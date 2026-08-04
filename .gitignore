@@ -1,0 +1,22 @@
+# Office の一時ロックファイル
+~$*
+
+# Python
+__pycache__/
+*.pyc
+
+# 認証情報（絶対にコミットしない）
+service_account.json
+credentials.json
+token.json
+config.txt
+*.pem
+*.key
+.env
+
+# 作業用の中間生成物
+unpacked/
+*_check/
+slide-*.jpg
+slide-*.png
+thumbnails*.jpg
