@@ -91,6 +91,30 @@ const HEADERS = [
 
 const DATA_ROWS = 1000; // 書式・ルールを適用する行数
 
+// ===== 日常(私生活)verの設定 =====
+
+const LIFE_SHEET_NAME = '日常タスク管理シート';
+
+// 日常タスクの種類と行の背景色
+const LIFE_TASK_TYPES = [
+  { name: '家事',         color: '#d9ead3' }, // 緑
+  { name: '買い物',       color: '#cfe2f3' }, // 青
+  { name: '手続き・お金', color: '#fce5cd' }, // オレンジ
+  { name: '健康・運動',   color: '#d0e0e3' }, // 水色
+  { name: '趣味・遊び',   color: '#d9d2e9' }, // 紫
+  { name: '人付き合い',   color: '#ead1dc' }, // ピンク
+  { name: 'その他',       color: '#f3f3f3' }, // グレー
+];
+
+const LIFE_HEADERS = [
+  'タスクの種類', // A
+  'タスク名',     // B
+  '考案日',       // C
+  '需要度',       // D
+];
+
+const DEMAND_OPTIONS = ['高', '中', '低'];
+
 // ===== ここから下は基本的に編集不要 =====
 
 // ---- メニュー ----
@@ -124,9 +148,84 @@ function setupTaskSheet() {
     insertSampleRows_(sheet);
   }
 
+  setupLifeSheet_(ss);
+
   ss.setActiveSheet(sheet);
-  alert_('「' + SHEET_NAME + '」と「' + SUMMARY_SHEET_NAME + '」のセットアップが完了しました。\n' +
+  alert_('「' + SHEET_NAME + '」「' + LIFE_SHEET_NAME + '」「' + SUMMARY_SHEET_NAME + '」のセットアップが完了しました。\n' +
     '毎朝のカレンダー通知を使う場合は「タスク管理」メニューから有効化してください。');
+}
+
+// ---- 日常(私生活)verのセットアップ ----
+// 列は「タスクの種類 / タスク名 / 考案日 / 需要度」だけのシンプル構成。
+// 種類ごとの行色分け・プルダウン・考案日の自動入力が効く(期日色分け・通知・工数集計は対象外)
+function setupLifeSheet_(ss) {
+  let sheet = ss.getSheetByName(LIFE_SHEET_NAME);
+  const isNewSheet = !sheet;
+  if (isNewSheet) {
+    sheet = ss.insertSheet(LIFE_SHEET_NAME);
+  }
+  const rows = DATA_ROWS;
+  const numCols = LIFE_HEADERS.length;
+
+  // ヘッダー
+  sheet.getRange(1, 1, 1, numCols)
+    .setValues([LIFE_HEADERS])
+    .setBackground('#434343')
+    .setFontColor('#ffffff')
+    .setFontWeight('bold')
+    .setHorizontalAlignment('center')
+    .setVerticalAlignment('middle');
+  sheet.setRowHeight(1, 32);
+  sheet.setFrozenRows(1);
+
+  // 列幅・表示形式
+  const widths = [110, 320, 90, 60];
+  widths.forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+  sheet.getRange(2, 3, rows, 1).setNumberFormat('yyyy/mm/dd'); // 考案日
+  [1, 3, 4].forEach(function (col) {
+    sheet.getRange(2, col, rows, 1).setHorizontalAlignment('center');
+  });
+
+  // プルダウン
+  const typeRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(LIFE_TASK_TYPES.map(function (t) { return t.name; }), true)
+    .setAllowInvalid(true)
+    .build();
+  sheet.getRange(2, 1, rows, 1).setDataValidation(typeRule);
+
+  const dateRule = SpreadsheetApp.newDataValidation()
+    .requireDate()
+    .setAllowInvalid(true)
+    .setHelpText('日付を入力してください (例: 2026/08/22)')
+    .build();
+  sheet.getRange(2, 3, rows, 1).setDataValidation(dateRule);
+
+  const demandRule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(DEMAND_OPTIONS, true)
+    .setAllowInvalid(false)
+    .build();
+  sheet.getRange(2, 4, rows, 1).setDataValidation(demandRule);
+
+  // 種類ごとの行色分け
+  const rowRange = sheet.getRange('A2:D' + (rows + 1));
+  const rules = LIFE_TASK_TYPES.map(function (t) {
+    return SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=$A2="' + t.name + '"')
+      .setBackground(t.color)
+      .setRanges([rowRange])
+      .build();
+  });
+  sheet.setConditionalFormatRules(rules);
+
+  // 動作確認用サンプル(新規作成時のみ。不要なら行ごと削除でOK)
+  if (isNewSheet) {
+    sheet.getRange(2, 1, 2, numCols).setValues([
+      ['家事', '(サンプル) 部屋の大掃除', new Date(), '中'],
+      ['趣味・遊び', '(サンプル) 行きたいカフェをリストアップ', new Date(), '低'],
+    ]);
+  }
 }
 
 // ヘッダー行の作成と固定
@@ -322,13 +421,14 @@ function setupSummarySheet_(ss) {
   });
 }
 
-// ---- 発生日の自動入力 ----
-// タスク名(B列)を入力したとき、発生日(C列)が空なら今日の日付を入れる
+// ---- 発生日/考案日の自動入力 ----
+// タスク名(B列)を入力したとき、C列(仕事: 発生日 / 日常: 考案日)が空なら今日の日付を入れる
 function onEdit(e) {
   if (!e || !e.range) return; // エディタから手動実行された場合は何もしない(編集時に自動で動く関数です)
   const range = e.range;
   const sheet = range.getSheet();
-  if (sheet.getName() !== SHEET_NAME) return;
+  const name_ = sheet.getName();
+  if (name_ !== SHEET_NAME && name_ !== LIFE_SHEET_NAME) return;
 
   const startRow = Math.max(range.getRow(), 2);
   const endRow = range.getRow() + range.getNumRows() - 1;
