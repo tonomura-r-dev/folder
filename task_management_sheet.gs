@@ -7,26 +7,40 @@
  * 3. このコードを丸ごと貼り付けて保存
  * 4. 上部の関数選択で「setupTaskSheet」を選んで「実行」
  *    (初回は権限の承認ダイアログが出るので許可してください)
+ * 5. 毎朝のカレンダー通知を使う場合は、続けて「setupNotificationTrigger」を実行
+ *    (スプレッドシートを開き直すと「タスク管理」メニューからも実行できます)
  *
  * ■ できあがるもの
- * - 「タスク管理シート」という名前のシート
- * - 列: タスクの種類 / タスク名 / 発生日 / 完了予定日 / ガチの期日 /
+ * - 「タスク管理シート」: メインのタスク一覧
+ *   列: タスクの種類 / タスク名 / 発生日 / 完了予定日 / ガチの期日 /
  *        重要度 / 予定工数 / 実際の工数 / 納品物・所感 / そこからの学び / ステータス
- * - タスクの種類ごとに行全体を色分け(条件付き書式なので自動で色が付く)
- * - 完了予定日が近づくと「タスク名」のセルだけ 黄 → オレンジ → 赤 に変化
- *   (ステータスが「完了」になると色は消える)
- * - タスクの種類 / 重要度 / ステータス はプルダウン選択
+ * - 「工数集計」: 種類別・月別の予定工数/実際工数の集計(自動計算)
+ *
+ * ■ 色分けルール(条件付き書式なので自動で変わります)
+ * 優先度の高い順に:
+ * 1. ガチの期日を超過した未完了タスク → タスク名が濃い赤+白文字
+ * 2. 完了予定日まで 当日・超過→赤 / 3日以内→オレンジ / 7日以内→黄 (タスク名セル)
+ * 3. ステータス「完了」の行 → 行全体がグレー+取り消し線
+ * 4. タスクの種類ごとに行全体を色分け
+ *
+ * ■ 自動機能
+ * - タスク名(B列)を入力すると、発生日(C列)が空なら今日の日付が自動で入る
+ * - setupNotificationTrigger 実行後は、毎朝8時台に期日をチェックして、
+ *   「完了予定日が3日以内 or 超過」「ガチの期日超過」の未完了タスクがあれば
+ *   Googleカレンダーに通知付きの予定を自動作成(スマホのカレンダー通知が届く)
  *
  * ■ カスタマイズ
- * - タスクの種類や色を変えたい → 下の TASK_TYPES を編集して setupTaskSheet を再実行
- * - 色が変わる日数の区切りを変えたい → DEADLINE_RULES を編集して再実行
+ * - タスクの種類や色 → TASK_TYPES を編集して setupTaskSheet を再実行
+ * - 色が変わる日数の区切り → DEADLINE_RULES を編集して再実行
+ * - 通知する残り日数 → NOTIFY_DAYS_AHEAD を編集
  * - setupTaskSheet は何度実行しても入力済みのデータは消えません
- *   (書式・プルダウン・色分けルールだけ設定し直します)
+ *   (書式・プルダウン・色分けルール・集計シートだけ設定し直します)
  */
 
 // ===== 設定(ここを編集すれば自由にカスタマイズできます) =====
 
 const SHEET_NAME = 'タスク管理シート';
+const SUMMARY_SHEET_NAME = '工数集計';
 
 // タスクの種類と行の背景色(薄めの色を推奨)
 const TASK_TYPES = [
@@ -46,9 +60,20 @@ const DEADLINE_RULES = [
   { days: 7, color: '#ffd966' }, // 残り7日以内 → 黄
 ];
 
+// ガチの期日を超過した未完了タスクの「タスク名」の見た目(最優先)
+const HARD_DEADLINE_STYLE = { background: '#cc0000', fontColor: '#ffffff' };
+
+// 完了した行の見た目
+const DONE_STYLE = { background: '#efefef', fontColor: '#999999' };
+
 const IMPORTANCE_OPTIONS = ['高', '中', '低'];
 const STATUS_OPTIONS = ['未着手', '進行中', '完了'];
-const DONE_STATUS = '完了'; // この状態になるとタスク名の期日色が消える
+const DONE_STATUS = '完了';
+
+// カレンダー通知: 完了予定日が今日から何日以内なら通知対象にするか
+const NOTIFY_DAYS_AHEAD = 3;
+// 通知用に作る予定のタイトル先頭(同じ日の古い通知予定はこれを目印に消して作り直します)
+const NOTIFY_EVENT_PREFIX = '⚠タスク期日チェック';
 
 const HEADERS = [
   'タスクの種類',   // A
@@ -68,6 +93,19 @@ const DATA_ROWS = 1000; // 書式・ルールを適用する行数
 
 // ===== ここから下は基本的に編集不要 =====
 
+// ---- メニュー ----
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu('タスク管理')
+    .addItem('初期セットアップ(再実行OK)', 'setupTaskSheet')
+    .addItem('毎朝のカレンダー通知を有効化', 'setupNotificationTrigger')
+    .addItem('今すぐ期日チェック', 'notifyDeadlinesManual')
+    .addToUi();
+}
+
+// ---- セットアップ本体 ----
+
 function setupTaskSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME);
@@ -80,13 +118,15 @@ function setupTaskSheet() {
   setupColumnFormats_(sheet);
   setupValidations_(sheet);
   setupConditionalFormats_(sheet);
+  setupSummarySheet_(ss);
 
   if (isNewSheet) {
     insertSampleRows_(sheet);
   }
 
   ss.setActiveSheet(sheet);
-  SpreadsheetApp.getUi().alert('「' + SHEET_NAME + '」のセットアップが完了しました。');
+  alert_('「' + SHEET_NAME + '」と「' + SUMMARY_SHEET_NAME + '」のセットアップが完了しました。\n' +
+    '毎朝のカレンダー通知を使う場合は「タスク管理」メニューから有効化してください。');
 }
 
 // ヘッダー行の作成と固定
@@ -113,7 +153,7 @@ function setupColumnFormats_(sheet) {
   const rows = DATA_ROWS;
   // 日付列 (C:発生日, D:完了予定日, E:ガチの期日)
   sheet.getRange(2, 3, rows, 3).setNumberFormat('yyyy/mm/dd');
-  // 工数列 (G, H) : 数値(時間)想定
+  // 工数列 (G, H) : 時間(h)
   sheet.getRange(2, 7, rows, 2).setNumberFormat('0.0"h"');
   // 長文列 (I, J) は折り返し表示
   sheet.getRange(2, 9, rows, 2).setWrap(true);
@@ -153,14 +193,25 @@ function setupValidations_(sheet) {
   sheet.getRange(2, 11, rows, 1).setDataValidation(statusRule);
 }
 
-// 条件付き書式(色分けルール)
+// 条件付き書式(色分けルール)。先に登録したルールほど優先される
 function setupConditionalFormats_(sheet) {
   const rules = [];
   const lastRow = DATA_ROWS + 1;
-
-  // --- 1. タスク名セルの期日色 (先に登録したルールが優先される) ---
-  // 完了予定日(D)が入っていて、ステータス(K)が「完了」でない行が対象
   const taskNameRange = sheet.getRange('B2:B' + lastRow);
+  const rowRange = sheet.getRange('A2:K' + lastRow);
+
+  // --- 1. ガチの期日(E)を超過した未完了タスク → タスク名を濃い赤+白文字 ---
+  rules.push(
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=AND($E2<>"", $K2<>"' + DONE_STATUS + '", $E2<TODAY())')
+      .setBackground(HARD_DEADLINE_STYLE.background)
+      .setFontColor(HARD_DEADLINE_STYLE.fontColor)
+      .setBold(true)
+      .setRanges([taskNameRange])
+      .build()
+  );
+
+  // --- 2. 完了予定日(D)の残り日数によるタスク名の色 ---
   DEADLINE_RULES.forEach(function (r) {
     const formula =
       '=AND($D2<>"", $K2<>"' + DONE_STATUS + '", $D2<=TODAY()+' + r.days + ')';
@@ -174,8 +225,18 @@ function setupConditionalFormats_(sheet) {
     );
   });
 
-  // --- 2. タスクの種類による行全体の色分け ---
-  const rowRange = sheet.getRange('A2:K' + lastRow);
+  // --- 3. 完了した行 → 行全体グレー+取り消し線(種類の色より優先) ---
+  rules.push(
+    SpreadsheetApp.newConditionalFormatRule()
+      .whenFormulaSatisfied('=$K2="' + DONE_STATUS + '"')
+      .setBackground(DONE_STYLE.background)
+      .setFontColor(DONE_STYLE.fontColor)
+      .setStrikethrough(true)
+      .setRanges([rowRange])
+      .build()
+  );
+
+  // --- 4. タスクの種類による行全体の色分け ---
   TASK_TYPES.forEach(function (t) {
     rules.push(
       SpreadsheetApp.newConditionalFormatRule()
@@ -189,6 +250,202 @@ function setupConditionalFormats_(sheet) {
   sheet.setConditionalFormatRules(rules); // 既存ルールを置き換え
 }
 
+// 工数集計シート(種類別・月別)。数式で組むので値の変更に自動追従します
+function setupSummarySheet_(ss) {
+  let sheet = ss.getSheetByName(SUMMARY_SHEET_NAME);
+  if (!sheet) {
+    sheet = ss.insertSheet(SUMMARY_SHEET_NAME);
+  }
+  sheet.clear();
+
+  const src = "'" + SHEET_NAME + "'";
+  const last = DATA_ROWS + 1;
+  const typeCol = src + '!$A$2:$A$' + last;
+  const dueCol = src + '!$D$2:$D$' + last;
+  const planCol = src + '!$G$2:$G$' + last;
+  const actualCol = src + '!$H$2:$H$' + last;
+
+  // --- 種類別集計 ---
+  sheet.getRange('A1').setValue('種類別集計').setFontWeight('bold').setFontSize(12);
+  sheet.getRange('A2:D2')
+    .setValues([['タスクの種類', '予定工数', '実際の工数', '差分(実際-予定)']])
+    .setBackground('#434343').setFontColor('#ffffff').setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  TASK_TYPES.forEach(function (t, i) {
+    const row = 3 + i;
+    sheet.getRange(row, 1).setValue(t.name).setBackground(t.color);
+    sheet.getRange(row, 2).setFormula('=SUMIF(' + typeCol + ',$A' + row + ',' + planCol + ')');
+    sheet.getRange(row, 3).setFormula('=SUMIF(' + typeCol + ',$A' + row + ',' + actualCol + ')');
+    sheet.getRange(row, 4).setFormula('=C' + row + '-B' + row);
+  });
+  const totalRow = 3 + TASK_TYPES.length;
+  sheet.getRange(totalRow, 1).setValue('合計').setFontWeight('bold');
+  sheet.getRange(totalRow, 2).setFormula('=SUM(B3:B' + (totalRow - 1) + ')').setFontWeight('bold');
+  sheet.getRange(totalRow, 3).setFormula('=SUM(C3:C' + (totalRow - 1) + ')').setFontWeight('bold');
+  sheet.getRange(totalRow, 4).setFormula('=C' + totalRow + '-B' + totalRow).setFontWeight('bold');
+  sheet.getRange(3, 2, TASK_TYPES.length + 1, 3).setNumberFormat('0.0"h"');
+
+  // --- 月別集計(完了予定日ベース・今年の1〜12月) ---
+  sheet.getRange('F1').setValue('月別集計(完了予定日ベース・今年)').setFontWeight('bold').setFontSize(12);
+  sheet.getRange('F2:H2')
+    .setValues([['月', '予定工数', '実際の工数']])
+    .setBackground('#434343').setFontColor('#ffffff').setFontWeight('bold')
+    .setHorizontalAlignment('center');
+
+  for (let m = 1; m <= 12; m++) {
+    const row = 2 + m;
+    sheet.getRange(row, 6).setFormula('=DATE(YEAR(TODAY()),' + m + ',1)');
+    sheet.getRange(row, 7).setFormula(
+      '=SUMIFS(' + planCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))');
+    sheet.getRange(row, 8).setFormula(
+      '=SUMIFS(' + actualCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))');
+  }
+  sheet.getRange(3, 6, 12, 1).setNumberFormat('yyyy/mm').setHorizontalAlignment('center');
+  sheet.getRange(3, 7, 12, 2).setNumberFormat('0.0"h"');
+
+  const widths = [130, 100, 100, 120, 30, 90, 100, 100];
+  widths.forEach(function (w, i) {
+    sheet.setColumnWidth(i + 1, w);
+  });
+}
+
+// ---- 発生日の自動入力 ----
+// タスク名(B列)を入力したとき、発生日(C列)が空なら今日の日付を入れる
+function onEdit(e) {
+  const range = e.range;
+  const sheet = range.getSheet();
+  if (sheet.getName() !== SHEET_NAME) return;
+
+  const startRow = Math.max(range.getRow(), 2);
+  const endRow = range.getRow() + range.getNumRows() - 1;
+  const startCol = range.getColumn();
+  const endCol = startCol + range.getNumColumns() - 1;
+  if (endRow < 2 || startCol > 2 || endCol < 2) return; // B列に触れていなければ何もしない
+
+  for (let row = startRow; row <= endRow; row++) {
+    const name = sheet.getRange(row, 2).getValue();
+    const dateCell = sheet.getRange(row, 3);
+    if (name !== '' && dateCell.getValue() === '') {
+      dateCell.setValue(new Date()).setNumberFormat('yyyy/mm/dd');
+    }
+  }
+}
+
+// ---- Googleカレンダー通知 ----
+
+// 毎朝8時台に notifyDeadlines を実行するトリガーを設定(再実行すると張り直し)
+function setupNotificationTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'notifyDeadlines') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  ScriptApp.newTrigger('notifyDeadlines').timeBased().everyDays(1).atHour(8).create();
+  alert_('毎朝8時台に期日をチェックして、対象タスクがあればGoogleカレンダーに通知予定を作るようにしました。');
+}
+
+// メニューの「今すぐ期日チェック」用
+function notifyDeadlinesManual() {
+  const count = notifyDeadlines();
+  alert_(count === 0
+    ? '期日が近い・超過している未完了タスクはありませんでした。'
+    : count + '件の要対応タスクをGoogleカレンダーの予定にまとめました(約15分後に通知されます)。');
+}
+
+/**
+ * 期日チェック本体。
+ * 「ガチの期日を超過」「完了予定日が超過 or NOTIFY_DAYS_AHEAD日以内」の未完了タスクを集め、
+ * デフォルトのGoogleカレンダーに通知(ポップアップリマインダー)付きの予定を1件作る。
+ * 対象0件なら何もしない。戻り値は対象タスク数。
+ */
+function notifyDeadlines() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return 0;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return 0;
+
+  const values = sheet.getRange(2, 1, lastRow - 1, HEADERS.length).getValues();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dayMs = 24 * 60 * 60 * 1000;
+
+  const hardOverdue = [];
+  const dueOverdue = [];
+  const dueSoon = [];
+
+  values.forEach(function (row) {
+    const name = row[1];
+    const due = row[3];   // 完了予定日
+    const hard = row[4];  // ガチの期日
+    const status = row[10];
+    if (name === '' || status === DONE_STATUS) return;
+
+    if (hard instanceof Date) {
+      const h = new Date(hard); h.setHours(0, 0, 0, 0);
+      if (h < today) {
+        hardOverdue.push('・' + name + ' (ガチの期日 ' + formatDate_(h) + ' を超過!)');
+        return;
+      }
+    }
+    if (due instanceof Date) {
+      const d = new Date(due); d.setHours(0, 0, 0, 0);
+      const daysLeft = Math.round((d - today) / dayMs);
+      if (daysLeft < 0) {
+        dueOverdue.push('・' + name + ' (完了予定日を' + (-daysLeft) + '日超過)');
+      } else if (daysLeft <= NOTIFY_DAYS_AHEAD) {
+        dueSoon.push('・' + name + ' (完了予定日まであと' + daysLeft + '日)');
+      }
+    }
+  });
+
+  const total = hardOverdue.length + dueOverdue.length + dueSoon.length;
+  if (total === 0) return 0;
+
+  const lines = [];
+  if (hardOverdue.length) lines.push('【ガチの期日 超過】', hardOverdue.join('\n'), '');
+  if (dueOverdue.length) lines.push('【完了予定日 超過】', dueOverdue.join('\n'), '');
+  if (dueSoon.length) lines.push('【完了予定日まで' + NOTIFY_DAYS_AHEAD + '日以内】', dueSoon.join('\n'), '');
+  lines.push('シート: ' + ss.getUrl());
+
+  const cal = CalendarApp.getDefaultCalendar();
+  // 同じ日に作った古いチェック予定は消して作り直す(重複防止)
+  cal.getEventsForDay(new Date()).forEach(function (ev) {
+    if (ev.getTitle().indexOf(NOTIFY_EVENT_PREFIX) === 0) {
+      ev.deleteEvent();
+    }
+  });
+
+  const start = new Date(Date.now() + 15 * 60 * 1000); // 15分後に通知が届くように
+  const end = new Date(start.getTime() + 15 * 60 * 1000);
+  const event = cal.createEvent(
+    NOTIFY_EVENT_PREFIX + ': 要対応 ' + total + '件',
+    start,
+    end,
+    { description: lines.join('\n') }
+  );
+  event.removeAllReminders();
+  event.addPopupReminder(1);
+
+  return total;
+}
+
+// ---- 補助 ----
+
+function formatDate_(d) {
+  return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy/MM/dd');
+}
+
+// トリガー実行時など UI が使えない場面でも落ちないようにする
+function alert_(message) {
+  try {
+    SpreadsheetApp.getUi().alert(message);
+  } catch (err) {
+    Logger.log(message);
+  }
+}
+
 // 動作確認用のサンプル行(新規作成時のみ投入。不要なら行ごと削除してOK)
 function insertSampleRows_(sheet) {
   const today = new Date();
@@ -200,6 +457,7 @@ function insertSampleRows_(sheet) {
   const samples = [
     ['提案資料作成', '(サンプル) LINE公式アカウント提案資料の作成', addDays(-3), addDays(2), addDays(5), '高', 8, '', '', '', '進行中'],
     ['分析・リサーチ', '(サンプル) LP分析レポートまとめ', addDays(-1), addDays(6), addDays(10), '中', 4, '', '', '', '未着手'],
+    ['企画・ライティング', '(サンプル) 記事企画案の修正 ※ガチの期日超過の例', addDays(-10), addDays(-5), addDays(-2), '高', 3, '', '', '', '進行中'],
     ['学習・研修', '(サンプル) AIバナー生成ワークの復習', addDays(-7), addDays(-1), addDays(14), '低', 2, 2, '(サンプル) 復習メモを作成', '(サンプル) プロンプトの型が重要', '完了'],
   ];
   sheet.getRange(2, 1, samples.length, HEADERS.length).setValues(samples);
