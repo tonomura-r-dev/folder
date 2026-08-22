@@ -266,25 +266,35 @@ function setupSummarySheet_(ss) {
   const actualCol = src + '!$H$2:$H$' + last;
 
   // --- 種類別集計 ---
+  // ※セル1個ずつ書き込むと極端に遅くなるため、すべて配列で一括書き込みする
   sheet.getRange('A1').setValue('種類別集計').setFontWeight('bold').setFontSize(12);
   sheet.getRange('A2:D2')
     .setValues([['タスクの種類', '予定工数', '実際の工数', '差分(実際-予定)']])
     .setBackground('#434343').setFontColor('#ffffff').setFontWeight('bold')
     .setHorizontalAlignment('center');
 
-  TASK_TYPES.forEach(function (t, i) {
+  const n = TASK_TYPES.length;
+  sheet.getRange(3, 1, n, 1)
+    .setValues(TASK_TYPES.map(function (t) { return [t.name]; }))
+    .setBackgrounds(TASK_TYPES.map(function (t) { return [t.color]; }));
+
+  const typeFormulas = TASK_TYPES.map(function (t, i) {
     const row = 3 + i;
-    sheet.getRange(row, 1).setValue(t.name).setBackground(t.color);
-    sheet.getRange(row, 2).setFormula('=SUMIF(' + typeCol + ',$A' + row + ',' + planCol + ')');
-    sheet.getRange(row, 3).setFormula('=SUMIF(' + typeCol + ',$A' + row + ',' + actualCol + ')');
-    sheet.getRange(row, 4).setFormula('=C' + row + '-B' + row);
+    return [
+      '=SUMIF(' + typeCol + ',$A' + row + ',' + planCol + ')',
+      '=SUMIF(' + typeCol + ',$A' + row + ',' + actualCol + ')',
+      '=C' + row + '-B' + row,
+    ];
   });
-  const totalRow = 3 + TASK_TYPES.length;
-  sheet.getRange(totalRow, 1).setValue('合計').setFontWeight('bold');
-  sheet.getRange(totalRow, 2).setFormula('=SUM(B3:B' + (totalRow - 1) + ')').setFontWeight('bold');
-  sheet.getRange(totalRow, 3).setFormula('=SUM(C3:C' + (totalRow - 1) + ')').setFontWeight('bold');
-  sheet.getRange(totalRow, 4).setFormula('=C' + totalRow + '-B' + totalRow).setFontWeight('bold');
-  sheet.getRange(3, 2, TASK_TYPES.length + 1, 3).setNumberFormat('0.0"h"');
+  const totalRow = 3 + n;
+  typeFormulas.push([
+    '=SUM(B3:B' + (totalRow - 1) + ')',
+    '=SUM(C3:C' + (totalRow - 1) + ')',
+    '=C' + totalRow + '-B' + totalRow,
+  ]);
+  sheet.getRange(3, 2, n + 1, 3).setFormulas(typeFormulas).setNumberFormat('0.0"h"');
+  sheet.getRange(totalRow, 1).setValue('合計');
+  sheet.getRange(totalRow, 1, 1, 4).setFontWeight('bold');
 
   // --- 月別集計(完了予定日ベース・今年の1〜12月) ---
   sheet.getRange('F1').setValue('月別集計(完了予定日ベース・今年)').setFontWeight('bold').setFontSize(12);
@@ -293,14 +303,16 @@ function setupSummarySheet_(ss) {
     .setBackground('#434343').setFontColor('#ffffff').setFontWeight('bold')
     .setHorizontalAlignment('center');
 
+  const monthFormulas = [];
   for (let m = 1; m <= 12; m++) {
     const row = 2 + m;
-    sheet.getRange(row, 6).setFormula('=DATE(YEAR(TODAY()),' + m + ',1)');
-    sheet.getRange(row, 7).setFormula(
-      '=SUMIFS(' + planCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))');
-    sheet.getRange(row, 8).setFormula(
-      '=SUMIFS(' + actualCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))');
+    monthFormulas.push([
+      '=DATE(YEAR(TODAY()),' + m + ',1)',
+      '=SUMIFS(' + planCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))',
+      '=SUMIFS(' + actualCol + ',' + dueCol + ',">="&$F' + row + ',' + dueCol + ',"<"&EDATE($F' + row + ',1))',
+    ]);
   }
+  sheet.getRange(3, 6, 12, 3).setFormulas(monthFormulas);
   sheet.getRange(3, 6, 12, 1).setNumberFormat('yyyy/mm').setHorizontalAlignment('center');
   sheet.getRange(3, 7, 12, 2).setNumberFormat('0.0"h"');
 
@@ -313,6 +325,7 @@ function setupSummarySheet_(ss) {
 // ---- 発生日の自動入力 ----
 // タスク名(B列)を入力したとき、発生日(C列)が空なら今日の日付を入れる
 function onEdit(e) {
+  if (!e || !e.range) return; // エディタから手動実行された場合は何もしない(編集時に自動で動く関数です)
   const range = e.range;
   const sheet = range.getSheet();
   if (sheet.getName() !== SHEET_NAME) return;
