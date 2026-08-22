@@ -450,12 +450,15 @@ function formatDate_(d) {
   return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy/MM/dd');
 }
 
-// トリガー実行時など UI が使えない場面でも落ちないようにする
+// 完了メッセージの表示。
+// getUi().alert() はスプレッドシート側のタブにダイアログを出し、閉じられるまで
+// スクリプトが待ち続けて6分でタイムアウトするため、待ちが発生しないトースト通知を使う
 function alert_(message) {
+  Logger.log(message);
   try {
-    SpreadsheetApp.getUi().alert(message);
+    SpreadsheetApp.getActiveSpreadsheet().toast(message, 'タスク管理', 10);
   } catch (err) {
-    Logger.log(message);
+    // トリガー実行時など表示できない場面では何もしない(ログには残る)
   }
 }
 
