@@ -20,3 +20,8 @@ unpacked/
 slide-*.jpg
 slide-*.png
 thumbnails*.jpg
+
+# 社内数字（売上・粗利・個人別数字を含むためコミットしない）
+# 月次管理ブックと、そこから生成した集計ファイル
+*_AD案件サマリ.xlsx
+*月次*.xlsx
