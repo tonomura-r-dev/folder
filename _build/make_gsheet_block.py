@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Google スプレッドシートの新規タブに貼り付ける「提案管理集計」ブロックを書き出す。
+"""Google スプレッドシートの新規タブに貼り付ける「全媒体 案件集計」ブロックを書き出す。
 
   python _build/make_gsheet_block.py [出力先.tsv]
 
-出力した TSV を新規タブの A1 に貼るだけで、AD と OA（LINE公式アカウント）を
-まとめて集計するタブができる。元シートには一切書き込まない（参照するだけ）。
+出力した TSV を新規タブの A1 に貼るだけで、全13媒体シートを参照する集計タブができる。
+元シートには一切書き込まない（参照するだけ）。
 
-対象シートの列（2026-08-25 に実物で確認済み。ADとOAで並びは完全に同じ）
-  B=ヨミか請求か（ADのみ／OAは記入日）  H=請求額（税抜）  I=原価合計  J=利益
-  K=計上種別（ストック／ショット）      L=対象月          P=商材
-  R,S,T,U,V  = アカウント / コンサル / 運用①②③
-  AB〜AF     = 上記の按分売上
-  AG〜AK     = 上記の按分利益
+佐村さんの指示（2026-08-25）
+  ・商材カテゴリ × 契約形態 × 売上 × 粗利 が1枚で分かること
+  ・AD・OA だけでなく全媒体
+  ・担当別の数字は不要。案件全体の数字だけでよい
+
+列の並びは媒体ごとに違う（メディア・ベトナム・マス広告だけズレている）ので、
+シートごとに列を指定している。2026-08-25 に実データで確認済み。
 """
 import sys
 
@@ -21,144 +22,132 @@ LIMIT = 2000
 
 KEIS = ["ストック", "ショット"]
 
-# 対象媒体。sheet はスプレッドシート上のタブ名そのまま。
-# yomi=True のシートだけ B列で「ヨミ／請求」を判別できる。
+# sheet: タブ名 / uri: 請求額（税抜）/ genka: 原価合計 / rieki: 利益
+# kei: 計上種別 / cat: 商材 / cats: その媒体に実在する商材
 MEDIA = [
-    {"label": "AD", "sheet": "AD", "yomi": True,
+    {"sheet": "AD", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
      "cats": ["リスティング", "SNS", "DSP", "その他"]},
-    {"label": "OA（商流のみ）", "sheet": "LINE公式アカウント", "yomi": False,
-     "cats": ["LINE公式アカウント"]},
+    {"sheet": "アフィ", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["アフィリエイト"]},
+    {"sheet": "CS", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["SEO固定", "SEO成果"]},
+    {"sheet": "MEO", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["SEO固定"]},
+    {"sheet": "制作", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["F-code", "Spider", "保守管理", "サイト修正", "バナー"]},
+    {"sheet": "PR", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["PR", "タレントシェア"]},
+    {"sheet": "風評", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["風評被害対策", "排他的RFO", "排他的SEO", "RFO", "排他的RFO(G)",
+              "風評監視ツール", "2ch"]},
+    {"sheet": "タレントシェア", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["タレントシェア"]},
+    {"sheet": "LINE公式アカウント", "uri": "H", "genka": "I", "rieki": "J", "kei": "K",
+     "cat": "P", "cats": ["LINE公式アカウント"]},
+    {"sheet": "メディア", "uri": "K", "genka": "L", "rieki": "M", "kei": "N", "cat": "F",
+     "cats": ["SEO固定掲載費", "紹介手数料", "AD成果報酬", "SEO成果報酬", "成約手数料",
+              "ファクタリング", "リフォーム"]},
+    {"sheet": "ベトナム", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "N",
+     "cats": ["リスティング", "SNS", "BPO", "CS", "PR"]},
+    {"sheet": "ASP", "uri": "H", "genka": "I", "rieki": "J", "kei": "K", "cat": "P",
+     "cats": ["ASP"]},
+    {"sheet": "マス広告(MA)・その他", "uri": "H", "genka": "I", "rieki": "J", "kei": "K",
+     "cat": "N", "cats": ["CM", "アドトラック"]},
 ]
 
-HEADERS = ["媒体", "商材カテゴリ", "契約形態", "件数", "売上", "粗利", "粗利率",
-           "請求_売上", "請求_粗利率", "ヨミ_売上", "ヨミ_粗利率"]
-NO_YOMI = "－"  # ヨミ／請求の区分を持たないシートの表示
 
-
-def col(sheet, letter):
-    """1シートの1列。行数を LIMIT で打ち切る。"""
-    return f"'{sheet}'!${letter}$2:${letter}${LIMIT}"
-
-
-def joined(fn):
-    """全媒体ぶんを + でつないだ数式を返す。"""
-    return "+".join(fn(m["sheet"]) for m in MEDIA)
+def col(m, key):
+    """媒体 m の key 列。行数を LIMIT で打ち切る。"""
+    letter = m[key]
+    return f"'{m['sheet']}'!${letter}$2:${letter}${LIMIT}"
 
 
 def rows():
     r = []
     A = r.append
 
-    A(["提案管理集計｜商材カテゴリ × 契約形態 × 売上 × 粗利 × 担当"])
-    A(["対象：ADシート＋OA（LINE公式アカウント）シート／全対象月／金額は税抜／"
-       "元シートは参照のみ・変更しません"])
+    A(["全媒体 案件集計｜商材カテゴリ × 契約形態 × 売上 × 粗利"])
+    A(["対象：全13媒体シート／全対象月／金額は税抜／元シートは参照のみ・変更しません"])
     A([])
 
-    # ---------------- ① 検算
-    A(["① 検算", "各媒体の数字が元シートと合っているかの確認。差分が0なら以下の集計も信用できます"])
+    # ---------------- ① 媒体別サマリ 兼 検算
+    A(["① 媒体別サマリ（検算兼用）",
+       "各行がそのままの媒体シートの合計です。元シートと突き合わせて確認できます"])
     A(["媒体", "件数", "売上", "原価", "粗利", "粗利率"])
-    first_check = len(r) + 1
+    first_m = len(r) + 1
     for m in MEDIA:
         n = len(r) + 1
-        s = m["sheet"]
-        A([m["label"],
-           f"=COUNT({col(s, 'H')})",
-           f"=SUM({col(s, 'H')})",
-           f"=SUM({col(s, 'I')})",
-           f"=SUM({col(s, 'J')})",
+        A([m["sheet"],
+           f"=COUNT({col(m, 'uri')})",
+           f"=SUM({col(m, 'uri')})",
+           f"=SUM({col(m, 'genka')})",
+           f"=SUM({col(m, 'rieki')})",
            f'=IFERROR(E{n}/C{n},"")'])
-    last_check = len(r)
+    last_m = len(r)
 
     n = len(r) + 1
     A(["合計",
-       f"=SUM(B{first_check}:B{last_check})",
-       f"=SUM(C{first_check}:C{last_check})",
-       f"=SUM(D{first_check}:D{last_check})",
-       f"=SUM(E{first_check}:E{last_check})",
+       f"=SUM(B{first_m}:B{last_m})",
+       f"=SUM(C{first_m}:C{last_m})",
+       f"=SUM(D{first_m}:D{last_m})",
+       f"=SUM(E{first_m}:E{last_m})",
        f'=IFERROR(E{n}/C{n},"")'])
-    total_check = n
-
-    # 按分列にエラー値が混ざっていても止まらないよう IFERROR で包む
-    n = len(r) + 1
-    A(["担当按分の合計", "",
-       "=" + joined(lambda s: f"SUMPRODUCT(IFERROR('{s}'!$AB$2:$AF${LIMIT},0))"),
-       "",
-       "=" + joined(lambda s: f"SUMPRODUCT(IFERROR('{s}'!$AG$2:$AK${LIMIT},0))"),
-       ""])
-    bunpai = n
-
-    A(["差分（0ならOK）", "", f"=C{total_check}-C{bunpai}", "",
-       f"=E{total_check}-E{bunpai}", ""])
+    grand = n
     A([])
 
-    # ---------------- ② 商材カテゴリ × 契約形態
-    A(["② 商材カテゴリ × 契約形態",
-       "「件数・売上・粗利」は請求＋ヨミの合計。右側がその内訳"])
-    A(HEADERS)
+    # ---------------- ② 契約形態のまとめ
+    A(["② 契約形態別（全媒体）", "ストックとショットで粗利率がどう違うかを見るところ"])
+    A(["契約形態", "件数", "売上", "粗利", "粗利率"])
+    first_k = len(r) + 1
+    for kei in KEIS:
+        n = len(r) + 1
+        cnt = "+".join(f'COUNTIFS({col(m, "kei")},$A{n})' for m in MEDIA)
+        uri = "+".join(f'SUMIFS({col(m, "uri")},{col(m, "kei")},$A{n})' for m in MEDIA)
+        rie = "+".join(f'SUMIFS({col(m, "rieki")},{col(m, "kei")},$A{n})' for m in MEDIA)
+        A([kei, f"={cnt}", f"={uri}", f"={rie}", f'=IFERROR(D{n}/C{n},"")'])
+    last_k = len(r)
+    n = len(r) + 1
+    A(["合計", f"=B{grand}", f"=C{grand}", f"=E{grand}", f'=IFERROR(D{n}/C{n},"")'])
+    A(["うち計上種別が空欄", f"=B{n}-SUM(B{first_k}:B{last_k})",
+       f"=C{n}-SUM(C{first_k}:C{last_k})", f"=D{n}-SUM(D{first_k}:D{last_k})"])
+    A([])
 
-    first = len(r) + 1
+    # ---------------- ③ 媒体 × 商材カテゴリ × 契約形態
+    A(["③ 媒体 × 商材カテゴリ × 契約形態", "これが本体。オートフィルタやピボットの元データにも使えます"])
+    A(["媒体", "商材カテゴリ", "契約形態", "件数", "売上", "粗利", "粗利率"])
+    first_d = len(r) + 1
     for m in MEDIA:
-        s, has_yomi = m["sheet"], m["yomi"]
         for cat in m["cats"]:
             for kei in KEIS:
                 n = len(r) + 1
-                base = f"{col(s, 'P')},$B{n},{col(s, 'K')},$C{n}"
-                row = [m["label"], cat, kei,
-                       f"=COUNTIFS({base})",
-                       f"=SUMIFS({col(s, 'H')},{base})",
-                       f"=SUMIFS({col(s, 'J')},{base})",
-                       f'=IFERROR(F{n}/E{n},"")']
-                if has_yomi:
-                    b = col(s, "B")
-                    row += [
-                        f'=SUMIFS({col(s, "H")},{base},{b},"*請求*")',
-                        f'=IFERROR(SUMIFS({col(s, "J")},{base},{b},"*請求*")/H{n},"")',
-                        f'=SUMIFS({col(s, "H")},{base},{b},"*ヨミ*")',
-                        f'=IFERROR(SUMIFS({col(s, "J")},{base},{b},"*ヨミ*")/J{n},"")',
-                    ]
-                else:
-                    row += [NO_YOMI, NO_YOMI, NO_YOMI, NO_YOMI]
-                A(row)
-    last = len(r)
+                base = f"{col(m, 'cat')},$B{n},{col(m, 'kei')},$C{n}"
+                A([m["sheet"], cat, kei,
+                   f"=COUNTIFS({base})",
+                   f"=SUMIFS({col(m, 'uri')},{base})",
+                   f"=SUMIFS({col(m, 'rieki')},{base})",
+                   f'=IFERROR(F{n}/E{n},"")'])
+    last_d = len(r)
 
     n = len(r) + 1
-    yomi_sheets = [m for m in MEDIA if m["yomi"]]
-    q_uri = "+".join(f'SUMIFS({col(m["sheet"], "H")},{col(m["sheet"], "B")},"*請求*")'
-                     for m in yomi_sheets)
-    q_ri = "+".join(f'SUMIFS({col(m["sheet"], "J")},{col(m["sheet"], "B")},"*請求*")'
-                    for m in yomi_sheets)
-    y_uri = "+".join(f'SUMIFS({col(m["sheet"], "H")},{col(m["sheet"], "B")},"*ヨミ*")'
-                     for m in yomi_sheets)
-    y_ri = "+".join(f'SUMIFS({col(m["sheet"], "J")},{col(m["sheet"], "B")},"*ヨミ*")'
-                    for m in yomi_sheets)
-    A(["合計", "", "",
-       f"=C{total_check}", f"=D{total_check}", f"=F{total_check}",
-       f'=IFERROR(F{n}/E{n},"")',
-       f"={q_uri}", f'=IFERROR(({q_ri})/H{n},"")',
-       f"={y_uri}", f'=IFERROR(({y_ri})/J{n},"")'])
+    A(["合計", "", "", f"=B{grand}", f"=C{grand}", f"=E{grand}",
+       f'=IFERROR(F{n}/E{n},"")'])
     A(["うち未分類（商材か計上種別が空欄）", "", "",
-       f"=D{n}-SUM(D{first}:D{last})",
-       f"=E{n}-SUM(E{first}:E{last})",
-       f"=F{n}-SUM(F{first}:F{last})"])
-    A([])
-
-    # ---------------- ③ 担当別
-    A(["③ 担当別（按分後・二重計上なし）",
-       "AD・OAを合算。1案件を複数担当で分けた後の数字なので、合計は①の「担当按分の合計」と一致します"])
-    A(["担当", "売上（按分）", "粗利（按分）", "粗利率"])
-    A([let_formula()])
+       f"=D{n}-SUM(D{first_d}:D{last_d})",
+       f"=E{n}-SUM(E{first_d}:E{last_d})",
+       f"=F{n}-SUM(F{first_d}:F{last_d})"])
     A([])
 
     # ---------------- 注記
     A(["読み方・注意点"])
     for t in [
-        "・商材カテゴリ＝元シートの「商材」列。契約形態＝「計上種別」列（ストック／ショット）。",
+        "・商材カテゴリ＝各媒体シートの「商材」列。契約形態＝「計上種別」列（ストック／ショット）。",
         "・売上＝「請求額（税抜）」、粗利＝「利益」。粗利率＝粗利÷売上。",
+        "・①の各行は、その媒体シートをそのまま合計したものです。元シートと数字が合うか確認できます。",
+        "・③の「うち未分類」は、商材または計上種別が空欄の案件です。0でなければ元シートの入力漏れです。",
+        "・③に商材が新しく増えた場合、その行は表に出ず「うち未分類」に入ります。気づいたら行を足してください。",
         "・対象月は絞っていません（全月合算）。月で見たいときは元シートの「対象月」で絞った表を別途作ります。",
-        "・請求＝確定、ヨミ＝見込。粗利率が大きく違うので②の右側で内訳を出しています。",
-        f"・OA（LINE公式アカウント）シートにはヨミ／請求の区分が無いため、該当欄は「{NO_YOMI}」としています。",
-        "・③は按分後の数字です。1案件に複数担当がつくため、按分前で数えると売上が担当人数ぶん重複します。",
-        "・このタブは元シートを参照しているだけです。AD・OAのシートには何も書き込んでいません。",
+        "・ヨミ（見込）と請求（確定）はADシートのみ区分があります。全媒体では区別していません。",
+        "・このタブは元シートを参照しているだけです。各媒体シートには何も書き込んでいません。",
         f"・数式は各シートの2〜{LIMIT}行目を見ています。行数がこれを超えたら、数式内の{LIMIT}をまとめて増やしてください。",
         "・件数は「請求額（税抜）に数値が入っている行」を数えています。空欄の行は含みません。",
     ]:
@@ -166,27 +155,8 @@ def rows():
     return r
 
 
-def let_formula():
-    """AD・OA を合算した担当別テーブルを1セルで出す。売上の多い順に並ぶ。"""
-    roles = [("R", "AB", "AG"), ("S", "AC", "AH"), ("T", "AD", "AI"),
-             ("U", "AE", "AJ"), ("V", "AF", "AK")]
-    names = ",".join(col(m["sheet"], c)
-                     for m in MEDIA for c, _, _ in roles)
-    uri = "+".join(f"SUMIF({col(m['sheet'], c)},x,{col(m['sheet'], s)})"
-                   for m in MEDIA for c, s, _ in roles)
-    rieki = "+".join(f"SUMIF({col(m['sheet'], c)},x,{col(m['sheet'], p)})"
-                     for m in MEDIA for c, _, p in roles)
-    return (
-        "=LET("
-        f"n,SORT(UNIQUE(TOCOL({{{names}}},1))),"
-        f"u,MAP(n,LAMBDA(x,{uri})),"
-        f"r,MAP(n,LAMBDA(x,{rieki})),"
-        'SORT({n,u,r,MAP(u,r,LAMBDA(a,b,IFERROR(b/a,"")))},2,FALSE))'
-    )
-
-
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else "_build/ad_summary_gsheet.tsv"
+    out = sys.argv[1] if len(sys.argv) > 1 else "_build/zen_baitai_shukei.tsv"
     data = rows()
     with open(out, "w", encoding="utf-8") as fh:
         for row in data:
