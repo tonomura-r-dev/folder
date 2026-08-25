@@ -96,15 +96,22 @@ def rows():
     A([])
 
     # ---------------- ② 契約形態のまとめ
+    # 13媒体ぶんの SUMIFS をつなぐと1セル3000文字を超えて扱いづらいので、
+    # ③の明細を集計する形にする（結果は同じで、数式は50分の1の長さになる）。
+    d_first = len(r) + 10  # ②(6行) + 空行 + ③見出し(2行) を足した先が明細の先頭
+    d_last = d_first + sum(len(m["cats"]) for m in MEDIA) * len(KEIS) - 1
+    dc = f"$C${d_first}:$C${d_last}"  # ③の契約形態列
+
     A(["② 契約形態別（全媒体）", "ストックとショットで粗利率がどう違うかを見るところ"])
     A(["契約形態", "件数", "売上", "粗利", "粗利率"])
     first_k = len(r) + 1
     for kei in KEIS:
         n = len(r) + 1
-        cnt = "+".join(f'COUNTIFS({col(m, "kei")},$A{n})' for m in MEDIA)
-        uri = "+".join(f'SUMIFS({col(m, "uri")},{col(m, "kei")},$A{n})' for m in MEDIA)
-        rie = "+".join(f'SUMIFS({col(m, "rieki")},{col(m, "kei")},$A{n})' for m in MEDIA)
-        A([kei, f"={cnt}", f"={uri}", f"={rie}", f'=IFERROR(D{n}/C{n},"")'])
+        A([kei,
+           f"=SUMIF({dc},$A{n},$D${d_first}:$D${d_last})",
+           f"=SUMIF({dc},$A{n},$E${d_first}:$E${d_last})",
+           f"=SUMIF({dc},$A{n},$F${d_first}:$F${d_last})",
+           f'=IFERROR(D{n}/C{n},"")'])
     last_k = len(r)
     n = len(r) + 1
     A(["合計", f"=B{grand}", f"=C{grand}", f"=E{grand}", f'=IFERROR(D{n}/C{n},"")'])
