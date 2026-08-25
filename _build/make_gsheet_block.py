@@ -77,8 +77,11 @@ def rows():
     first_m = len(r) + 1
     for m in MEDIA:
         n = len(r) + 1
+        # 件数は③と同じ数え方（計上種別が入っている案件）にそろえる。
+        # 請求額の有無で数えると、金額未入力の案件のぶんだけ③と食い違う。
+        kei = col(m, "kei")
         A([m["sheet"],
-           f"=COUNT({col(m, 'uri')})",
+           "=" + "+".join(f'COUNTIF({kei},"{k}")' for k in KEIS),
            f"=SUM({col(m, 'uri')})",
            f"=SUM({col(m, 'genka')})",
            f"=SUM({col(m, 'rieki')})",
@@ -115,7 +118,7 @@ def rows():
     last_k = len(r)
     n = len(r) + 1
     A(["合計", f"=B{grand}", f"=C{grand}", f"=E{grand}", f'=IFERROR(D{n}/C{n},"")'])
-    A(["うち計上種別が空欄", f"=B{n}-SUM(B{first_k}:B{last_k})",
+    A(["うち下の③に入らない案件", f"=B{n}-SUM(B{first_k}:B{last_k})",
        f"=C{n}-SUM(C{first_k}:C{last_k})", f"=D{n}-SUM(D{first_k}:D{last_k})"])
     A([])
 
@@ -138,7 +141,7 @@ def rows():
     n = len(r) + 1
     A(["合計", "", "", f"=B{grand}", f"=C{grand}", f"=E{grand}",
        f'=IFERROR(F{n}/E{n},"")'])
-    A(["うち未分類（商材か計上種別が空欄）", "", "",
+    A(["うち未分類（商材がリスト外、または計上種別が空欄）", "", "",
        f"=D{n}-SUM(D{first_d}:D{last_d})",
        f"=E{n}-SUM(E{first_d}:E{last_d})",
        f"=F{n}-SUM(F{first_d}:F{last_d})"])
@@ -156,7 +159,8 @@ def rows():
         "・ヨミ（見込）と請求（確定）はADシートのみ区分があります。全媒体では区別していません。",
         "・このタブは元シートを参照しているだけです。各媒体シートには何も書き込んでいません。",
         f"・数式は各シートの2〜{LIMIT}行目を見ています。行数がこれを超えたら、数式内の{LIMIT}をまとめて増やしてください。",
-        "・件数は「請求額（税抜）に数値が入っている行」を数えています。空欄の行は含みません。",
+        "・件数は「計上種別（ストック／ショット）が入っている案件」を数えています。①と③で同じ数え方です。",
+        "・売上・粗利はシート全体の合計なので、計上種別が空欄の案件も含みます（件数だけ数え方が違います）。",
     ]:
         A([t])
     return r
