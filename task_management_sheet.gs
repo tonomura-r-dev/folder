@@ -115,42 +115,46 @@ const LIFE_HEADERS = [
 
 const DEMAND_OPTIONS = ['高', '中', '低'];
 
-// ===== 提案管理シートの設定 =====
+// ===== 既存提案管理シートの設定 =====
+// 「今すでに運用している顧客」に対する追加提案(アップセル)を管理するシート
 
-const DEAL_SHEET_NAME = '提案管理シート';
+const DEAL_SHEET_NAME = '既存提案管理シート';
 
-// 提案フェーズと行の背景色(左ほど初期、右ほど成約に近い)
+// 提案フェーズと行の背景色(上ほど初期、下ほど成約に近い)
 const DEAL_PHASES = [
-  { name: '①ヒアリング', color: '#f3f3f3' }, // グレー
-  { name: '②提案準備',   color: '#fff2cc' }, // 黄
-  { name: '③提案済み',   color: '#cfe2f3' }, // 青
-  { name: '④検討中',     color: '#fce5cd' }, // オレンジ
-  { name: '⑤受注',       color: '#d9ead3' }, // 緑
-  { name: '⑥失注',       color: '#efefef' }, // 薄グレー(取り消し線)
-  { name: '⑦保留',       color: '#ead1dc' }, // ピンク
+  { name: '①ネタ出し',   color: '#f3f3f3' }, // グレー
+  { name: '②社内確認',   color: '#fff2cc' }, // 黄
+  { name: '③提案準備',   color: '#fce5cd' }, // オレンジ
+  { name: '④提案済み',   color: '#cfe2f3' }, // 青
+  { name: '⑤検討中',     color: '#d0e0e3' }, // 水色
+  { name: '⑥受注',       color: '#d9ead3' }, // 緑
+  { name: '⑦見送り',     color: '#efefef' }, // 薄グレー(取り消し線)
+  { name: '⑧保留',       color: '#ead1dc' }, // ピンク
 ];
 
-const DEAL_LOST_PHASE = '⑥失注';
-const DEAL_WON_PHASE = '⑤受注';
+const DEAL_LOST_PHASE = '⑦見送り';
+const DEAL_WON_PHASE = '⑥受注';
 
 // ヨミ(受注確度)
 const DEAL_PROBABILITY_OPTIONS = ['A(ほぼ確実)', 'B(有力)', 'C(可能性あり)', 'D(薄い)'];
 
 const DEAL_HEADERS = [
-  'フェーズ',       // A
-  '提案先',         // B
-  '案件名・提案内容', // C
-  '担当者(先方)',   // D
-  '初回接触日',     // E
-  '提案日',         // F
-  '次アクション',   // G
-  '次アクション期限', // H
-  'ヨミ',           // I
-  '初期費用',       // J
-  '月額費用',       // K
-  '想定売上(年間)', // L
-  '関連資料・メモ', // M
-  '最終更新日',     // N
+  '顧客名',             // A
+  '現契約・運用中サービス', // B
+  '現在の月額',         // C
+  '契約開始日',         // D
+  '提案テーマ(追加提案)', // E
+  '提案のきっかけ・根拠', // F
+  'フェーズ',           // G
+  '提案予定日',         // H
+  '次アクション',       // I
+  '次アクション期限',   // J
+  'ヨミ',               // K
+  '想定初期費用',       // L
+  '想定月額(増分)',     // M
+  '想定年間増収',       // N
+  'メモ',               // O
+  '最終更新日',         // P
 ];
 
 // 次アクション期限までの残り日数と「次アクション」セルの色
@@ -202,8 +206,9 @@ function setupTaskSheet() {
     '毎朝のカレンダー通知を使う場合は「タスク管理」メニューから有効化してください。');
 }
 
-// ---- 提案管理シートのセットアップ ----
-// 既存提案を「次に何をするか」で追いかけるためのシート。
+// ---- 既存提案管理シートのセットアップ ----
+// すでに運用している顧客に対する「追加提案(アップセル)」を管理するシート。
+// 1顧客に複数の提案テーマがある場合は、顧客名を繰り返して複数行で持つ。
 // フェーズごとの行色分けと、次アクション期限が近づくとそのセルが色づく
 function setupDealSheet_(ss) {
   let sheet = ss.getSheetByName(DEAL_SHEET_NAME);
@@ -225,59 +230,63 @@ function setupDealSheet_(ss) {
     .setVerticalAlignment('middle');
   sheet.setRowHeight(1, 32);
   sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(2); // フェーズと提案先は常に見えるように
+  sheet.setFrozenColumns(1); // 顧客名は常に見えるように
 
   // 列幅・表示形式
-  const widths = [110, 150, 260, 110, 95, 95, 240, 105, 105, 95, 95, 110, 260, 95];
+  const widths = [140, 200, 95, 95, 240, 260, 105, 95, 240, 105, 105, 105, 110, 110, 240, 95];
   widths.forEach(function (w, i) {
     sheet.setColumnWidth(i + 1, w);
   });
-  sheet.getRange(2, 5, rows, 2).setNumberFormat('yyyy/mm/dd');  // 初回接触日・提案日
-  sheet.getRange(2, 8, rows, 1).setNumberFormat('yyyy/mm/dd');  // 次アクション期限
-  sheet.getRange(2, 10, rows, 3).setNumberFormat('¥#,##0');     // 初期費用・月額費用・想定売上
-  sheet.getRange(2, 14, rows, 1).setNumberFormat('yyyy/mm/dd'); // 最終更新日
-  sheet.getRange(2, 7, rows, 1).setWrap(true);   // 次アクション
-  sheet.getRange(2, 13, rows, 1).setWrap(true);  // 関連資料・メモ
-  [1, 5, 6, 8, 9, 14].forEach(function (col) {
+  sheet.getRange(2, 3, rows, 1).setNumberFormat('¥#,##0');      // 現在の月額
+  sheet.getRange(2, 4, rows, 1).setNumberFormat('yyyy/mm/dd');  // 契約開始日
+  sheet.getRange(2, 8, rows, 1).setNumberFormat('yyyy/mm/dd');  // 提案予定日
+  sheet.getRange(2, 10, rows, 1).setNumberFormat('yyyy/mm/dd'); // 次アクション期限
+  sheet.getRange(2, 12, rows, 3).setNumberFormat('¥#,##0');     // 想定初期費用・想定月額・想定年間増収
+  sheet.getRange(2, 16, rows, 1).setNumberFormat('yyyy/mm/dd'); // 最終更新日
+  [5, 6, 9, 15].forEach(function (col) {
+    sheet.getRange(2, col, rows, 1).setWrap(true); // 提案テーマ・きっかけ・次アクション・メモ
+  });
+  [3, 4, 7, 8, 10, 11, 16].forEach(function (col) {
     sheet.getRange(2, col, rows, 1).setHorizontalAlignment('center');
   });
 
-  // 想定売上(年間)= 初期費用 + 月額費用×12 を自動計算(手入力で上書きも可)
+  // 想定年間増収 = 想定初期費用 + 想定月額×12 を自動計算
   const revenueFormulas = [];
   for (let r = 2; r <= lastRow; r++) {
-    revenueFormulas.push(['=IF(AND($J' + r + '="",$K' + r + '=""),"",N($J' + r + ')+N($K' + r + ')*12)']);
+    revenueFormulas.push(['=IF(AND($L' + r + '="",$M' + r + '=""),"",N($L' + r + ')+N($M' + r + ')*12)']);
   }
-  sheet.getRange(2, 12, rows, 1).setFormulas(revenueFormulas);
+  sheet.getRange(2, 14, rows, 1).setFormulas(revenueFormulas);
 
   // プルダウン
   const phaseRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(DEAL_PHASES.map(function (p) { return p.name; }), true)
     .setAllowInvalid(true)
     .build();
-  sheet.getRange(2, 1, rows, 1).setDataValidation(phaseRule);
+  sheet.getRange(2, 7, rows, 1).setDataValidation(phaseRule);
 
   const probRule = SpreadsheetApp.newDataValidation()
     .requireValueInList(DEAL_PROBABILITY_OPTIONS, true)
     .setAllowInvalid(false)
     .build();
-  sheet.getRange(2, 9, rows, 1).setDataValidation(probRule);
+  sheet.getRange(2, 11, rows, 1).setDataValidation(probRule);
 
   const dateRule = SpreadsheetApp.newDataValidation()
     .requireDate()
     .setAllowInvalid(true)
     .setHelpText('日付を入力してください (例: 2026/08/28)')
     .build();
-  sheet.getRange(2, 5, rows, 2).setDataValidation(dateRule);
+  sheet.getRange(2, 4, rows, 1).setDataValidation(dateRule);
   sheet.getRange(2, 8, rows, 1).setDataValidation(dateRule);
+  sheet.getRange(2, 10, rows, 1).setDataValidation(dateRule);
 
   // 条件付き書式(先に登録したルールほど優先)
   const rules = [];
-  const actionRange = sheet.getRange('G2:G' + lastRow);
-  const rowRange = sheet.getRange('A2:N' + lastRow);
+  const actionRange = sheet.getRange('I2:I' + lastRow);
+  const rowRange = sheet.getRange('A2:P' + lastRow);
 
-  // 1. 次アクション期限が近い/超過 → 次アクションのセルを色づけ(受注・失注済みは対象外)
+  // 1. 次アクション期限が近い/超過 → 次アクションのセルを色づけ(受注・見送り済みは対象外)
   DEAL_ACTION_RULES.forEach(function (r) {
-    const formula = '=AND($H2<>"", $A2<>"' + DEAL_WON_PHASE + '", $A2<>"' + DEAL_LOST_PHASE + '", $H2<=TODAY()+' + r.days + ')';
+    const formula = '=AND($J2<>"", $G2<>"' + DEAL_WON_PHASE + '", $G2<>"' + DEAL_LOST_PHASE + '", $J2<=TODAY()+' + r.days + ')';
     rules.push(
       SpreadsheetApp.newConditionalFormatRule()
         .whenFormulaSatisfied(formula)
@@ -288,10 +297,10 @@ function setupDealSheet_(ss) {
     );
   });
 
-  // 2. 失注した行 → グレー+取り消し線
+  // 2. 見送りになった行 → グレー+取り消し線
   rules.push(
     SpreadsheetApp.newConditionalFormatRule()
-      .whenFormulaSatisfied('=$A2="' + DEAL_LOST_PHASE + '"')
+      .whenFormulaSatisfied('=$G2="' + DEAL_LOST_PHASE + '"')
       .setBackground('#efefef')
       .setFontColor('#999999')
       .setStrikethrough(true)
@@ -303,7 +312,7 @@ function setupDealSheet_(ss) {
   DEAL_PHASES.forEach(function (p) {
     rules.push(
       SpreadsheetApp.newConditionalFormatRule()
-        .whenFormulaSatisfied('=$A2="' + p.name + '"')
+        .whenFormulaSatisfied('=$G2="' + p.name + '"')
         .setBackground(p.color)
         .setRanges([rowRange])
         .build()
@@ -312,22 +321,19 @@ function setupDealSheet_(ss) {
 
   sheet.setConditionalFormatRules(rules);
 
-  // 進行中の案件を初期投入(新規作成時のみ。不要なら行ごと削除でOK)
+  // 運用中の顧客を初期投入(新規作成時のみ。不要なら行ごと削除してOK)
+  // ※提案テーマ以降は空欄。追加提案のネタが決まったら埋めていく想定
   if (isNewSheet) {
-    const d = function (s) { return s ? new Date(s) : ''; };
     const seed = [
-      ['④検討中', '株式会社ビイサイドプランニング', 'LINE公式アカウント活用のご提案(求人vivical『しが就職・転職フェア』)', '', d('2026/08/01'), d('2026/08/04'), '秋クール受付開始(8/28)に向けたフォロー', d('2026/08/28'), '', '', '', '', '提案資料2種・SIM(コンサル)あり', new Date()],
-      ['②提案準備', '古河林業', 'LINEOA施策提案(SIM CPFなしver)', '佐村さん(社内確認)', '', d('2026/08/28'), 'CPFなしverを作成し佐村さんへ確認依頼', d('2026/08/25'), '', '', '', '', '提案日8/28(金)から逆算', new Date()],
-      ['②提案準備', 'ニナファーム', 'LINEOA施策提案(SIM)', '佐村さん(社内確認)', '', '', 'SIMの確認依頼(山口さん不在のため確認者変更)', d('2026/08/25'), '', '', '', '', '当初は山口さんから8/24中の指定', new Date()],
-      ['③提案済み', 'ソウガク', 'LINE配信企画案・9,10月投稿案', '', '', d('2026/08/18'), '9,10月分の投稿構成(各月4本)を作成し制作依頼', d('2026/08/27'), '', '', '', '', '', new Date()],
-      ['③提案済み', 'インクアート', 'LINE運用・9,10月投稿案', '', '', '', '9,10月分の投稿構成(各月4本)を作成し制作依頼', d('2026/08/27'), '', '', '', '', '', new Date()],
-      ['③提案済み', 'ノーストクリニック', 'LINE運用・9,10月投稿案', '', '', '', '9,10月分の投稿構成(各月4本)を作成し制作依頼', d('2026/08/27'), '', '', '', '', '', new Date()],
+      ['ソウガク', 'LINE公式アカウント運用(配信企画・投稿制作)'],
+      ['インクアート', 'LINE公式アカウント運用'],
+      ['ノーストクリニック', 'LINE公式アカウント運用'],
     ];
-    // L列(想定売上)は数式なので書き込み対象から外す
     seed.forEach(function (row, i) {
       const r = 2 + i;
-      sheet.getRange(r, 1, 1, 11).setValues([row.slice(0, 11)]);
-      sheet.getRange(r, 13, 1, 2).setValues([row.slice(12, 14)]);
+      sheet.getRange(r, 1, 1, 2).setValues([row]);
+      sheet.getRange(r, 7).setValue(DEAL_PHASES[0].name); // ①ネタ出し
+      sheet.getRange(r, 16).setValue(new Date());
     });
   }
 }
@@ -606,14 +612,14 @@ function onEdit(e) {
   const sheet = range.getSheet();
   const name_ = sheet.getName();
 
-  // 提案管理シートは、行を編集したら「最終更新日」(N列)を今日にする
+  // 既存提案管理シートは、行を編集したら「最終更新日」(P列)を今日にする
   if (name_ === DEAL_SHEET_NAME) {
-    if (range.getColumn() === 14) return; // 最終更新日自体の編集では動かさない(無限ループ防止)
+    if (range.getColumn() === 16) return; // 最終更新日自体の編集では動かさない(無限ループ防止)
     const first = Math.max(range.getRow(), 2);
     const last = range.getRow() + range.getNumRows() - 1;
     for (let row = first; row <= last; row++) {
-      if (sheet.getRange(row, 2).getValue() !== '') { // 提案先が入っている行だけ
-        sheet.getRange(row, 14).setValue(new Date()).setNumberFormat('yyyy/mm/dd');
+      if (sheet.getRange(row, 1).getValue() !== '') { // 顧客名が入っている行だけ
+        sheet.getRange(row, 16).setValue(new Date()).setNumberFormat('yyyy/mm/dd');
       }
     }
     return;
