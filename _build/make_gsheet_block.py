@@ -18,7 +18,14 @@ import sys
 SRC = "'AD'"
 CATS = ["リスティング", "SNS", "DSP", "その他"]
 KEIS = ["ストック", "ショット"]
-TOCOL_LIMIT = 3000  # 担当名を拾う範囲。ADの行数がこれを超えたら数式内の数字を増やす
+# 参照する行数の上限。本番ブックは130シートあるので列全体（100万行）を見に行くと重い。
+# ADの行数がこれを超えたら、数式内の数字をまとめて増やすこと。
+LIMIT = 2000
+
+
+def col(letter):
+    """ADシートの1列。行数を LIMIT で打ち切る。"""
+    return f"{SRC}!${letter}$2:${letter}${LIMIT}"
 
 
 def rows():
@@ -32,15 +39,18 @@ def rows():
     # ---------------- ① 検算
     A(["① 検算", "差分が0ならADシートと一致＝以下の集計も信用できます"])
     A(["項目", "件数", "売上", "原価", "粗利", "粗利率"])
+    # 件数は COUNTA だと「空に見えるが数式が入っている」セルまで数えてしまうので、
+    # 請求額が数値で入っている行だけを COUNT で数える。
     A(["ADシート全体",
-       f"=COUNTA({SRC}!$A$2:$A)",
-       f"=SUM({SRC}!$H$2:$H)",
-       f"=SUM({SRC}!$I$2:$I)",
-       f"=SUM({SRC}!$J$2:$J)",
+       f"=COUNT({col('H')})",
+       f"=SUM({col('H')})",
+       f"=SUM({col('I')})",
+       f"=SUM({col('J')})",
        '=IFERROR(E6/C6,"")'])
+    # 按分列にエラー値が混ざっていても止まらないよう IFERROR で包む
     A(["担当按分の合計", "",
-       f"=SUM({SRC}!$AB$2:$AF)", "",
-       f"=SUM({SRC}!$AG$2:$AK)",
+       f"=SUMPRODUCT(IFERROR({SRC}!$AB$2:$AF${LIMIT},0))", "",
+       f"=SUMPRODUCT(IFERROR({SRC}!$AG$2:$AK${LIMIT},0))",
        '=IFERROR(E7/C7,"")'])
     A(["差分（0ならOK）", "", "=C6-C7", "", "=E6-E7", ""])
     A([])
@@ -54,28 +64,28 @@ def rows():
     for cat in CATS:
         for kei in KEIS:
             n = len(r) + 1
-            base = f"{SRC}!$P$2:$P,$A{n},{SRC}!$K$2:$K,$B{n}"
+            base = f"{col('P')},$A{n},{col('K')},$B{n}"
             A([cat, kei,
                f"=COUNTIFS({base})",
-               f"=SUMIFS({SRC}!$H$2:$H,{base})",
-               f"=SUMIFS({SRC}!$J$2:$J,{base})",
+               f"=SUMIFS({col('H')},{base})",
+               f"=SUMIFS({col('J')},{base})",
                f'=IFERROR(E{n}/D{n},"")',
-               f'=SUMIFS({SRC}!$H$2:$H,{base},{SRC}!$B$2:$B,"*請求*")',
-               f'=IFERROR(SUMIFS({SRC}!$J$2:$J,{base},{SRC}!$B$2:$B,"*請求*")/G{n},"")',
-               f'=SUMIFS({SRC}!$H$2:$H,{base},{SRC}!$B$2:$B,"*ヨミ*")',
-               f'=IFERROR(SUMIFS({SRC}!$J$2:$J,{base},{SRC}!$B$2:$B,"*ヨミ*")/I{n},"")'])
+               f'=SUMIFS({col("H")},{base},{col("B")},"*請求*")',
+               f'=IFERROR(SUMIFS({col("J")},{base},{col("B")},"*請求*")/G{n},"")',
+               f'=SUMIFS({col("H")},{base},{col("B")},"*ヨミ*")',
+               f'=IFERROR(SUMIFS({col("J")},{base},{col("B")},"*ヨミ*")/I{n},"")'])
     last = len(r)
 
     n = len(r) + 1
     A(["合計", "",
-       f"=COUNTA({SRC}!$A$2:$A)",
-       f"=SUM({SRC}!$H$2:$H)",
-       f"=SUM({SRC}!$J$2:$J)",
+       f"=COUNT({col('H')})",
+       f"=SUM({col('H')})",
+       f"=SUM({col('J')})",
        f'=IFERROR(E{n}/D{n},"")',
-       f'=SUMIFS({SRC}!$H$2:$H,{SRC}!$B$2:$B,"*請求*")',
-       f'=IFERROR(SUMIFS({SRC}!$J$2:$J,{SRC}!$B$2:$B,"*請求*")/G{n},"")',
-       f'=SUMIFS({SRC}!$H$2:$H,{SRC}!$B$2:$B,"*ヨミ*")',
-       f'=IFERROR(SUMIFS({SRC}!$J$2:$J,{SRC}!$B$2:$B,"*ヨミ*")/I{n},"")'])
+       f'=SUMIFS({col("H")},{col("B")},"*請求*")',
+       f'=IFERROR(SUMIFS({col("J")},{col("B")},"*請求*")/G{n},"")',
+       f'=SUMIFS({col("H")},{col("B")},"*ヨミ*")',
+       f'=IFERROR(SUMIFS({col("J")},{col("B")},"*ヨミ*")/I{n},"")'])
     A(["うち未分類（商材か計上種別が空欄）",
        "", f"=C{n}-SUM(C{first}:C{last})", f"=D{n}-SUM(D{first}:D{last})",
        f"=E{n}-SUM(E{first}:E{last})"])
@@ -97,7 +107,8 @@ def rows():
         "・請求＝確定、ヨミ＝見込。粗利率が大きく違うので②の右側で内訳を出しています。",
         "・③は按分後の数字です。1案件に複数担当がつくため、按分前で数えると売上が担当人数ぶん重複します。",
         "・このタブはADシートを参照しているだけです。ADシートには何も書き込んでいません。",
-        f"・③の担当名は AD!R2:V{TOCOL_LIMIT} から自動で拾っています。ADの行数がこれを超えたら数式内の{TOCOL_LIMIT}を増やしてください。",
+        f"・数式はADシートの2〜{LIMIT}行目を見ています。行数がこれを超えたら、数式内の{LIMIT}をまとめて増やしてください。",
+        "・件数は「請求額（税抜）に数値が入っている行」を数えています。空欄の行は含みません。",
     ]:
         A([t])
     return r
@@ -107,9 +118,9 @@ def let_formula():
     """担当別テーブルを1セルで出す。売上の多い順に並ぶ。"""
     roles = [("R", "AB", "AG"), ("S", "AC", "AH"), ("T", "AD", "AI"),
              ("U", "AE", "AJ"), ("V", "AF", "AK")]
-    names = ",".join(f"{SRC}!${c}$2:${c}${TOCOL_LIMIT}" for c, _, _ in roles)
-    uri = "+".join(f"SUMIF({SRC}!${c}:${c},x,{SRC}!${s}:${s})" for c, s, _ in roles)
-    rieki = "+".join(f"SUMIF({SRC}!${c}:${c},x,{SRC}!${p}:${p})" for c, _, p in roles)
+    names = ",".join(col(c) for c, _, _ in roles)
+    uri = "+".join(f"SUMIF({col(c)},x,{col(s)})" for c, s, _ in roles)
+    rieki = "+".join(f"SUMIF({col(c)},x,{col(p)})" for c, _, p in roles)
     return (
         "=LET("
         f"n,SORT(UNIQUE(TOCOL({{{names}}},1))),"
