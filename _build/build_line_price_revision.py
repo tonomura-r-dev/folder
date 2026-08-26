@@ -121,42 +121,45 @@ def clear_slide(slide):
 
 
 # ---------- 中身 ----------
-TITLE = "LINE料金改定に伴う運用最適化・特別プランのご案内"
+TITLE = "LINE公式アカウント 料金改定に伴う運用最適化・特別プランのご案内"
 
 LEAD = [
-    {"runs": [("10月の料金改定により、従来の一斉配信のままでは配信コストが増大します。", 13.5, True, INK)],
+    {"runs": [("2026年10月の料金改定により、従来の配信スタイルのままでは配信コストが増大します。", 13.5, True, INK)],
      "align": "c"},
     {"runs": [("10月に実データを計測のうえ、", 13.5, True, INK),
               ("11月から", 13.5, True, RED),
               ("各社様に最適化した特別プランを適用いたします。", 13.5, True, INK)], "align": "c"},
 ]
 
-RISK = [
-    {"runs": [("LINEヤフー社の追加メッセージ単価が改定されます。", 13, None, INK)], "sa": 3},
-    {"runs": [("従来の一斉配信のままでは、配信コストが増大するリスクがあります。", 13, True, RED)]},
+# ① 背景と課題（10月〜）：ラベル＋本文の2行
+BACKGROUND = [
+    ("LINEヤフーの料金体系改定", NAVY,
+     "2026年10月より追加メッセージ単価体系が改定。"),
+    ("生じるリスク", RED,
+     "従来の配信スタイルのまま運用を継続した場合、メッセージ配信コストが大幅に増大する可能性。"),
 ]
 
+# ② 弊社の対応方針
 MEASURES = [
-    ("01", "一斉配信 → セグメント配信へ",
-     "配信対象を絞り込み、効果の低い配信をなくすことで、不要なコストを削減します。"),
-    ("02", "弊社特別調整プランの設計",
-     "各社様の配信規模に応じた調整プランを設計し、実質単価を最適化します。"),
+    ("01", "配信の最適化",
+     "一斉配信から「セグメント配信」へ移行し、不要コストを圧縮します。"),
+    ("02", "特別プランの再設計",
+     "新料金下でも費用対効果を最大化できるよう、弊社独自の「調整プラン（特別還元）」をご提供します。"),
 ]
 
+# ③ スケジュール
 # (期間, 小見出し, 本文, 注記, ヘッダー色, カード色, 枠色, 本文色, 注記色, ヘッダー文字色)
 SCHEDULE = [
-    ("10月", "実データ計測・検証期",
-     "新料金下での実際の配信ボリュームと費用対効果を正確に計測します。",
-     "原則、通常プランの適用となります",
+    ("10月", "配信データ計測・検証期",
+     "新料金下での実際の配信ボリュームとコストの適正推移を測定・分析します。",
+     "原則、通常プラン適用",
      GREY, FADE, BORDER, INK, MUT, WHITE),
-    ("10月下旬", "個別シミュレーション",
-     "10月実績をもとに媒体インセンティブを算出し、還元率を試算します。",
-     "各社様ごとに個別で試算します",
-     BLUE, PALE, BLUE, INK, BLUE, WHITE),
+    ("10月下旬", "個別シミュレーション提示",
+     "10月の配信実績および媒体インセンティブを試算し、貴社に最もメリットが出る特別プランを個別に作成します。",
+     "", BLUE, PALE, BLUE, INK, BLUE, WHITE),
     ("11月〜", "特別プラン適用開始",
-     "各社様に最適化した特別プランの適用を開始します。",
-     "配信規模に応じて個別に適用します",
-     WHITE, NAVY, NAVY, WHITE, ICE, NAVY),
+     "各社様に最適化した特別プランを正式に適用します。",
+     "", WHITE, NAVY, NAVY, WHITE, ICE, NAVY),
 ]
 
 TALK_SCRIPT = """【営業トークスクリプト】LINE料金改定に伴う運用最適化・特別プランのご案内
@@ -210,9 +213,9 @@ A. あります。セグメント配信への切り替えは10月から着手で
 X0, TOTAL_W = 0.50, 9.83
 GAP = 0.30
 
-SEC1_LABEL_Y, SEC1_Y, SEC1_H = 1.66, 1.94, 0.76
-SEC2_LABEL_Y, SEC2_Y, SEC2_H = 2.88, 3.16, 1.18
-SEC3_LABEL_Y, SEC3_Y, SEC3_H = 4.54, 4.82, 1.94
+SEC1_LABEL_Y, SEC1_Y, SEC1_H = 1.58, 1.82, 0.84
+SEC2_LABEL_Y, SEC2_Y, SEC2_H = 2.80, 3.04, 1.30
+SEC3_LABEL_Y, SEC3_Y, SEC3_H = 4.48, 4.72, 2.08
 
 MEASURE_W = (TOTAL_W - GAP) / 2
 STEP_W = (TOTAL_W - GAP * 2) / 3
@@ -225,29 +228,33 @@ def section_label(s, y, no, text, color):
 
 
 def draw_body(s):
-    # ===== ① 課題とリスク =====
-    section_label(s, SEC1_LABEL_Y, "①", "課題とリスク（10月〜）", RED)
+    # ===== ① 背景と課題 =====
+    section_label(s, SEC1_LABEL_Y, "①", "背景と課題（10月〜）", RED)
     add_box(s, X0, SEC1_Y, TOTAL_W, SEC1_H, fill=FADE, line=BORDER)
-    c = add_box(s, X0 + 0.30, SEC1_Y + (SEC1_H - 0.40) / 2, 1.35, 0.40, fill=RED)
-    put_text(c.text_frame, [{"runs": [("10月〜", 13, True, WHITE)], "align": "c"}],
-             anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
-    add_text(s, X0 + 1.95, SEC1_Y, TOTAL_W - 2.25, SEC1_H, RISK, anchor="m", ml=0.0)
+    for i, (label, lcol, body) in enumerate(BACKGROUND):
+        y = SEC1_Y + 0.10 + i * 0.33
+        add_text(s, X0 + 0.30, y, TOTAL_W - 0.60, 0.32,
+                 [{"runs": [("■ ", 11, True, lcol),
+                            (label, 12, True, lcol),
+                            ("：", 12, True, lcol),
+                            (body, 12, None, INK)]}],
+                 anchor="m", ml=0.0, mr=0.0)
 
     # ===== ② 弊社の対策提案 =====
-    section_label(s, SEC2_LABEL_Y, "②", "弊社の対策提案", BLUE)
+    section_label(s, SEC2_LABEL_Y, "②", "弊社の対応方針", BLUE)
     for i, (no, head, body) in enumerate(MEASURES):
         x = X0 + i * (MEASURE_W + GAP)
         add_box(s, x, SEC2_Y, MEASURE_W, SEC2_H, fill=PALE, line=BLUE)
-        bd = add_box(s, x + 0.22, SEC2_Y + 0.20, 0.42, 0.42, fill=BLUE)
+        bd = add_box(s, x + 0.22, SEC2_Y + 0.18, 0.42, 0.42, fill=BLUE)
         put_text(bd.text_frame, [{"runs": [(no, 12, True, WHITE)], "align": "c"}],
                  anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
-        add_text(s, x + 0.76, SEC2_Y + 0.18, MEASURE_W - 0.98, 0.46,
+        add_text(s, x + 0.76, SEC2_Y + 0.16, MEASURE_W - 0.98, 0.46,
                  [{"runs": [(head, 14, True, NAVY)]}], anchor="m", ml=0.0)
-        add_text(s, x + 0.76, SEC2_Y + 0.66, MEASURE_W - 0.98, 0.46,
+        add_text(s, x + 0.76, SEC2_Y + 0.66, MEASURE_W - 0.98, 0.52,
                  [{"runs": [(body, 11, None, INK)], "ls": 1.25}], anchor="t", ml=0.0)
 
     # ===== ③ スケジュール =====
-    section_label(s, SEC3_LABEL_Y, "③", "スケジュールと適用の流れ（11月開始の理由）", NAVY)
+    section_label(s, SEC3_LABEL_Y, "③", "スケジュール（なぜ11月からの適用なのか）", NAVY)
     for i, (term, head, body, note, hcol, fill, edge, bcol, ncol, htxt) in enumerate(SCHEDULE):
         x = X0 + i * (STEP_W + GAP)
         add_box(s, x, SEC3_Y, STEP_W, SEC3_H, fill=fill, line=edge,
@@ -260,11 +267,12 @@ def draw_body(s):
         add_text(s, x + 0.12, SEC3_Y + 0.62, STEP_W - 0.24, 0.34,
                  [{"runs": [(head, 13, True, bcol)], "align": "c"}], anchor="m", ml=0.0, mr=0.0)
 
-        add_text(s, x + 0.14, SEC3_Y + 1.00, STEP_W - 0.28, 0.60,
+        add_text(s, x + 0.14, SEC3_Y + 1.00, STEP_W - 0.28, 0.66,
                  [{"runs": [(body, 10.5, None, bcol)], "ls": 1.28}], anchor="t", ml=0.0, mr=0.0)
 
-        add_text(s, x + 0.14, SEC3_Y + 1.60, STEP_W - 0.28, 0.28,
-                 [{"runs": [("※ " + note, 9.5, None, ncol)]}], anchor="m", ml=0.0, mr=0.0)
+        if note:
+            add_text(s, x + 0.14, SEC3_Y + 1.70, STEP_W - 0.28, 0.28,
+                     [{"runs": [("※ " + note, 9.5, None, ncol)]}], anchor="m", ml=0.0, mr=0.0)
 
         if i < 2:
             ar = add_box(s, x + STEP_W + 0.04, SEC3_Y + SEC3_H / 2 - 0.15,
