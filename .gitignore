@@ -26,5 +26,5 @@ thumbnails*.jpg
 *_AD案件サマリ.xlsx
 *月次*.xlsx
 既存アタック用_*.xlsx
-CRM引き当てマスタ*.xlsx
-CRM引き当てマスタ*.tsv
+CRM移行マスタ*.xlsx
+CRM移行マスタ*.tsv
