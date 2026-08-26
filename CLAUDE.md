@@ -18,6 +18,7 @@
   - `_templates/`: デッキのベースとなるテンプレート PPTX
   - `_build/`: テンプレートから提案デッキを生成する Python スクリプト
     （`build_vivical_33.py`, `build_vivical_9p.py`, 検品用の `qa_render.py`）
+  - `.claude/skills/`: このリポジトリで使えるスキル（Claude Code が自動で読む）
 - 認証情報類（*.json, .env など）は絶対にコミットしない（.gitignore 参照）。
 
 ## 記憶メモ（会話を跨いで覚えておくこと）
@@ -27,3 +28,12 @@
     アカウント単位に自動共有される（設定 → 機能 → メモリ。反映に最大1日ラグ）。
   - Claude Code のセッションは自動同期されないため、覚えておくべきことは
     この CLAUDE.md に書いてコミットする、というのがこのリポジトリでの運用。
+
+- 2026-08-26: スキル `lineoa-industry` を `.claude/skills/lineoa-industry/` に設置した。
+  - 業界名だけを送れば LINE公式アカウントの提案成果物が出る。3モード：
+    A=15スライドの提案原稿テキスト（既定）／B=業界汎用PPTX 39枚（2ラリー）／
+    C=LINEヤフー公式の導入事例集PPTX。
+  - 使い方：チャットに「ブライダル業界」等と業界名だけ送る。PPTXが要るときは
+    「pptxで」「資料まで」、事例集は「事例集」と一言添える。
+  - 本文中で参照している関連スキル（`dym-format` / `lineoa-sim` / `zengo-search` /
+    `lineoa-pre-visit-research`）はこのリポジトリには未設置。必要になったら同じ場所に追加する。
