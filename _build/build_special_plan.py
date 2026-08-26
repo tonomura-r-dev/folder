@@ -128,15 +128,12 @@ def clear_slide(slide):
             spTree.remove(el)
 
 
-def frame(slide, header, band):
-    """タイトル＋結論バンド＋区切り線（FMT実測準拠）"""
+def frame(slide, header):
+    """タイトル＋区切り線（FMT実測準拠）"""
     clear_slide(slide)
     slide.shapes._spTree.append(deepcopy(div_el))
     add_text(slide, 0.60, 0.13, 8.10, 0.40,
              [{"runs": [(header, 16, True, TNAVY)], "align": "l"}],
-             anchor="m", ml=0.0, mr=0.0)
-    add_text(slide, 0.42, 0.66, 10.02, 0.80,
-             [{"runs": band, "align": "c"}],
              anchor="m", ml=0.0, mr=0.0)
 
 
@@ -149,56 +146,22 @@ def chip(slide, x, y, w, h, text, fill, size=14):
 
 # ---------- 作図 ----------
 s = slides[0]
-frame(s, "特別プランのご提供方針",
-      [("10月から原則、特別プランのご提供は難しく、", 14, True, INK),
-       ("11月以降", 14, True, RED),
-       ("に各社様ごとの調整をいたします", 14, True, INK)])
+frame(s, "特別プランのご提供方針")
 
-# ===== 10月：原則ご提供なし =====
-add_box(s, 0.50, 1.90, 9.83, 1.24, fill=PALE, line=BORDER)
-chip(s, 0.82, 2.29, 1.34, 0.46, "10月〜", RED)
-add_text(s, 2.42, 1.94, 7.60, 1.16,
+# ===== 10月〜：原則ご提供なし =====
+add_box(s, 0.50, 1.95, 9.83, 2.05, fill=PALE, line=BORDER)
+chip(s, 0.85, 2.73, 1.45, 0.50, "10月〜", RED)
+add_text(s, 2.60, 1.95, 7.40, 2.05,
          [{"runs": [("原則、特別プランのご提供は難しいです。", 21, True, INK)]}],
          anchor="m", ml=0.0)
 
-arrow = add_box(s, 5.19, 3.28, 0.45, 0.42, fill=BORDER, shape=MSO_SHAPE.DOWN_ARROW)
-arrow.line.fill.background()
-
-# ===== 11月以降：配信金額×媒体インセンティブで調整 =====
-add_box(s, 0.50, 3.86, 9.83, 2.70, fill=PALE, line=BORDER)
-chip(s, 0.82, 4.16, 1.34, 0.46, "11月以降", NAVY)
-add_text(s, 2.42, 4.04, 7.60, 0.72,
-         [{"runs": [("各社様の配信金額と媒体インセンティブの兼ね合いから、", 15.5, True, INK)]},
-          {"runs": [("特別プランの調整をいたします。", 15.5, True, INK)]}],
+# ===== 11月以降：配信金額と媒体インセンティブから調整 =====
+add_box(s, 0.50, 4.45, 9.83, 2.05, fill=PALE, line=BORDER)
+chip(s, 0.85, 5.23, 1.45, 0.50, "11月以降", NAVY)
+add_text(s, 2.60, 4.45, 7.40, 2.05,
+         [{"runs": [("各社様の配信金額と媒体インセンティブの兼ね合いから、", 18, True, INK)], "ls": 1.25},
+          {"runs": [("特別プランの調整をいたします。", 18, True, INK)], "ls": 1.25}],
          anchor="m", ml=0.0)
-
-add_text(s, 0.90, 4.90, 4.00, 0.30,
-         [{"runs": [("調整のポイント", 12, True, NAVY)]}], anchor="m", ml=0.0)
-
-TILE_Y, TILE_H = 5.26, 1.00
-t1 = add_box(s, 0.90, TILE_Y, 2.75, TILE_H, fill=WHITE, line=NAVY, shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-put_text(t1.text_frame,
-         [{"runs": [("各社様の", 10.5, None, MUT)], "align": "c", "sa": 2},
-          {"runs": [("配信金額", 16, True, NAVY)], "align": "c"}],
-         anchor="m", ml=0.06, mr=0.06, mt=0.0, mb=0.0)
-
-add_text(s, 3.65, TILE_Y, 0.60, TILE_H,
-         [{"runs": [("×", 20, True, MUT)], "align": "c"}], anchor="m", ml=0.0, mr=0.0)
-
-t2 = add_box(s, 4.25, TILE_Y, 2.75, TILE_H, fill=WHITE, line=NAVY, shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-put_text(t2.text_frame,
-         [{"runs": [("媒体側の", 10.5, None, MUT)], "align": "c", "sa": 2},
-          {"runs": [("媒体インセンティブ", 16, True, NAVY)], "align": "c"}],
-         anchor="m", ml=0.06, mr=0.06, mt=0.0, mb=0.0)
-
-add_text(s, 7.00, TILE_Y, 0.60, TILE_H,
-         [{"runs": [("→", 20, True, MUT)], "align": "c"}], anchor="m", ml=0.0, mr=0.0)
-
-t3 = add_box(s, 7.60, TILE_Y, 2.35, TILE_H, fill=NAVY, shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-put_text(t3.text_frame,
-         [{"runs": [("各社様ごとに", 10.5, None, "C8D0E8")], "align": "c", "sa": 2},
-          {"runs": [("特別プランを調整", 15, True, WHITE)], "align": "c"}],
-         anchor="m", ml=0.06, mr=0.06, mt=0.0, mb=0.0)
 
 prs.save(OUT)
 print("saved:", OUT)
