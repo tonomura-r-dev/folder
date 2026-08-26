@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
-"""LINE料金改定へのご対応（1枚・4ステップ）
+"""LINE料金改定に伴う運用最適化・特別プランのご案内（1枚完結）
 
-ストーリー：
-  ① 課題      10月にLINEヤフー社の追加メッセージ単価が改定される
-  ② リスク    一斉配信のままだとコストが増大する
-  ③ 解決策    セグメント配信への移行＋弊社特別プランで最適化
-  ④ スケジュール 適用開始は10月ではなく11月から
-     ※10月は配信実績データの計測期間。実績とインセンティブを踏まえ11月に個別調整。
+構成：
+  ① 課題とリスク（10月〜） 追加メッセージ単価の改定。一斉配信のままだとコスト増
+  ② 弊社の対策提案        セグメント配信への切替／各社様の配信規模に応じた特別調整プラン
+  ③ スケジュール          10月＝実データ計測 → 10月下旬＝個別シミュレーション
+                          → 11月〜＝特別プラン適用開始
 
-トーンは ネガ（グレー→赤）→ ポジ（青→紺）へ色で着地させる。
+「10月に一律で安くできない理由」を角を立てずに説明し、11月への期待で着地させる。
+営業用トークスクリプトはスピーカーノートに入れている。
 
 使い方:
     python _build/build_line_price_revision.py
@@ -30,16 +30,17 @@ from pptx.oxml.ns import qn
 
 ROOT = Path(__file__).resolve().parent.parent
 FMT = str(ROOT / "_templates" / "DYM_LINEOA_FMT.pptx")
-STANDALONE_OUT = str(ROOT / "20260826_LINE料金改定へのご対応.pptx")
+STANDALONE_OUT = str(ROOT / "20260826_LINE料金改定に伴う運用最適化・特別プランのご案内.pptx")
 
 TNAVY = "002060"   # タイトル
-NAVY = "1F285A"    # 打ち手・着地
-BLUE = "1565C0"    # 解決策
-RED = "C00000"     # リスク
-GREY = "8C8C8C"    # 課題（動かせない外部要因）
+NAVY = "1F285A"    # 着地・スケジュール
+BLUE = "1565C0"    # 対策
+RED = "C00000"     # 課題・リスク
+GREY = "8C8C8C"    # 動かせない外部要因
 INK = "333333"
 MUT = "808080"
 WHITE = "FFFFFF"
+ICE = "C8D0E8"     # 紺地の上の小さい文字
 PALE = "F4F7FF"
 FADE = "F2F2F2"
 BORDER = "D9D9D9"
@@ -120,89 +121,159 @@ def clear_slide(slide):
 
 
 # ---------- 中身 ----------
-TITLE = "LINE料金改定へのご対応について"
+TITLE = "LINE料金改定に伴う運用最適化・特別プランのご案内"
 
 LEAD = [
-    {"runs": [("一斉配信のままでは、10月の料金改定で配信コストが増大します。", 14, True, INK)],
+    {"runs": [("10月の料金改定により、従来の一斉配信のままでは配信コストが増大します。", 13.5, True, INK)],
      "align": "c"},
-    {"runs": [("セグメント配信への移行と特別プランの適用で最適化し、", 14, True, INK),
-              ("11月から", 14, True, RED),
-              ("ご提供いたします。", 14, True, INK)], "align": "c"},
+    {"runs": [("10月に実データを計測のうえ、", 13.5, True, INK),
+              ("11月から", 13.5, True, RED),
+              ("各社様に最適化した特別プランを適用いたします。", 13.5, True, INK)], "align": "c"},
 ]
 
-STEPS = [
-    # (no, ラベル, ヘッダー色, カード色, 枠色, 見出し, 本文, 補足の一言, 補足色)
-    ("STEP 1", "課題", GREY, FADE, BORDER,
-     "10月に料金改定",
-     "LINEヤフー社の追加メッセージ単価が改定されます。",
-     "20万通超は一律 2.5円/通", MUT),
-    ("STEP 2", "リスク", RED, FADE, BORDER,
-     "コストが増大",
-     "一斉配信のままでは、配信コストが大きく膨らみます。",
-     "大量配信の割引が縮小", RED),
-    ("STEP 3", "解決策", BLUE, PALE, BLUE,
-     "配信を最適化",
-     "セグメント配信へ移行し、弊社の特別プランを適用します。",
-     "ムダな配信を削減", BLUE),
-    ("STEP 4", "スケジュール", NAVY, PALE, NAVY,
-     "11月から適用",
-     "適用開始は10月からではなく、11月からとなります。",
-     "10月は実績の計測期間", NAVY),
+RISK = [
+    {"runs": [("LINEヤフー社の追加メッセージ単価が改定されます。", 13, None, INK)], "sa": 3},
+    {"runs": [("従来の一斉配信のままでは、配信コストが増大するリスクがあります。", 13, True, RED)]},
 ]
 
-NOTE = ("10月は配信実績データの計測期間とし、その実績と媒体インセンティブを踏まえて、"
-        "11月に各社様ごとの特別プランを個別調整いたします。")
+MEASURES = [
+    ("01", "一斉配信 → セグメント配信へ",
+     "配信対象を絞り込み、効果の低い配信をなくすことで、不要なコストを削減します。"),
+    ("02", "弊社特別調整プランの設計",
+     "各社様の配信規模に応じた調整プランを設計し、実質単価を最適化します。"),
+]
 
-CLOSING = "11月から、各社様に合わせた特別プランでご提供いたします。"
+# (期間, 小見出し, 本文, 注記, ヘッダー色, カード色, 枠色, 本文色, 注記色, ヘッダー文字色)
+SCHEDULE = [
+    ("10月", "実データ計測・検証期",
+     "新料金下での実際の配信ボリュームと費用対効果を正確に計測します。",
+     "原則、通常プランの適用となります",
+     GREY, FADE, BORDER, INK, MUT, WHITE),
+    ("10月下旬", "個別シミュレーション",
+     "10月実績をもとに媒体インセンティブを算出し、還元率を試算します。",
+     "各社様ごとに個別で試算します",
+     BLUE, PALE, BLUE, INK, BLUE, WHITE),
+    ("11月〜", "特別プラン適用開始",
+     "各社様に最適化した特別プランの適用を開始します。",
+     "配信規模に応じて個別に適用します",
+     WHITE, NAVY, NAVY, WHITE, ICE, NAVY),
+]
 
-# レイアウト定数（スライド 10.83 × 7.5 inch）
-X0, TOTAL_W, GAP = 0.50, 9.83, 0.30
-CARD_W = (TOTAL_W - GAP * 3) / 4
-CARD_Y, CARD_H = 1.95, 2.52
-NOTE_Y, NOTE_H = 4.72, 0.80
-CLOSE_Y, CLOSE_H = 5.78, 0.92
+TALK_SCRIPT = """【営業トークスクリプト】LINE料金改定に伴う運用最適化・特別プランのご案内
+
+■ 導入
+2026年10月から、LINEヤフー社の料金体系が改定されます。追加メッセージの単価が変わり、
+大量配信に対する割引が縮小します。御社のように配信ボリュームが大きいアカウントほど、
+影響を受けやすい改定です。
+
+■ 課題とリスク
+対策をしないと、これまでと同じ配信をしているだけでコストが上がります。
+特に全員に一律で送る「一斉配信」は、反応の薄い層にも同じ単価がかかるので、
+改定後はムダが大きく出てしまいます。
+
+■ 弊社の対策
+ご提案は2つです。
+ひとつめは、一斉配信からセグメント配信への切り替えです。
+反応が見込める層に絞って配信することで、通数そのものを減らしながら成果は維持します。
+ふたつめが、御社の配信規模に合わせた弊社の特別調整プランです。
+
+■ なぜ11月からなのか（ここが本題）
+特別プランの適用は11月からとさせてください。理由は、10月が
+「新しい料金体系での実データを取る期間」だからです。
+新料金で実際にどれくらいの通数・費用になるかは、動かしてみないと正確に出ません。
+10月は原則、通常プランで運用いただき、実データを取らせてください。
+そのうえで10月下旬に、実績をもとに媒体インセンティブを算出し、
+御社にどれだけ還元できるかを試算します。
+その試算に基づいて、11月から御社専用の特別プランを適用します。
+
+■ 着地
+10月に一律で値引きをするのではなく、10月の実績を見たうえで、
+御社にとって一番効果の大きい形で11月から適用する、という進め方です。
+根拠のない一律値引きよりも、実データに基づいた最適化のほうが、
+結果的に御社のメリットは大きくなります。
+
+■ 想定QA
+Q. 10月分は高いままですか？
+A. 10月は原則、通常プランでの適用となります。ただしその1ヶ月の実績が、
+   11月以降の調整の根拠になります。無駄な1ヶ月にはしません。
+
+Q. どれくらい下がりますか？
+A. 現時点では確約できません。10月の配信実績と媒体インセンティブ次第です。
+   10月下旬に、御社専用のシミュレーションをお出しします。
+
+Q. 10月から何かできることはありますか？
+A. あります。セグメント配信への切り替えは10月から着手できます。
+   ここを進めておくほど、11月の調整余地も大きくなります。
+"""
+
+# ---------- レイアウト定数（スライド 10.83 × 7.5 inch） ----------
+X0, TOTAL_W = 0.50, 9.83
+GAP = 0.30
+
+SEC1_LABEL_Y, SEC1_Y, SEC1_H = 1.66, 1.94, 0.76
+SEC2_LABEL_Y, SEC2_Y, SEC2_H = 2.88, 3.16, 1.18
+SEC3_LABEL_Y, SEC3_Y, SEC3_H = 4.54, 4.82, 1.94
+
+MEASURE_W = (TOTAL_W - GAP) / 2
+STEP_W = (TOTAL_W - GAP * 2) / 3
+
+
+def section_label(s, y, no, text, color):
+    add_text(s, X0, y, 6.0, 0.26,
+             [{"runs": [(no + "  ", 12, True, color), (text, 12, True, color)]}],
+             anchor="m", ml=0.0, mr=0.0)
 
 
 def draw_body(s):
-    """4ステップ＋補足＋クロージング。タイトル／リードは呼び出し側で置く。"""
-    for i, (no, label, hcol, fill, edge, head, body, tag, tagcol) in enumerate(STEPS):
-        x = X0 + i * (CARD_W + GAP)
-        add_box(s, x, CARD_Y, CARD_W, CARD_H, fill=fill, line=edge)
+    # ===== ① 課題とリスク =====
+    section_label(s, SEC1_LABEL_Y, "①", "課題とリスク（10月〜）", RED)
+    add_box(s, X0, SEC1_Y, TOTAL_W, SEC1_H, fill=FADE, line=BORDER)
+    c = add_box(s, X0 + 0.30, SEC1_Y + (SEC1_H - 0.40) / 2, 1.35, 0.40, fill=RED)
+    put_text(c.text_frame, [{"runs": [("10月〜", 13, True, WHITE)], "align": "c"}],
+             anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
+    add_text(s, X0 + 1.95, SEC1_Y, TOTAL_W - 2.25, SEC1_H, RISK, anchor="m", ml=0.0)
 
-        hd = add_box(s, x, CARD_Y, CARD_W, 0.52, fill=hcol)
-        put_text(hd.text_frame,
-                 [{"runs": [(no, 9.5, True, WHITE), ("　", 9.5, True, WHITE),
-                            (label, 13, True, WHITE)], "align": "c"}],
+    # ===== ② 弊社の対策提案 =====
+    section_label(s, SEC2_LABEL_Y, "②", "弊社の対策提案", BLUE)
+    for i, (no, head, body) in enumerate(MEASURES):
+        x = X0 + i * (MEASURE_W + GAP)
+        add_box(s, x, SEC2_Y, MEASURE_W, SEC2_H, fill=PALE, line=BLUE)
+        bd = add_box(s, x + 0.22, SEC2_Y + 0.20, 0.42, 0.42, fill=BLUE)
+        put_text(bd.text_frame, [{"runs": [(no, 12, True, WHITE)], "align": "c"}],
+                 anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
+        add_text(s, x + 0.76, SEC2_Y + 0.18, MEASURE_W - 0.98, 0.46,
+                 [{"runs": [(head, 14, True, NAVY)]}], anchor="m", ml=0.0)
+        add_text(s, x + 0.76, SEC2_Y + 0.66, MEASURE_W - 0.98, 0.46,
+                 [{"runs": [(body, 11, None, INK)], "ls": 1.25}], anchor="t", ml=0.0)
+
+    # ===== ③ スケジュール =====
+    section_label(s, SEC3_LABEL_Y, "③", "スケジュールと適用の流れ（11月開始の理由）", NAVY)
+    for i, (term, head, body, note, hcol, fill, edge, bcol, ncol, htxt) in enumerate(SCHEDULE):
+        x = X0 + i * (STEP_W + GAP)
+        add_box(s, x, SEC3_Y, STEP_W, SEC3_H, fill=fill, line=edge,
+                lw=1.5 if i == 2 else 1.0)
+
+        hd = add_box(s, x + 0.10, SEC3_Y + 0.14, STEP_W - 0.20, 0.42, fill=hcol)
+        put_text(hd.text_frame, [{"runs": [(term, 13, True, htxt)], "align": "c"}],
                  anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
 
-        add_text(s, x + 0.10, CARD_Y + 0.62, CARD_W - 0.20, 0.42,
-                 [{"runs": [(head, 15, True, INK)], "align": "c"}],
-                 anchor="m", ml=0.0, mr=0.0)
+        add_text(s, x + 0.12, SEC3_Y + 0.62, STEP_W - 0.24, 0.34,
+                 [{"runs": [(head, 13, True, bcol)], "align": "c"}], anchor="m", ml=0.0, mr=0.0)
 
-        add_text(s, x + 0.12, CARD_Y + 1.10, CARD_W - 0.24, 0.86,
-                 [{"runs": [(body, 10.5, None, INK)], "ls": 1.3}],
-                 anchor="t", ml=0.0, mr=0.0)
+        add_text(s, x + 0.14, SEC3_Y + 1.00, STEP_W - 0.28, 0.60,
+                 [{"runs": [(body, 10.5, None, bcol)], "ls": 1.28}], anchor="t", ml=0.0, mr=0.0)
 
-        add_text(s, x + 0.12, CARD_Y + 2.00, CARD_W - 0.24, 0.34,
-                 [{"runs": [("▶ " + tag, 9.5, True, tagcol)]}],
-                 anchor="m", ml=0.0, mr=0.0)
+        add_text(s, x + 0.14, SEC3_Y + 1.60, STEP_W - 0.28, 0.28,
+                 [{"runs": [("※ " + note, 9.5, None, ncol)]}], anchor="m", ml=0.0, mr=0.0)
 
-        if i < 3:
-            ar = add_box(s, x + CARD_W + 0.04, CARD_Y + CARD_H / 2 - 0.15,
+        if i < 2:
+            ar = add_box(s, x + STEP_W + 0.04, SEC3_Y + SEC3_H / 2 - 0.15,
                          0.22, 0.30, fill=BORDER, shape=MSO_SHAPE.RIGHT_ARROW)
             ar.line.fill.background()
 
-    # 補足（なぜ11月からなのか）
-    add_box(s, X0, NOTE_Y, TOTAL_W, NOTE_H, fill=WHITE, line=NAVY)
-    add_text(s, X0 + 0.28, NOTE_Y, TOTAL_W - 0.56, NOTE_H,
-             [{"runs": [("※ ", 11.5, True, NAVY), (NOTE, 11.5, None, INK)], "ls": 1.25}],
-             anchor="m", ml=0.0, mr=0.0)
 
-    # クロージング（ポジティブ着地）
-    cl = add_box(s, X0, CLOSE_Y, TOTAL_W, CLOSE_H, fill=NAVY)
-    put_text(cl.text_frame,
-             [{"runs": [(CLOSING, 18, True, WHITE)], "align": "c"}],
-             anchor="m", ml=0.0, mr=0.0, mt=0.0, mb=0.0)
+def set_notes(s, text):
+    s.notes_slide.notes_text_frame.text = text
 
 
 def build_standalone(out=STANDALONE_OUT):
@@ -231,10 +302,11 @@ def build_standalone(out=STANDALONE_OUT):
     s = list(prs.slides)[0]
     clear_slide(s)
     s.shapes._spTree.append(deepcopy(div_el))
-    add_text(s, 0.60, 0.13, 8.10, 0.40,
+    add_text(s, 0.60, 0.13, 8.60, 0.40,
              [{"runs": [(TITLE, 16, True, TNAVY)]}], anchor="m", ml=0.0, mr=0.0)
-    add_text(s, 0.42, 0.62, 10.02, 0.84, LEAD, anchor="m", ml=0.0, mr=0.0)
+    add_text(s, 0.42, 0.60, 10.02, 0.84, LEAD, anchor="m", ml=0.0, mr=0.0)
     draw_body(s)
+    set_notes(s, TALK_SCRIPT)
     prs.save(out)
     return out
 
@@ -245,10 +317,11 @@ def build_into_deck(src, out, page=9):
     prs = Presentation(out)
     s = prs.slides[page - 1]
     clear_slide(s)
-    add_text(s, 0.47, 0.10, 8.22, 0.40,
+    add_text(s, 0.47, 0.10, 8.60, 0.40,
              [{"runs": [(TITLE, 16, None, TNAVY)]}], anchor="m", ml=0.1, mr=0.0)
-    add_text(s, 0.16, 0.62, 10.58, 0.84, LEAD, anchor="m", ml=0.0, mr=0.0)
+    add_text(s, 0.16, 0.60, 10.58, 0.84, LEAD, anchor="m", ml=0.0, mr=0.0)
     draw_body(s)
+    set_notes(s, TALK_SCRIPT)
     prs.save(out)
     return out
 
