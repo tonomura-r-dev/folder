@@ -18,6 +18,7 @@
   - `_templates/`: デッキのベースとなるテンプレート PPTX
   - `_build/`: テンプレートから提案デッキを生成する Python スクリプト
     （`build_vivical_33.py`, `build_vivical_9p.py`, 検品用の `qa_render.py`）
+  - `.claude/skills/`: このリポジトリで使えるスキル（Claude Code が自動で読む）
 - 認証情報類（*.json, .env など）は絶対にコミットしない（.gitignore 参照）。
 
 ## 記憶メモ（会話を跨いで覚えておくこと）
@@ -27,3 +28,36 @@
     アカウント単位に自動共有される（設定 → 機能 → メモリ。反映に最大1日ラグ）。
   - Claude Code のセッションは自動同期されないため、覚えておくべきことは
     この CLAUDE.md に書いてコミットする、というのがこのリポジトリでの運用。
+
+- 2026-08-26: スキル `lineoa-industry` の使い方。
+  - 実体は `.claude/skills/lineoa-industry/`（配布版は `skills/lineoa-industry.skill`）。
+  - 使い方：チャットに「ブライダル業界」等と業界名だけ送る。PPTXが要るときは
+    「pptxで」「資料まで」、事例集は「事例集」と一言添える。
+  - 3モード：A=15スライドの提案原稿テキスト（既定）／B=業界汎用PPTX 39枚（2ラリー）／
+    C=LINEヤフー公式の導入事例集PPTX。
+  - 本文中で参照している関連スキル（`dym-format` / `lineoa-sim` / `zengo-search` /
+    `lineoa-pre-visit-research`）はこのリポジトリには未設置。必要になったら同じ場所に追加する。
+
+- 2026-08-26: 注文住宅業界のモードB資料を作った（ルート直下に納品済み）。
+  - `注文住宅業界_LINEOA施策提案.pptx`（36枚）／`注文住宅業界資料_公表判断チェックリスト.xlsx`
+  - 再生成は `_build/build_chumon_jutaku.py`（文言修正はここを触る）と `build_checklist.py`。
+  - **未完の申し送り2件：**
+    1. **チェックリストが赤4枚（S18/S24/S25/S29）。** FMT由来の出典未記載の数値
+       （「業態平均で最大3%」「CVR 2%→5-10%」「商談化70%改善」「友だち追加率0.8-1.0%」）。
+       出典を社内で確定するか削除するまで**対外提出不可**。→ 殿村さんが確認中。
+    2. **競合の友だち数が未取得**（S9/S10 は破線の差込枠のまま）。クラウド環境からは
+       `page.line.me` / `lineoa.jp` が egress ブロックで見られない。**PC側で取得すること。**
+       同じ理由で Googleトレンド画像・LINEヤフー前後検索データも未反映（S7/S8 は推計・仮説）。
+  - **論点：この資料は「LINEOA運用」の話。広告の扱いに注意。**
+    S5（検索広告CPC推移）とS6（広告実績CVR＋広告審査）は Web広告全般の話で、
+    スキル §6.5 の最上級FMT構成に指定があるから入れている。運用に純化したいなら
+    この2枚が削除候補（LINE広告・CPFは友だち追加動線なので残す）。→ 判断保留中。
+  - モードAの原稿とLINE公式の導入事例リサーチは `_drafts/` に置いた。
+    注文住宅の請負会社の「LINE公式アカウント」公式事例は**存在しない**（＝先行者になれる）。
+    近い事例は auka（ギバーテイクオール）／オープンハウスG／ミサワホーム北越／LIFULL HOME'S。
+
+- 2026-08-26: クラウド環境（claude.ai/code）の落とし穴。
+  - `libreoffice-impress` / `libreoffice-calc` が未導入だと PPTX/XLSX を開けず QA できない。
+    `apt-get install -y libreoffice-impress libreoffice-calc` で入る。
+  - `pdftoppm`（poppler）も無い。`_build/qa_render.py` は PyMuPDF へ自動フォールバックする。
+  - メイリオが無いため QA画像は代替フォント。**文字あふれの最終確認は必ずPCの PowerPoint で。**
