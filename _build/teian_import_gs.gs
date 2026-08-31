@@ -5,11 +5,15 @@
  *   提案管理シート（まずはコピーで試す）を開く
  *   → 拡張機能 → Apps Script → 中身を全部消してこれを貼る → 保存
  *   → シートを再読み込み → 上のメニューに「既存顧客の取込」が出る
- *   → まず「取り込む件数を見る」で確認 → よければ「行を追加する」
+ *   → ①取り込む件数を見る → ②行を追加する → （戻したければ）③取り消す
  *
- * ■ 既存の行は1セルも変更しない
- *   「↑ここより上に行追加してください」の直前に行を挿入するだけ。
- *   既にあるセルへの書き込みは一切しない。
+ * ■ 今あるデータは動かさない
+ *   ・既にあるセルへの書き込みは一切しない（setValues は挿入した行だけ）
+ *   ・行の並べ替え・削除もしない
+ *   ・「↑ここより上に行追加してください」の直前にまとめて挿入するので、
+ *     その上の行は行番号ごとそのまま。ずれるのは最下部の「---」と
+ *     「↑ここより上に…」の2行だけ
+ *   ・入れた場所を控えてあるので、メニュー③で追加分だけ消せる
  *
  * ■ どの列に何を入れるか
  *   提案     実行した月（26/8 の形）
@@ -112,13 +116,66 @@ function guessGyokai_(name) {
 function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('既存顧客の取込')
-    .addItem('取り込む件数を見る', 'previewImport')
-    .addItem('行を追加する', 'runImport')
+    .addItem('① 取り込む件数を見る（書き込まない）', 'previewImport')
+    .addItem('② 行を追加する', 'runImport')
+    .addSeparator()
+    .addItem('③ さっき追加した行を取り消す', 'undoImport')
     .addToUi();
 }
 
 function previewImport() { importRows_(true); }
 function runImport() { importRows_(false); }
+
+// ========================= 取り消し =========================
+
+/** 直前の追加を記録しておくキー。取り消しのときにこの範囲だけ消す */
+const UNDO_KEY = 'lastImport';
+
+/**
+ * 直前に追加した行だけを消す。
+ * 記録した範囲の「提案」列が全部その月になっているかを先に確かめ、
+ * 1行でも違えば何もしない（手で並べ替えた後などに巻き込まないため）。
+ */
+function undoImport() {
+  const ui = SpreadsheetApp.getUi();
+  const props = PropertiesService.getDocumentProperties();
+  const raw = props.getProperty(UNDO_KEY);
+  if (!raw) {
+    ui.alert('取り消せる追加がありません', 'このスクリプトで追加した記録が無い状態です。',
+             ui.ButtonSet.OK);
+    return;
+  }
+  const rec = JSON.parse(raw);
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheets().filter(
+    function (s) { return s.getSheetId() === rec.gid; })[0];
+  if (!sh) {
+    ui.alert('取り消せません', '追加したシートが見つかりませんでした。', ui.ButtonSet.OK);
+    return;
+  }
+
+  // 記録した範囲が、本当に自分が入れた行のままかを確かめる
+  const vals = sh.getRange(rec.at, rec.teianCol, rec.count, 1).getValues();
+  const allMine = vals.every(function (r) { return String(r[0]).trim() === rec.teian; });
+  if (!allMine) {
+    ui.alert('取り消しを中止しました',
+      '追加したはずの範囲（' + rec.at + '行目から' + rec.count + '行）の「提案」列が\n' +
+      '「' + rec.teian + '」になっていません。\n\n' +
+      '行を動かしたか、既に消した可能性があります。\n' +
+      '巻き込み事故を防ぐため、何もしませんでした。手で消してください。',
+      ui.ButtonSet.OK);
+    return;
+  }
+
+  const ok = ui.alert('追加した行を取り消します',
+    rec.at + '行目から ' + rec.count + '行を削除します。\n' +
+    '（提案列が「' + rec.teian + '」の、さっき追加したぶんだけ）\n\n実行しますか？',
+    ui.ButtonSet.OK_CANCEL);
+  if (ok !== ui.Button.OK) return;
+
+  sh.deleteRows(rec.at, rec.count);
+  props.deleteProperty(UNDO_KEY);
+  ui.alert('取り消しました', rec.count + '行を削除しました。', ui.ButtonSet.OK);
+}
 
 // ========================= メイン =========================
 
@@ -178,14 +235,19 @@ function importRows_(dryRun) {
     return;
   }
 
+  const at = findTailRow_(sh, head.cols['企業名'], head.row);
+
   const ok = ui.alert('行を追加します',
-    msg + '\n\n既存の行は1セルも変更しません。行の挿入だけです。\n' +
-    '結論・追客・Ac名は空欄のままにします（提案してから手で入れる列なので）。\n' +
-    'DYM売上・LINE売上には実績を入れます。\n\n実行しますか？',
+    msg + '\n\n' +
+    '【今ある行に何が起きるか】\n' +
+    '　・1行目〜' + (at - 1) + '行目：1セルも変えません。並び順も行番号もそのままです\n' +
+    '　・' + at + '行目の「---」と「↑ここより上に行追加」だけが下にずれます\n' +
+    '　・追加は ' + at + '行目から ' + data.length + '行ぶん、まとめて挿入します\n' +
+    '　・あとからメニュー「③ さっき追加した行を取り消す」で戻せます\n\n' +
+    '実行しますか？',
     ui.ButtonSet.OK_CANCEL);
   if (ok !== ui.Button.OK) return;
 
-  const at = findTailRow_(sh, head.cols['企業名'], head.row);
   sh.insertRowsBefore(at, data.length);
 
   const width = sh.getLastColumn();
@@ -211,10 +273,17 @@ function importRows_(dryRun) {
   sh.getRange(at, c['DYM売上'], rows.length, 1).setNumberFormat('¥#,##0');
   sh.getRange(at, c['LINE売上'], rows.length, 1).setNumberFormat('¥#,##0');
 
+  // 取り消せるように、入れた場所を控えておく
+  PropertiesService.getDocumentProperties().setProperty(UNDO_KEY, JSON.stringify({
+    gid: sh.getSheetId(), at: at, count: rows.length,
+    teian: teian, teianCol: c['提案'],
+  }));
+
   ui.alert('完了',
-    data.length + '行を追加しました。\n' +
-    '提案列が「' + teian + '」の行が今回ぶんです。\n' +
-    '消したくなったら、提案列で絞り込んでください。', ui.ButtonSet.OK);
+    at + '行目から ' + data.length + '行を追加しました。\n' +
+    '今ある行は1セルも変わっていません。\n\n' +
+    '戻したいときはメニュー「③ さっき追加した行を取り消す」。\n' +
+    '手で消すなら、提案列が「' + teian + '」の行が今回ぶんです。', ui.ButtonSet.OK);
 }
 
 // ========================= 提案管理シートを読む =========================
