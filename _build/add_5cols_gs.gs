@@ -269,24 +269,44 @@ function keiyakuLabel_(kei) {
   return (s && o) ? 'ストック＋ショット' : s ? 'ストック' : o ? 'ショット' : '';
 }
 
-/** 月次管理ブックを 正規化した会社名 → 5列ぶんの中身 の表にする */
+/** 使う列。ここに無い列は読まない（読む量を減らして速くするため） */
+const NEED_COLS = ['エンドクライアント名', '社名', '計上種別', '請求額（税抜）',
+                   '利益', '商材'].concat(TANTO_COLS);
+
+/**
+ * 月次管理ブックを 正規化した会社名 → 5列ぶんの中身 の表にする。
+ *
+ * 速度のために2段階で読む。
+ *   1回目：見出し行だけ（1行×80列）を読んで、使う列がどこにあるかを調べる
+ *   2回目：使う列の右端までしか読まない
+ * 全部で80列読むと13媒体ぶんで数百万セルになり、GASの6分制限に引っかかる。
+ */
 function buildMap_() {
   const src = SpreadsheetApp.openById(SRC_ID);
   const g = {};
 
   MEDIA.forEach(function (sheetName) {
     const sh = src.getSheetByName(sheetName);
-    if (!sh || sh.getLastRow() < 2) return;
-    const values = sh.getRange(1, 1, sh.getLastRow(),
-                               Math.min(sh.getLastColumn(), 80)).getValues();
+    const lastRow = sh ? sh.getLastRow() : 0;
+    if (!sh || lastRow < 2) return;
+
+    const wide = Math.min(sh.getLastColumn(), 80);
+    const header = sh.getRange(1, 1, 1, wide).getValues()[0];
     const h = {};
-    values[0].forEach(function (v, i) {
+    header.forEach(function (v, i) {
       const k = toStr_(v).replace(/\n/g, '');
       if (k && !(k in h)) h[k] = i;      // 同名列は左（通常ぶん）を優先
     });
     if (!('計上種別' in h) || !('請求額（税抜）' in h)) return;
 
-    for (let r = 1; r < values.length; r++) {
+    // 使う列のうち一番右までしか読まない
+    let maxCol = 0;
+    NEED_COLS.forEach(function (c) { if (c in h && h[c] > maxCol) maxCol = h[c]; });
+    if ('種別' in h && h['種別'] > maxCol) maxCol = h['種別'];
+
+    const values = sh.getRange(2, 1, lastRow - 1, maxCol + 1).getValues();
+
+    for (let r = 0; r < values.length; r++) {
       const row = values[r];
       const end = toStr_(row[h['エンドクライアント名']]) || toStr_(row[h['社名']]);
       if (!end) continue;
