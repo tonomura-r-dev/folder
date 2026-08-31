@@ -28,8 +28,9 @@
                   （ASPだけ列名が `広告主担当①②` `媒体担当①②` なのでそちらも見る）
 
 出力
-  <ベース名>.xlsx  見出し付き。中身の確認用
-  <ベース名>.tsv   見出し無し・値だけ。そのまま貼れる
+  <ベース名>.xlsx        見出し付き。中身の確認用
+  <ベース名>.tsv         見出し無し。既にある表の途中に貼るとき用
+  <ベース名>_見出し付き.tsv  1行目が見出し。新しいタブを作って貼るとき用
 
 元ブックは読むだけで一切変更しない。
 """
@@ -114,14 +115,16 @@ def write_xlsx(path, rows):
     wb.save(path)
 
 
-def write_tsv(path, rows):
-    """見出し無し・値だけ。そのまま行に貼れる形にする。
+def write_tsv(path, rows, header=False):
+    """そのまま貼れるTSVを書く。header=True で1行目に見出しを付ける。
 
     元データのセルにタブや改行が入っていることがある
     （例：「ワンタグシステム利用料[タブ]_月額固定費」）。
     そのまま出すと列がずれるので、半角スペースに潰す。
     """
     with open(path, "w", encoding="utf-8") as fh:
+        if header:
+            fh.write("\t".join(HEADERS) + "\n")
         for row in rows:
             cells = []
             for v in row:
@@ -166,9 +169,10 @@ def main():
     rows = rows_from(recs)
     write_xlsx(f"{base}.xlsx", rows)
     write_tsv(f"{base}.tsv", rows)
+    write_tsv(f"{base}_見出し付き.tsv", rows, header=True)
 
     stock = [r for r in rows if r[4] is not None]
-    print(f"書き出しました  : {base}.xlsx / {base}.tsv")
+    print(f"書き出しました  : {base}.xlsx / {base}.tsv / {base}_見出し付き.tsv")
     print(f"  案件数        : {len(rows):,}")
     print(f"  売上          : {sum(r[6] for r in rows):,.0f}")
     print(f"  利益          : {sum(r[7] for r in rows):,.0f}")
