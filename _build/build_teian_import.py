@@ -45,6 +45,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from build_attack_list import extract  # 抽出処理は既存アタック用リストと共通
+from gyokai import guess as guess_gyokai
 
 FONT = "メイリオ"
 NAVY = "1F3864"
@@ -59,11 +60,11 @@ BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 SHEET_COLS = ["提案", "結論", "☑", "追客", "企業名", "Ac名", "既存", "商流",
               "外注先", "提案商材", "業界", "担当①", "担当②", "DYM売上", "LINE売上"]
 # 判断材料として右に足す列。貼るかどうかは任意
-REF_COLS = ["契約形態", "実績売上", "実績粗利", "粗利率", "案件数", "媒体",
+REF_COLS = ["契約形態", "実績粗利", "粗利率", "案件数", "媒体",
             "商材カテゴリ", "担当（フルネーム）", "最新対象月", "アカウント貸し"]
 
-WIDTHS = ([9, 9, 5, 8, 30, 14, 6, 24, 14, 14, 10, 10, 10, 12, 12] +
-          [16, 14, 13, 9, 8, 20, 24, 26, 12, 12])
+WIDTHS = ([9, 9, 5, 8, 30, 14, 6, 24, 20, 14, 10, 10, 10, 13, 13] +
+          [16, 13, 9, 8, 20, 24, 26, 12, 12])
 
 LINE_MEDIA = "LINE公式アカウント"
 KAIGASHI = "アカウント貸し"
@@ -126,7 +127,7 @@ def aggregate(recs, teian, shozai):
     """エンドクライアント単位で1行にまとめる。売上の大きい順＝アタックの優先順。"""
     g = defaultdict(lambda: {
         "売上": 0.0, "LINE売上": 0.0, "粗利": 0.0, "件数": 0, "貸し": 0,
-        "直": False, "代理店名": [], "kei": set(),
+        "直": False, "代理店名": [], "kei": set(), "外注先": [],
         "媒体": [], "商材": [], "担当": [], "月": [], "acct": "", "cons": "",
     })
 
@@ -148,6 +149,9 @@ def aggregate(recs, teian, shozai):
             d["直"] = True
         elif "代理店" in r["種別"] and r["社名"] and r["社名"] != end:
             push(d["代理店名"], r["社名"])
+
+        # 外注先はCS・制作・PR・タレントシェアの「発注先名」にしか入っていない
+        push(d["外注先"], r["発注先名"])
 
         if r["契約形態"] in KEIS:
             d["kei"].add(r["契約形態"])
@@ -173,10 +177,11 @@ def aggregate(recs, teian, shozai):
         shoryu = "直" if d["直"] else (" / ".join(d["代理店名"]) or "不明")
         sheet = [teian, "", 1, "",                    # 提案 / 結論 / ☑ / 追客
                  name, "", "●", shoryu,               # 企業名 / Ac名 / 既存 / 商流
-                 "", shozai, "",                      # 外注先 / 提案商材 / 業界
+                 " / ".join(d["外注先"]), shozai,      # 外注先 / 提案商材
+                 guess_gyokai(name),                   # 業界（社名からの判定）
                  surname(d["acct"]), surname(d["cons"]),   # 担当① / 担当②
-                 "", ""]                              # DYM売上 / LINE売上（未提案）
-        ref = [keiyaku(d["kei"]), d["売上"], d["粗利"],
+                 d["売上"], d["LINE売上"]]             # DYM売上 / LINE売上（実績）
+        ref = [keiyaku(d["kei"]), d["粗利"],
                (d["粗利"] / d["売上"] if d["売上"] else None), d["件数"],
                " / ".join(d["媒体"]), " / ".join(d["商材"]),
                " / ".join(d["担当"]),
@@ -209,8 +214,8 @@ def write_xlsx(path, rows, teian, shozai, excluded):
         c.border = BORDER
     ws.row_dimensions[3].height = 30
 
-    money = (14, 15, 17, 18)
-    wrap = (8, 21, 22, 23)
+    money = (14, 15, 17)          # DYM売上 / LINE売上 / 実績粗利
+    wrap = (8, 9, 20, 21, 22)     # 商流・外注先・媒体・商材・担当は折り返す
     for j, row in enumerate(rows):
         rr = 4 + j
         for i, v in enumerate(row, start=1):
@@ -222,7 +227,7 @@ def write_xlsx(path, rows, teian, shozai, excluded):
                 c.fill = PatternFill("solid", fgColor=LIGHT)
         for i in money:
             ws.cell(row=rr, column=i).number_format = YEN
-        ws.cell(row=rr, column=19).number_format = PCT
+        ws.cell(row=rr, column=18).number_format = PCT
         for i in (3, 7):
             ws.cell(row=rr, column=i).alignment = Alignment(horizontal="center")
 
@@ -284,20 +289,23 @@ def main():
     n = len(SHEET_COLS)
     write_xlsx(f"{base}.xlsx", rows, teian, shozai, excluded)
     write_tsv(f"{base}_貼り付け用.tsv", rows, 0, n)
-    write_tsv(f"{base}_参考列.tsv", rows, n, len(rows[0]), pct_at=n + 3)
+    write_tsv(f"{base}_参考列.tsv", rows, n, len(rows[0]), pct_at=n + 2)
 
     choku = sum(1 for r in rows if r[7] == "直")
     fumei = sum(1 for r in rows if r[7] == "不明")
-    kashi = sum(1 for r in rows if r[n + 9])
     print(f"書き出しました: {base}.xlsx / {base}_貼り付け用.tsv / {base}_参考列.tsv")
     print(f"  社数              : {len(rows):,}")
-    print(f"  提案（年月）      : {teian}")
-    print(f"  提案商材          : {shozai}")
+    print(f"  提案（年月）      : {teian}　／　提案商材: {shozai}")
     print(f"  商流              : 直 {choku}社 ／ 代理店名あり {len(rows)-choku-fumei}社 "
           f"／ 不明 {fumei}社")
+    print(f"  外注先が入った    : {sum(1 for r in rows if r[8])}社（発注先名がある案件だけ）")
+    print(f"  業界が入った      : {sum(1 for r in rows if r[10])}社"
+          f"（社名からの判定。残りはシート側から引く）")
     print(f"  担当①が空欄      : {sum(1 for r in rows if not r[11])}社")
-    print(f"  アカウント貸しあり: {kashi}社")
-    print(f"  実績売上 合計     : {sum(r[n+1] for r in rows):,.0f}（参考列。本体は空欄）")
+    print(f"  DYM売上 合計      : {sum(r[13] for r in rows):,.0f}")
+    print(f"  LINE売上 合計     : {sum(r[14] for r in rows):,.0f}"
+          f"（{sum(1 for r in rows if r[14])}社）")
+    print(f"  アカウント貸しあり: {sum(1 for r in rows if r[n + 8])}社")
     for sheet, miss in skipped:
         print(f"  ★スキップ {sheet}: {miss}")
 

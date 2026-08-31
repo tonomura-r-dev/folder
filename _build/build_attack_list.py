@@ -119,6 +119,8 @@ def extract(src_path):
                 "主担当": tanto[0] if tanto else "",
                 "アカウント担当": acct,
                 "コンサル担当": cons,
+                # 外注先。CS・制作・PR・タレントシェアにしか列が無い
+                "発注先名": norm(r[h["発注先名"]]) if "発注先名" in h else "",
             })
     wb.close()
     return recs, skipped
