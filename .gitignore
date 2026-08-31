@@ -33,4 +33,7 @@ thumbnails*.jpg
 *引き当てマスタ*.tsv
 *提案管理シート_移管用*.xlsx
 *提案管理シート_移管用*.tsv
+# 上と同じ中身を、日本語名だと落とせない環境向けに英数字名でコピーしたもの
+teian_import*.xlsx
+teian_paste*.tsv
 契約形態マスタ.tsv
