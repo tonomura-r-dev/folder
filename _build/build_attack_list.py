@@ -91,8 +91,12 @@ def extract(src_path):
             uri = num(r[h["請求額（税抜）"]])
             if not kei and uri == 0:
                 continue  # 空行
-            tanto = [norm(r[i]) for _, i in roles]
-            tanto = [t for t in tanto if t]
+            byrole = {n: norm(r[i]) for n, i in roles}
+            tanto = [t for t in byrole.values() if t]
+            # 役割ごとにも持っておく（提案管理シートの担当①②に流し込むため）。
+            # ASPだけ呼び方が違うので、そちらも同じ枠に寄せる。
+            acct = byrole.get("アカウント") or byrole.get("広告主担当①") or ""
+            cons = byrole.get("コンサル") or byrole.get("媒体担当①") or ""
             yomi = ""
             if yi is not None:
                 s = norm(r[yi])
@@ -113,6 +117,8 @@ def extract(src_path):
                 "粗利": num(r[h["利益"]]),
                 "担当": " / ".join(dict.fromkeys(tanto)),  # 重複を除いて連結
                 "主担当": tanto[0] if tanto else "",
+                "アカウント担当": acct,
+                "コンサル担当": cons,
             })
     wb.close()
     return recs, skipped
