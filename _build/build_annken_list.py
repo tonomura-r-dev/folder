@@ -41,6 +41,8 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from build_attack_list import MEDIA, extract
+from gyokai import guess as guess_gyokai
+from gyokai_manual import lookup as lookup_gyokai
 
 FONT = "メイリオ"
 NAVY = "1F3864"
@@ -49,10 +51,12 @@ thin = Side(style="thin", color="BFBFBF")
 BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 
 # 佐村さん指定の並び。ここを変えると貼り付け位置がずれるので触らない
+# 業界は12列目に足す。指定された11列の位置を動かさないため、
+# 間に挟まず一番右に置く。
 HEADERS = ["商材", "クライアント名", "エンドクライアント名", "商材詳細",
            "ストック売上", "ストック利益", "売上", "利益",
-           "担当者1", "担当者2", "担当者3"]
-WIDTHS = [18, 28, 28, 20, 14, 14, 14, 14, 14, 14, 14]
+           "担当者1", "担当者2", "担当者3", "業界"]
+WIDTHS = [18, 28, 28, 20, 14, 14, 14, 14, 14, 14, 14, 14]
 MONEY = (5, 6, 7, 8)
 
 KAIGASHI = "アカウント貸し"
@@ -81,6 +85,10 @@ def rows_from(recs):
             tanto[0] if len(tanto) > 0 else "",
             tanto[1] if len(tanto) > 1 else "",
             tanto[2] if len(tanto) > 2 else "",
+            # 業界は元ブックに列が無い。手で調べた表 → 社名からの判定 の順で当てる。
+            # どちらでも分からないものは空欄のまま（推測で埋めない）
+            lookup_gyokai(r["エンドクライアント名"])
+            or guess_gyokai(r["エンドクライアント名"]),
         ])
     return out
 
