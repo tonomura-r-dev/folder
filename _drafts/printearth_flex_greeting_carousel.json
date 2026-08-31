@@ -6,14 +6,14 @@
       "size": "mega",
       "hero": {
         "type": "image",
-        "url": "https://www.inkart.jp/line/greeting_card1_20off.jpg",
+        "url": "https://www.inkart.jp/line/greeting_card1_flyer.jpg",
         "size": "full",
         "aspectRatio": "20:10",
         "aspectMode": "cover",
         "action": {
           "type": "uri",
-          "label": "初回20%OFFで注文する",
-          "uri": "https://www.inkart.jp/regist/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card1_hero"
+          "label": "チラシ・ポスターを刷る",
+          "uri": "https://www.inkart.jp/lineup/chirasi_flyer/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card1_hero"
         }
       },
       "body": {
@@ -24,22 +24,22 @@
         "contents": [
           {
             "type": "text",
-            "text": "初回かぎり",
+            "text": "販促・集客に",
             "size": "xs",
             "weight": "bold",
             "color": "#E8380D"
           },
           {
             "type": "text",
-            "text": "20%OFF ＋ 1,000ポイント",
-            "size": "xl",
+            "text": "チラシ・ポスターを刷る",
+            "size": "lg",
             "weight": "bold",
             "color": "#1A1A1A",
             "wrap": true
           },
           {
             "type": "text",
-            "text": "会員登録は30秒。登録した時点で、カートの金額に反映されます。",
+            "text": "サイズと部数を選ぶだけ。送料込みの総額が30秒で出ます。最短で当日出荷。",
             "size": "sm",
             "color": "#6B6B6B",
             "wrap": true,
@@ -61,8 +61,8 @@
             "color": "#E8380D",
             "action": {
               "type": "uri",
-              "label": "30秒で登録して割引を受け取る",
-              "uri": "https://www.inkart.jp/regist/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card1_signup"
+              "label": "30秒で見積もりを出す",
+              "uri": "https://www.inkart.jp/contact/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card1_flyer_estimate"
             }
           },
           {
@@ -71,8 +71,8 @@
             "height": "sm",
             "action": {
               "type": "uri",
-              "label": "商品と価格を見る",
-              "uri": "https://www.inkart.jp/lineup/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card1_lineup"
+              "label": "価格表を見る",
+              "uri": "https://www.inkart.jp/lineup/chirasi_flyer/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card1_flyer_price"
             }
           }
         ]
@@ -83,14 +83,14 @@
       "size": "mega",
       "hero": {
         "type": "image",
-        "url": "https://www.inkart.jp/line/greeting_card2_estimate.jpg",
+        "url": "https://www.inkart.jp/line/greeting_card2_goods.jpg",
         "size": "full",
         "aspectRatio": "20:10",
         "aspectMode": "cover",
         "action": {
           "type": "uri",
-          "label": "無料で見積りを出す",
-          "uri": "https://www.inkart.jp/estimate/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card2_hero"
+          "label": "推し活グッズをつくる",
+          "uri": "https://www.inkart.jp/lineup/oshikatsu_goods/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card2_hero"
         }
       },
       "body": {
@@ -101,22 +101,22 @@
         "contents": [
           {
             "type": "text",
-            "text": "仕様が決まっていなくても",
+            "text": "1種類1枚からOK",
             "size": "xs",
             "weight": "bold",
             "color": "#E8380D"
           },
           {
             "type": "text",
-            "text": "その場で無料見積り",
-            "size": "xl",
+            "text": "推し活グッズをつくる",
+            "size": "lg",
             "weight": "bold",
             "color": "#1A1A1A",
             "wrap": true
           },
           {
             "type": "text",
-            "text": "サイズと部数を選ぶだけ。1分で総額が出ます。送料も込みの金額です。",
+            "text": "アクスタ、缶バッジ、透明グッズ。1種類1枚から刷れます。個人の方のご注文も大歓迎です。",
             "size": "sm",
             "color": "#6B6B6B",
             "wrap": true,
@@ -138,8 +138,8 @@
             "color": "#E8380D",
             "action": {
               "type": "uri",
-              "label": "無料で見積りを出す",
-              "uri": "https://www.inkart.jp/estimate/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card2_estimate"
+              "label": "グッズの種類と値段を見る",
+              "uri": "https://www.inkart.jp/lineup/oshikatsu_goods/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card2_goods"
             }
           },
           {
@@ -148,8 +148,8 @@
             "height": "sm",
             "action": {
               "type": "uri",
-              "label": "納期を確認する",
-              "uri": "https://www.inkart.jp/guide/delivery/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card2_delivery"
+              "label": "入稿テンプレートをもらう",
+              "uri": "https://www.inkart.jp/download/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card2_template"
             }
           }
         ]
@@ -160,14 +160,91 @@
       "size": "mega",
       "hero": {
         "type": "image",
-        "url": "https://www.inkart.jp/line/greeting_card3_datacheck.jpg",
+        "url": "https://www.inkart.jp/line/greeting_card3_sample.jpg",
+        "size": "full",
+        "aspectRatio": "20:10",
+        "aspectMode": "cover",
+        "action": {
+          "type": "uri",
+          "label": "無料で見本帳をもらう",
+          "uri": "https://www.inkart.jp/guide/request-info/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card3_hero"
+        }
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "紙で迷ったら",
+            "size": "xs",
+            "weight": "bold",
+            "color": "#E8380D"
+          },
+          {
+            "type": "text",
+            "text": "紙の見本帳、無料で送ります",
+            "size": "lg",
+            "weight": "bold",
+            "color": "#1A1A1A",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "実際に印刷された用紙を、手にとって選べます。送料も無料です。",
+            "size": "sm",
+            "color": "#6B6B6B",
+            "wrap": true,
+            "margin": "md"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "paddingTop": "0px",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#E8380D",
+            "action": {
+              "type": "uri",
+              "label": "無料で見本帳をもらう",
+              "uri": "https://www.inkart.jp/guide/request-info/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card3_sample"
+            }
+          },
+          {
+            "type": "button",
+            "style": "link",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "名刺・冊子の価格を見る",
+              "uri": "https://www.inkart.jp/lineup/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card3_lineup"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "bubble",
+      "size": "mega",
+      "hero": {
+        "type": "image",
+        "url": "https://www.inkart.jp/line/greeting_card4_datacheck.jpg",
         "size": "full",
         "aspectRatio": "20:10",
         "aspectMode": "cover",
         "action": {
           "type": "uri",
           "label": "無料でデータを見てもらう",
-          "uri": "https://www.inkart.jp/contact/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card3_hero"
+          "uri": "https://www.inkart.jp/contact/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card4_hero"
         }
       },
       "body": {
@@ -216,7 +293,7 @@
             "action": {
               "type": "uri",
               "label": "無料でデータを見てもらう",
-              "uri": "https://www.inkart.jp/contact/?utm_source=line&utm_medium=greeting&utm_campaign=ad_20off&utm_content=card3_datacheck"
+              "uri": "https://www.inkart.jp/contact/?utm_source=line&utm_medium=greeting&utm_campaign=ad_1000pt&utm_content=card4_datacheck"
             }
           },
           {
