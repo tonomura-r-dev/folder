@@ -2,6 +2,8 @@
 """月次管理ブックから「既存アタック用の案件一覧」を別ファイルで作る。
 
   python _build/build_attack_list.py <月次管理ブック.xlsx> [出力先.xlsx]
+  オプション:
+    --除外アカウント貸し   サービス詳細が「アカウント貸し」の案件を集計から外す
 
 佐村さんの指摘（2026-08-25）
   ・既存アタックをするのにエンドクライアント名が無いと使えない
@@ -272,13 +274,26 @@ def build_cat_summary(wb, recs):
 
 
 def main():
-    if len(sys.argv) < 2:
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    excluded = "--除外アカウント貸し" in sys.argv
+    if not args:
         print(__doc__)
         sys.exit(1)
-    src = sys.argv[1]
-    out = sys.argv[2] if len(sys.argv) > 2 else "既存アタック用_案件一覧.xlsx"
+    src = args[0]
+    out = args[1] if len(args) > 1 else "既存アタック用_案件一覧.xlsx"
 
     recs, skipped = extract(src)
+    if excluded:
+        before_n = len(recs)
+        before_uri = sum(r["売上"] for r in recs)
+        before_ends = {r["エンドクライアント名"] for r in recs}
+        recs = [r for r in recs if "アカウント貸し" not in r["サービス詳細"]]
+        gone = before_ends - {r["エンドクライアント名"] for r in recs}
+        print("アカウント貸しを除外しました")
+        print(f"  外した案件    : {before_n - len(recs)}件")
+        print(f"  外した売上    : {before_uri - sum(r['売上'] for r in recs):,.0f}")
+        print(f"  消えた会社    : {len(gone)}社（アカウント貸しの案件しか無かった会社）")
+
     wb = Workbook()
     wb.remove(wb.active)
     build_end_summary(wb, recs)
