@@ -33,7 +33,14 @@ thumbnails*.jpg
 *引き当てマスタ*.tsv
 *提案管理シート_移管用*.xlsx
 *提案管理シート_移管用*.tsv
-# 上と同じ中身を、日本語名だと落とせない環境向けに英数字名でコピーしたもの
+*案件一覧_部署集計*.xlsx
+*案件一覧_部署集計*.tsv
+# 上と同じ中身を、日本語名だと落とせない環境向けに英数字名でコピーしたもの。
+# ★英数字名のコピーは .gitignore をすり抜けやすい。実際に
+#   attack_list_no_lending_20260831.xlsx が一度コミットされてしまった。
+#   コピーを作ったら、必ずここにも追記すること。
 teian_import*.xlsx
 teian_paste*.tsv
+attack_list*.xlsx
+attack_list*.tsv
 契約形態マスタ.tsv
