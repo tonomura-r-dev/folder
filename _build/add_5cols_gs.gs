@@ -21,8 +21,14 @@
 /** 月次管理ブックのID（読むだけ。一切変更しない） */
 const SRC_ID = '11j9QaZ74iOp1ABNV95wq-PIDK81sWsXXxA0JYy0KCWw';
 
-/** 書き込む先のシート（URLの gid= の数字）。0 にすると開いているシートを使う */
-const TARGET_GID = 0;
+/**
+ * 書き込む先のシート（URLの gid= の数字）。0 にすると開いているシートを使う。
+ * 本番・コピーともアポリストのタブが 281377521。
+ *   本番  18TLsRqtH34Bq4o7wYwWL57Zf8Z3TnRIb4khCmxwZKA0
+ *   コピー 1IQObsH-aumtz4pZdifWucKQtV1InT_S5Rmb4OQP9X8k
+ * 開いているタブを間違えて書かないよう、0 ではなく固定しておく。
+ */
+const TARGET_GID = 281377521;
 
 /** 企業名が入っている列の見出し */
 const KEY_HEADER = '企業名';
