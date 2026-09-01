@@ -222,7 +222,6 @@ function setupTemplateSheet_(ss) {
 
   addRequiredEmptyFormatting_(sheet, requiredCells);
   sheet.setFrozenRows(1);
-  sheet.setFrozenColumns(1);
 }
 
 function writeBlockHeader_(sheet, row, title, bg) {
