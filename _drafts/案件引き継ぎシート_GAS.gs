@@ -1,5 +1,5 @@
 /**
- * 案件引き継ぎシート セットアップスクリプト
+ * 案件引き継ぎシート セットアップスクリプト（LINEOA特化版）
  *
  * 使い方
  * 1. 対象のGoogleスプレッドシートを開く
@@ -10,6 +10,9 @@
  *    ②新規案件タブを作成 で案件ごとのタブをワンクリック複製できる
  * 6. 「⓪設定」タブの社員名簿・Lパターンなど、社内固有の値は各自入力すること
  *    （このスクリプトは仕組みだけ作る。中身の実データはスクリプトからは分からないため）
+ *
+ * 今回は「広告はいらない」との指示により、Web広告ブロックは含まない
+ * （共通情報＋LINEOAのみの構成）。
  */
 
 const CONFIG = {
@@ -19,7 +22,6 @@ const CONFIG = {
 
 const COLORS = {
   header共通: '#3467B2',
-  headerWeb広告: '#D9661F',
   headerLINEOA: '#00897B',
   subHeader: '#8E4EC6',
   requiredLabel: '#FBE2E1',
@@ -33,14 +35,10 @@ const LAST_COL = 10;
 
 const MASTER_LISTS = [
   { name: 'LIST_直代理店', header: '直/代理店', values: ['直', '代理店'] },
-  { name: 'LIST_契約形態', header: '契約形態', values: ['自動更新', '単年契約', '都度契約'] },
   { name: 'LIST_請求書タイミング', header: '請求書提出タイミング', values: ['月末締め翌月10日払い', '都度払い', 'その他'] },
   { name: 'LIST_レポートタイミング', header: 'レポート提出タイミング', values: ['週次', '月次', '随時', 'その他'] },
   { name: 'LIST_MTG周期', header: '定例MTG周期', values: ['毎週', '隔週', '月1回', '不定期'] },
-  { name: 'LIST_KPI種別', header: 'KPI種別', values: ['CPA', 'CPO', 'ROAS', 'CV数', '友だち数', 'その他'] },
-  { name: 'LIST_指名広告可否', header: '指名広告の可否', values: ['可', '不可', '条件付き可'] },
-  { name: 'LIST_リマケ可否', header: 'リマーケティング拡張可否', values: ['可', '不可', '要相談'] },
-  { name: 'LIST_広告文変更スパン', header: '広告文の変更スパン', values: ['週1回', '月1回', '随時', 'キャンペーン都度'] },
+  { name: 'LIST_KPI種別', header: 'KPI種別', values: ['CPA', 'CPO', 'CV数', '友だち数', 'その他'] },
   { name: 'LIST_契約プラン', header: 'LINEOA契約プラン', values: ['コミュニケーションプラン', 'ライトプラン', 'フリープラン'] },
   { name: 'LIST_配信頻度', header: '定期配信の頻度', values: ['週1', '月2', '不定期', 'その他'] },
   { name: 'LIST_リッチメニュー頻度', header: 'リッチメニュー更新頻度', values: ['固定', '月次更新', 'キャンペーン都度'] },
@@ -78,27 +76,6 @@ const COMMON_FIELDS_OPS = [
   { label: '備考（都度発生タスク等）', required: false, type: 'text' },
 ];
 
-const AD_FIELDS_PRE = [
-  { label: 'Marchant Center', required: 'conditional', type: 'text', note: 'メールアドレス＋アカウント名。EC・ショッピング広告利用時のみ' },
-  { label: '指名広告の掲載可否', required: true, type: 'dropdown', list: 'LIST_指名広告可否' },
-];
-
-const AD_FIELDS_POST = [
-  { label: '除外KWリストの利用有無', required: true, type: 'checkbox' },
-  { label: '新規キャンペーンでの除外KW共通設定有無', required: true, type: 'checkbox' },
-  { label: 'リマーケティング広告の拡張可否', required: true, type: 'dropdown', list: 'LIST_リマケ可否' },
-  { label: '掲載時間', required: false, type: 'text' },
-  { label: '配信地域', required: true, type: 'text', note: '指定なしの場合は「指定なし」と明記' },
-  { label: '性別・年齢設定', required: true, type: 'text', note: '指定なしの場合は「指定なし」と明記' },
-  { label: 'プレースメント設定', required: false, type: 'text' },
-  { label: '広告文の変更スパン', required: true, type: 'dropdown', list: 'LIST_広告文変更スパン' },
-  { label: '広告文の最終変更日', required: true, type: 'date' },
-  { label: 'CVテスト_申込者名', required: false, type: 'text' },
-  { label: 'CVテスト_商品', required: false, type: 'text' },
-  { label: 'CVテスト_支払い方法', required: false, type: 'text' },
-  { label: 'CVテスト_再テスト前に先方確認が必要か', required: false, type: 'checkbox' },
-];
-
 const LINEOA_BASIC_FIELDS = [
   { label: 'LINE公式アカウント名／ベーシックID', required: true, type: 'text' },
   { label: '管理画面アクセス権限保有者', required: true, type: 'text' },
@@ -134,7 +111,7 @@ const LINEOA_RICHMENU_FIELDS = [
   { label: 'リッチメニュー更新頻度', required: true, type: 'dropdown', list: 'LIST_リッチメニュー頻度' },
   { label: 'デザインデータの保管場所', required: true, type: 'url' },
   { label: 'クーポン／ショップカード利用有無', required: false, type: 'checkbox' },
-  { label: 'LINE広告連携有無', required: false, type: 'checkbox', note: '「有」の場合はWeb広告ブロックの運用媒体マトリクス側をメイン記載とする' },
+  { label: 'LINE広告（友だち追加広告等）連携有無', required: false, type: 'checkbox' },
   { label: '特記事項', required: false, type: 'text' },
 ];
 
@@ -210,23 +187,13 @@ function setupTemplateSheet_(ss) {
 
   row = writeBlockHeader_(sheet, row, '■共通情報', COLORS.header共通);
   COMMON_FIELDS_BASIC.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
-  row = writeCheckboxGroup_(sheet, row, '運用媒体区分', true, ['Web広告', 'LINEOA'], 'チェックした媒体のブロックのみ入力してください');
   row = writeRepeatingTable_(sheet, row, { title: '先方担当者', required: true, columns: ['氏名', 'リテラシー(1-5)'], repeatCount: 3, note: '足りない場合は行を挿入' });
   COMMON_FIELDS_PRODUCT.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
   row = writeRepeatingTable_(sheet, row, { title: 'ベンチマーク競合', required: false, columns: ['社名', 'URL'], repeatCount: 5 });
   COMMON_FIELDS_OPS.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
 
   row++;
-  row = writeBlockHeader_(sheet, row, '■Web広告（運用媒体区分でチェックした場合のみ入力）', COLORS.headerWeb広告);
-  row = writeMediaStatusMatrix_(sheet, row);
-  AD_FIELDS_PRE.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
-  row = writeRepeatingTable_(sheet, row, { title: 'ビッグワード停止設定', required: false, columns: ['KW', '停止理由', '再開提案可否'], repeatCount: 3, note: '停止中のものがある場合のみ' });
-  AD_FIELDS_POST.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
-  row = writeCheckboxGroup_(sheet, row, 'デバイス設定', true, ['PC', 'スマホ', 'タブレット']);
-  row = writeCheckboxGroup_(sheet, row, 'P-max・SNS等の最適化拡張可否', true, ['P-max', 'LINE', 'Facebook・Instagram']);
-
-  row++;
-  row = writeBlockHeader_(sheet, row, '■LINEOA（新設・運用媒体区分でチェックした場合のみ入力）', COLORS.headerLINEOA);
+  row = writeBlockHeader_(sheet, row, '■LINEOA運用情報', COLORS.headerLINEOA);
   row = writeSubHeader_(sheet, row, '基本情報・契約');
   LINEOA_BASIC_FIELDS.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
 
@@ -306,29 +273,6 @@ function writeField_(sheet, row, field, requiredCellsAccumulator) {
   return row + 1;
 }
 
-function writeCheckboxGroup_(sheet, row, label, required, options, note) {
-  const labelCell = sheet.getRange(row, COL.LABEL);
-  labelCell.setValue(label);
-  setStyle_(labelCell, { bg: labelBg_(required), bold: true });
-
-  let col = COL.VALUE_START;
-  options.forEach((opt) => {
-    const optLabelCell = sheet.getRange(row, col);
-    optLabelCell.setValue(opt);
-    setStyle_(optLabelCell, { fontSize: 9, color: '#555555' });
-    sheet.getRange(row, col + 1).insertCheckboxes();
-    col += 2;
-  });
-
-  if (note) {
-    const noteCell = sheet.getRange(row, COL.NOTE);
-    noteCell.setValue(note);
-    setStyle_(noteCell, { color: '#888888', fontSize: 9, fontStyle: 'italic' });
-  }
-
-  return row + 1;
-}
-
 function writeRepeatingTable_(sheet, row, { title, required, columns, repeatCount, note }) {
   sheet.getRange(row, COL.LABEL).setValue(title);
   setStyle_(sheet.getRange(row, COL.LABEL), { bg: labelBg_(required), bold: true });
@@ -347,28 +291,6 @@ function writeRepeatingTable_(sheet, row, { title, required, columns, repeatCoun
     sheet.getRange(row, COL.VALUE_START, 1, columns.length).setBorder(true, true, true, true, false, false);
     row++;
   }
-  return row;
-}
-
-function writeMediaStatusMatrix_(sheet, row) {
-  const media = ['Google広告', 'YSA（Yahoo検索）', 'YDA（Yahooディスプレイ）', 'Facebook広告', 'LINE広告', 'TikTok広告', 'X（Twitter）広告'];
-
-  sheet.getRange(row, COL.LABEL).setValue('運用媒体');
-  setStyle_(sheet.getRange(row, COL.LABEL), { bg: COLORS.requiredLabel, bold: true });
-  ['稼働中', '過去実施(停止中)', '補足'].forEach((h, i) => {
-    const c = sheet.getRange(row, COL.VALUE_START + i);
-    c.setValue(h);
-    setStyle_(c, { fontSize: 9, bold: true, color: '#555555' });
-  });
-  row++;
-
-  media.forEach((m) => {
-    sheet.getRange(row, COL.LABEL).setValue('　' + m);
-    sheet.getRange(row, COL.VALUE_START).insertCheckboxes();
-    sheet.getRange(row, COL.VALUE_START + 1).insertCheckboxes();
-    row++;
-  });
-
   return row;
 }
 
