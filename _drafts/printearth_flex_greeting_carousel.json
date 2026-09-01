@@ -1,0 +1,312 @@
+{
+  "type": "carousel",
+  "contents": [
+    {
+      "type": "bubble",
+      "size": "mega",
+      "hero": {
+        "type": "image",
+        "url": "https://www.inkart.jp/line/greeting_card1_flyer.jpg",
+        "size": "full",
+        "aspectRatio": "20:10",
+        "aspectMode": "cover",
+        "action": {
+          "type": "uri",
+          "label": "チラシ・ポスターを刷る",
+          "uri": "https://www.inkart.jp/lineup/chirasi_flyer/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card1_hero"
+        }
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "販促・集客に",
+            "size": "xs",
+            "weight": "bold",
+            "color": "#0E8A4F"
+          },
+          {
+            "type": "text",
+            "text": "チラシ・ポスターを刷る",
+            "size": "lg",
+            "weight": "bold",
+            "color": "#1A1A1A",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "サイズと部数を選ぶだけ。送料込みの総額が30秒で出ます。最短で当日出荷。",
+            "size": "sm",
+            "color": "#6B6B6B",
+            "wrap": true,
+            "margin": "md"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "paddingTop": "0px",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#E8564B",
+            "action": {
+              "type": "uri",
+              "label": "30秒で見積もりを出す",
+              "uri": "https://www.inkart.jp/contact/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card1_flyer_estimate"
+            }
+          },
+          {
+            "type": "button",
+            "style": "link",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "価格表を見る",
+              "uri": "https://www.inkart.jp/lineup/chirasi_flyer/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card1_flyer_price"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "bubble",
+      "size": "mega",
+      "hero": {
+        "type": "image",
+        "url": "https://www.inkart.jp/line/greeting_card2_goods.jpg",
+        "size": "full",
+        "aspectRatio": "20:10",
+        "aspectMode": "cover",
+        "action": {
+          "type": "uri",
+          "label": "推し活グッズをつくる",
+          "uri": "https://www.inkart.jp/lineup/oshikatsu_goods/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card2_hero"
+        }
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "1種類1枚からOK",
+            "size": "xs",
+            "weight": "bold",
+            "color": "#0E8A4F"
+          },
+          {
+            "type": "text",
+            "text": "推し活グッズをつくる",
+            "size": "lg",
+            "weight": "bold",
+            "color": "#1A1A1A",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "アクスタ、缶バッジ、透明グッズ。1種類1枚から刷れます。個人の方のご注文も大歓迎です。",
+            "size": "sm",
+            "color": "#6B6B6B",
+            "wrap": true,
+            "margin": "md"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "paddingTop": "0px",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#E8564B",
+            "action": {
+              "type": "uri",
+              "label": "グッズの種類と値段を見る",
+              "uri": "https://www.inkart.jp/lineup/oshikatsu_goods/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card2_goods"
+            }
+          },
+          {
+            "type": "button",
+            "style": "link",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "入稿テンプレートをもらう",
+              "uri": "https://www.inkart.jp/download/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card2_template"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "bubble",
+      "size": "mega",
+      "hero": {
+        "type": "image",
+        "url": "https://www.inkart.jp/line/greeting_card3_sample.jpg",
+        "size": "full",
+        "aspectRatio": "20:10",
+        "aspectMode": "cover",
+        "action": {
+          "type": "uri",
+          "label": "無料で見本帳をもらう",
+          "uri": "https://www.inkart.jp/guide/request-info/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card3_hero"
+        }
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "紙で迷ったら",
+            "size": "xs",
+            "weight": "bold",
+            "color": "#0E8A4F"
+          },
+          {
+            "type": "text",
+            "text": "紙の見本帳、無料で送ります",
+            "size": "lg",
+            "weight": "bold",
+            "color": "#1A1A1A",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "実際に印刷された用紙を、手にとって選べます。送料も無料です。",
+            "size": "sm",
+            "color": "#6B6B6B",
+            "wrap": true,
+            "margin": "md"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "paddingTop": "0px",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#E8564B",
+            "action": {
+              "type": "uri",
+              "label": "無料で見本帳をもらう",
+              "uri": "https://www.inkart.jp/guide/request-info/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card3_sample"
+            }
+          },
+          {
+            "type": "button",
+            "style": "link",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "名刺・冊子の価格を見る",
+              "uri": "https://www.inkart.jp/lineup/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card3_lineup"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "bubble",
+      "size": "mega",
+      "hero": {
+        "type": "image",
+        "url": "https://www.inkart.jp/line/greeting_card4_datacheck.jpg",
+        "size": "full",
+        "aspectRatio": "20:10",
+        "aspectMode": "cover",
+        "action": {
+          "type": "uri",
+          "label": "無料でデータを見てもらう",
+          "uri": "https://www.inkart.jp/contact/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card4_hero"
+        }
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "データに不安がある方へ",
+            "size": "xs",
+            "weight": "bold",
+            "color": "#0E8A4F"
+          },
+          {
+            "type": "text",
+            "text": "入稿データ、無料で確認します",
+            "size": "lg",
+            "weight": "bold",
+            "color": "#1A1A1A",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "そのまま印刷できるか、担当者が確認してご連絡します。追加料金はかかりません。",
+            "size": "sm",
+            "color": "#6B6B6B",
+            "wrap": true,
+            "margin": "md"
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "paddingAll": "16px",
+        "paddingTop": "0px",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#E8564B",
+            "action": {
+              "type": "uri",
+              "label": "無料でデータを見てもらう",
+              "uri": "https://www.inkart.jp/contact/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20260901_greeting_carousel&utm_content=card4_datacheck"
+            }
+          },
+          {
+            "type": "text",
+            "text": "※お返事はメールでお送りします（1営業日以内）",
+            "size": "xxs",
+            "color": "#9B9B9B",
+            "wrap": true,
+            "align": "center",
+            "margin": "md"
+          }
+        ]
+      }
+    }
+  ]
+}
