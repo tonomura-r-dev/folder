@@ -6,6 +6,7 @@ Linux（クラウド）: LibreOffice経由（フォント代替で見た目は�
 使い方:
   python _build/qa_render.py <pptxのパス> [出力先ディレクトリ]
 """
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -34,13 +35,26 @@ Write-Output $n
 
 
 def render_libreoffice(pptx: Path, outdir: Path) -> int:
-    """LibreOffice → PDF → pdftoppm でPNG化"""
+    """LibreOffice → PDF → PNG化。
+    pdftoppm があればそれを使い、無ければ PyMuPDF にフォールバックする
+    （クラウドコンテナには poppler が入っていないことがある）。"""
     subprocess.run(["soffice", "--headless", "--convert-to", "pdf",
                     "--outdir", str(outdir), str(pptx)], check=True)
     pdf = outdir / (pptx.stem + ".pdf")
-    subprocess.run(["pdftoppm", "-jpeg", "-r", "110", str(pdf),
-                    str(outdir / "slide")], check=True)
-    return len(list(outdir.glob("slide-*.jpg")))
+    if shutil.which("pdftoppm"):
+        subprocess.run(["pdftoppm", "-jpeg", "-r", "110", str(pdf),
+                        str(outdir / "slide")], check=True)
+        return len(list(outdir.glob("slide-*.jpg")))
+
+    import fitz  # PyMuPDF
+    doc = fitz.open(pdf)
+    zoom = 110 / 72.0
+    for i, page in enumerate(doc, 1):
+        page.get_pixmap(matrix=fitz.Matrix(zoom, zoom)).save(
+            str(outdir / f"slide-{i:02d}.png"))
+    n = doc.page_count
+    doc.close()
+    return n
 
 
 def main() -> None:
