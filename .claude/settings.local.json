@@ -4,7 +4,9 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(mkdir -p /tmp/claude-0/-home-user-folder/ce08d1a6-7951-5434-b459-810a1fdb88ae/scratchpad)",
+      "Bash(cp /root/.claude/uploads/ce08d1a6-7951-5434-b459-810a1fdb88ae/6d58aa09-_____LINEOA____.pptx /tmp/claude-0/-home-user-folder/ce08d1a6-7951-5434-b459-810a1fdb88ae/scratchpad/demo.pptx)"
     ]
   }
 }
