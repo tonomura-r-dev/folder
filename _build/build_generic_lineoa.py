@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
 """LINE公式アカウント運用のご提案【業界汎用版】のビルド
 
-DYM汎用FMT（_templates/DYM_LINEOA_FMT.pptx・36枚）から、
-どの業界の初回商談でもそのまま出せる25枚の汎用デッキを生成する。
+DYM汎用FMT（_templates/DYM_LINEOA_FMT.pptx・36枚）を骨格そのままに、
+業種依存の記述だけを外した36枚の汎用デッキを生成する。
 
-FMTからの変更点は3つだけ：
-  1. 業界固有の実データ／未挿入ページを削除
-     （5-6：グラフ未挿入の差し込み枠、7-10：人材/転職業界のGoogleトレンド・他社分析）
-  2. 未完成のブレスト用ページを削除（12-16：社内メモがそのまま残っている）
-  3. 転職業界に特化していた3ページ（33-35）を業種非依存の「型」に書き換え
+FMTからの変更点：
+  1. 転職業界に特化していた3ページ（33-35）を業種非依存の「型」に書き換え
+     （登録直後アンケート／年間の企画カレンダー／診断コンテンツ）
+  2. 表紙の未記入プレースホルダ「業界：○○」を「業界汎用版」に
+  3. 業種を限定する語を中立化（定期購入→リピート、査定→見積、商圏→エリア）
+
+**ページは1枚も削っていない**（殿村さん指示：FMTの構成をそのまま保つ）。
+そのぶん、商談前に手当てが要るページが残る。ビルド後に出る
+「差し替えチェックリスト」がその一覧なので、出す前に必ず確認すること。
 
 使い方:
     pip install python-pptx
@@ -26,18 +30,30 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "_templates" / "DYM_LINEOA_FMT.pptx"
 OUT = ROOT / "DYM_LINEOA_業界汎用_ご提案.pptx"
 
-# 業界固有の実データ／未完成ページ（FMTでの1始まり番号）
-# ここを削らないと「そのまま出せる」資料にならない。
-# 業界別にカスタマイズする際は、FMTから該当ページを戻して使う。
-DROP = [
-    5,   # 検索広告CPCの推移：グラフが未挿入の差し込み枠（本文がほぼ空）
-    6,   # 広告実績CVR：同上
-    7,   # ニーズ調査（シーズナリティ）：転職エージェント等のGoogleトレンド画像
-    8,   # ニーズ調査（前後検索）：同上＋「あああ」
-    9,   # 他社配信アカウント：「すうじ」「ロゴ」等のダミーで全面構成
-    10,  # 他社分析：ダミー画面イメージ5枚
-    12, 13, 14, 15, 16,  # 具体企画のブレスト：社内メモのまま
-]
+# 削除するページ（FMTでの1始まり番号）。
+# **空 ＝ FMTの36枚を1枚も削らない**（殿村さん指示）。
+#
+# 以前は下の11枚を削って25枚版にしていた。軽い版が要るときはここに戻す：
+#   5, 6              グラフ未挿入の差し込み枠（本文がほぼ空）
+#   7, 8              ニーズ調査：人材/転職業界のGoogleトレンド画像＋「あああ」
+#   9, 10             他社分析：「すうじ」「ロゴ」等のダミーで全面構成
+#   12, 13, 14, 15, 16  具体企画のブレスト：社内メモのまま
+DROP = []
+
+# 商談前に手当てが要るページ（ビルド後のチェックリストに出す）
+NEEDS_WORK = {
+    5: "検索広告CPCの推移：グラフが未挿入。業界のCPCデータを貼る",
+    6: "広告実績CVR：グラフが未挿入。実績CVRを貼る",
+    7: "ニーズ調査（シーズナリティ）：転職KWのGoogleトレンド画像。業界KWで撮り直す",
+    8: "ニーズ調査（前後検索）：転職の前後検索データ＋「あああ」。業界KWに差し替え",
+    9: "他社配信アカウント：「すうじ」「ロゴ」等のダミー。競合の実数値を記入",
+    10: "他社分析：ダミーのアカウント画面5枚。競合のキャプチャに差し替え",
+    12: "具体企画のブレスト：社内メモのまま。企画案を書くか、商談では飛ばす",
+    13: "同上",
+    14: "同上",
+    15: "同上（見出しは「他社分析」だが中身はブレスメモ）",
+    16: "同上",
+}
 
 # 業種を限定してしまう語の中立化（全ページ対象・run単位で置換）
 # FMTは1文が複数runに分かれているため、パターンはrunをまたがない短さにする
@@ -252,26 +268,43 @@ prs.save(OUT)
 # ---------- 検品 ----------
 done = Presentation(OUT)
 n_slides = len(list(done.slides))
-assert n_slides == 36 - len(DROP) == 25, n_slides
+assert n_slides == 36 - len(DROP), n_slides
 
+# 業種固有・ダミーが残っている箇所を洗い出す。
+# ページを削っていないので「残っていて当然」だが、
+# **書き換えたはずの3ページに転職の語が残っていたら、それはバグ。**
 NG_WORDS = ["転職", "求人", "面接", "年収", "入社", "退職", "キャリアアップ",
             "来場", "査定", "商圏", "定期購入",
             "あああ", "すうじ", "なまえ", "XXX"]
-leftovers = []
+REWRITTEN = {33, 34, 35}  # 業種非依存に書き換えたページ（DROPが空のときの番号）
+
+found = {}
 for i, slide in enumerate(done.slides, 1):
     for sh in iter_shapes(slide.shapes):
         if not sh.has_text_frame:
             continue
         for word in NG_WORDS:
             if word in sh.text_frame.text:
-                leftovers.append((i, word, sh.text_frame.text[:60]))
+                found.setdefault(i, set()).add(word)
 
 print(f"saved: {OUT.name}")
 print(f"slides: {n_slides}（FMT 36枚 − 削除 {len(DROP)}枚）")
 print(f"中立化した語: {n_neutralized}箇所")
-if leftovers:
-    print("!! 業界固有・ダミーの残骸あり:")
-    for i, word, text in leftovers:
-        print(f"   p{i} [{word}] {text}")
+
+print("\n--- 差し替えチェックリスト（商談前に手当てするページ）---")
+if DROP:
+    print("  ※DROPが空でないためページ番号がずれています。FMT基準の番号で表示します。")
+for page, note in sorted(NEEDS_WORK.items()):
+    if page in DROP:
+        continue
+    words = "／".join(sorted(found.get(page, []))) or "—"
+    print(f"  p{page:<2} {note}  [検出: {words}]")
+
+# 書き換え済みページに業種固有の語が残っていないかだけは厳しく見る
+bugs = {p: w for p, w in found.items() if p in REWRITTEN and not DROP}
+if bugs:
+    print("\n!! 書き換えたはずのページに業種固有の語が残っている:")
+    for page, words in sorted(bugs.items()):
+        print(f"   p{page} {'／'.join(sorted(words))}")
 else:
-    print("業界固有・ダミーの残骸: なし")
+    print("\n書き換えた3ページ（33-35）の業種固有語: なし")
