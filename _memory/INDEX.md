@@ -52,6 +52,7 @@
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md` |
 | **リッチメニュー運用** | `_drafts/リッチメニュー_予約公開の運用手順.md` |
 | **資料ビルド** | `_build/build_*.py`（案件ごとのデッキ生成）／`qa_render.py`（検品）／`make_images.py`（図版生成） |
+| **提案テンプレート** | `_templates/DYM_LINEOA_BUFFF_62p.pptx`＋PDF＝**フル版62枚**（2026-09-02収容）／`DYM_LINEOA_FMT.pptx`＝36枚・業界汎用の器／`DYM_LINEOA_33p_base.pptx`＝44枚。**BUFFFにしか無いページ＝会社紹介・Partner Award・費用感と市場相場感・体制図・効果計測・CRM/API連携** |
 
 ## スキル（`.claude/skills/`）
 

@@ -4,7 +4,10 @@
       "Bash(git init *)",
       "Bash(git remote *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(cp /root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/59713b34-LINEOA_BUFFF.pptx _templates/DYM_LINEOA_BUFFF_62p.pptx)",
+      "Bash(cp /root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/fd9be874-LINEOA_BUFFF.pdf _templates/DYM_LINEOA_BUFFF_62p.pdf)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
