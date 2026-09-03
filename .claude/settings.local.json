@@ -7,7 +7,9 @@
       "Bash(git commit *)",
       "Bash(cp /root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/59713b34-LINEOA_BUFFF.pptx _templates/DYM_LINEOA_BUFFF_62p.pptx)",
       "Bash(cp /root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/fd9be874-LINEOA_BUFFF.pdf _templates/DYM_LINEOA_BUFFF_62p.pdf)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(cp \"/root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/a0d851c9-____________LINEOA____ver3.pptx\" \"ジム・フィットネス業界_LINEOA施策提案_ver3.pptx\")",
+      "Bash(cp \"/root/.claude/uploads/fb3759ae-2547-5c13-ad9d-fa5f94dc87c5/3ffabc85-____________LINEOA____ver3.pdf\" \"ジム・フィットネス業界_LINEOA施策提案_ver3.pdf\")"
     ]
   }
 }
