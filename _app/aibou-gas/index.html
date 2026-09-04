@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>殿村の相棒</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  :root {
+    --bg: #F5F6FA; --surface: #FFFFFF; --surface-2: #EEF1F8; --line: #D9DDE8;
+    --ink: #2B2F3A; --muted: #6B7186; --accent: #1F285A; --accent-ink: #FFFFFF; --accent-soft: #E7EBF7;
+    --danger: #C00000; --shadow: 0 6px 24px rgba(31,40,90,.10); --radius: 14px;
+    --font: "BIZ UDPGothic", "Meiryo", "Hiragino Sans", "Yu Gothic", sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#12151F; --surface:#1A1E2B; --surface-2:#232838; --line:#2E3448; --ink:#E6E8F0; --muted:#9AA0B4;
+      --accent:#5B6BC7; --accent-soft:#252C4A; --danger:#FF6B6B; --shadow:0 6px 24px rgba(0,0,0,.45); }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.7; overflow: hidden; -webkit-font-smoothing: antialiased; }
+  button, textarea, input { font-family: inherit; font-size: inherit; color: inherit; }
+  button { cursor: pointer; }
+  button:focus-visible, textarea:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+  .app { height: 100dvh; display: flex; flex-direction: column; }
+  .top { height: 54px; flex: none; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; flex: 1; }
+  .brand .mark { width: 30px; height: 30px; border-radius: 9px; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 15px; }
+  .btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 10px; font-weight: 700; font-size: 14px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .btn:hover { background: var(--surface-2); }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.ghost { border-color: transparent; background: transparent; }
+  .btn.sm { padding: 4px 10px; font-size: 12px; border-radius: 8px; }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  .scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+  .thread { max-width: 780px; margin: 0 auto; padding: 20px 16px 24px; display: flex; flex-direction: column; gap: 18px; }
+  .msg { display: flex; flex-direction: column; gap: 4px; }
+  .msg.user { align-items: flex-end; }
+  .msg .who { font-size: 12px; color: var(--muted); letter-spacing: .06em; padding: 0 4px; }
+  .msg .body { max-width: 92%; padding: 12px 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); overflow-wrap: anywhere; word-break: break-word; }
+  .msg.user .body { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); border-bottom-right-radius: 4px; white-space: pre-wrap; }
+  .msg.ai .body { border-bottom-left-radius: 4px; }
+  .msg .tools { display: flex; gap: 6px; padding: 0 2px; opacity: .7; }
+  .msg .note { font-size: 12px; color: var(--danger); padding: 0 4px; }
+  .body p { margin: 0 0 .7em; } .body p:last-child { margin-bottom: 0; }
+  .body ul, .body ol { margin: 0 0 .7em; padding-left: 1.4em; } .body li { margin: .15em 0; }
+  .body h4 { margin: .6em 0 .3em; font-size: 1em; } .body h4:first-child { margin-top: 0; }
+  .body code { font-family: var(--mono); font-size: .88em; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+  .body pre { margin: .4em 0 .8em; padding: 10px 12px; background: var(--surface-2); border-radius: 10px; overflow-x: auto; }
+  .body pre code { background: transparent; padding: 0; font-size: .85em; line-height: 1.5; }
+  .body table { border-collapse: collapse; margin: .4em 0 .8em; display: block; overflow-x: auto; max-width: 100%; }
+  .body th, .body td { border: 1px solid var(--line); padding: 4px 8px; font-size: .92em; }
+  .body hr { border: 0; border-top: 1px solid var(--line); margin: .8em 0; }
+  .thinking { display: inline-flex; gap: 4px; align-items: center; color: var(--muted); }
+  .thinking i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .thinking i:nth-child(2) { animation-delay: .2s; } .thinking i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .25 } 40% { opacity: 1 } }
+
+  .empty { max-width: 780px; margin: 0 auto; padding: 36px 16px 20px; }
+  .empty h2 { margin: 0 0 6px; font-size: 22px; text-wrap: balance; }
+  .empty p { margin: 0 0 18px; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; font-size: 14px; text-align: left; }
+  .chip:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+  .composer { flex: none; border-top: 1px solid var(--line); background: var(--surface); padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+  .composer .inner { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  textarea.input { flex: 1; resize: none; min-height: 44px; max-height: 40vh; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); line-height: 1.5; }
+  textarea.input::placeholder { color: var(--muted); }
+  .hint { font-size: 12px; color: var(--muted); }
+
+  .gate { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg); z-index: 40; padding: 16px; }
+  .gate .card { width: 100%; max-width: 360px; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+  .gate input { padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+  .toast { position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: 13px; box-shadow: var(--shadow); z-index: 50; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand"><span class="mark">相</span><span>殿村の相棒</span></div>
+    <button class="btn ghost" id="newBtn">＋ 新しい会話</button>
+  </div>
+  <div class="scroll" id="scroll">
+    <div class="empty" id="empty">
+      <h2>おつかれさまです、殿村さん。</h2>
+      <p>案件の状況と返答ルールは入っています。記憶は持たないので、決まったことは Claude Code 側に残してください。</p>
+      <div class="chips" id="chips">
+        <button class="chip">今日やることを優先順で整理して</button>
+        <button class="chip">Geminiに投げる調査プロンプトを作って</button>
+        <button class="chip">Claude Codeに渡す指示文にして</button>
+        <button class="chip">この文面を短く直して</button>
+        <button class="chip">佐村さんへの進捗報告の文面を作って</button>
+      </div>
+    </div>
+    <div class="thread" id="thread"></div>
+  </div>
+  <div class="composer">
+    <div class="inner">
+      <div class="row">
+        <textarea class="input" id="input" rows="1" placeholder="メッセージ（Enterで送信・Shift+Enterで改行）"></textarea>
+        <button class="btn primary" id="sendBtn">送信</button>
+      </div>
+      <div class="hint" id="hint">記憶なし・ログイン不要</div>
+    </div>
+  </div>
+</div>
+
+<div class="gate" id="gate" hidden>
+  <div class="card">
+    <b>合言葉</b>
+    <input id="passInput" type="password" placeholder="合言葉を入力" autocomplete="off">
+    <button class="btn primary" id="passBtn">入る</button>
+    <span class="hint" id="passMsg"></span>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const el = { scroll: $('scroll'), empty: $('empty'), thread: $('thread'), chips: $('chips'), input: $('input'), sendBtn: $('sendBtn'), hint: $('hint'), newBtn: $('newBtn'), gate: $('gate'), passInput: $('passInput'), passBtn: $('passBtn'), passMsg: $('passMsg') };
+  const ERR = {
+    NO_KEY: 'APIキーが未設定です（スクリプト プロパティ GEMINI_API_KEY）。',
+    PASSCODE_MISMATCH: '合言葉が違います。',
+    RATE_LIMITED: '使いすぎです。少し待ってからもう一度送ってください。',
+    BLOCKED: 'この内容には答えられませんでした。聞き方を変えてみてください。',
+    EMPTY: '返事が空でした。もう少し短く聞いてみてください。',
+    EMPTY_INPUT: 'メッセージが空です。',
+  };
+  let turns = [];  // {role:'user'|'assistant', content}
+  let busy = false, reqId = 0;
+  let passcode = '';
+  try { passcode = sessionStorage.getItem('aibou.pass') || ''; turns = JSON.parse(sessionStorage.getItem('aibou.turns') || '[]'); } catch (_) {}
+
+  function persist() { try { sessionStorage.setItem('aibou.turns', JSON.stringify(turns.slice(-60))); } catch (_) {} }
+
+  function send(text) {
+    text = (text || '').trim();
+    if (!text || busy) return;
+    turns.push({ role: 'user', content: text });
+    el.input.value = ''; autosize();
+    appendMsg({ role: 'user', content: text });
+    const ai = { role: 'assistant', content: '' };
+    const node = appendMsg(ai);
+    const body = node.querySelector('.body');
+    body.innerHTML = '<span class="thinking">考え中<i></i><i></i><i></i></span>';
+    scrollBottom();
+    busy = true; el.sendBtn.disabled = true;
+    const my = ++reqId;
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (my !== reqId) return;
+        ai.content = res.text; body.innerHTML = md(res.text);
+        turns.push({ role: 'assistant', content: res.text }); persist();
+        if (res.truncated) addNote(node, '長すぎて途中で切れました。「続けて」と送ってください。');
+        addCopy(node, ai); done();
+      })
+      .withFailureHandler((e) => {
+        if (my !== reqId) return;
+        const m = String((e && e.message) || e || '');
+        const key = Object.keys(ERR).find(k => m.indexOf(k) === 0);
+        body.innerHTML = '';
+        addNote(node, key ? ERR[key] : ('エラー: ' + m.replace(/^(API_ERROR|BAD_KEY): ?/, '')));
+        if (key === 'PASSCODE_MISMATCH') { passcode = ''; try { sessionStorage.removeItem('aibou.pass'); } catch (_) {} openGate('合言葉が違います'); }
+        turns.pop(); persist(); done();
+      })
+      .chat(turns.slice(), passcode);
+    function done() { busy = false; el.sendBtn.disabled = false; scrollBottom(); }
+  }
+
+  function appendMsg(m) {
+    el.empty.hidden = true;
+    const n = document.createElement('div'); n.className = 'msg ' + (m.role === 'user' ? 'user' : 'ai');
+    const who = document.createElement('div'); who.className = 'who'; who.textContent = m.role === 'user' ? '殿村さん' : '相棒';
+    const body = document.createElement('div'); body.className = 'body';
+    if (m.role === 'user') body.textContent = m.content; else body.innerHTML = md(m.content || '');
+    n.appendChild(who); n.appendChild(body); el.thread.appendChild(n);
+    return n;
+  }
+  function addCopy(node, m) {
+    const t = document.createElement('div'); t.className = 'tools';
+    const b = document.createElement('button'); b.className = 'btn sm ghost'; b.textContent = 'コピー';
+    b.onclick = async () => { try { await navigator.clipboard.writeText(m.content); toast('コピーしました'); } catch (_) { toast('長押しで選択してコピーしてください'); } };
+    t.appendChild(b); node.appendChild(t);
+  }
+  function addNote(node, text) { const n = document.createElement('div'); n.className = 'note'; n.textContent = text; node.appendChild(n); }
+  function renderAll() {
+    el.thread.innerHTML = ''; el.empty.hidden = !!turns.length;
+    for (const m of turns) { const n = appendMsg(m); if (m.role === 'assistant') addCopy(n, m); }
+    scrollBottom();
+  }
+
+  // 最小マークダウン（先にエスケープするので安全）
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function inline(s) { return s.replace(/`([^`\n]+)`/g, '<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>'); }
+  function md(src) {
+    const parts = src.split(/```/); let html = '';
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 1) { html += '<pre><code>' + esc(parts[i].replace(/^[^\n]*\n/, '').replace(/\n$/, '')) + '</code></pre>'; continue; }
+      html += block(parts[i]);
+    }
+    return html;
+  }
+  function block(text) {
+    const lines = esc(text).split('\n'); let out = '', para = [], list = null, table = null;
+    const flushP = () => { if (para.length) { out += '<p>' + inline(para.join('<br>')) + '</p>'; para = []; } };
+    const flushL = () => { if (list) { out += `<${list.tag}>` + list.items.map(x => '<li>' + inline(x) + '</li>').join('') + `</${list.tag}>`; list = null; } };
+    const flushT = () => {
+      if (!table) return;
+      const rows = table.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r));
+      out += '<table>' + rows.map((r, i) => { const cells = r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => inline(c.trim())); const tag = i === 0 ? 'th' : 'td'; return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>'; }).join('') + '</table>';
+      table = null;
+    };
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, ''); let m;
+      if (!line.trim()) { flushP(); flushL(); flushT(); continue; }
+      if (/^\s*\|.*\|\s*$/.test(line)) { flushP(); flushL(); (table = table || []).push(line); continue; }
+      flushT();
+      if ((m = line.match(/^#{1,6}\s+(.*)/))) { flushP(); flushL(); out += '<h4>' + inline(m[1]) + '</h4>'; continue; }
+      if (/^\s*(-{3,}|\*{3,})\s*$/.test(line)) { flushP(); flushL(); out += '<hr>'; continue; }
+      if ((m = line.match(/^\s*(?:[-*・•]|\d+[.)])\s+(.*)/))) { const tag = /^\s*\d/.test(line) ? 'ol' : 'ul'; flushP(); if (list && list.tag !== tag) flushL(); (list = list || { tag, items: [] }).items.push(m[1]); continue; }
+      flushL(); para.push(line);
+    }
+    flushP(); flushL(); flushT(); return out;
+  }
+
+  function scrollBottom() { el.scroll.scrollTop = el.scroll.scrollHeight; }
+  function autosize() { el.input.style.height = 'auto'; el.input.style.height = Math.min(el.input.scrollHeight, window.innerHeight * 0.4) + 'px'; }
+  let toastTimer;
+  function toast(text) { let t = document.querySelector('.toast'); if (!t) { t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t); } t.textContent = text; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2400); }
+  function openGate(msg) { el.passMsg.textContent = msg || ''; el.gate.hidden = false; el.passInput.focus(); }
+  el.passBtn.onclick = () => { passcode = el.passInput.value.trim(); if (!passcode) return; try { sessionStorage.setItem('aibou.pass', passcode); } catch (_) {} el.gate.hidden = true; el.input.focus(); };
+  el.passInput.onkeydown = (e) => { if (e.key === 'Enter') el.passBtn.click(); };
+
+  el.sendBtn.onclick = () => send(el.input.value);
+  el.newBtn.onclick = () => { reqId++; busy = false; el.sendBtn.disabled = false; turns = []; persist(); renderAll(); el.input.focus(); };
+  el.input.addEventListener('input', autosize);
+  el.input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+      if (window.matchMedia('(pointer: coarse)').matches) return; // スマホは改行。送信ボタンで送る
+      e.preventDefault(); send(el.input.value);
+    }
+  });
+  el.chips.querySelectorAll('.chip').forEach(c => c.onclick = () => { el.input.value = c.textContent; autosize(); el.input.focus(); });
+
+  renderAll(); autosize();
+  google.script.run.withSuccessHandler((need) => { if (need && !passcode) openGate(''); }).withFailureHandler(() => {}).needsPasscode();
+})();
+</script>
+</body>
+</html>
