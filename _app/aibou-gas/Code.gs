@@ -15,7 +15,7 @@
  *   NOTES_SHEET_ID  … setup が自動で入れる（手で入れなくてよい）
  */
 
-const MODEL_DEFAULT = 'gemini-2.5-flash';
+const MODEL_DEFAULT = 'gemini-3.6-flash';
 const HISTORY_CHARS = 60000;   // 直近の会話をここまで送る
 const NOTES_MAX = 300;         // メモは新しい方からこの件数まで読む
 const SHEET_NAME = '殿村の相棒メモ';
