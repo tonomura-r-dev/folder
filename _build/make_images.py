@@ -47,7 +47,10 @@ SURFACE = "#FFFFFF"
 ACCENT = "#D9661F"      # 強調（オレンジ系列色と同一）
 
 # ---- フォント（PCで再生成するならメイリオが使われる）----
-FONT_CANDIDATES = ["Meiryo", "メイリオ", "IPAPGothic", "IPAGothic", "Noto Sans CJK JP"]
+# ★IPAゴシックより Noto を先に置く。**IPAには太字（Bold）が無い**ため、
+#   IPAが選ばれると fontweight="bold" が黙って通常字に落ちて強調が消える。
+#   クラウド環境では `apt-get install -y fonts-noto-cjk` で入る。
+FONT_CANDIDATES = ["Meiryo", "メイリオ", "Noto Sans CJK JP", "IPAPGothic", "IPAGothic"]
 
 
 def pick_font():
