@@ -1,21 +1,27 @@
 /**
- * 殿村の相棒（ログイン不要版）— Google Apps Script
+ * 殿村の相棒（ログイン不要版・シート付き）— Google Apps Script
  *
  * 仕組み：この GAS を「ウェブアプリ」として公開すると、URL を開くだけで
  * チャット画面（index.html）が出る。返答は Gemini API（無料枠）で作る。
- * 記憶は持たない（会話はブラウザを閉じると消える）。
+ * 知識と記憶は Google スプレッドシート「殿村の相棒メモ」に置く（setup で自動作成）。
+ *   ・「設定」シート … 殿村さんについて／返答ルール／案件地図（B列を直せばすぐ反映）
+ *   ・「メモ」シート … 1行1件のメモ。相棒が毎回読む。チャットで「覚えて ○○」と送っても追記される
+ * デプロイし直しは不要。シートを直せば次の返事から効く。
  *
- * 設定はコードに書かず「プロジェクトの設定 → スクリプト プロパティ」に入れる：
+ * スクリプト プロパティ（プロジェクトの設定 → スクリプト プロパティ）：
  *   GEMINI_API_KEY  … 必須。Google AI Studio で発行したキー
- *   PASSCODE        … 任意。入れると、開いた人に合言葉を1回聞く（URL が漏れたときの保険）
+ *   PASSCODE        … 任意。入れると、開いた人に合言葉を1回聞く
  *   MODEL           … 任意。既定は下の MODEL_DEFAULT
+ *   NOTES_SHEET_ID  … setup が自動で入れる（手で入れなくてよい）
  */
 
 const MODEL_DEFAULT = 'gemini-2.5-flash';
-const HISTORY_CHARS = 60000; // 直近の会話をここまで送る（古い分は自動で落とす）
+const HISTORY_CHARS = 60000;   // 直近の会話をここまで送る
+const NOTES_MAX = 300;         // メモは新しい方からこの件数まで読む
+const SHEET_NAME = '殿村の相棒メモ';
 
 // ---------------------------------------------------------------
-// 人格。ここを直せば相棒の性格・前提が変わる
+// 初期値（setup 時に「設定」シートへ写す。以後はシート側が正）
 // ---------------------------------------------------------------
 const PROFILE = `殿村亮太（とのむら りょうた）。株式会社DYMで、LINE公式アカウント（LINE OA）の提案・構築・運用を担当する営業。
 - 上司・同僚：佐村さん（依頼元になることが多い。数字と期限に厳しい）。
@@ -30,7 +36,7 @@ const RULES = `- 日本語。短く・シンプルに・具体的な手順で。
 - 人が使っている共有シートには、頼まれるまで書き込まない方針を前提に助言する。
 - 数字の扱い：「最大」を付ける（景表法）、医療広告ガイドライン、薬機法、特商法に触れそうなら一言注意する。
 - このチャットではファイルは作れない。PPTX／Excel／スクリプトが要るときは、Claude Codeにそのまま貼れる指示文を作って渡す。
-- このチャットは記憶を持たない。「覚えて」と言われたら、覚えられないことと、代わりに Claude Code のリポジトリ（CLAUDE.md）に書く手順を1行で伝える。`;
+- 覚えておいてほしいことは「メモ」シートに入っている。殿村さんが「覚えて ○○」と送ると自動で追記される。`;
 
 const CASES = `【業界汎用シリーズ（完成・ルート直下）】
 - 注文住宅業界：完成。ただし対外提出不可（S18/S24/S25/S29 の出典未記載、競合友だち数未取得）。
@@ -54,6 +60,41 @@ const CASES = `【業界汎用シリーズ（完成・ルート直下）】
 【運用ルール（佐村さん5点）】ステータス明記（投稿案→FIX→デザイン→配信設定）／固定と変動を分ける／Cヨミと計上月を精査／デイリー納品（途中物も毎日）／既存運用の効率化がいつ進むか明確化。`;
 
 // ---------------------------------------------------------------
+// 最初に1回だけ、エディタから実行する：メモ帳シートを作る
+// ---------------------------------------------------------------
+function setup() {
+  const props = PropertiesService.getScriptProperties();
+  let ss = null;
+  const id = props.getProperty('NOTES_SHEET_ID');
+  if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
+  if (!ss) {
+    ss = SpreadsheetApp.create(SHEET_NAME);
+    props.setProperty('NOTES_SHEET_ID', ss.getId());
+  }
+  let memo = ss.getSheetByName('メモ');
+  if (!memo) { memo = ss.getSheets()[0]; memo.setName('メモ'); }
+  if (memo.getLastRow() === 0) {
+    memo.getRange(1, 1, 1, 2).setValues([['日付', 'メモ（1行1件。相棒が毎回読む）']]).setFontWeight('bold');
+    memo.setColumnWidth(1, 90); memo.setColumnWidth(2, 640);
+    memo.setFrozenRows(1);
+  }
+  let conf = ss.getSheetByName('設定');
+  if (!conf) {
+    conf = ss.insertSheet('設定');
+    conf.getRange(1, 1, 3, 2).setValues([
+      ['殿村さんについて', PROFILE],
+      ['返答ルール', RULES],
+      ['案件地図', CASES],
+    ]);
+    conf.getRange(1, 1, 3, 1).setFontWeight('bold').setVerticalAlignment('top');
+    conf.getRange(1, 2, 3, 1).setWrap(true).setVerticalAlignment('top');
+    conf.setColumnWidth(1, 140); conf.setColumnWidth(2, 900);
+  }
+  Logger.log('メモ帳のURL: ' + ss.getUrl());
+  return ss.getUrl();
+}
+
+// ---------------------------------------------------------------
 // Web アプリの入口
 // ---------------------------------------------------------------
 function doGet() {
@@ -62,7 +103,7 @@ function doGet() {
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
 }
 
-/** 画面が最初に呼ぶ。合言葉が設定されているかだけ返す（合言葉そのものは返さない） */
+/** 画面が最初に呼ぶ。合言葉が設定されているかだけ返す */
 function needsPasscode() {
   return !!PropertiesService.getScriptProperties().getProperty('PASSCODE');
 }
@@ -81,7 +122,17 @@ function chat(turns, passcode) {
   if (pass && String(passcode || '') !== pass) throw new Error('PASSCODE_MISMATCH');
   if (!Array.isArray(turns) || !turns.length) throw new Error('EMPTY_INPUT');
 
-  // 直近の会話だけ残す（文字数で上限）
+  // 「覚えて ○○」はAIを呼ばずにシートへ追記する
+  const last = turns[turns.length - 1] || {};
+  const lastText = String(last.content || '').trim();
+  const m = lastText.match(/^(?:覚えて|おぼえて|メモして|記憶して)[\s:：、。]*([\s\S]+)$/);
+  if (last.role !== 'assistant' && m) {
+    const note = m[1].trim();
+    const ok = appendNote_(note);
+    if (!ok) return { text: 'メモ帳シートがまだありません。Apps Script で setup を1回実行してください。', truncated: false };
+    return { text: '覚えました：' + note, truncated: false };
+  }
+
   const kept = [];
   let total = 0;
   for (let i = turns.length - 1; i >= 0; i--) {
@@ -130,18 +181,72 @@ function chat(turns, passcode) {
 }
 
 // ---------------------------------------------------------------
+// シート
+// ---------------------------------------------------------------
+function openSheet_() {
+  const id = PropertiesService.getScriptProperties().getProperty('NOTES_SHEET_ID');
+  if (!id) return null;
+  try { return SpreadsheetApp.openById(id); } catch (e) { return null; }
+}
+
+/** 設定シートとメモシートを読む。読めなければコード内の初期値で動く */
+function readSheet_() {
+  const out = { profile: PROFILE, rules: RULES, cases: CASES, notes: [] };
+  const ss = openSheet_();
+  if (!ss) return out;
+  try {
+    const conf = ss.getSheetByName('設定');
+    if (conf && conf.getLastRow() >= 3) {
+      const v = conf.getRange(1, 2, 3, 1).getValues();
+      if (String(v[0][0]).trim()) out.profile = String(v[0][0]);
+      if (String(v[1][0]).trim()) out.rules = String(v[1][0]);
+      if (String(v[2][0]).trim()) out.cases = String(v[2][0]);
+    }
+    const memo = ss.getSheetByName('メモ');
+    if (memo && memo.getLastRow() > 1) {
+      const rows = memo.getRange(2, 1, memo.getLastRow() - 1, 2).getValues();
+      out.notes = rows
+        .map(function (r) { return { date: fmtDate_(r[0]), text: String(r[1] || '').trim() }; })
+        .filter(function (x) { return x.text; })
+        .slice(-NOTES_MAX);
+    }
+  } catch (e) { /* シートが壊れていても会話は続ける */ }
+  return out;
+}
+
+function appendNote_(text) {
+  const ss = openSheet_();
+  if (!ss) return false;
+  let memo = ss.getSheetByName('メモ');
+  if (!memo) { memo = ss.insertSheet('メモ'); memo.appendRow(['日付', 'メモ']); }
+  memo.appendRow([new Date(), text]);
+  return true;
+}
+
+function fmtDate_(v) {
+  if (v instanceof Date && !isNaN(v)) return Utilities.formatDate(v, 'Asia/Tokyo', 'M/d');
+  const s = String(v || '').trim();
+  return s;
+}
+
+// ---------------------------------------------------------------
 // 内部
 // ---------------------------------------------------------------
 function systemPrompt_() {
   const now = new Date();
   const w = ['日', '月', '火', '水', '木', '金', '土'][Number(Utilities.formatDate(now, 'Asia/Tokyo', 'u')) % 7];
   const today = Utilities.formatDate(now, 'Asia/Tokyo', 'yyyy年M月d日') + '（' + w + '）';
+  const s = readSheet_();
+  const notes = s.notes.length
+    ? s.notes.map(function (n) { return '- ' + (n.date ? n.date + ' ' : '') + n.text; }).join('\n')
+    : '（まだありません）';
   return [
     'あなたは殿村亮太さん専用のAIアシスタント「相棒」です。以下を前提に、殿村さんの右腕として答えてください。',
     '', '## 今日', today,
-    '', '## 殿村さんについて', PROFILE,
-    '', '## 返答のルール（必ず守る）', RULES,
-    '', '## 案件地図（進行中の案件と状態）', CASES,
+    '', '## 殿村さんについて', s.profile,
+    '', '## 返答のルール（必ず守る）', s.rules,
+    '', '## メモ（殿村さんが覚えておいてほしいと言ったこと・決定事項。新しいものが下）', notes,
+    '', '## 案件地図（進行中の案件と状態）', s.cases,
     '', '前置きや自己紹介は不要です。',
   ].join('\n');
 }
