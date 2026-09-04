@@ -167,6 +167,70 @@ def trend_chart(csv_path, out_name, title, subtitle="", note="",
 
 
 # ==========================================================
+# 1b. CPC推移のスロープチャート（2点だけの比較）
+# ==========================================================
+# ★ y軸に目盛りを出さない。2点しかないので、値は点に直付けする。
+#   目盛りを出すと「0起点でない＝誇張」に見えるが、直付けなら全数値が読める。
+def cpc_slope(out_name, series, xlabels, title, subtitle="", note="",
+              width=7.6, height=5.6):
+    """series = [(系列名, [左の値, 右の値], 表示文字列2つ, 増減率の文字列, 色, 太さ)]"""
+    fig, ax = plt.subplots(figsize=(width, height), dpi=200)
+
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(True, color=GRID, linewidth=0.8)
+    ax.xaxis.grid(False)
+    for side in ("top", "right", "left"):
+        ax.spines[side].set_visible(False)
+    ax.spines["bottom"].set_color(GRID)
+    ax.set_yticks([])
+    ax.tick_params(colors=MUTED, labelsize=10, length=0)
+
+    lo = min(min(v) for _, v, _, _, _, _ in series)
+    hi = max(max(v) for _, v, _, _, _, _ in series)
+    pad = (hi - lo) * 0.45
+
+    for name, vals, texts, delta, color, lw in series:
+        ax.plot([0, 1], vals, color=color, linewidth=lw,
+                solid_capstyle="round", zorder=3)
+        for xi in (0, 1):
+            ax.plot([xi], [vals[xi]], "o", color=color, markersize=8,
+                    markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=5)
+        # 左端＝値だけ／右端＝値と増減率を線の色で
+        ax.annotate(texts[0], xy=(0, vals[0]), xytext=(-10, 0),
+                    textcoords="offset points", ha="right", va="center",
+                    color=color, fontsize=13, fontweight="bold", zorder=6)
+        ax.annotate(texts[1], xy=(1, vals[1]), xytext=(12, 6),
+                    textcoords="offset points", ha="left", va="center",
+                    color=color, fontsize=13, fontweight="bold", zorder=6)
+        ax.annotate(f"{name}　{delta}", xy=(1, vals[1]), xytext=(12, -11),
+                    textcoords="offset points", ha="left", va="center",
+                    color=color, fontsize=10.5, fontweight="bold", zorder=6)
+
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels(xlabels, fontsize=10.5)
+    ax.set_xlim(-0.30, 1.62)
+    ax.set_ylim(lo - pad, hi + pad)
+
+    if subtitle:
+        ax.text(0, 1.04, subtitle, transform=ax.transAxes,
+                color=MUTED, fontsize=10, va="bottom")
+        ax.text(0, 1.12, title, transform=ax.transAxes,
+                color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
+    else:
+        ax.text(0, 1.04, title, transform=ax.transAxes,
+                color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
+    if note:
+        fig.text(0.012, 0.012, note, color=MUTED, fontsize=7.5)
+
+    fig.tight_layout(rect=(0, 0.06 if note else 0.02, 1, 0.93))
+    p = OUT / out_name
+    fig.savefig(p, bbox_inches="tight")
+    plt.close(fig)
+    print("  ", p.name)
+    return p
+
+
+# ==========================================================
 # 2. LINEトーク画面のモック
 # ==========================================================
 BEZEL, SCREEN, GREEN = "#2B2B2B", "#EFF2F7", "#06C755"
@@ -412,7 +476,38 @@ def gen_funnel():
     ], title="「意思はあるが今すぐでない」区間を埋める")
 
 
-TASKS = {"trend": gen_trend, "phone": gen_phone, "menu": gen_menu, "funnel": gen_funnel}
+def gen_cpc():
+    """ジム業界 p11 用。CPC推移（全業界平均 vs ジム・フィットネス）。
+
+    出典：WordStream / LocaliQ「Google Ads Benchmarks」（米国・Google広告）。
+    レポート名の年は**発行年**で、データ期間は前年4月〜当年3月。
+    ★元データは米ドル。円は 1ドル=157円（2026/9/3時点）で換算した参考値であって、
+      **日本のジムのCPCではない**。スライドの脚注に必ず明記すること。
+    """
+    print("[cpc]")
+    rate = 157
+    usd = {"all": (5.26, 5.42), "gym": (5.00, 6.17)}
+    yen = {k: (round(a * rate), round(b * rate)) for k, (a, b) in usd.items()}
+
+    cpc_slope(
+        "gym_cpc_yen.png",
+        [
+            ("全業界平均", list(yen["all"]),
+             (f"¥{yen['all'][0]:,}", f"¥{yen['all'][1]:,}"), "+3.0%", CAT[0], 2.2),
+            ("ジム・フィットネス", list(yen["gym"]),
+             (f"¥{yen['gym'][0]:,}", f"¥{yen['gym'][1]:,}"), "+23.4%", ACCENT, 3.4),
+        ],
+        ["2025年版", "2026年版"],
+        title="ジムのCPCは、全業界平均の約8倍のペースで上昇",
+        subtitle="検索広告の平均クリック単価（円換算）",
+        note="※WordStream / LocaliQ「Google Ads Benchmarks」（米国・Google広告）を"
+             f"1ドル={rate}円で換算した参考値。日本のジム業界の実測CPCではない。"
+             "レポート年は発行年で、データ期間は前年4月〜当年3月。",
+    )
+
+
+TASKS = {"trend": gen_trend, "phone": gen_phone, "menu": gen_menu,
+         "funnel": gen_funnel, "cpc": gen_cpc}
 
 if __name__ == "__main__":
     want = sys.argv[1:] or list(TASKS)
