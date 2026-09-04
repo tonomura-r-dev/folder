@@ -154,18 +154,25 @@ function chat(turns, passcode) {
     contents: kept,
     generationConfig: { temperature: 0.7, maxOutputTokens: 4096 },
   };
-  const res = UrlFetchApp.fetch(url, {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { 'x-goog-api-key': key },
-    payload: JSON.stringify(body),
-    muteHttpExceptions: true,
-  });
-  const code = res.getResponseCode();
+  // 混雑（503/429）は数秒待って最大3回まで自動で再試行する
+  let res = null, code = 0;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    res = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'x-goog-api-key': key },
+      payload: JSON.stringify(body),
+      muteHttpExceptions: true,
+    });
+    code = res.getResponseCode();
+    if (code !== 503 && code !== 429) break;
+    Utilities.sleep(3000 * (attempt + 1));
+  }
   let json = {};
   try { json = JSON.parse(res.getContentText() || '{}'); } catch (e) { json = {}; }
   if (code !== 200) {
     if (code === 429) throw new Error('RATE_LIMITED');
+    if (code === 503) throw new Error('BUSY');
     if (code === 400 || code === 403) throw new Error('BAD_KEY: ' + ((json.error && json.error.message) || code));
     throw new Error('API_ERROR: ' + ((json.error && json.error.message) || ('HTTP ' + code)));
   }
