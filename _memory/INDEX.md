@@ -92,6 +92,7 @@
 
 | 名前 | 中身 |
 |---|---|
+| **殿村の相棒（オレ専用AI）** | 2026-09-04 新設。claude.ai 上のWebチャット。URL・使い方は `_app/aibou/README.md`。ソースは `_app/aibou/index.html`。案件地図・返答ルール・記憶（「覚えて」で追記）を持ち、スマホ/PCで同じ会話を継続。**再公開は同じURLで**（READMEの手順） |
 | **タスク管理シート** | `task_management_sheet.gs` — GASをGoogleスプレッドシートに貼る。期日で色が変わる／毎朝カレンダー通知 |
 | **案件一覧・部署集計** | `20260831_案件一覧_部署集計_11列.xlsx`／`_build/gyokai.py`（業界自動分類）／`teian_import_gs.gs`／`crm_sync.gs` |
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md`（v3で確定・LINEOA特化）。**「個別管理票」の統一フォーマットの実体はこれ** |
