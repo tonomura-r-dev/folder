@@ -175,8 +175,12 @@ def trend_chart(csv_path, out_name, title, subtitle="", note="",
 # ★ y軸に目盛りを出さない。2点しかないので、値は点に直付けする。
 #   目盛りを出すと「0起点でない＝誇張」に見えるが、直付けなら全数値が読める。
 def cpc_slope(out_name, series, xlabels, title, subtitle="", note="",
-              width=7.6, height=5.6):
-    """series = [(系列名, [左の値, 右の値], 表示文字列2つ, 増減率の文字列, 色, 太さ)]"""
+              width=7.6, height=5.6, compact=False):
+    """series = [(系列名, [左の値, 右の値], 表示文字列2つ, 増減率の文字列, 色, 太さ)]
+
+    compact=True はPPTXの既存の差込枠（縦長）用。見出し・脚注はスライド側に
+    あるので描かず、系列名と値だけを小さく載せる。
+    """
     fig, ax = plt.subplots(figsize=(width, height), dpi=200)
 
     ax.set_axisbelow(True)
@@ -193,11 +197,25 @@ def cpc_slope(out_name, series, xlabels, title, subtitle="", note="",
     pad = (hi - lo) * 0.45
 
     for name, vals, texts, delta, color, lw in series:
-        ax.plot([0, 1], vals, color=color, linewidth=lw,
+        ax.plot([0, 1], vals, color=color, linewidth=lw if not compact else lw + 0.6,
                 solid_capstyle="round", zorder=3)
         for xi in (0, 1):
-            ax.plot([xi], [vals[xi]], "o", color=color, markersize=8,
+            ax.plot([xi], [vals[xi]], "o", color=color, markersize=8 if not compact else 7,
                     markeredgecolor=SURFACE, markeredgewidth=2.0, zorder=5)
+        if compact:
+            # 枠が縦長。左端の値は線の外側（左）へ、系列名と増減率は右端の値の下へ。
+            # 2本の左端は値が近いので、上下に振らず横に逃がさないと必ず重なる。
+            ax.annotate(texts[0], xy=(0, vals[0]), xytext=(-7, 0),
+                        textcoords="offset points", ha="right", va="center",
+                        color=color, fontsize=11, fontweight="bold", zorder=6)
+            ax.annotate(texts[1], xy=(1, vals[1]), xytext=(0, 13),
+                        textcoords="offset points", ha="center", va="center",
+                        color=color, fontsize=12.5, fontweight="bold", zorder=6)
+            # 系列名は点の「右下」へ。上りの線は真下を通るので中央寄せだと線が字を貫く。
+            ax.annotate(f"{name} {delta}", xy=(1, vals[1]), xytext=(7, -13),
+                        textcoords="offset points", ha="left", va="center",
+                        color=color, fontsize=9.5, fontweight="bold", zorder=6)
+            continue
         # 左端＝値だけ／右端＝値と増減率を線の色で
         ax.annotate(texts[0], xy=(0, vals[0]), xytext=(-10, 0),
                     textcoords="offset points", ha="right", va="center",
@@ -210,22 +228,24 @@ def cpc_slope(out_name, series, xlabels, title, subtitle="", note="",
                     color=color, fontsize=10.5, fontweight="bold", zorder=6)
 
     ax.set_xticks([0, 1])
-    ax.set_xticklabels(xlabels, fontsize=10.5)
-    ax.set_xlim(-0.30, 1.62)
-    ax.set_ylim(lo - pad, hi + pad)
+    ax.set_xticklabels(xlabels, fontsize=10.5 if not compact else 9.5)
+    ax.set_xlim(-0.30, 1.62 if not compact else 1.55)
+    ax.set_ylim(lo - pad * (1 if not compact else 0.55),
+                hi + pad * (1 if not compact else 0.55))
 
-    if subtitle:
-        ax.text(0, 1.04, subtitle, transform=ax.transAxes,
-                color=MUTED, fontsize=10, va="bottom")
-        ax.text(0, 1.12, title, transform=ax.transAxes,
-                color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
-    else:
-        ax.text(0, 1.04, title, transform=ax.transAxes,
-                color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
-    if note:
-        fig.text(0.012, 0.012, note, color=MUTED, fontsize=7.5)
+    if not compact:
+        if subtitle:
+            ax.text(0, 1.04, subtitle, transform=ax.transAxes,
+                    color=MUTED, fontsize=10, va="bottom")
+            ax.text(0, 1.12, title, transform=ax.transAxes,
+                    color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
+        else:
+            ax.text(0, 1.04, title, transform=ax.transAxes,
+                    color=INK_STRONG, fontsize=14, fontweight="bold", va="bottom")
+        if note:
+            fig.text(0.012, 0.012, note, color=MUTED, fontsize=7.5)
 
-    fig.tight_layout(rect=(0, 0.06 if note else 0.02, 1, 0.93))
+    fig.tight_layout(rect=(0, 0.06 if (note and not compact) else 0.02, 1, 0.93))
     p = OUT / out_name
     fig.savefig(p, bbox_inches="tight")
     plt.close(fig)
@@ -506,6 +526,19 @@ def gen_cpc():
         note="※WordStream / LocaliQ「Google Ads Benchmarks」（米国・Google広告）を"
              f"1ドル={rate}円で換算した参考値。日本のジム業界の実測CPCではない。"
              "レポート年は発行年で、データ期間は前年4月〜当年3月。",
+    )
+
+    # PPTX ver3 の11枚目の差込枠（2.36 × 2.78 inch の縦長）にそのまま入る版。
+    cpc_slope(
+        "gym_cpc_yen_compact.png",
+        [
+            ("全業界", list(yen["all"]),
+             (f"¥{yen['all'][0]:,}", f"¥{yen['all'][1]:,}"), "+3.0%", CAT[0], 2.2),
+            ("ジム", list(yen["gym"]),
+             (f"¥{yen['gym'][0]:,}", f"¥{yen['gym'][1]:,}"), "+23.4%", ACCENT, 3.4),
+        ],
+        ["2025年版", "2026年版"],
+        title="", width=2.36 * 1.6, height=2.78 * 1.6, compact=True,
     )
 
 
