@@ -8,7 +8,8 @@
  *  4. スプレッドシートに戻って再読み込み → 4つのシートができていればOK
  *
  * できるシート
- *  ・予約   … 1行＝1予約。あとでレストランボードの通知メールからGASが自動で足す。手入力もできる
+ *  ・予約   … 1行＝1予約。列は「予約者／日にち／時間／コース／席／指名する人」＋GAS用4列。
+ *              あとでレストランボードの通知メールからGASが自動で足す。手入力もできる
  *  ・日別   … 日付ごとの予約人数と残席（数式）。「空き状況」画面はここを読む
  *  ・設定   … 総席数・営業時間など。数式とGASが参照する
  *  ・ログ   … GASの動作記録
@@ -23,18 +24,18 @@ var SHEETS = {
   LOG: 'ログ',
 };
 
+// 殿村さん指定の6列を先頭に。右の4列はGAS用（残席の計算と、メールの二重取り込み防止）
 var RES_HEADERS = [
-  '予約ID',      // A 通知メールから取れれば予約番号。無ければ自動採番
-  '日付',        // B yyyy/mm/dd
-  '時間',        // C hh:mm（来店時刻）
-  '人数',        // D 数値
-  'お名前',      // E
-  '媒体',        // F ホットペッパー／食べログ／電話／その他
-  'ステータス',  // G 予約／来店／キャンセル
-  '指名',        // H 備考から拾った指名。無ければ空
-  '備考',        // I 通知メールの要望欄そのまま
-  '取込日時',    // J GASが書いた時刻。手入力なら空
-  'メールID',    // K 二重取り込み防止用。手入力なら空
+  '予約者',        // A
+  '日にち',        // B yyyy/mm/dd
+  '時間',          // C hh:mm（来店時刻）
+  'コース',        // D
+  '席',            // E 席数（＝人数）。残席はこの合計で出す
+  '指名する人',    // F
+  'ステータス',    // G 予約／来店／キャンセル（GAS用）
+  '媒体',          // H ホットペッパー／食べログ／電話／その他（GAS用）
+  '取込日時',      // I GASが書く。手入力なら空
+  'メールID',      // J 二重取り込み防止。手入力なら空
 ];
 
 var CONF_ROWS = [
@@ -76,26 +77,19 @@ function setupResSheet_(ss) {
   var sh = getOrCreate_(ss, SHEETS.RES);
   writeHeader_(sh, RES_HEADERS);
   sh.setFrozenRows(1);
-  sh.setColumnWidths(1, 1, 110);
-  sh.setColumnWidth(2, 100);
-  sh.setColumnWidth(3, 70);
-  sh.setColumnWidth(4, 60);
-  sh.setColumnWidth(5, 120);
-  sh.setColumnWidth(6, 110);
-  sh.setColumnWidth(7, 90);
-  sh.setColumnWidth(8, 100);
-  sh.setColumnWidth(9, 240);
-  sh.setColumnWidth(10, 140);
-  sh.setColumnWidth(11, 160);
+  sh.setFrozenColumns(1);
+  [120, 100, 70, 160, 60, 110, 90, 110, 140, 160].forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });
   var n = Math.max(sh.getMaxRows() - 1, 500);
   // 書式
   sh.getRange(2, 2, n, 1).setNumberFormat('yyyy/mm/dd');
   sh.getRange(2, 3, n, 1).setNumberFormat('hh:mm');
-  sh.getRange(2, 4, n, 1).setNumberFormat('0');
-  sh.getRange(2, 10, n, 1).setNumberFormat('yyyy/mm/dd hh:mm');
+  sh.getRange(2, 5, n, 1).setNumberFormat('0');
+  sh.getRange(2, 9, n, 1).setNumberFormat('yyyy/mm/dd hh:mm');
+  // GAS用の4列は見出しをグレーにして区別
+  sh.getRange(1, 7, 1, 4).setBackground('#6B7280');
   // プルダウン
-  setList_(sh.getRange(2, 6, n, 1), ['ホットペッパー', '食べログ', '電話', 'その他']);
   setList_(sh.getRange(2, 7, n, 1), ['予約', '来店', 'キャンセル']);
+  setList_(sh.getRange(2, 8, n, 1), ['ホットペッパー', '食べログ', '電話', 'その他']);
   // キャンセル行は薄く
   var rules = sh.getConditionalFormatRules();
   rules.push(SpreadsheetApp.newConditionalFormatRule()
@@ -130,7 +124,7 @@ function setupConfSheet_(ss) {
 // ---------- 日別（数式） ----------
 function setupDailySheet_(ss) {
   var sh = getOrCreate_(ss, SHEETS.DAILY);
-  writeHeader_(sh, ['日付', '曜日', '予約件数', '予約人数', '残席', '内訳（時間 人数 名前）']);
+  writeHeader_(sh, ['日にち', '曜日', '予約件数', '予約席数', '残席', '内訳（時間 席 予約者 コース 指名）']);
   sh.setFrozenRows(1);
   sh.setColumnWidth(1, 100);
   sh.setColumnWidth(2, 50);
@@ -146,10 +140,10 @@ function setupDailySheet_(ss) {
     rows.push([
       '=TODAY()+' + i,
       '=TEXT(A' + r + ',"ddd")',
-      '=COUNTIFS(予約!$B:$B,A' + r + ',予約!$G:$G,"<>キャンセル",予約!$E:$E,"<>")',
-      '=SUMIFS(予約!$D:$D,予約!$B:$B,A' + r + ',予約!$G:$G,"<>キャンセル")',
+      '=COUNTIFS(予約!$B:$B,A' + r + ',予約!$G:$G,"<>キャンセル",予約!$A:$A,"<>")',
+      '=SUMIFS(予約!$E:$E,予約!$B:$B,A' + r + ',予約!$G:$G,"<>キャンセル")',
       '=設定!$B$2-D' + r,
-      '=IFERROR(TEXTJOIN(" ／ ",TRUE,ARRAYFORMULA(IF((予約!$B$2:$B=A' + r + ')*(予約!$G$2:$G<>"キャンセル")*(予約!$E$2:$E<>""),TEXT(予約!$C$2:$C,"hh:mm")&" "&予約!$D$2:$D&"名 "&予約!$E$2:$E&IF(予約!$H$2:$H<>"","（指名:"&予約!$H$2:$H&"）",""),""))),"")',
+      '=IFERROR(TEXTJOIN(" ／ ",TRUE,ARRAYFORMULA(IF((予約!$B$2:$B=A' + r + ')*(予約!$G$2:$G<>"キャンセル")*(予約!$A$2:$A<>""),TEXT(予約!$C$2:$C,"hh:mm")&" "&予約!$E$2:$E&"席 "&予約!$A$2:$A&IF(予約!$D$2:$D<>""," "&予約!$D$2:$D,"")&IF(予約!$F$2:$F<>"","（指名:"&予約!$F$2:$F&"）",""),""))),"")',
     ]);
   }
   sh.getRange(2, 1, days, 6).setFormulas(rows);
@@ -186,17 +180,18 @@ function insertSampleReservations() {
   var today = new Date(); today.setHours(0, 0, 0, 0);
   function d(n) { var x = new Date(today); x.setDate(x.getDate() + n); return x; }
   function t(h, m) { var x = new Date(1899, 11, 30, h, m); return x; }
+  // 予約者, 日にち, 時間, コース, 席, 指名する人, ステータス, 媒体, 取込日時, メールID
   var rows = [
-    ['S-001', d(1), t(17, 30), 2, '高橋 様', '電話', '予約', '', '', '', SAMPLE_TAG],
-    ['S-002', d(1), t(18, 0), 4, '田中 様', 'ホットペッパー', '予約', '', '', '', SAMPLE_TAG],
-    ['S-003', d(1), t(18, 30), 6, '佐藤 様', '食べログ', '予約', '', '', '', SAMPLE_TAG],
-    ['S-004', d(1), t(19, 0), 3, '鈴木 様', '電話', '予約', '', '', '', SAMPLE_TAG],
-    ['S-005', d(1), t(20, 0), 5, '伊藤 様', 'ホットペッパー', '予約', '', '', '', SAMPLE_TAG],
-    ['S-006', d(1), t(20, 30), 2, '渡辺 様', '食べログ', '予約', '', '', '', SAMPLE_TAG],
-    ['S-007', d(1), t(19, 0), 4, '山田 様', '食べログ', '予約', 'ユウスケ', '指名：ユウスケ', '', SAMPLE_TAG],
-    ['S-008', d(2), t(19, 0), 8, '中村 様', 'ホットペッパー', '予約', '', '', '', SAMPLE_TAG],
-    ['S-009', d(2), t(20, 0), 4, '小林 様', '電話', 'キャンセル', '', '', '', SAMPLE_TAG],
-    ['S-010', d(3), t(18, 0), 10, '加藤 様', '食べログ', '予約', 'マサキ', '指名：マサキ／誕生日', '', SAMPLE_TAG],
+    ['高橋 様', d(1), t(17, 30), '', 2, '', '予約', '電話', '', SAMPLE_TAG],
+    ['田中 様', d(1), t(18, 0), '飲み放題付き宴会コース', 4, '', '予約', 'ホットペッパー', '', SAMPLE_TAG],
+    ['佐藤 様', d(1), t(18, 30), 'おまかせコース', 6, '', '予約', '食べログ', '', SAMPLE_TAG],
+    ['鈴木 様', d(1), t(19, 0), '', 3, '', '予約', '電話', '', SAMPLE_TAG],
+    ['伊藤 様', d(1), t(20, 0), '飲み放題付き宴会コース', 5, '', '予約', 'ホットペッパー', '', SAMPLE_TAG],
+    ['渡辺 様', d(1), t(20, 30), '', 2, '', '予約', '食べログ', '', SAMPLE_TAG],
+    ['山田 様', d(1), t(19, 0), 'おまかせコース', 4, 'ユウスケ', '予約', '食べログ', '', SAMPLE_TAG],
+    ['中村 様', d(2), t(19, 0), '飲み放題付き宴会コース', 8, '', '予約', 'ホットペッパー', '', SAMPLE_TAG],
+    ['小林 様', d(2), t(20, 0), '', 4, '', 'キャンセル', '電話', '', SAMPLE_TAG],
+    ['加藤 様', d(3), t(18, 0), 'おまかせコース', 10, 'マサキ', '予約', '食べログ', '', SAMPLE_TAG],
   ];
   sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
   log_('sample', rows.length + '件のサンプルを入れた');
@@ -206,7 +201,7 @@ function removeSampleReservations() {
   if (!sh) return;
   var last = sh.getLastRow();
   if (last < 2) return;
-  var ids = sh.getRange(2, 11, last - 1, 1).getValues();
+  var ids = sh.getRange(2, 10, last - 1, 1).getValues();
   for (var i = ids.length - 1; i >= 0; i--) {
     if (ids[i][0] === SAMPLE_TAG) sh.deleteRow(i + 2);
   }
