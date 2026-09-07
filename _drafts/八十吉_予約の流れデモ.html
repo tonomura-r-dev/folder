@@ -1,0 +1,308 @@
+<title>八十吉 予約の流れデモ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --bg:#F5F6F9; --paper:#FFFFFF; --ink:#1F285A; --text:#2B3044; --muted:#6B7280; --line:#DCE0E8;
+    --green:#06C755; --green-ink:#0B7A3A; --green-soft:#E6F8EE;
+    --amber:#D9661F; --amber-soft:#FBEEE4;
+    --chat-bg:#7C9BD0; --bubble-me:#8DE39B; --bubble-you:#FFFFFF;
+    --sheet-head:#EEF3FB; --code:#F1F3F7;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#12141C; --paper:#1B1E29; --ink:#DCE3FF; --text:#E6E8F0; --muted:#9AA0B3; --line:#2E3345;
+      --green:#2FD46F; --green-ink:#7BE6A3; --green-soft:#153524;
+      --amber:#F08A45; --amber-soft:#3A2416;
+      --chat-bg:#3D4F75; --bubble-me:#3E8C52; --bubble-you:#2A2E3D;
+      --sheet-head:#232A3D; --code:#232736;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#12141C; --paper:#1B1E29; --ink:#DCE3FF; --text:#E6E8F0; --muted:#9AA0B3; --line:#2E3345;
+    --green:#2FD46F; --green-ink:#7BE6A3; --green-soft:#153524;
+    --amber:#F08A45; --amber-soft:#3A2416;
+    --chat-bg:#3D4F75; --bubble-me:#3E8C52; --bubble-you:#2A2E3D;
+    --sheet-head:#232A3D; --code:#232736;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;font-size:15px;line-height:1.6}
+  h1,h2,h3{font-family:"Zen Kaku Gothic New","Noto Sans JP",sans-serif;color:var(--ink);text-wrap:balance;margin:0}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 16px 48px}
+  header{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;margin-bottom:14px}
+  header h1{font-size:22px;font-weight:900;letter-spacing:.01em}
+  header .sub{color:var(--muted);font-size:13px}
+  .stepper{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px;padding:0;list-style:none}
+  .stepper button{font:inherit;font-weight:700;font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper);color:var(--muted);cursor:pointer}
+  .stepper button[aria-current="step"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .stepper button.done{color:var(--ink)}
+  .stepper button:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+  .stage{display:grid;grid-template-columns:340px 1fr;gap:20px;align-items:start}
+  @media (max-width:760px){.stage{grid-template-columns:1fr}}
+  /* phone */
+  .phone{background:#111;border-radius:34px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.18);margin:0 auto;width:100%;max-width:340px}
+  .screen{background:var(--chat-bg);border-radius:26px;overflow:hidden;min-height:560px;display:flex;flex-direction:column}
+  .bar{background:var(--paper);color:var(--ink);padding:10px 14px;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .bar .who{font-size:11px;color:var(--muted);font-weight:500}
+  .chat{padding:12px 10px;display:flex;flex-direction:column;gap:9px;flex:1}
+  .msg{max-width:86%;padding:9px 12px;border-radius:16px;font-size:13.5px;line-height:1.55;white-space:pre-wrap;color:#1a1a1a;position:relative}
+  .msg.you{background:var(--bubble-you);align-self:flex-start;border-top-left-radius:4px}
+  .msg.me{background:var(--bubble-me);align-self:flex-end;border-top-right-radius:4px}
+  :root[data-theme="dark"] .msg, .msg{color:#1a1a1a}
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .msg{color:#F2F4F8} }
+  :root[data-theme="dark"] .msg{color:#F2F4F8}
+  .msg .name{display:block;font-size:11px;opacity:.7;margin-bottom:2px}
+  .msg .link{display:block;margin-top:8px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.06);font-weight:700;font-size:12.5px}
+  .sys{align-self:center;font-size:11px;color:#fff;background:rgba(0,0,0,.28);padding:3px 10px;border-radius:999px}
+  .richmenu{background:var(--paper);display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+  .richmenu div{padding:12px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--ink);border-right:1px solid var(--line)}
+  .richmenu div:last-child{border-right:0}
+  .richmenu div.hot{background:var(--green-soft);color:var(--green-ink)}
+  /* LIFF view */
+  .liff{background:var(--paper);flex:1;padding:12px;display:flex;flex-direction:column;gap:10px;color:var(--text)}
+  .liff .date{display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;color:var(--ink)}
+  .liff .date span{color:var(--muted);font-weight:500;font-size:12px}
+  .seats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .seat{border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+  .seat b{display:block;font-size:22px;line-height:1.1;font-family:"Zen Kaku Gothic New",sans-serif;font-variant-numeric:tabular-nums}
+  .seat small{color:var(--muted);font-size:11px}
+  .seat.ok b{color:var(--green-ink)}
+  .seat.left b{color:var(--amber)}
+  table.res{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  table.res th{background:var(--sheet-head);color:var(--muted);font-weight:500;text-align:left;padding:6px 6px;font-size:11px}
+  table.res td{padding:6px 6px;border-bottom:1px solid var(--line)}
+  table.res tr.new td{background:var(--amber-soft);font-weight:700}
+  .tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--code);color:var(--muted)}
+  /* tabelog mock */
+  .tabelog{background:var(--paper);flex:1;padding:14px;color:var(--text);display:flex;flex-direction:column;gap:10px}
+  .tabelog .brand{font-weight:900;color:#E9502E;font-family:"Zen Kaku Gothic New",sans-serif}
+  .tabelog .row{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:7px 0;font-size:13.5px}
+  .tabelog .row span:first-child{color:var(--muted)}
+  .tabelog .btn{margin-top:auto;background:#E9502E;color:#fff;text-align:center;padding:12px;border-radius:10px;font-weight:700}
+  /* explanation */
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;font-weight:700}
+  .card h2{font-size:20px;margin:4px 0 12px;font-weight:900}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px;margin:0 0 14px}
+  .kv dt{color:var(--muted);font-weight:500}
+  .kv dd{margin:0;font-weight:700;color:var(--ink)}
+  .back{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
+  .back h3{font-size:13px;color:var(--muted);font-weight:700;letter-spacing:.06em;margin-bottom:8px}
+  .pipe{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px}
+  .pipe span{background:var(--code);padding:4px 10px;border-radius:8px;font-weight:700;color:var(--ink)}
+  .pipe span.hot{background:var(--green-soft);color:var(--green-ink)}
+  .pipe i{color:var(--muted);font-style:normal}
+  .note{font-size:13px;color:var(--muted);margin-top:10px}
+  .cost{display:inline-block;margin-top:10px;font-size:12px;font-weight:700;color:var(--green-ink);background:var(--green-soft);padding:3px 10px;border-radius:999px}
+  .nav{display:flex;gap:10px;margin-top:16px}
+  .nav button{font:inherit;font-weight:700;font-size:15px;padding:12px 18px;border-radius:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;flex:1}
+  .nav button.primary{background:var(--green);border-color:var(--green);color:#fff}
+  .nav button:disabled{opacity:.4;cursor:default}
+  .nav button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+  .overview ol{margin:0;padding-left:1.3em;display:grid;gap:8px}
+  .overview li b{color:var(--ink)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:12px}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+  @media (prefers-reduced-motion: no-preference){ .msg{animation:pop .25s ease-out both} @keyframes pop{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}} }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>八十吉 予約の流れデモ</h1>
+    <span class="sub">パフォーマー指名予約：LINE ＋ 予約状況ビュー ＋ 食べログ（お席の管理はレストランボードのまま）</span>
+  </header>
+
+  <ul class="stepper" id="stepper" aria-label="ステップ"></ul>
+
+  <div class="stage">
+    <div class="phone"><div class="screen" id="screen"></div></div>
+    <div>
+      <div class="card" id="explain"></div>
+      <div class="nav">
+        <button id="prev">← 前へ</button>
+        <button id="next" class="primary">次へ →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---- 画面の部品 ----
+  const bar = (title, who) => `<div class="bar"><span>${title}</span><span class="who">${who}</span></div>`;
+  const richmenu = (hot) => `<div class="richmenu">
+      <div class="${hot==='予約'?'hot':''}">ご予約</div><div>今から行く</div><div>お品書き</div>
+      <div>はじめての方へ</div><div>アクセス</div><div class="${hot==='空き'?'hot':''}">${hot==='空き'?'空き状況':'系列店'}</div></div>`;
+  const msg = (side, name, text, link) => `<div class="msg ${side}">${name?`<span class="name">${name}</span>`:''}${text}${link?`<span class="link">${link}</span>`:''}</div>`;
+  const sys = (t) => `<div class="sys">${t}</div>`;
+
+  const chatScreen = (who, items, hot) => bar('八十吉', who) + `<div class="chat">${items.join('')}</div>` + richmenu(hot);
+
+  const resRows = (withNew) => `
+    <table class="res"><thead><tr><th>時間</th><th>お名前</th><th>人数</th><th>媒体</th></tr></thead><tbody>
+      <tr><td>17:30</td><td>高橋様</td><td>2</td><td><span class="tag">電話</span></td></tr>
+      <tr><td>18:00</td><td>田中様</td><td>4</td><td><span class="tag">ホットペッパー</span></td></tr>
+      <tr><td>18:30</td><td>佐藤様</td><td>6</td><td><span class="tag">食べログ</span></td></tr>
+      <tr><td>19:00</td><td>鈴木様</td><td>3</td><td><span class="tag">電話</span></td></tr>
+      ${withNew?'<tr class="new"><td>19:00</td><td>山田様</td><td>4</td><td><span class="tag">食べログ</span> 指名：ユウスケ</td></tr>':''}
+      <tr><td>20:00</td><td>伊藤様</td><td>5</td><td><span class="tag">ホットペッパー</span></td></tr>
+      <tr><td>20:30</td><td>渡辺様</td><td>2</td><td><span class="tag">食べログ</span></td></tr>
+    </tbody></table>`;
+  const liffScreen = (withNew) => bar('空き状況', 'パフォーマーのスマホ') + `<div class="liff">
+      <div class="date">9/20（土）<span>‹ 前日　翌日 ›</span></div>
+      <div class="seats">
+        <div class="seat"><small>総席数</small><b>30</b></div>
+        <div class="seat"><small>予約済み</small><b>${withNew?26:22}</b></div>
+        <div class="seat ${withNew?'left':'ok'}"><small>残席</small><b>${withNew?4:8}</b></div>
+      </div>
+      ${resRows(withNew)}
+      <div class="note" style="margin-top:auto">${withNew?'色付きの行が、いま入った予約です。':'売上・単価は出ません。予約の日時・人数・名前だけ。'}</div>
+    </div>`;
+
+  const tabelogScreen = () => bar('食べログ', 'お客様のスマホ') + `<div class="tabelog">
+      <div class="brand">食べログ ネット予約</div>
+      <div style="font-weight:700;font-size:16px;color:var(--ink)">あさぶの居酒屋 八十吉</div>
+      <div class="row"><span>来店日</span><span>9/20（土）</span></div>
+      <div class="row"><span>時間</span><span>19:00</span></div>
+      <div class="row"><span>人数</span><span>4名</span></div>
+      <div class="row"><span>お名前</span><span>山田 太郎</span></div>
+      <div class="row"><span>ご要望</span><span>指名：ユウスケ</span></div>
+      <div class="btn">この内容で予約する</div>
+      <div class="note">予約ツールはお店が使っているものそのまま。ここで入った予約は自動でレストランボードに入ります。</div>
+    </div>`;
+
+  // ---- 会話の積み上げ ----
+  const m1 = msg('me','', 'ご希望日：9月20日（土）\nお時間：19時ごろ\n人数：4名\nご指名：ユウスケ\nご要望：マジックを見たいです');
+  const m0 = msg('you','八十吉', 'ご予約ありがとうございます。下記をコピーして、埋めたうえでお送りください。\n\nご希望日：　月　日（　）\nお時間：　時　分ごろ\n人数：　名\nご指名：\nご要望：\n\n※お席と出演者の空き状況を確認いたしますので、この時点ではご予約は確定しておりません。');
+  const m2 = msg('you','ユウスケ（八十吉）', 'ご指名ありがとうございます！ユウスケです。\n9/20（土）19時ごろ・4名で承りました。\nお席の空きを確認しますので少々お待ちください。\n\n※この時点ではまだご予約は確定していません。');
+  const m25 = msg('you','ユウスケ（八十吉）', '9/20（土）は次の時間帯でご案内できます。\n\n・19:00〜\n・20:30〜\n\n先着順でのご案内です。ご希望の時間を返信してください。');
+  const m3u = msg('me','', '19:00でお願いします！');
+  const m3 = msg('you','ユウスケ（八十吉）', '19:00〜 4名 で承ります。\nマジックショーは20時ごろから、お席で。\n\n下のリンクから本予約をお願いします。ご要望欄に「指名：ユウスケ」とお書きください。\n予約できたら、日時をこのトークに送ってください。\n\n※お席の確保期限：本日23:00', '🔗 食べログで予約する（9/20 19:00 4名）');
+  const m4 = msg('me','', '予約しました！\n9/20（土）19:00 4名です');
+  const m5 = msg('you','ユウスケ（八十吉）', 'ご予約を確認しました！\n\n◇ご予約日時　9/20（土）19:00\n◇人数　4名\n◇ご指名　ユウスケ\n\nご来店を心よりお待ちしております。');
+
+  const pipe = (parts) => `<div class="pipe">${parts.map((p,i)=>(i?'<i>→</i>':'')+`<span class="${p.startsWith('*')?'hot':''}">${p.replace(/^\*/,'')}</span>`).join('')}</div>`;
+
+  const steps = [
+    { key:'全体', label:'全体像',
+      screen: chatScreen('お客様のスマホ', [sys('友だち追加'), msg('you','八十吉','友だち追加ありがとうございます。\nあさぶの居酒屋 八十吉です。\n\nこのアカウントでは、ご予約の受付と出演者の情報をお届けしております。\n下のメニュー「ご予約」からどうぞ。')], '予約'),
+      html: `<div class="eyebrow">Overview</div><h2>5つのステップ。お席の管理は変えません</h2>
+        <div class="overview"><ol>
+          <li><b>1　意思表明</b>　お客様がLINEで日時・人数・指名を送る</li>
+          <li><b>2　一時返信</b>　指名されたパフォーマーが受け取ったことを返す（未確定）</li>
+          <li><b>2.5　可能な時間帯</b>　パフォーマーが<b>予約状況ビュー</b>で残席を見て、時間帯を提示。先着順</li>
+          <li><b>3　条件提示</b>　時間・人数を確定し、予約ツールのリンクを送る</li>
+          <li><b>4　本予約</b>　お客様が食べログで予約 → 自動でレストランボードへ → 日時をLINEに送る</li>
+          <li><b>5　確認</b>　予約状況ビューに載ったのを見て、確定の連絡</li>
+        </ol></div>
+        <div class="back"><h3>新しく作るもの</h3>
+          ${pipe(['レストランボード 予約通知メール','Gmail','GAS','スプレッドシート','*予約状況ビュー（LINE内）'])}
+          <div class="note">レストランボードには誰もログインしない。売上はこの経路を通らない。月額0円・通数ゼロ。</div>
+        </div>
+        <div class="legend"><span><i style="background:var(--bubble-me)"></i>お客様</span><span><i style="background:var(--bubble-you);border:1px solid var(--line)"></i>お店（パフォーマー）</span></div>` },
+
+    { key:'1', label:'1 意思表明',
+      screen: chatScreen('お客様のスマホ', [sys('「ご予約」をタップ'), m0, m1], '予約'),
+      html: `<div class="eyebrow">Step 1 ／ LINE</div><h2>お客様 → お店（パフォーマー）</h2>
+        <dl class="kv"><dt>誰が</dt><dd>お客様</dd><dt>どこで</dt><dd>LINEのトーク</dd><dt>何を</dt><dd>日時・人数・指名を送る</dd></dl>
+        <p>リッチメニュー「ご予約」を押すと、記入フォーマットが自動応答で出ます。お客様はコピーして埋めるだけ。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['お客様の送信','LINE公式アカウント','*操作権限を持つパフォーマー全員に通知'])}
+        <div class="note">指名された本人がこのトークを担当します（担当者機能）。</div><span class="cost">通数：0（チャット）</span></div>` },
+
+    { key:'2', label:'2 一時返信',
+      screen: chatScreen('お客様のスマホ', [m1, m2], ''),
+      html: `<div class="eyebrow">Step 2 ／ LINE</div><h2>パフォーマー → お客様：受け取りました（未確定）</h2>
+        <dl class="kv"><dt>誰が</dt><dd>指名されたパフォーマー</dd><dt>どこで</dt><dd>LINEのトーク（店舗アカウント）</dd><dt>何を</dt><dd>内容を確認し、いったん受信の返事</dd></dl>
+        <p>定型文をそのまま送ります。「この時点では確定していません」を必ず入れて、行き違いを防ぎます。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['パフォーマーのスマホ','LINE公式アカウント（チャット）','お客様'])}
+        <div class="note">個人のLINEは使いません。やり取りは店舗のアカウントに残ります。</div><span class="cost">通数：0（チャット）</span></div>` },
+
+    { key:'2.5a', label:'2.5 空きを見る',
+      screen: liffScreen(false),
+      html: `<div class="eyebrow">Step 2.5 ／ 予約状況ビュー</div><h2>パフォーマーが残席を見る。ログインなし</h2>
+        <dl class="kv"><dt>誰が</dt><dd>パフォーマー</dd><dt>どこで</dt><dd>LINEのリッチメニュー「空き状況」→ この画面</dd><dt>何を</dt><dd>9/20の予約一覧と残席を見る</dd></dl>
+        <p>ここが今回<b>新しく作る画面</b>です。レストランボードを開かずに、その日の予約と残席だけが見えます。売上・客単価は一切出ません。</p>
+        <div class="back"><h3>裏で起きていること（この画面ができるまで）</h3>${pipe(['レストランボード','予約通知メール','Gmail','GAS（5分おき）','スプレッドシート','*この画面'])}
+        <div class="note">ホットペッパー・食べログ・電話、どの予約もレストランボードに入った時点でメールが飛び、シートに1行追加されます。</div><span class="cost">通数：0（見るだけ）</span></div>` },
+
+    { key:'2.5b', label:'2.5 時間帯を提示',
+      screen: chatScreen('お客様のスマホ', [m2, m25], ''),
+      html: `<div class="eyebrow">Step 2.5 ／ LINE</div><h2>パフォーマー → お客様：ご案内できる時間帯</h2>
+        <dl class="kv"><dt>誰が</dt><dd>パフォーマー</dd><dt>どこで</dt><dd>LINEのトーク</dd><dt>何を</dt><dd>残席のある時間帯を提示。先着順</dd></dl>
+        <p>さっきの画面で「19:00は残席8」と見えたので、19:00〜と20:30〜を提示しています。同じ時間帯に複数のお客様がいる場合は、到達順で先着です。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['予約状況ビューの残席','パフォーマーの判断','LINEチャットで提示'])}<span class="cost">通数：0（チャット）</span></div>` },
+
+    { key:'3', label:'3 条件提示',
+      screen: chatScreen('お客様のスマホ', [m3u, m3], ''),
+      html: `<div class="eyebrow">Step 3 ／ LINE</div><h2>パフォーマー → お客様：条件と予約リンク</h2>
+        <dl class="kv"><dt>誰が</dt><dd>パフォーマー</dd><dt>どこで</dt><dd>LINEのトーク</dd><dt>何を</dt><dd>時間・人数を確定し、予約ツールのリンクと期限を送る</dd></dl>
+        <p>お席の状況はパフォーマーが予約状況ビューで把握済み。お店が台帳を見に行く作業は発生しません。リンクには日時・人数を添え、要望欄に「指名：〇〇」と書いてもらいます。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['条件提示（定型文）','食べログの予約ページへのリンク','確保期限を明記'])}
+        <div class="note">期限を過ぎたら、あらためて空き状況を案内します。</div><span class="cost">通数：0（チャット）</span></div>` },
+
+    { key:'4a', label:'4 本予約',
+      screen: tabelogScreen(),
+      html: `<div class="eyebrow">Step 4 ／ 食べログ</div><h2>お客様が予約ツールで本予約</h2>
+        <dl class="kv"><dt>誰が</dt><dd>お客様</dd><dt>どこで</dt><dd>食べログ（お店が使っている予約ツール）</dd><dt>何を</dt><dd>9/20 19:00 4名で予約。要望欄に「指名：ユウスケ」</dd></dl>
+        <p>お席の在庫はここで判定されます。同じ席に二重で入ることはありません。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['食べログ','サイトコントローラー','*レストランボード（台帳に自動で入る）','予約通知メール','GAS','スプレッドシート'])}
+        <div class="note">予約が台帳に入った瞬間に、予約状況ビューにも1行増えます。</div><span class="cost">通数：0</span></div>` },
+
+    { key:'4b', label:'4 日時を送付',
+      screen: chatScreen('お客様のスマホ', [m3, m4], ''),
+      html: `<div class="eyebrow">Step 4 ／ LINE</div><h2>お客様 → お店：予約した日時を送る</h2>
+        <dl class="kv"><dt>誰が</dt><dd>お客様</dd><dt>どこで</dt><dd>LINEのトーク</dd><dt>何を</dt><dd>「予約しました。9/20 19:00 4名」</dd></dl>
+        <p>LINE側と予約ツール側を突き合わせるための一言です。ステップ3の文面で「予約できたら日時を送ってください」と頼んでいます。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['お客様の送信','LINE公式アカウント','担当パフォーマーに通知'])}<span class="cost">通数：0（チャット）</span></div>` },
+
+    { key:'5a', label:'5 確認',
+      screen: liffScreen(true),
+      html: `<div class="eyebrow">Step 5 ／ 予約状況ビュー</div><h2>予約が取れているかを、同じ画面で確認</h2>
+        <dl class="kv"><dt>誰が</dt><dd>パフォーマー（お店も同じ画面）</dd><dt>どこで</dt><dd>LINEのリッチメニュー「空き状況」</dd><dt>何を</dt><dd>9/20 19:00 山田様 4名・指名：ユウスケ の行が増えているのを見る</dd></dl>
+        <p>食べログの予約は自動でレストランボードに入り、メール経由でここに載ります。お店が台帳を開いて突き合わせる作業はありません。</p>
+        <div class="back"><h3>裏で起きていること</h3>${pipe(['レストランボード','予約通知メール','GAS','スプレッドシート','*色付きの行として表示'])}<span class="cost">通数：0（見るだけ）</span></div>` },
+
+    { key:'5b', label:'5 確定連絡',
+      screen: chatScreen('お客様のスマホ', [m4, m5], ''),
+      html: `<div class="eyebrow">Step 5 ／ LINE</div><h2>パフォーマー → お客様：ご予約を承りました</h2>
+        <dl class="kv"><dt>誰が</dt><dd>パフォーマー</dd><dt>どこで</dt><dd>LINEのトーク</dd><dt>何を</dt><dd>日時・人数・指名を添えた確定の定型文</dd></dl>
+        <p>ここで初めて「確定」です。文面集の③をそのまま使います。</p>
+        <div class="back"><h3>この流れ全体で</h3>
+          ${pipe(['レストランボードのログイン：なし','手入力：なし','月額：0円','*配信通数：0'])}
+          <div class="note">パフォーマーが触るのは、LINEのトークと「空き状況」画面の2つだけ。</div>
+        </div>` },
+  ];
+
+  const stepper = document.getElementById('stepper');
+  const screen = document.getElementById('screen');
+  const explain = document.getElementById('explain');
+  const prev = document.getElementById('prev');
+  const next = document.getElementById('next');
+  let i = 0;
+  try{ const s = parseInt(localStorage.getItem('yasokichi-demo-step')||'0',10); if(s>=0 && s<steps.length) i=s; }catch(e){}
+
+  steps.forEach((s,idx)=>{
+    const li=document.createElement('li');
+    const b=document.createElement('button'); b.type='button'; b.textContent=s.label;
+    b.addEventListener('click',()=>{i=idx;render();});
+    li.appendChild(b); stepper.appendChild(li);
+  });
+
+  function render(){
+    const s=steps[i];
+    screen.innerHTML=s.screen;
+    explain.innerHTML=s.html;
+    [...stepper.querySelectorAll('button')].forEach((b,idx)=>{
+      if(idx===i) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current');
+      b.classList.toggle('done', idx<i);
+    });
+    prev.disabled = i===0;
+    next.textContent = i===steps.length-1 ? '最初に戻る' : '次へ →';
+    try{ localStorage.setItem('yasokichi-demo-step', String(i)); }catch(e){}
+    const chat=screen.querySelector('.chat'); if(chat) chat.scrollTop=chat.scrollHeight;
+  }
+  prev.addEventListener('click',()=>{ if(i>0){i--;render();} });
+  next.addEventListener('click',()=>{ i = (i+1)%steps.length; render(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){next.click();} if(e.key==='ArrowLeft'){prev.click();} });
+  render();
+})();
+</script>
