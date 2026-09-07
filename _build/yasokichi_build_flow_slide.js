@@ -3,7 +3,7 @@
 //   → 20260907_八十吉_ご予約の流れ_予約状況ビュー版.pptx（ルート直下）
 // 既存デッキには組み込まない前提の単独1枚。文言を直すときはここを触る。
 const pptxgen = require("pptxgenjs");
-const fs = require("fs");
+
 const path = require("path");
 
 const OUT = path.join(__dirname, "..", "20260907_八十吉_ご予約の流れ_予約状況ビュー版.pptx");
@@ -86,19 +86,6 @@ s.addText([
 s.addShape(pres.shapes.RECTANGLE, { x: 0.45, y: 5.12, w: 9.1, h: 0.34, fill: { color: NAVY }, line: { color: NAVY } });
 s.addText("パフォーマーが触るのは、LINEのトークと「空き状況」画面の2つだけ。レストランボードには誰もログインしない。", { x: 0.45, y: 5.12, w: 9.1, h: 0.34, fontFace: FONT, fontSize: 10, bold: true, color: "FFFFFF", align: "center", valign: "middle", isTextBox: true, margin: 0 });
 
-pres.writeFile({ fileName: OUT }).then(() => {
-  // a:ea にもメイリオを入れる（日本語がフォールバックしないように）
-  const JSZip = require("jszip");
-  const buf = fs.readFileSync(OUT);
-  JSZip.loadAsync(buf).then(async (zip) => {
-    const names = Object.keys(zip.files).filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n));
-    for (const n of names) {
-      let xml = await zip.file(n).async("string");
-      xml = xml.replace(/<a:latin typeface="メイリオ"([^>]*)\/>/g, '<a:latin typeface="メイリオ"$1/><a:ea typeface="メイリオ"/><a:cs typeface="メイリオ"/>');
-      zip.file(n, xml);
-    }
-    const out = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-    fs.writeFileSync(OUT, out);
-    console.log("wrote", OUT);
-  });
-});
+// pptxgenjs は fontFace を a:latin / a:ea / a:cs の3つに書くので、後付けの加工はしない
+// （2026-09-07：後付けで a:ea/a:cs を重ねたら要素が二重になり PowerPoint で開けなくなった）
+pres.writeFile({ fileName: OUT }).then(() => console.log("wrote", OUT));
