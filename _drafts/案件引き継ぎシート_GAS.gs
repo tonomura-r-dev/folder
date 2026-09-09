@@ -13,6 +13,13 @@
  *
  * 今回は「広告はいらない」との指示により、Web広告ブロックは含まない
  * （共通情報＋LINEOAのみの構成）。
+ *
+ * v4（2026-09-09）：引き継ぎで抜けやすい6行を追加
+ *   ・権限レベル／ログインに使うアカウント（基本情報・契約）
+ *   ・CVの定義／CVの計測方法・utmの決まり（基本情報・契約の末尾）
+ *   ・月の配信本数／配信の承認フロー・曜日時刻／NG表現・必ず入れる文言（配信・シナリオの先頭）
+ *   すでに「⓪設定」がある場合は消さずにそのまま使う（社員名簿などの入力を守る）。
+ *   「案件テンプレート」だけ作り直す。既存の案件タブには手を付けない。
  */
 
 const CONFIG = {
@@ -79,10 +86,19 @@ const COMMON_FIELDS_OPS = [
 const LINEOA_BASIC_FIELDS = [
   { label: 'LINE公式アカウント名／ベーシックID', required: true, type: 'text' },
   { label: '管理画面アクセス権限保有者', required: true, type: 'text' },
+  { label: '権限レベル／ログインに使うアカウント', required: true, type: 'text', note: '管理者か運用担当者か。ログインに使うメール・LINEアカウントは誰のものか。2段階認証の受け取り先' },
   { label: '契約プラン', required: true, type: 'dropdown', list: 'LIST_契約プラン' },
 ];
 
+const LINEOA_KPI_FIELDS = [
+  { label: 'CVの定義（何を成果と数えるか）', required: true, type: 'text', note: '例：予約完了／購入／問い合わせ／来店。成果報酬の根拠' },
+  { label: 'CVの計測方法・utmの決まり', required: true, type: 'text', note: 'GA4／LINEタグ／Lステップ／電話・来店 のどれで数えるか。utm_source等の命名規則' },
+];
+
 const LINEOA_DISTRIBUTION_FIELDS = [
+  { label: '月の配信本数（契約上の固定分）', required: true, type: 'number', note: '都度の施策は特記事項へ' },
+  { label: '配信の承認フロー／配信曜日・時刻', required: true, type: 'text', note: '原稿の提出先／確認者／何営業日前に提出／配信の曜日と時刻／NG日' },
+  { label: 'NG表現・必ず入れる文言', required: true, type: 'text', note: '業種の法律（薬機法・景表法・医療広告GL等）／クライアントのNGワード／免責などの定型文／過去に指摘された表現' },
   { label: 'あいさつメッセージ設定の有無', required: true, type: 'checkbox' },
   { label: 'あいさつメッセージ内容／リンク', required: 'conditional', type: 'url' },
   { label: 'ステップ配信（シナリオ配信）の有無', required: true, type: 'checkbox' },
@@ -157,20 +173,29 @@ function createNewProjectTab() {
 
 function setupMasterSheet_(ss) {
   let sheet = ss.getSheetByName(CONFIG.MASTER_SHEET_NAME);
-  if (sheet) ss.deleteSheet(sheet);
-  sheet = ss.insertSheet(CONFIG.MASTER_SHEET_NAME, 0);
+  if (!sheet) {
+    sheet = ss.insertSheet(CONFIG.MASTER_SHEET_NAME, 0);
+    sheet.setFrozenRows(1);
+  }
 
-  MASTER_LISTS.forEach((list, i) => {
-    const col = i + 1;
-    sheet.getRange(1, col).setValue(list.header);
-    setStyle_(sheet.getRange(1, col), { bold: true, bg: '#E8E8E8' });
-    sheet.getRange(2, col, list.values.length, 1).setValues(list.values.map((v) => [v]));
-    sheet.setColumnWidth(col, 200);
+  // 既にある「⓪設定」は消さない（社員名簿などの入力を守る）。
+  // 見出しが無いリストだけ右端に足し、名前付き範囲は毎回張り直す。
+  const lastCol = sheet.getLastColumn();
+  const headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  let nextCol = headers.length + 1;
+
+  MASTER_LISTS.forEach((list) => {
+    let col = headers.indexOf(list.header) + 1;
+    if (col === 0) {
+      col = nextCol++;
+      sheet.getRange(1, col).setValue(list.header);
+      setStyle_(sheet.getRange(1, col), { bold: true, bg: '#E8E8E8' });
+      sheet.getRange(2, col, list.values.length, 1).setValues(list.values.map((v) => [v]));
+      sheet.setColumnWidth(col, 200);
+    }
     // 200行分の余白を確保し、あとから選択肢を追加してもプルダウンが自動追従するようにする
     ss.setNamedRange(list.name, sheet.getRange(2, col, 200, 1));
   });
-
-  sheet.setFrozenRows(1);
 }
 
 function setupTemplateSheet_(ss) {
@@ -207,6 +232,7 @@ function setupTemplateSheet_(ss) {
   addNumberWarning_(sheet, sheet.getRange(rowRate, COL.VALUE_START), 0.8);
   row = writeField_(sheet, row, { label: '追加メッセージ購入の有無', required: true, type: 'checkbox' }, requiredCells);
   row = writeField_(sheet, row, { label: '友だち数', required: true, type: 'number', note: '取得日を右の備考欄に併記' }, requiredCells);
+  LINEOA_KPI_FIELDS.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
 
   row = writeSubHeader_(sheet, row, '配信・シナリオ');
   LINEOA_DISTRIBUTION_FIELDS.forEach((f) => (row = writeField_(sheet, row, f, requiredCells)));
