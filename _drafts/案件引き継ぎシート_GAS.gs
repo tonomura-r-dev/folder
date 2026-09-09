@@ -46,7 +46,7 @@ const MASTER_LISTS = [
   { name: 'LIST_レポートタイミング', header: 'レポート提出タイミング', values: ['週次', '月次', '随時', 'その他'] },
   { name: 'LIST_MTG周期', header: '定例MTG周期', values: ['毎週', '隔週', '月1回', '不定期'] },
   { name: 'LIST_KPI種別', header: 'KPI種別', values: ['CPA', 'CPO', 'CV数', '友だち数', 'その他'] },
-  { name: 'LIST_契約プラン', header: 'LINEOA契約プラン', values: ['コミュニケーションプラン', 'ライトプラン', 'フリープラン'] },
+  { name: 'LIST_契約プラン', header: 'LINEOA契約プラン', values: ['コミュニケーションプラン', 'ライトプラン', 'スタンダードプラン'] },
   { name: 'LIST_配信頻度', header: '定期配信の頻度', values: ['週1', '月2', '不定期', 'その他'] },
   { name: 'LIST_リッチメニュー頻度', header: 'リッチメニュー更新頻度', values: ['固定', '月次更新', 'キャンペーン都度'] },
   { name: 'LIST_社員', header: '営業担当・運用担当（社員名簿）', values: ['（ここに社員名を1行1名で追加してください）'] },
