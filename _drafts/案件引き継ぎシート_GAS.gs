@@ -14,10 +14,10 @@
  * 今回は「広告はいらない」との指示により、Web広告ブロックは含まない
  * （共通情報＋LINEOAのみの構成）。
  *
- * v4（2026-09-09）：引き継ぎで抜けやすい6行を追加
- *   ・権限レベル／ログインに使うアカウント（基本情報・契約）
- *   ・CVの定義／CVの計測方法・utmの決まり（基本情報・契約の末尾）
- *   ・月の配信本数／配信の承認フロー・曜日時刻／NG表現・必ず入れる文言（配信・シナリオの先頭）
+ * v4（2026-09-09）：引き継ぎで抜けやすい行を追加。殿村さんの実物に合わせて3行に確定。
+ *   ・CVの定義と計測方法（基本情報・契約の末尾）
+ *   ・配信の承認フローと月の本数／NG表現と必ず入れる文言（配信・シナリオの先頭）
+ *   ・権限レベルの行は不要（共通の「アカウント名」で足りる）。Lパターンは廃止（⓪設定からも削除済み）。
  *   すでに「⓪設定」がある場合は消さずにそのまま使う（社員名簿などの入力を守る）。
  *   「案件テンプレート」だけ作り直す。既存の案件タブには手を付けない。
  */
@@ -50,7 +50,6 @@ const MASTER_LISTS = [
   { name: 'LIST_配信頻度', header: '定期配信の頻度', values: ['週1', '月2', '不定期', 'その他'] },
   { name: 'LIST_リッチメニュー頻度', header: 'リッチメニュー更新頻度', values: ['固定', '月次更新', 'キャンペーン都度'] },
   { name: 'LIST_社員', header: '営業担当・運用担当（社員名簿）', values: ['（ここに社員名を1行1名で追加してください）'] },
-  { name: 'LIST_Lパターン', header: 'Lパターン（意味確認中）', values: ['（用途確認後に選択肢を追加してください）'] },
 ];
 
 const COMMON_FIELDS_BASIC = [
@@ -59,7 +58,6 @@ const COMMON_FIELDS_BASIC = [
   { label: 'エンドクライアント名', required: false, type: 'text', note: 'クライアントが代理店/仲介の場合の実広告主' },
   { label: '直/代理店 案件', required: true, type: 'dropdown', list: 'LIST_直代理店' },
   { label: 'マージン（%）', required: true, type: 'number' },
-  { label: 'Lパターン', required: true, type: 'dropdown', list: 'LIST_Lパターン', note: '意味を要確認。分かり次第⓪設定タブの選択肢を確定してください' },
   { label: 'アカウント名', required: true, type: 'text' },
   { label: '営業担当', required: true, type: 'dropdown', list: 'LIST_社員' },
 ];
@@ -86,19 +84,16 @@ const COMMON_FIELDS_OPS = [
 const LINEOA_BASIC_FIELDS = [
   { label: 'LINE公式アカウント名／ベーシックID', required: true, type: 'text' },
   { label: '管理画面アクセス権限保有者', required: true, type: 'text' },
-  { label: '権限レベル／ログインに使うアカウント', required: true, type: 'text', note: '管理者か運用担当者か。ログインに使うメール・LINEアカウントは誰のものか。2段階認証の受け取り先' },
   { label: '契約プラン', required: true, type: 'dropdown', list: 'LIST_契約プラン' },
 ];
 
 const LINEOA_KPI_FIELDS = [
-  { label: 'CVの定義（何を成果と数えるか）', required: true, type: 'text', note: '例：予約完了／購入／問い合わせ／来店。成果報酬の根拠' },
-  { label: 'CVの計測方法・utmの決まり', required: true, type: 'text', note: 'GA4／LINEタグ／Lステップ／電話・来店 のどれで数えるか。utm_source等の命名規則' },
+  { label: 'CVの定義と計測方法', required: true, type: 'text', note: '何をCVと数えて、どこで見るか（GA4／LINEタグ／Lステップ／電話・来店）。utmの決まり' },
 ];
 
 const LINEOA_DISTRIBUTION_FIELDS = [
-  { label: '月の配信本数（契約上の固定分）', required: true, type: 'number', note: '都度の施策は特記事項へ' },
-  { label: '配信の承認フロー／配信曜日・時刻', required: true, type: 'text', note: '原稿の提出先／確認者／何営業日前に提出／配信の曜日と時刻／NG日' },
-  { label: 'NG表現・必ず入れる文言', required: true, type: 'text', note: '業種の法律（薬機法・景表法・医療広告GL等）／クライアントのNGワード／免責などの定型文／過去に指摘された表現' },
+  { label: '配信の承認フローと月の本数', required: true, type: 'text', note: '誰が原稿を確認するか／何営業日前に出すか／配信の曜日と時刻／月何本が契約か' },
+  { label: 'NG表現と必ず入れる文言', required: true, type: 'text', note: '業種の法律／クライアントのNGワード／免責などの定型文' },
   { label: 'あいさつメッセージ設定の有無', required: true, type: 'checkbox' },
   { label: 'あいさつメッセージ内容／リンク', required: 'conditional', type: 'url' },
   { label: 'ステップ配信（シナリオ配信）の有無', required: true, type: 'checkbox' },
