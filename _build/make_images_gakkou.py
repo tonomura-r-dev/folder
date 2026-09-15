@@ -151,7 +151,7 @@ ax.annotate(f"{d2[i50]:%-m/%-d}週で半分（{v[i50]}）", xy=(d2[i50], v[i50])
 i20 = next(k for k, x in enumerate(v) if x >= 20)
 vline(ax, d2[i20], f"動き出し\n{d2[i20]:%-m/%-d}週", y=92)
 ax.axvspan(d2[i20], d2[i50], color=ORANGE, alpha=0.07, zorder=0)
-ax.annotate("仕込みの窓＝5週間", xy=(d2[i20] + (d2[i50] - d2[i20]) / 2, 84),
+ax.annotate("仕込みの窓＝5週間", xy=(d2[i20] + (d2[i50] - d2[i20]) / 2, 70),
             ha="center", fontsize=10, color=ORANGE, fontweight="bold")
 ax.annotate("お盆で一度落ちる", xy=(d2[v.index(25)], 25), xytext=(4, 14),
             textcoords="offset points", fontsize=9, color=MUT)
@@ -171,15 +171,7 @@ for k, name in enumerate(h3):
 base(ax, d3)
 yearly_axis(ax)
 i_so, i_si = h3.index("総合型選抜"), h3.index("指定校推薦")
-# 9月値の推移を注記
-for y, dy in [(2021, 12), (2026, 12)]:
-    i = next(k for k, dt in enumerate(d3) if dt.year == y and dt.month == 9)
-    ax.annotate(f"{c3[i_so][i]}", xy=(d3[i], c3[i_so][i]), xytext=(0, dy),
-                textcoords="offset points", ha="center", fontsize=10,
-                color=SERIES[i_so], fontweight="bold")
-    ax.annotate(f"{c3[i_si][i]}", xy=(d3[i], c3[i_si][i]), xytext=(0, -20),
-                textcoords="offset points", ha="center", fontsize=10,
-                color=SERIES[i_si], fontweight="bold")
+# 9月値（グラフ両端）は軸外に出るので注記せず、脚注に逃がす
 # 逆転点（2023-09 で 56 : 56）
 ix = next(k for k, dt in enumerate(d3) if dt.year == 2023 and dt.month == 9)
 ax.plot(d3[ix], c3[i_so][ix], "o", color=ORANGE, ms=9, zorder=6)
