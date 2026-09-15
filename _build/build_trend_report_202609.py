@@ -237,8 +237,10 @@ def topic_slide(slide, data):
         add_rect(slide, x, y, box_w, box_h, fill=WHITE, line=BORDER_GRAY, line_w=Pt(0.75))
         chip(slide, x, y, box_w, chip_h, label, size=10.5)
         items = items or ["－"]
+        size, spacing = (8.5, 1.1) if len(items) >= 6 else (9, 1.15) if len(items) >= 5 else (10, 1.2)
         add_bullets(slide, x + Inches(0.18), y + chip_h + Inches(0.1),
-                    box_w - Inches(0.36), box_h - chip_h - Inches(0.2), items)
+                    box_w - Inches(0.36), box_h - chip_h - Inches(0.2), items,
+                    size=size, line_spacing=spacing)
 
     source_line(slide, data.get("source"))
 
@@ -259,10 +261,17 @@ TOPICS = [
         message="特定条件を満たしたユーザーに、ミニアプリのお気に入り追加を促すポップアップが自動表示される新機能。",
         overview=["トリガー①：マイミニアプリの「履歴」からアクセス",
                    "トリガー②：7日以内に2日以上アクセス",
-                   "条件を満たすとお気に入り追加を促すポップアップが表示"],
+                   "条件を満たすとミニアプリを閉じたタイミングでポップアップが表示",
+                   "「お気に入りに追加」を押すとアプリタブの「お気に入り」に追加され、同時にアプリタブへ自動遷移"],
         pricing=["－"],
-        schedule=["－（リリース日は要確認）"],
-        caution=["リピート利用ユーザーの再訪導線が強化される。ミニアプリ運用中クライアントへの案内材料になる"],
+        schedule=["リリース予定日：8月31日（アプリのバージョンアップデートに伴って変更の可能性あり）",
+                   "表示トリガーは数週間のABテストを経て、より効果の高い条件を100%反映予定（現状は暫定条件で運用中）"],
+        caution=["リピート利用ユーザーの再訪導線が強化される。ミニアプリ運用中クライアントへの案内材料になる",
+                   "既にお気に入り登録済みのミニアプリにはポップアップは表示されない",
+                   "追加後に削除した場合、同じミニアプリのポップアップは720時間（30日間）再表示されない",
+                   "「Not now」で見送った場合は14日間再表示されない",
+                   "同一ミニアプリへの表示上限は2回。2回とも閉じると永久に対象外になる",
+                   "同一ユーザーへの表示は1日最大1回（直近表示から24時間以内は非表示）"],
         source="https://workers-hub.box.com/s/9uo4m0fiqyxmddz5br3xe9691w0q4ht7",
     ),
     dict(
