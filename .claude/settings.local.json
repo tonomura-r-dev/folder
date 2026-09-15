@@ -1173,7 +1173,9 @@
       "Bash(python sync.py 2026-08-31)",
       "Bash(python sync.py)",
       "Bash(python -m uv run --python 3.12 --with gspread --with google-auth tasks.py)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Read(//root/.claude/uploads/67c31c15-87c1-5ccc-98e0-4f781e12435c/**)",
+      "Bash(cp \"/root/.claude/uploads/67c31c15-87c1-5ccc-98e0-4f781e12435c/00af289a-LINEOA_BUFFF_3.pptx\" /tmp/claude-0/-home-user-folder/67c31c15-87c1-5ccc-98e0-4f781e12435c/scratchpad/LINEOA_BUFFF_3.pptx)"
     ]
   }
 }
