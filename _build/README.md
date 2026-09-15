@@ -4,6 +4,9 @@ LINE公式アカウント提案資料を、スクリプトから再生成する�
 **スマホから claude.ai/code でこのリポジトリを開けば、同じ作業ができます。**
 
 ※ 業界別の資料（注文住宅・賃貸・EC など）はスキル `lineoa-industry` で作る。
+※ 毎月の「LINE公式アカウント 媒体最新情報 トレンドレポート」はスキル `trend-report` で作る
+（`_build/trend_report_engine.py` ＋ `_templates/DYM_LINEOA_BUFFF_FMT.pptx`。ここに載っている
+提案書系FMTとは別物なので混同しないこと）。
 ここは**FMT／ベースPPTXから直接ビルドする資料**の手順。
 
 ## ファイル構成
