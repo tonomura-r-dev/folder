@@ -4,15 +4,25 @@ LINE公式アカウント 媒体最新情報 2026年9月 トレンドレポー�
 _drafts/トレンドレポート_2026年9月_構成案.md の内容をPPTX化する。
 対象業界・フェーズ・フラグは元データに記載が無いため空欄のまま出力する。
 
+DYM汎用FMT（_templates/DYM_LINEOA_FMT.pptx）をコピーし、必要な11枚だけ残して
+clear_slide() → 作り直す経路（build_special_plan.py と同じ）。
+スライドの新規追加はしない（python-pptxで壊れるため。CLAUDE.md参照）。
+
 使い方: python3 _build/build_trend_report_202609.py
 """
 
+import shutil
+from pathlib import Path
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.ns import qn
+
+ROOT = Path(__file__).resolve().parent.parent
+SRC = str(ROOT / "_templates" / "DYM_LINEOA_FMT.pptx")
+OUT = str(ROOT / "LINEOA媒体最新情報_2026年9月トレンドレポート.pptx")
 
 FONT = "メイリオ"
 
@@ -28,7 +38,7 @@ PLACEHOLDER_GRAY = RGBColor(0x99, 0x99, 0x99)
 SLIDE_W = Inches(10.83)
 SLIDE_H = Inches(7.5)
 
-OUT_PATH = "LINEOA媒体最新情報_2026年9月トレンドレポート.pptx"
+N_SLIDES = 11  # 表紙1 + 目次1 + トピック9
 
 
 def set_font_all(text_frame, name=FONT):
@@ -42,6 +52,33 @@ def set_font_all(text_frame, name=FONT):
                     el = rPr.makeelement(qn(tag), {})
                     rPr.append(el)
                 el.set("typeface", name)
+
+
+def clear_slide(slide):
+    """FMT側の残骸シェイプを全部消して、まっさらな状態にする。"""
+    spTree = slide.shapes._spTree
+    for el in list(spTree):
+        if el.tag.split("}")[-1] in ("sp", "cxnSp", "pic", "graphicFrame", "grpSp"):
+            spTree.remove(el)
+
+
+def load_trimmed_fmt(n_slides):
+    """FMTをコピーし、先頭n_slides枚だけ残す（追加はしない）。"""
+    shutil.copyfile(SRC, OUT)
+    prs = Presentation(OUT)
+    sldIdLst = prs.slides._sldIdLst
+    ids = list(sldIdLst)
+    keep_ids = ids[:n_slides]
+    for sldId in ids:
+        if sldId in keep_ids:
+            continue
+        prs.part.drop_rel(sldId.rId)
+        sldIdLst.remove(sldId)
+    slides = list(prs.slides)
+    assert len(slides) == n_slides, len(slides)
+    for slide in slides:
+        clear_slide(slide)
+    return prs, slides
 
 
 def add_rect(slide, x, y, w, h, fill=None, line=None, line_w=None, shadow=False):
@@ -149,8 +186,7 @@ def subheader(slide, industry=None, phase=None):
               anchor=MSO_ANCHOR.MIDDLE)
 
 
-def cover_slide(prs, theme):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def cover_slide(slide, theme):
     add_rect(slide, 0, 0, SLIDE_W, SLIDE_H, fill=NAVY)
     add_rect(slide, 0, Inches(4.55), SLIDE_W, Inches(0.03), fill=SUB_BLUE)
 
@@ -167,8 +203,7 @@ def cover_slide(prs, theme):
     return slide
 
 
-def agenda_slide(prs, topics):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def agenda_slide(slide, topics):
     header(slide)
     add_text(slide, Inches(0.4), Inches(1.05), Inches(8), Inches(0.5),
               [[("目次", 20, True, NAVY)]])
@@ -187,8 +222,7 @@ def agenda_slide(prs, topics):
     return slide
 
 
-def topic_slide(prs, data):
-    slide = prs.slides.add_slide(prs.slide_layouts[6])
+def topic_slide(slide, data):
     header(slide, flag_agency=data.get("flag_agency"), flag_noshare=data.get("flag_noshare"))
     subheader(slide, industry=data.get("industry"), phase=data.get("phase"))
 
@@ -365,20 +399,18 @@ def apply_deadline_accent(slide):
 
 
 def main():
-    prs = Presentation()
-    prs.slide_width = SLIDE_W
-    prs.slide_height = SLIDE_H
+    prs, slides = load_trimmed_fmt(N_SLIDES)
 
-    cover_slide(prs, theme=None)
-    agenda_slide(prs, TOPICS_LIST)
+    cover_slide(slides[0], theme=None)
+    agenda_slide(slides[1], TOPICS_LIST)
 
-    for data in TOPICS:
-        slide = topic_slide(prs, data)
+    for slide, data in zip(slides[2:], TOPICS):
+        topic_slide(slide, data)
         if data.get("accent_deadlines"):
             apply_deadline_accent(slide)
 
-    prs.save(OUT_PATH)
-    print(f"saved: {OUT_PATH}")
+    prs.save(OUT)
+    print(f"saved: {OUT}")
 
 
 if __name__ == "__main__":
