@@ -173,23 +173,10 @@ def page_title(slide, text, size=17):
               [[(text, size, True, TITLE_NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
 
 
-def meta_row(slide, industry=None, phase=None, flag_agency=None, flag_noshare=None):
-    """区切り線のすぐ下：号数チップ＋対象業界／フェーズ／フラグ（空欄可）。"""
-    y = Inches(0.7)
-    chip(slide, CONTENT_LEFT, y, Inches(0.85), Inches(0.28), "9月号", size=9)
-    ind = industry or "－"
-    ph = phase or "－"
-    ag = flag_agency or "－"
-    ns = flag_noshare or "－"
-    text = f"対象業界：{ind}　　フェーズ：{ph}　　代理店限定：{ag}　　展開禁止：{ns}"
-    add_text(slide, CONTENT_LEFT + Inches(1.0), y, Inches(8.8), Inches(0.28),
-              [[(text, 9.5, False, META_GRAY)]], anchor=MSO_ANCHOR.MIDDLE)
-
-
 def source_line(slide, url):
     if not url:
         return
-    add_text(slide, CONTENT_LEFT, Inches(6.86), Inches(9.5), Inches(0.24),
+    add_text(slide, CONTENT_LEFT, Inches(6.8), Inches(9.5), Inches(0.22),
               [[(f"出典：{url}", 7.5, False, SOURCE_GRAY)]], anchor=MSO_ANCHOR.MIDDLE)
 
 
@@ -219,19 +206,17 @@ def agenda_slide(slide, topics):
 
 def topic_slide(slide, data):
     page_title(slide, data["title"])
-    meta_row(slide, industry=data.get("industry"), phase=data.get("phase"),
-             flag_agency=data.get("flag_agency"), flag_noshare=data.get("flag_noshare"))
 
     # メインメッセージ
-    msg_y = Inches(1.1)
-    add_rect(slide, CONTENT_LEFT, msg_y, CONTENT_W, Inches(0.62), fill=LIGHT_BOX)
-    add_text(slide, CONTENT_LEFT + Inches(0.2), msg_y, CONTENT_W - Inches(0.4), Inches(0.62),
+    msg_y = Inches(0.75)
+    add_rect(slide, CONTENT_LEFT, msg_y, CONTENT_W, Inches(0.55), fill=LIGHT_BOX)
+    add_text(slide, CONTENT_LEFT + Inches(0.2), msg_y, CONTENT_W - Inches(0.4), Inches(0.55),
               [[(data["message"], 12, True, TITLE_NAVY)]],
               anchor=MSO_ANCHOR.MIDDLE, line_spacing=1.1)
 
     # 4区分ボックス（2x2）
-    box_top = Inches(1.9)
-    box_h = Inches(2.4)
+    box_top = Inches(1.45)
+    box_h = Inches(2.55)
     gap = Inches(0.15)
     hgap = Inches(0.2)
     box_w = (CONTENT_W - hgap) / 2
