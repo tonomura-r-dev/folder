@@ -2,7 +2,7 @@
 LINE公式アカウント 媒体最新情報 2026年9月 トレンドレポート ビルドスクリプト。
 
 トンマナは実際のDYM営業資料FMT（_templates/DYM_LINEOA_BUFFF_FMT.pptx）から抽出。
-このFMTをコピーし、必要な9枚だけ残して clear_slide() → 作り直す経路
+このFMTをコピーし、必要な8枚だけ残して clear_slide() → 作り直す経路
 （build_special_plan.py と同じ。スライドの新規追加はしない＝CLAUDE.md参照）。
 
 ヘッダーのネイビー角アイコン・区切り線・DYMロゴ・フッターの著作権表記／ページ番号は
@@ -12,9 +12,11 @@ LINE公式アカウント 媒体最新情報 2026年9月 トレンドレポー�
 
 採否は上長確認済み（2026-09）：
   ・［提供終了］リサーチ機能終了 → 先月既出のため除外
-  ・既読API（旧）新規受付終了 → 除外。新しい既読APIの一般提供開始をメインに書き直し
+  ・既読API（旧）新規受付終了 → 一旦は「新API中心に書き直し」で残したが、
+    その後「入れるには渋い」との判断で除外（最終6アジェンダには含めない）
   ・早期発注特典①の締切 → 期限切れのため除外
-  ・LINE Sales Promotion Manager → 優先度低のため掲載順を最後に
+  ・LINE Sales Promotion Manager → 優先度低だが一旦は残す。掲載順は元の号数どおり
+    （オープンキャンペーンより前）
 
 使い方: python3 _build/build_trend_report_202609.py
 """
@@ -48,7 +50,7 @@ SOURCE_GRAY = RGBColor(0x80, 0x80, 0x80)
 SLIDE_W = Inches(10.83)
 SLIDE_H = Inches(7.5)
 
-N_SLIDES = 9  # 表紙1 + 目次1 + トピック7
+N_SLIDES = 8  # 表紙1 + 目次1 + トピック6
 
 # ヘッダーの角アイコン（レイアウト側で幅0.49in・高さ0.6in）と被らない開始位置
 CONTENT_LEFT = Inches(0.62)
@@ -247,12 +249,11 @@ def topic_slide(slide, data):
 
 TOPICS_LIST = [
     "1. LINEミニアプリ お気に入り追加促進機能",
-    "2. 既読API 一般提供開始のお知らせ",
-    "3. LINE公式アカウント「分析」データ参照期間 過去36カ月に変更",
-    "4. プロモーションスタンプ 効果改善アップデート",
-    "5. 友だち追加オプション 複数アカウント対応",
+    "2. LINE公式アカウント「分析」データ参照期間 過去36カ月に変更",
+    "3. プロモーションスタンプ 効果改善アップデート",
+    "4. 友だち追加オプション 複数アカウント対応",
+    "5. LINE Sales Promotion Manager 利用停止期間",
     "6. LINEオープンキャンペーン 26年10-12月 期間限定キャンペーン",
-    "7. LINE Sales Promotion Manager 利用停止期間",
 ]
 
 TOPICS = [
@@ -273,18 +274,6 @@ TOPICS = [
                    "同一ミニアプリへの表示上限は2回。2回とも閉じると永久に対象外になる",
                    "同一ユーザーへの表示は1日最大1回（直近表示から24時間以内は非表示）"],
         source="https://workers-hub.box.com/s/9uo4m0fiqyxmddz5br3xe9691w0q4ht7",
-    ),
-    dict(
-        title="既読API「一般提供開始」のお知らせ",
-        message="事前申請不要の新しい既読API（Messaging API）が一般提供開始。トークの既読管理をAPI側から自動化できる。",
-        overview=["新しい既読API（Messaging API「mark as read」）が一般提供開始",
-                   "事前の利用申請が不要になり、通常のMessaging API開発フローの中でそのまま利用可能に"],
-        pricing=["該当なし（Messaging APIの利用範囲内）"],
-        schedule=["一般提供開始済み",
-                   "仕様：developers.line.biz/ja/docs/messaging-api/mark-as-read/"],
-        caution=["CS・チャットツールと連携した運用で、既読管理の自動化に活用できる",
-                   "旧既読API（LBPM経由の申請制）を使っていた案件は新APIへの移行を検討"],
-        source="https://workers-hub.box.com/s/nxgvv2ejax65j6cadz7gdsdalxd8zioa",
     ),
     dict(
         title="LINE公式アカウント「分析」データ参照期間 過去36カ月に変更",
@@ -324,6 +313,19 @@ TOPICS = [
         source="https://workers-hub.box.com/s/ko2jjwgxk5fs18ejrs97fvfqv3bm3089",
     ),
     dict(
+        title="LINE Sales Promotion Manager 利用停止期間",
+        message="データベース管理システムのスケール最適化のため、LINEで応募の管理画面が一時利用停止となる。",
+        overview=["データベース管理システムのスケール最適化実施のため対象期間中は管理画面が利用停止",
+                   "対象メニュー：LINEオープンキャンペーン（抽選型）。アンケート型・季節商品の過去案件も対象"],
+        pricing=["該当なし"],
+        schedule=["社外への案内開始日・リリース日：2026年9月2日",
+                   "対象期間：9月8日（火）〜9月10日（木） 10:00〜14:30の間"],
+        caution=["影響範囲：サマリーレポートの作成・ダウンロードが利用不可",
+                   "LBPMでの案件申請・入稿など、上記以外の機能は通常どおり利用可能",
+                   "稼働中キャンペーンがあるクライアントには事前周知が必要"],
+        source="https://workers-hub.box.com/s/mo3y54qld9vj4kung0c4040z41mfhoip",
+    ),
+    dict(
         title="LINEオープンキャンペーン 26年10-12月 期間限定キャンペーン",
         message="2026年10月20日〜12月25日に終了する案件限定で、特別価格・特別期間・特別通数の3特典が適用される。",
         overview=["対象：2026年10月20日開始〜12月25日までに終了する案件限定",
@@ -343,19 +345,6 @@ TOPICS = [
                    "キャンセル規定：発注受領後、または発注期日（開始25営業日前）超過後のキャンセルは最低発注金額1,500万円を請求",
                    "他割引との併用不可。景品がLINEポイントから変更になる可能性あり（変更不可の申し出は受付不可）"],
         source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
-    ),
-    dict(
-        title="LINE Sales Promotion Manager 利用停止期間",
-        message="データベース管理システムのスケール最適化のため、LINEで応募の管理画面が一時利用停止となる。",
-        overview=["データベース管理システムのスケール最適化実施のため対象期間中は管理画面が利用停止",
-                   "対象メニュー：LINEオープンキャンペーン（抽選型）。アンケート型・季節商品の過去案件も対象"],
-        pricing=["該当なし"],
-        schedule=["社外への案内開始日・リリース日：2026年9月2日",
-                   "対象期間：9月8日（火）〜9月10日（木） 10:00〜14:30の間"],
-        caution=["影響範囲：サマリーレポートの作成・ダウンロードが利用不可",
-                   "LBPMでの案件申請・入稿など、上記以外の機能は通常どおり利用可能",
-                   "稼働中キャンペーンがあるクライアントには事前周知が必要"],
-        source="https://workers-hub.box.com/s/mo3y54qld9vj4kung0c4040z41mfhoip",
     ),
 ]
 
