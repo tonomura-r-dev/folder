@@ -235,7 +235,8 @@ def topic_slide(slide, data):
         chip(slide, x, y, box_w, chip_h, label, size=10.5)
         items = items or ["－"]
         # 項目数が多い箱は自動でフォントを詰めて収める
-        size, spacing = (8.5, 1.1) if len(items) >= 6 else (9, 1.15) if len(items) >= 5 else (10, 1.2)
+        # 基本は11pt固定（殿村さん指定）。項目数が多い箱だけ、はみ出し防止で自動的に詰める
+        size, spacing = (10, 1.05) if len(items) >= 6 else (11, 1.15)
         add_bullets(slide, x + Inches(0.18), y + chip_h + Inches(0.1),
                     box_w - Inches(0.36), box_h - chip_h - Inches(0.2), items,
                     size=size, line_spacing=spacing)
