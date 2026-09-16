@@ -1,262 +1,308 @@
 """
-LINE公式アカウント 媒体最新情報 トレンドレポート 共通エンジン。
+LINE公式アカウント 媒体最新情報 トレンドレポート 共通エンジン（v2）。
 
-トンマナは実際のDYM営業資料FMT（_templates/DYM_LINEOA_BUFFF_FMT.pptx）から抽出。
-このFMTをコピーし、必要な枚数だけ残して clear_slide() → 作り直す経路
-（build_special_plan.py と同じ。スライドの新規追加はしない＝CLAUDE.md参照）。
+トンマナは実際に配布された過去号そのもの（2026年6月号・7月号）から抽出した
+_templates/DYM_LINEOA_TREND_FMT.pptx（＝2026年7月号の実ファイル）を土台にする。
+以前使っていた _templates/DYM_LINEOA_BUFFF_FMT.pptx（営業提案資料のFMT）とは別物。
+2026-09-16、殿村さんから過去号2本の提供を受けて全面差し替えた。
 
-ヘッダーのネイビー角アイコン・区切り線・DYMロゴ・フッターの著作権表記／ページ番号は
-スライドレイアウト側に定義されており、clear_slide() で個々のシェイプを消しても
-自動的に継承表示される（要検証済み：2026-09、test_inherit.jpg）。
-なので自前では描画しない。
+やり方：
+  1. FMTをコピーし、表紙(0)・目次(1)・トピックのひな形(2＝LINE VOOMのページ)の
+     3枚だけ残す
+  2. ひな形スライドを duplicate_slide() でトピック数ぶん複製する
+     （python-pptxの add_slide() は使うが、レイアウトは複製元と同じものを使うだけで
+     新しいレイアウトは作らない。CLAUDE.mdの「スライド新規追加はしない」は
+     FMTコピー後に空のスライドを新規に足すケースの話で、これは既存スライドの複製）
+  3. 各スライドの中身（対象業界／分類タグ／バナー見出し／3行サマリー／表／出典）を
+     テキストだけ書き換える。ヘッダーの「今後のアップデート情報」・DYMロゴ・
+     区切り線・フッターはひな形をそのまま複製しているので触らない
+  4. トピック本文は「概要・変更点／料金体系・出稿条件／スケジュール・導入フロー／
+     注意点・影響」の4行×2列表に統一（ひな形の3列×7行の実施日テーブルは
+     差し替える。理由：過去号は毎回テーブル構成がバラバラで再現しきれないため、
+     既存のTOPICSデータ構造（overview/pricing/schedule/caution）をそのまま使える
+     4行固定の表に寄せた）
 
-月ごとのビルドスクリプトはこのモジュールを import し、TOPICS_LIST / TOPICS /
-OUT / MONTH_LABEL だけを定義して build() を呼ぶ（_build/build_trend_report_202609.py 参照）。
-毎月の作業手順・データの集め方は .claude/skills/trend-report/SKILL.md を参照。
+月次スクリプトは build() を呼ぶだけでよい。作業手順は
+.claude/skills/trend-report/SKILL.md を参照。
 """
 
+import copy
 import shutil
 from pathlib import Path
+
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
-from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.dml import MSO_THEME_COLOR, MSO_LINE_DASH_STYLE
 from pptx.oxml.ns import qn
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = str(ROOT / "_templates" / "DYM_LINEOA_BUFFF_FMT.pptx")
+SRC = str(ROOT / "_templates" / "DYM_LINEOA_TREND_FMT.pptx")
 
-FONT = "メイリオ"
+# ひな形（FMT内の7月号）のスライド番号（0始まり）
+COVER_IDX = 0
+AGENDA_IDX = 1
+TEMPLATE_IDX = 2  # 【LINE VOOM】ページ。分類タグは「LINE公式アカウント」が選択済み
 
-# 実FMTから抽出した配色（2026-09、LINEOA_BUFFF_3.pptxを解析）
-TITLE_NAVY = RGBColor(0x00, 0x20, 0x60)   # ヘッダー見出し・本文タイトル色
-CHIP_NAVY = RGBColor(0x10, 0x25, 0x3F)    # セクション見出しチップ・フラグチップ
-BODY_GRAY = RGBColor(0x34, 0x34, 0x34)    # 本文
-META_GRAY = RGBColor(0x49, 0x48, 0x48)    # メタ情報
-RED = RGBColor(0xFF, 0x00, 0x00)          # 強調・注意（FMT実測）
-LIGHT_BOX = RGBColor(0xF2, 0xF2, 0xF2)    # メインメッセージ等のボックス塗り
+CATEGORIES = ["LINE公式アカウント", "開発\nLINE API", "オプション\n商材", "その他"]
+
+TABLE_LABEL_NAVY = RGBColor(0x15, 0x13, 0x3D)
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+BODY_GRAY = RGBColor(0x33, 0x33, 0x33)
 BORDER_GRAY = RGBColor(0xD9, 0xD9, 0xD9)
-SOURCE_GRAY = RGBColor(0x80, 0x80, 0x80)
+TAG_BORDER_BLUE = RGBColor(0x4F, 0x81, 0xBD)
 
-SLIDE_W = Inches(10.83)
-SLIDE_H = Inches(7.5)
-
-# ヘッダーの角アイコン（レイアウト側で幅0.49in・高さ0.6in）と被らない開始位置
-CONTENT_LEFT = Inches(0.62)
-CONTENT_RIGHT = Inches(10.33)
-CONTENT_W = CONTENT_RIGHT - CONTENT_LEFT
+SECTIONS = ["概要・変更点", "料金体系・出稿条件", "スケジュール・導入フロー", "注意点・影響"]
 
 
-def set_font_all(text_frame, name=FONT):
-    for para in text_frame.paragraphs:
-        for run in para.runs:
-            run.font.name = name
-            rPr = run._r.get_or_add_rPr()
-            for tag in ("a:latin", "a:ea", "a:cs"):
-                el = rPr.find(qn(tag))
-                if el is None:
-                    el = rPr.makeelement(qn(tag), {})
-                    rPr.append(el)
-                el.set("typeface", name)
+# ---------- スライド複製 ----------
+
+def _rewrite_and_copy_shape(source_part, dest_part, shape_el):
+    """シェイプXMLをdeepcopyし、画像参照(r:embed)をdestパート側の新しい関係に張り替える。"""
+    el = copy.deepcopy(shape_el)
+    r_ns = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+    for blip in el.iter(qn("a:blip")):
+        old_rid = blip.get(qn("r:embed"))
+        if not old_rid:
+            continue
+        rel = source_part.rels[old_rid]
+        new_rid = dest_part.rels._add_relationship(rel.reltype, rel._target)
+        blip.set(qn("r:embed"), new_rid)
+    return el
 
 
-def clear_slide(slide):
-    """スライド自身が持つシェイプだけを消す。レイアウト/マスター側の
-    ヘッダーアイコン・区切り線・DYMロゴ・フッターは継承表示のため残る。"""
-    spTree = slide.shapes._spTree
-    for el in list(spTree):
-        if el.tag.split("}")[-1] in ("sp", "cxnSp", "pic", "graphicFrame", "grpSp"):
-            spTree.remove(el)
+def duplicate_slide(prs, index):
+    """既存スライド(index)を複製して末尾に追加する。同じレイアウトを使うだけで
+    新規レイアウトは作らない。戻り値は新しいSlideオブジェクト。"""
+    source = prs.slides[index]
+    dest = prs.slides.add_slide(source.slide_layout)
+    # add_slide がレイアウト側プレースホルダを自動で入れてくることがあるので一旦全消し
+    for shp in list(dest.shapes):
+        shp._element.getparent().remove(shp._element)
+    for shape in source.shapes:
+        new_el = _rewrite_and_copy_shape(source.part, dest.part, shape._element)
+        dest.shapes._spTree.append(new_el)
+    return dest
 
 
-def load_trimmed_fmt(out_path, n_slides):
-    """FMTをコピーし、先頭n_slides枚だけ残す（追加はしない）。"""
+def load_base(out_path, n_topics):
+    """FMTをコピーし、表紙・目次・トピック用スライド(n_topics枚)を用意して返す。"""
     shutil.copyfile(SRC, out_path)
     prs = Presentation(out_path)
+
+    # 表紙・目次・ひな形(1枚)以外は削除
     sldIdLst = prs.slides._sldIdLst
     ids = list(sldIdLst)
-    keep_ids = ids[:n_slides]
+    keep_ids = {ids[COVER_IDX], ids[AGENDA_IDX], ids[TEMPLATE_IDX]}
     for sldId in ids:
         if sldId in keep_ids:
             continue
         prs.part.drop_rel(sldId.rId)
         sldIdLst.remove(sldId)
+
     slides = list(prs.slides)
-    assert len(slides) == n_slides, len(slides)
-    for slide in slides:
-        clear_slide(slide)
-    return prs, slides
+    assert len(slides) == 3, len(slides)
+    cover, agenda, template = slides
+
+    topic_slides = [template]
+    for _ in range(n_topics - 1):
+        topic_slides.append(duplicate_slide(prs, 2))
+
+    return prs, cover, agenda, topic_slides
 
 
-def add_rect(slide, x, y, w, h, fill=None, line=None, line_w=None):
-    shp = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
-    shp.shadow.inherit = False
-    if fill is None:
-        shp.fill.background()
-    else:
-        shp.fill.solid()
-        shp.fill.fore_color.rgb = fill
-    if line is None:
-        shp.line.fill.background()
-    else:
-        shp.line.color.rgb = line
-        shp.line.width = line_w or Pt(0.75)
-    return shp
+# ---------- テキスト編集ヘルパー ----------
+
+def set_single_run_text(shape, new_text):
+    """1パラグラフ1ランを前提に、フォーマットを保ったままテキストだけ差し替える。"""
+    p = shape.text_frame.paragraphs[0]
+    if not p.runs:
+        p.add_run()
+    p.runs[0].text = new_text
+    for r in list(p.runs[1:]):
+        r._r.getparent().remove(r._r)
 
 
-def add_text(slide, x, y, w, h, runs, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP,
-             line_spacing=None, word_wrap=True):
-    """runs: list of paragraphs; each paragraph is a list of (text, size, bold, color) tuples."""
-    box = slide.shapes.add_textbox(x, y, w, h)
-    tf = box.text_frame
-    tf.word_wrap = word_wrap
-    tf.vertical_anchor = anchor
-    tf.margin_left = 0
-    tf.margin_right = 0
-    tf.margin_top = 0
-    tf.margin_bottom = 0
-    for i, para_runs in enumerate(runs):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.alignment = align
-        if line_spacing:
-            p.line_spacing = line_spacing
-        for text, size, bold, color in para_runs:
-            r = p.add_run()
-            r.text = text
-            r.font.size = Pt(size)
-            r.font.bold = bold
-            r.font.color.rgb = color
-    set_font_all(tf)
-    return box
+def set_multiline_text(shape, lines):
+    """既存の段落数 <= len(lines) を前提に、各段落の先頭ランへ1行ずつ入れる。
+    段落が足りない場合は最後の段落の書式を複製して追加する。"""
+    tf = shape.text_frame
+    paras = tf.paragraphs
+    while len(paras) < len(lines):
+        new_p_el = copy.deepcopy(paras[-1]._p)
+        paras[-1]._p.addnext(new_p_el)
+        paras = tf.paragraphs
+    for i, line in enumerate(lines):
+        p = paras[i]
+        if not p.runs:
+            p.add_run()
+        p.runs[0].text = line
+        for r in list(p.runs[1:]):
+            r._r.getparent().remove(r._r)
+    for extra in list(paras[len(lines):]):
+        extra._p.getparent().remove(extra._p)
 
 
-def add_bullets(slide, x, y, w, h, items, size=10, color=BODY_GRAY, bullet="・",
-                 line_spacing=1.2):
-    box = slide.shapes.add_textbox(x, y, w, h)
-    tf = box.text_frame
-    tf.word_wrap = True
-    tf.margin_left = 0
-    tf.margin_right = 0
-    tf.margin_top = 0
-    tf.margin_bottom = 0
-    for i, item in enumerate(items):
-        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.line_spacing = line_spacing
-        p.space_after = Pt(3)
-        r = p.add_run()
-        r.text = f"{bullet}{item}"
-        r.font.size = Pt(size)
-        r.font.color.rgb = color
-    set_font_all(tf)
-    return box
+def find_shape(slide, predicate):
+    for sh in slide.shapes:
+        if sh.has_text_frame and predicate(sh.text_frame.text):
+            return sh
+    return None
 
 
-def chip(slide, x, y, w, h, text, fill=CHIP_NAVY, color=WHITE, size=9.5, bold=True):
-    c = add_rect(slide, x, y, w, h, fill=fill)
-    add_text(slide, x, y, w, h, [[(text, size, bold, color)]],
-              align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-    return c
+# ---------- コンテンツ編集 ----------
+
+def edit_cover(cover, month_label):
+    """month_label 例: '2026年9月'"""
+    sh = find_shape(cover, lambda t: "LINEOAトレンドレポート" in t)
+    p = sh.text_frame.paragraphs[0]
+    p.runs[0].text = f"{month_label}　LINEOAトレンドレポート　"
+    for r in list(p.runs[1:]):
+        r._r.getparent().remove(r._r)
 
 
-def page_title(slide, text, size=17):
-    """ヘッダー見出し（レイアウト側の角アイコンの右、区切り線の上）。"""
-    add_text(slide, CONTENT_LEFT, Inches(0.1), Inches(8.1), Inches(0.42),
-              [[(text, size, True, TITLE_NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
+def edit_agenda(agenda, topics):
+    """topics: [{"title": "..."}] の順で P.3, P.4, ... を振る。ページ番号は
+    表紙1・目次1・本編なので3から開始。"""
+    sh = find_shape(agenda, lambda t: t.strip() != "" and "目次" not in t)
+    lines = [f"P.{i + 3}　　{t['title']}" for i, t in enumerate(topics)]
+    set_multiline_text(sh, lines)
 
 
-def source_line(slide, url):
-    if not url:
-        return
-    add_text(slide, CONTENT_LEFT, Inches(6.8), Inches(9.5), Inches(0.22),
-              [[(f"出典：{url}", 7.5, False, SOURCE_GRAY)]], anchor=MSO_ANCHOR.MIDDLE)
+def set_tag_highlight(slide, category_label):
+    """4つの分類タグのうち category_label に一致するものだけハイライト
+    （塗り=TEXT_2テーマ色・枠=実線）にし、他は非選択（白塗り・点線）に戻す。"""
+    for sh in slide.shapes:
+        if not sh.has_text_frame:
+            continue
+        text = sh.text_frame.text.replace("\n", "").replace("\x0b", "")
+        if text not in [c.replace("\n", "") for c in CATEGORIES]:
+            continue
+        selected = (text == category_label.replace("\n", ""))
+        sh.fill.solid()
+        if selected:
+            sh.fill.fore_color.theme_color = MSO_THEME_COLOR.TEXT_2
+            sh.line.color.rgb = TAG_BORDER_BLUE
+            sh.line.dash_style = MSO_LINE_DASH_STYLE.SOLID
+        else:
+            sh.fill.fore_color.theme_color = MSO_THEME_COLOR.BACKGROUND_1
+            sh.line.color.rgb = TAG_BORDER_BLUE
+            sh.line.dash_style = MSO_LINE_DASH_STYLE.SQUARE_DOT
 
 
-def cover_slide(slide, month_label):
-    """month_label 例: '2026年9月'（"年"区切りで年と月を分けてタイトルに使う）"""
-    _, month_only = month_label.split("年")
-    add_text(slide, Inches(0.7), Inches(2.5), Inches(9), Inches(0.4),
-              [[("LINE公式アカウント", 14, False, META_GRAY)]])
-    add_text(slide, Inches(0.7), Inches(2.85), Inches(9.3), Inches(1.0),
-              [[(f"媒体最新情報　{month_only} トレンドレポート", 30, True, TITLE_NAVY)]],
-              line_spacing=1.15)
-    add_rect(slide, Inches(0.7), Inches(3.95), Inches(9.0), Pt(1.5), fill=TITLE_NAVY)
-    chip(slide, Inches(0.7), Inches(4.15), Inches(2.4), Inches(0.4), f"{month_label}号",
-         fill=LIGHT_BOX, color=META_GRAY, size=11, bold=False)
-    add_text(slide, Inches(0.7), Inches(6.5), Inches(6), Inches(0.4),
-              [[("株式会社DYM（DYM × LINEOA）", 12, True, TITLE_NAVY)]])
+def rebuild_body_table(slide, data):
+    """ひな形の実施日テーブル(3列×7行)を消して、4行×2列の
+    区分/内容 表に差し替える。"""
+    old_table_shape = None
+    for sh in slide.shapes:
+        if getattr(sh, "has_table", False):
+            old_table_shape = sh
+            break
+    left, top = old_table_shape.left, old_table_shape.top
+    width, height = Inches(10.2), Inches(3.4)
+    old_table_shape._element.getparent().remove(old_table_shape._element)
 
+    rows, cols = 4, 2
+    gframe = slide.shapes.add_table(rows, cols, left, top, width, height)
+    table = gframe.table
+    table.columns[0].width = Inches(2.15)
+    table.columns[1].width = width - Inches(2.15)
 
-def agenda_slide(slide, topics):
-    """topics: 表示用に番号込みで整形済みの文字列リスト（例 '1. ○○'）"""
-    page_title(slide, "目次")
-    y = Inches(1.0)
-    row_h = Inches(0.62)
-    for i, t in enumerate(topics, start=1):
-        chip(slide, CONTENT_LEFT, y, Inches(0.44), Inches(0.42), str(i), size=12)
-        add_text(slide, CONTENT_LEFT + Inches(0.62), y, Inches(9.0), Inches(0.42),
-                  [[(t, 13, False, BODY_GRAY)]], anchor=MSO_ANCHOR.MIDDLE)
-        y += row_h
-
-
-def topic_slide(slide, data):
-    """data のキー：title, message, overview[], pricing[], schedule[], caution[], source"""
-    page_title(slide, data["title"])
-
-    # メインメッセージ
-    msg_y = Inches(0.75)
-    add_rect(slide, CONTENT_LEFT, msg_y, CONTENT_W, Inches(0.55), fill=LIGHT_BOX)
-    add_text(slide, CONTENT_LEFT + Inches(0.2), msg_y, CONTENT_W - Inches(0.4), Inches(0.55),
-              [[(data["message"], 12, True, TITLE_NAVY)]],
-              anchor=MSO_ANCHOR.MIDDLE, line_spacing=1.1)
-
-    # 4区分ボックス（2x2）
-    box_top = Inches(1.45)
-    box_h = Inches(2.55)
-    gap = Inches(0.15)
-    hgap = Inches(0.2)
-    box_w = (CONTENT_W - hgap) / 2
-    positions = [
-        (CONTENT_LEFT, box_top),
-        (CONTENT_LEFT + box_w + hgap, box_top),
-        (CONTENT_LEFT, box_top + box_h + gap),
-        (CONTENT_LEFT + box_w + hgap, box_top + box_h + gap),
-    ]
     sections = [
-        ("概要・変更点", data.get("overview", [])),
-        ("料金体系・出稿条件", data.get("pricing", [])),
-        ("スケジュール・導入フロー", data.get("schedule", [])),
-        ("注意点・影響", data.get("caution", [])),
+        (SECTIONS[0], data.get("overview", [])),
+        (SECTIONS[1], data.get("pricing", [])),
+        (SECTIONS[2], data.get("schedule", [])),
+        (SECTIONS[3], data.get("caution", [])),
     ]
-    chip_h = Inches(0.34)
-    for (x, y), (label, items) in zip(positions, sections):
-        add_rect(slide, x, y, box_w, box_h, fill=WHITE, line=BORDER_GRAY, line_w=Pt(0.75))
-        chip(slide, x, y, box_w, chip_h, label, size=10.5)
+    for r, (label, items) in enumerate(sections):
+        label_cell = table.cell(r, 0)
+        label_cell.fill.solid()
+        label_cell.fill.fore_color.rgb = TABLE_LABEL_NAVY
+        label_cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+        label_cell.margin_left = Inches(0.08)
+        label_cell.margin_right = Inches(0.05)
+        tf = label_cell.text_frame
+        tf.word_wrap = True
+        p = tf.paragraphs[0]
+        p.text = label
+        for run in p.runs:
+            run.font.size = Pt(10)
+            run.font.bold = True
+            run.font.color.rgb = WHITE
+            run.font.name = "メイリオ"
+
+        content_cell = table.cell(r, 1)
+        content_cell.fill.solid()
+        content_cell.fill.fore_color.rgb = WHITE
+        content_cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+        content_cell.margin_left = Inches(0.1)
+        content_cell.margin_right = Inches(0.1)
+        ctf = content_cell.text_frame
+        ctf.word_wrap = True
         items = items or ["－"]
-        # 項目数が多い箱は自動でフォントを詰めて収める
-        # 基本は11pt固定（殿村さん指定）。項目数が多い箱だけ、はみ出し防止で自動的に詰める
-        size, spacing = (10, 1.05) if len(items) >= 6 else (11, 1.15)
-        add_bullets(slide, x + Inches(0.18), y + chip_h + Inches(0.1),
-                    box_w - Inches(0.36), box_h - chip_h - Inches(0.2), items,
-                    size=size, line_spacing=spacing)
+        total_len = sum(len(x) for x in items)
+        if total_len > 200:
+            size, spacing, space_after = 8.5, 1.0, 1
+        elif total_len > 120:
+            size, spacing, space_after = 9.5, 1.05, 1.5
+        else:
+            size, spacing, space_after = 11, 1.15, 3
+        for i, item in enumerate(items):
+            p = ctf.paragraphs[0] if i == 0 else ctf.add_paragraph()
+            p.line_spacing = spacing
+            p.space_after = Pt(space_after)
+            r_ = p.add_run()
+            r_.text = f"・{item}"
+            r_.font.size = Pt(size)
+            r_.font.color.rgb = BODY_GRAY
+            r_.font.name = "メイリオ"
 
-    source_line(slide, data.get("source"))
+
+def edit_topic_slide(slide, data):
+    banner = find_shape(slide, lambda t: t.startswith("【"))
+    set_single_run_text(banner, f"【{data['bracket']}】{data['headline']}")
+
+    # 説明バンド＝3段落・中央揃えのシェイプ（ひな形固有の構造で特定）
+    desc = None
+    for sh in slide.shapes:
+        if not sh.has_text_frame:
+            continue
+        paras = sh.text_frame.paragraphs
+        if len(paras) == 3 and paras[0].alignment == PP_ALIGN.CENTER:
+            desc = sh
+            break
+    set_multiline_text(desc, data["description_lines"])
+
+    # 対象業界の値ボックス＝ひな形の元テキストで特定
+    target = find_shape(slide, lambda t: t.strip() == "友だち獲得を強化したい全業種")
+    if target is not None:
+        set_single_run_text(target, data["industry"])
+
+    src = find_shape(slide, lambda t: t.startswith("出典："))
+    if src is not None:
+        set_single_run_text(src, f"出典：{data['source']}")
+
+    sec_header = find_shape(slide, lambda t: t.strip() == "■ 施策スケジュール")
+    if sec_header is not None:
+        set_single_run_text(sec_header, "■ 詳細")
+
+    set_tag_highlight(slide, data["category"])
+    rebuild_body_table(slide, data)
 
 
-def build(out_path, month_label, topics_list, topics):
-    """月次スクリプトから呼ぶエントリーポイント。
-    topics_list: 目次に出す番号付き文字列のリスト
-    topics: topic_slide() に渡す dict のリスト（topics_listと同じ順・同じ件数）
+def build(out_path, month_label, topics):
+    """topics: dict のリスト。各要素は
+    {title, bracket, headline, industry, category, description_lines(3行),
+     overview, pricing, schedule, caution, source}
+    title は目次に出すページタイトル（通常は【bracket】headline と同じでよい）。
     """
-    n_slides = 2 + len(topics)  # 表紙1 + 目次1 + トピックN
-    prs, slides = load_trimmed_fmt(out_path, n_slides)
+    prs, cover, agenda, topic_slides = load_base(out_path, len(topics))
 
-    cover_slide(slides[0], month_label)
-    agenda_slide(slides[1], topics_list)
-
-    for slide, data in zip(slides[2:], topics):
-        topic_slide(slide, data)
+    edit_cover(cover, month_label)
+    edit_agenda(agenda, topics)
+    for slide, data in zip(topic_slides, topics):
+        edit_topic_slide(slide, data)
 
     prs.save(out_path)
     print(f"saved: {out_path}")
