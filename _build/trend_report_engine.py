@@ -140,6 +140,10 @@ def set_multiline_text(shape, lines):
         p.runs[0].text = line
         for r in list(p.runs[1:]):
             r._r.getparent().remove(r._r)
+        # 元の段落に改行(Shift+Enter)で複数行が押し込まれているケースがあり、
+        # runs[1:] の削除だけでは <a:br/> が残って空行になる。ここで一緒に消す。
+        for br in list(p._p.findall(qn("a:br"))):
+            br.getparent().remove(br)
     for extra in list(paras[len(lines):]):
         extra._p.getparent().remove(extra._p)
 
