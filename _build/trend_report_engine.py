@@ -200,7 +200,7 @@ def rebuild_body_table(slide, data):
             old_table_shape = sh
             break
     left, top = old_table_shape.left, old_table_shape.top
-    width, height = Inches(10.2), Inches(3.4)
+    width, height = Inches(10.2), Inches(3.5)
     old_table_shape._element.getparent().remove(old_table_shape._element)
 
     rows, cols = 4, 2
@@ -215,6 +215,7 @@ def rebuild_body_table(slide, data):
         (SECTIONS[2], data.get("schedule", [])),
         (SECTIONS[3], data.get("caution", [])),
     ]
+
     for r, (label, items) in enumerate(sections):
         label_cell = table.cell(r, 0)
         label_cell.fill.solid()
@@ -238,14 +239,16 @@ def rebuild_body_table(slide, data):
         content_cell.vertical_anchor = MSO_ANCHOR.MIDDLE
         content_cell.margin_left = Inches(0.1)
         content_cell.margin_right = Inches(0.1)
+        content_cell.margin_top = Inches(0.04)
+        content_cell.margin_bottom = Inches(0.04)
         ctf = content_cell.text_frame
         ctf.word_wrap = True
         items = items or ["－"]
         total_len = sum(len(x) for x in items)
         if total_len > 200:
-            size, spacing, space_after = 8.5, 1.0, 1
+            size, spacing, space_after = 9, 1.02, 1.5
         elif total_len > 120:
-            size, spacing, space_after = 9.5, 1.05, 1.5
+            size, spacing, space_after = 10, 1.08, 2
         else:
             size, spacing, space_after = 11, 1.15, 3
         for i, item in enumerate(items):
