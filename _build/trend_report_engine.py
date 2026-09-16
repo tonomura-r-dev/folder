@@ -220,6 +220,26 @@ def rebuild_body_table(slide, data):
         (SECTIONS[3], data.get("caution", [])),
     ]
 
+    # 行の高さを内容量（文字数）に比例配分する。「料金体系・出稿条件」「スケジュール・
+    # 導入フロー」は「－」等の空回答が多く、他の区分と同じ高さだと余白ばかりになるため、
+    # 情報が少ない行は縮め、浮いた分を情報が多い行（概要・注意点など）に回す。
+    # フォントサイズは変えない（行の高さだけの調整なので、はみ出しの心配がない）。
+    lens = [max(sum(len(x) for x in items), 15) for _, items in sections]
+    total_w = sum(lens)
+    min_h = Inches(0.5)
+    raw_heights = [height * (w / total_w) for w in lens]
+    raw_heights = [max(h, min_h) for h in raw_heights]
+    overflow = sum(raw_heights) - height
+    if overflow > 0:
+        above_min = [i for i, h in enumerate(raw_heights) if h > min_h]
+        above_sum = sum(raw_heights[i] - min_h for i in above_min)
+        if above_sum > 0:
+            for i in above_min:
+                share = (raw_heights[i] - min_h) / above_sum
+                raw_heights[i] -= int(overflow * share)
+    for r, h in enumerate(raw_heights):
+        table.rows[r].height = int(h)
+
     for r, (label, items) in enumerate(sections):
         label_cell = table.cell(r, 0)
         label_cell.fill.solid()
