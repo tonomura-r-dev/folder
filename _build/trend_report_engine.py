@@ -294,6 +294,11 @@ def edit_topic_slide(slide, data):
     if sec_header is not None:
         set_single_run_text(sec_header, "■ 詳細")
 
+    # ヘッダー見出し「今後のアップデート情報」＝左上の紺色の角アイコンに寄りすぎているので右へ寄せる
+    header = find_shape(slide, lambda t: "今後のアップデート情報" in t)
+    if header is not None:
+        header.left = header.left + Inches(0.2)
+
     set_tag_highlight(slide, data["category"])
     rebuild_body_table(slide, data)
 
