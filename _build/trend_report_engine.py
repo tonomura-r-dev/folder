@@ -164,9 +164,14 @@ def find_shape(slide, predicate):
 
 def edit_cover(cover, month_label):
     """month_label 例: '2026年9月'"""
+    edit_cover_custom(cover, f"{month_label}　LINEOAトレンドレポート　")
+
+
+def edit_cover_custom(cover, full_text):
+    """表紙タイトルを丸ごと差し替える（トレンドレポート以外の単発デッキ用）。"""
     sh = find_shape(cover, lambda t: "LINEOAトレンドレポート" in t)
     p = sh.text_frame.paragraphs[0]
-    p.runs[0].text = f"{month_label}　LINEOAトレンドレポート　"
+    p.runs[0].text = full_text
     for r in list(p.runs[1:]):
         r._r.getparent().remove(r._r)
 
@@ -607,6 +612,23 @@ def build(out_path, month_label, topics):
     prs, cover, agenda, topic_slides = load_base(out_path, len(topics))
 
     edit_cover(cover, month_label)
+    edit_agenda(agenda, topics)
+    for slide, data in zip(topic_slides, topics):
+        edit_topic_slide(slide, data)
+
+    force_font(prs)
+
+    prs.save(out_path)
+    print(f"saved: {out_path}")
+
+
+def build_standalone(out_path, cover_title, topics):
+    """トレンドレポートと同じトンマナ（DYM_LINEOA_TREND_FMT.pptx）で、
+    特定の案件・キャンペーン専用の単発デッキを作る。topics の形式は build() と同じ。
+    表紙タイトルだけ自由文言にできる（月次ラベル形式を強制しない）。"""
+    prs, cover, agenda, topic_slides = load_base(out_path, len(topics))
+
+    edit_cover_custom(cover, cover_title)
     edit_agenda(agenda, topics)
     for slide, data in zip(topic_slides, topics):
         edit_topic_slide(slide, data)
