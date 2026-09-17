@@ -296,6 +296,24 @@ def rebuild_body_table(slide, data):
     return left, top, width, height
 
 
+def add_image(slide, left, top, box_w, box_h, image_path):
+    """指定エリアに収まるよう縦横比を保ってスケールし、中央寄せで画像を配置する。"""
+    from PIL import Image
+    with Image.open(image_path) as im:
+        img_w, img_h = im.size
+    box_ratio = box_w / box_h
+    img_ratio = img_w / img_h
+    if img_ratio > box_ratio:
+        w = box_w
+        h = int(box_w / img_ratio)
+    else:
+        h = box_h
+        w = int(box_h * img_ratio)
+    left_off = left + (box_w - w) // 2
+    top_off = top + (box_h - h) // 2
+    slide.shapes.add_picture(image_path, left_off, top_off, width=w, height=h)
+
+
 def add_image_placeholder(slide, left, top, width, height, caption):
     """画像を後から差し込むための空きスペース（破線の枠＋説明キャプション）を置く。
     画像が届いたらこの枠を picture に差し替える。"""
@@ -364,14 +382,14 @@ def edit_topic_slide(slide, data):
 
     set_tag_highlight(slide, data["category"])
     t_left, t_top, t_width, t_height = rebuild_body_table(slide, data)
-    add_image_placeholder(
-        slide,
-        t_left + t_width + IMAGE_GAP,
-        t_top,
-        IMAGE_WIDTH,
-        t_height,
-        data.get("image_caption", ""),
-    )
+    image_left = t_left + t_width + IMAGE_GAP
+    image_path = data.get("image_path")
+    if image_path and Path(image_path).exists():
+        add_image(slide, image_left, t_top, IMAGE_WIDTH, t_height, image_path)
+    else:
+        add_image_placeholder(
+            slide, image_left, t_top, IMAGE_WIDTH, t_height, data.get("image_caption", "")
+        )
 
 
 def build(out_path, month_label, topics):

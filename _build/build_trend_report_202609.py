@@ -46,6 +46,7 @@ TOPICS = [
                    "同一ミニアプリへの表示上限2回（閉じ切ると永久対象外）。同一ユーザーは1日最大1回まで"],
         source="https://workers-hub.box.com/s/9uo4m0fiqyxmddz5br3xe9691w0q4ht7",
         image_caption="トリガー→ポップアップ表示→アプリタブ追加の3ステップ図",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic1.png"),
     ),
     dict(
         bracket="LINE公式アカウント",
@@ -67,6 +68,7 @@ TOPICS = [
                    "告知日程が流動的なため最新情報を要確認"],
         source="https://workers-hub.box.com/s/ms8iztyci2dn5z2qna88rklxwxp7o5ja",
         image_caption="参照期間のBefore/Afterタイムライン図",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic2.png"),
     ),
     dict(
         bracket="LINEプロモーションスタンプ",
@@ -89,6 +91,7 @@ TOPICS = [
                    "運用中クライアントへの実績報告・追加提案の材料に使える"],
         source="https://workers-hub.box.com/s/rgfhp6hxyusj7domi1irjx68jld23k9r",
         image_caption="サジェスト面の導線イメージ（友だち追加）",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic3.png"),
     ),
     dict(
         bracket="LINEミニアプリ",
@@ -110,6 +113,7 @@ TOPICS = [
                    "1回の誘導で選べるのは1アカウントのみ。流入経路ごとに出し分ける（同時に複数へは登録不可）"],
         source="https://workers-hub.box.com/s/ko2jjwgxk5fs18ejrs97fvfqv3bm3089",
         image_caption="1ミニアプリ→複数公式アカウントへの分岐図",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic4.png"),
     ),
     dict(
         bracket="LINE Sales Promotion Manager",
@@ -131,6 +135,7 @@ TOPICS = [
                    "稼働中キャンペーンがあるクライアントには事前周知が必要"],
         source="https://workers-hub.box.com/s/mo3y54qld9vj4kung0c4040z41mfhoip",
         image_caption="利用停止期間のカレンダー帯グラフ",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic5.png"),
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -158,6 +163,7 @@ TOPICS = [
                    "他割引との併用不可。景品がLINEポイントから変更になる可能性あり（変更不可の申し出は受付不可）"],
         source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
         image_caption="実施フロー図（告知→応募→景品進呈）",
+        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic6.png"),
     ),
 ]
 
