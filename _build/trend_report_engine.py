@@ -299,6 +299,24 @@ def edit_topic_slide(slide, data):
         )
 
 
+def force_font(prs, font_name="メイリオ"):
+    """全スライドの全テキスト（表のセルも含む）のフォントを font_name に統一する。
+    ひな形（FMT）由来のランには "Meiryo"（英語表記）や未指定（テーマ既定）が
+    混ざっているため、2026-09-17、殿村さんの指示で明示的に揃えることにした。"""
+    for slide in prs.slides:
+        for sh in slide.shapes:
+            if sh.has_text_frame:
+                for para in sh.text_frame.paragraphs:
+                    for run in para.runs:
+                        run.font.name = font_name
+            if getattr(sh, "has_table", False):
+                for row in sh.table.rows:
+                    for cell in row.cells:
+                        for para in cell.text_frame.paragraphs:
+                            for run in para.runs:
+                                run.font.name = font_name
+
+
 def build(out_path, month_label, topics):
     """topics: dict のリスト。各要素は
     {title, bracket, headline, industry, category, description_lines(3行),
@@ -311,6 +329,8 @@ def build(out_path, month_label, topics):
     edit_agenda(agenda, topics)
     for slide, data in zip(topic_slides, topics):
         edit_topic_slide(slide, data)
+
+    force_font(prs)
 
     prs.save(out_path)
     print(f"saved: {out_path}")
