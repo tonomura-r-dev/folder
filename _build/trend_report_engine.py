@@ -199,25 +199,130 @@ def set_tag_highlight(slide, category_label):
 IMAGE_GAP = Inches(0.15)
 IMAGE_WIDTH = Inches(2.7)
 
+CIRCLED_NUMS = "①②③④⑤⑥⑦⑧⑨"
+NA_ITEMS = {"－", "該当なし"}
+
+ACCENT_BLUE = RGBColor(0x34, 0x67, 0xB2)
+CARD_FILL = RGBColor(0xFA, 0xFA, 0xFB)
+CARD_BORDER = RGBColor(0xE0, 0xE0, 0xE0)
+MUTED_GRAY = RGBColor(0x80, 0x80, 0x80)
+CHANGE_COLOR = RGBColor(0xC0, 0x50, 0x2A)
+
+
+def is_step_list(items):
+    """「①...」「②...」のように連番で始まる項目が2つ以上並んでいるか。"""
+    return len(items) >= 2 and all(it.strip()[:1] in CIRCLED_NUMS for it in items)
+
+
+def _fill_bullets(text_frame, items, font_size, line_spacing, space_after):
+    """丸ドット箇条書き。「→」を含む項目は矢印以降を強調色・太字にして
+    数字の変化がひと目で分かるようにする。"""
+    text_frame.word_wrap = True
+    for i, item in enumerate(items):
+        p = text_frame.paragraphs[0] if i == 0 else text_frame.add_paragraph()
+        p.alignment = PP_ALIGN.LEFT
+        p.line_spacing = line_spacing
+        p.space_after = Pt(space_after)
+        dot = p.add_run()
+        dot.text = "● "
+        dot.font.size = Pt(max(font_size - 1.5, 6))
+        dot.font.color.rgb = ACCENT_BLUE
+        dot.font.name = "メイリオ"
+
+        if "→" in item:
+            before_txt, _, rest = item.partition("→")
+            after_txt = "→" + rest
+            r1 = p.add_run()
+            r1.text = before_txt
+            r1.font.size = Pt(font_size)
+            r1.font.color.rgb = BODY_GRAY
+            r1.font.name = "メイリオ"
+            r2 = p.add_run()
+            r2.text = after_txt
+            r2.font.size = Pt(font_size)
+            r2.font.bold = False
+            r2.font.color.rgb = CHANGE_COLOR
+            r2.font.name = "メイリオ"
+        else:
+            r1 = p.add_run()
+            r1.text = item
+            r1.font.size = Pt(font_size)
+            r1.font.color.rgb = BODY_GRAY
+            r1.font.name = "メイリオ"
+
+
+def _step_flow(slide, x, y, w, h, items):
+    """①②③④…の連番項目を、箱＋矢印の横並びフローで表示する
+    （スケジュールの導入フローだけ、この形にして工程の流れが一目でわかるようにする）。"""
+    n = len(items)
+    arrow_w = Inches(0.22)
+    box_w = (w - (n - 1) * arrow_w) // n
+    cx = x
+    for i, item in enumerate(items):
+        box = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, y, box_w, h)
+        box.adjustments[0] = 0.12
+        box.fill.solid()
+        box.fill.fore_color.rgb = CARD_FILL
+        box.line.color.rgb = CARD_BORDER
+        box.line.width = Pt(0.75)
+        box.shadow.inherit = False
+        tf = box.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_left = Inches(0.06)
+        tf.margin_right = Inches(0.06)
+        tf.margin_top = Inches(0.03)
+        tf.margin_bottom = Inches(0.03)
+        p = tf.paragraphs[0]
+        p.alignment = PP_ALIGN.CENTER
+        p.line_spacing = 0.95
+        r = p.add_run()
+        r.text = item.strip()
+        r.font.size = Pt(9)
+        r.font.bold = True
+        r.font.color.rgb = RGBColor(0x1F, 0x28, 0x5A)
+        r.font.name = "メイリオ"
+        cx += box_w
+        if i < n - 1:
+            atb = slide.shapes.add_textbox(cx, y, arrow_w, h)
+            atf = atb.text_frame
+            atf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            atf.margin_left = 0
+            atf.margin_right = 0
+            ap = atf.paragraphs[0]
+            ap.alignment = PP_ALIGN.CENTER
+            ar = ap.add_run()
+            ar.text = "→"
+            ar.font.size = Pt(14)
+            ar.font.bold = True
+            ar.font.color.rgb = ACCENT_BLUE
+            cx += arrow_w
+
 
 def rebuild_body_table(slide, data):
-    """ひな形の実施日テーブル(3列×7行)を消して、4行×2列の
-    区分/内容 表に差し替える。右端は画像プレースホルダー分だけ幅を空けておく。"""
+    """ひな形の実施日テーブル(3列×7行)を消して、4行×2列の区分/内容 表に
+    差し替える（土台は元のテーブルのまま＝PowerPoint側の行高さ自動調整に乗せて
+    あふれを防ぐ）。2026-09-17：文章の羅列からビジュアル表現に変更した：
+    ①スケジュールが①②③④…の連番なら、セルの上に箱＋矢印の横並びフローを重ねて表示
+    ②それ以外の内容は丸ドット箇条書きにし、「→」を含む一文は変化後を強調色にする
+    ③情報が無い区分（－／該当なし）は中央にグレーの「該当なし」とだけ表示する
+    右端は画像プレースホルダー分だけ幅を空けておく。"""
     old_table_shape = None
     for sh in slide.shapes:
         if getattr(sh, "has_table", False):
             old_table_shape = sh
             break
     left, top = old_table_shape.left, old_table_shape.top
-    full_width, height = Inches(10.2), Inches(3.5)
+    full_width, height = Inches(10.2), Inches(3.6)
     width = full_width - IMAGE_GAP - IMAGE_WIDTH
     old_table_shape._element.getparent().remove(old_table_shape._element)
 
+    label_w = Inches(1.9)
     rows, cols = 4, 2
     gframe = slide.shapes.add_table(rows, cols, left, top, width, height)
     table = gframe.table
-    table.columns[0].width = Inches(1.9)
-    table.columns[1].width = width - Inches(1.9)
+    table.columns[0].width = label_w
+    table.columns[1].width = width - label_w
 
     sections = [
         (SECTIONS[0], data.get("overview", [])),
@@ -226,14 +331,12 @@ def rebuild_body_table(slide, data):
         (SECTIONS[3], data.get("caution", [])),
     ]
 
-    # 行の高さを内容量（文字数）に比例配分する。「料金体系・出稿条件」「スケジュール・
-    # 導入フロー」は「－」等の空回答が多く、他の区分と同じ高さだと余白ばかりになるため、
-    # 情報が少ない行は縮め、浮いた分を情報が多い行（概要・注意点など）に回す。
-    # フォントサイズは変えない（行の高さだけの調整なので、はみ出しの心配がない）。
+    # 行の高さを内容量（文字数）に比例配分する。情報が少ない区分は縮め、
+    # 浮いた分を情報が多い区分に回す。
     lens = [max(sum(len(x) for x in items), 15) for _, items in sections]
     total_w = sum(lens)
     min_h = Inches(0.5)
-    raw_heights = [height * (w / total_w) for w in lens]
+    raw_heights = [height * (w_ / total_w) for w_ in lens]
     raw_heights = [max(h, min_h) for h in raw_heights]
     overflow = sum(raw_heights) - height
     if overflow > 0:
@@ -246,6 +349,7 @@ def rebuild_body_table(slide, data):
     for r, h in enumerate(raw_heights):
         table.rows[r].height = int(h)
 
+    step_row = None
     for r, (label, items) in enumerate(sections):
         label_cell = table.cell(r, 0)
         label_cell.fill.solid()
@@ -267,34 +371,48 @@ def rebuild_body_table(slide, data):
         content_cell.fill.solid()
         content_cell.fill.fore_color.rgb = WHITE
         content_cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-        content_cell.margin_left = Inches(0.1)
+        content_cell.margin_left = Inches(0.12)
         content_cell.margin_right = Inches(0.1)
         content_cell.margin_top = Inches(0.04)
         content_cell.margin_bottom = Inches(0.04)
-        ctf = content_cell.text_frame
-        ctf.word_wrap = True
+
         items = items or ["－"]
         total_len = sum(len(x) for x in items)
-        # 画像プレースホルダー分だけ列幅が狭くなった（同じ文字数でも折り返しが増える）ので、
-        # 閾値を厳しめにしてある。
-        if total_len > 150:
-            size, spacing, space_after = 8.5, 1.0, 1
-        elif total_len > 90:
-            size, spacing, space_after = 9.5, 1.05, 1.5
-        else:
-            size, spacing, space_after = 10.5, 1.1, 2
-        for i, item in enumerate(items):
-            p = ctf.paragraphs[0] if i == 0 else ctf.add_paragraph()
-            p.line_spacing = spacing
-            p.space_after = Pt(space_after)
+        if len(items) == 1 and items[0].strip() in NA_ITEMS:
+            p = content_cell.text_frame.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
             r_ = p.add_run()
-            r_.text = f"・{item}"
-            r_.font.size = Pt(size)
-            r_.font.color.rgb = BODY_GRAY
+            r_.text = "該当なし"
+            r_.font.size = Pt(10)
+            r_.font.bold = True
+            r_.font.color.rgb = MUTED_GRAY
             r_.font.name = "メイリオ"
+        elif is_step_list(items):
+            step_row = r  # セルは白紙のまま。表を作り終えてから上に箱＋矢印を重ねる
+        else:
+            if total_len > 150:
+                font_size, line_spacing, space_after = 9, 1.02, 1.5
+            elif total_len > 90:
+                font_size, line_spacing, space_after = 10, 1.08, 2
+            else:
+                font_size, line_spacing, space_after = 10.5, 1.15, 3
+            _fill_bullets(content_cell.text_frame, items, font_size, line_spacing, space_after)
+
+    if step_row is not None:
+        row_top = top + sum(raw_heights[:step_row])
+        row_h = raw_heights[step_row]
+        content_left = left + label_w
+        content_w = width - label_w
+        _step_flow(
+            slide,
+            int(content_left) + int(Inches(0.06)),
+            int(row_top),
+            int(content_w) - int(Inches(0.12)),
+            int(row_h),
+            sections[step_row][1],
+        )
 
     return left, top, width, height
-
 
 def add_image(slide, left, top, box_w, box_h, image_path):
     """指定エリアに収まるよう縦横比を保ってスケールし、中央寄せで画像を配置する。"""
