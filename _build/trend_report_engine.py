@@ -257,7 +257,7 @@ def _label_chip(slide, x, y, w, h, text, fill, text_color):
     r.font.name = "メイリオ"
 
 
-def _content_box(slide, x, y, w, h, lines, fill, border, big_bold_first=False):
+def _content_box(slide, x, y, w, h, lines, fill, border, big_bold_first=False, headline_size=None):
     box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
     box.fill.solid()
     box.fill.fore_color.rgb = fill
@@ -279,7 +279,7 @@ def _content_box(slide, x, y, w, h, lines, fill, border, big_bold_first=False):
         r = p.add_run()
         r.text = line
         if i == 0 and big_bold_first:
-            r.font.size = Pt(16) if len(lines) > 1 else Pt(18)
+            r.font.size = headline_size if headline_size else (Pt(16) if len(lines) > 1 else Pt(18))
             r.font.bold = True
             r.font.color.rgb = NAVY
         else:
@@ -324,17 +324,26 @@ def render_before_after(slide, x, y, w, h, data):
     """AS-IS/TO-BEの比較（上段・コンパクト）＋メリット2枚（下段・主役）。
     2026-09-17、③プロモーションスタンプを「アップデート内容」「インパクト」の
     2ページに分割した際に確定したレイアウト。data のキー：
-    as_is（1行）、to_be_lines（1〜2行）、merits（[(headline, desc), ...] 2件）。"""
+    as_is（1行）、to_be_lines（1〜2行）、merits（[(headline, desc), ...] 2件）。
+    任意キー as_is_ratio（AS-IS箱の幅比率。既定0.5＝左右等分）、
+    as_is_headline_size・to_be_headline_size（見出し文字サイズをPt()で明示指定。
+    既定は等分レイアウト時の自動計算のまま）で、片方を強調するレイアウトにできる
+    （2026-09-17、⑥LINEオープンキャンペーン「特典内容」で追加。既定値は③の
+    確定レイアウトと同じなので、data にこれらのキーが無い限り見た目は変わらない）。"""
     top_h = Inches(1.0)
     label_h = Inches(0.3)
     arrow_w = Inches(0.5)
-    box_w = (w - arrow_w) // 2
+    as_is_ratio = data.get("as_is_ratio", 0.5)
+    avail_w = w - arrow_w
+    as_is_w = int(avail_w * as_is_ratio)
+    to_be_w = avail_w - as_is_w
 
-    _label_chip(slide, x, y, box_w, label_h, "AS-IS", LIGHT_GRAY, BODY_GRAY)
-    _content_box(slide, x, y + label_h, box_w, top_h - label_h,
-                 [data["as_is"]], LIGHT_GRAY, BORDER_GRAY, big_bold_first=True)
+    _label_chip(slide, x, y, as_is_w, label_h, "AS-IS", LIGHT_GRAY, BODY_GRAY)
+    _content_box(slide, x, y + label_h, as_is_w, top_h - label_h,
+                 [data["as_is"]], LIGHT_GRAY, BORDER_GRAY, big_bold_first=True,
+                 headline_size=data.get("as_is_headline_size"))
 
-    atb = slide.shapes.add_textbox(x + box_w, y, arrow_w, top_h)
+    atb = slide.shapes.add_textbox(x + as_is_w, y, arrow_w, top_h)
     atf = atb.text_frame
     atf.vertical_anchor = MSO_ANCHOR.MIDDLE
     ap = atf.paragraphs[0]
@@ -345,10 +354,11 @@ def render_before_after(slide, x, y, w, h, data):
         r.font.bold = True
         r.font.color.rgb = ACCENT
 
-    x2 = x + box_w + arrow_w
-    _label_chip(slide, x2, y, box_w, label_h, "TO-BE", NAVY, WHITE)
-    _content_box(slide, x2, y + label_h, box_w, top_h - label_h,
-                 data["to_be_lines"], LIGHT_BLUE, ACCENT, big_bold_first=True)
+    x2 = x + as_is_w + arrow_w
+    _label_chip(slide, x2, y, to_be_w, label_h, "TO-BE", NAVY, WHITE)
+    _content_box(slide, x2, y + label_h, to_be_w, top_h - label_h,
+                 data["to_be_lines"], LIGHT_BLUE, ACCENT, big_bold_first=True,
+                 headline_size=data.get("to_be_headline_size"))
 
     merit_y = y + top_h + Inches(0.25)
     merit_h = Inches(1.5)

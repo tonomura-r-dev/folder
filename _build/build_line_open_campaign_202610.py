@@ -11,6 +11,7 @@ LINEオープンキャンペーン（26年10-12月・期間限定特別プラン
 """
 
 from pathlib import Path
+from pptx.util import Pt
 import trend_report_engine as engine
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +30,9 @@ TOPICS = [
         ],
         render="before_after",
         as_is="通常プラン｜基本費用1,800万円・掲載期間7日間・配信900万通",
+        as_is_ratio=0.4,
+        as_is_headline_size=Pt(13),
+        to_be_headline_size=Pt(22),
         to_be_lines=["特別プラン｜基本費用1,500万円", "掲載期間15日間・配信1,050万通に拡大"],
         merits=[
             ("特別価格で提案しやすい",
