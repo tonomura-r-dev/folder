@@ -45,6 +45,7 @@ TOPICS = [
                    "再表示制御：追加後に削除すると720時間（30日間）、「Not now」で見送ると14日間は再表示なし",
                    "同一ミニアプリへの表示上限2回（閉じ切ると永久対象外）。同一ユーザーは1日最大1回まで"],
         source="https://workers-hub.box.com/s/9uo4m0fiqyxmddz5br3xe9691w0q4ht7",
+        image_caption="トリガー→ポップアップ表示→アプリタブ追加の3ステップ図",
     ),
     dict(
         bracket="LINE公式アカウント",
@@ -65,6 +66,7 @@ TOPICS = [
                    "「分析」タブの一部データはダウンロード可能（詳細は分析マニュアル参照）",
                    "告知日程が流動的なため最新情報を要確認"],
         source="https://workers-hub.box.com/s/ms8iztyci2dn5z2qna88rklxwxp7o5ja",
+        image_caption="参照期間のBefore/Afterタイムライン図",
     ),
     dict(
         bracket="LINEプロモーションスタンプ",
@@ -86,6 +88,7 @@ TOPICS = [
                    "改善倍率は無料スタンプの最新DL日が古い層ほど高く、過去6〜18ヶ月DLなし層で約3.0倍",
                    "運用中クライアントへの実績報告・追加提案の材料に使える"],
         source="https://workers-hub.box.com/s/rgfhp6hxyusj7domi1irjx68jld23k9r",
+        image_caption="サジェスト面の導線イメージ（友だち追加）",
     ),
     dict(
         bracket="LINEミニアプリ",
@@ -106,6 +109,7 @@ TOPICS = [
                    "紐づけ条件：同一プロバイダーの公式アカウント／admin権限を持つ操作者。最大1,000件まで",
                    "1回の誘導で選べるのは1アカウントのみ。流入経路ごとに出し分ける（同時に複数へは登録不可）"],
         source="https://workers-hub.box.com/s/ko2jjwgxk5fs18ejrs97fvfqv3bm3089",
+        image_caption="1ミニアプリ→複数公式アカウントへの分岐図",
     ),
     dict(
         bracket="LINE Sales Promotion Manager",
@@ -126,6 +130,7 @@ TOPICS = [
                    "LBPMでの案件申請・入稿など、上記以外の機能は通常どおり利用可能",
                    "稼働中キャンペーンがあるクライアントには事前周知が必要"],
         source="https://workers-hub.box.com/s/mo3y54qld9vj4kung0c4040z41mfhoip",
+        image_caption="利用停止期間のカレンダー帯グラフ",
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -152,6 +157,7 @@ TOPICS = [
                    "キャンセル規定：発注受領後、または発注期日（開始25営業日前）超過後のキャンセルは最低発注金額1,500万円を請求",
                    "他割引との併用不可。景品がLINEポイントから変更になる可能性あり（変更不可の申し出は受付不可）"],
         source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        image_caption="実施フロー図（告知→応募→景品進呈）",
     ),
 ]
 

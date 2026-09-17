@@ -35,6 +35,7 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.dml import MSO_THEME_COLOR, MSO_LINE_DASH_STYLE
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.ns import qn
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -195,23 +196,28 @@ def set_tag_highlight(slide, category_label):
             sh.line.dash_style = MSO_LINE_DASH_STYLE.SQUARE_DOT
 
 
+IMAGE_GAP = Inches(0.15)
+IMAGE_WIDTH = Inches(2.7)
+
+
 def rebuild_body_table(slide, data):
     """ひな形の実施日テーブル(3列×7行)を消して、4行×2列の
-    区分/内容 表に差し替える。"""
+    区分/内容 表に差し替える。右端は画像プレースホルダー分だけ幅を空けておく。"""
     old_table_shape = None
     for sh in slide.shapes:
         if getattr(sh, "has_table", False):
             old_table_shape = sh
             break
     left, top = old_table_shape.left, old_table_shape.top
-    width, height = Inches(10.2), Inches(3.5)
+    full_width, height = Inches(10.2), Inches(3.5)
+    width = full_width - IMAGE_GAP - IMAGE_WIDTH
     old_table_shape._element.getparent().remove(old_table_shape._element)
 
     rows, cols = 4, 2
     gframe = slide.shapes.add_table(rows, cols, left, top, width, height)
     table = gframe.table
-    table.columns[0].width = Inches(2.15)
-    table.columns[1].width = width - Inches(2.15)
+    table.columns[0].width = Inches(1.9)
+    table.columns[1].width = width - Inches(1.9)
 
     sections = [
         (SECTIONS[0], data.get("overview", [])),
@@ -269,12 +275,14 @@ def rebuild_body_table(slide, data):
         ctf.word_wrap = True
         items = items or ["－"]
         total_len = sum(len(x) for x in items)
-        if total_len > 200:
-            size, spacing, space_after = 9, 1.02, 1.5
-        elif total_len > 120:
-            size, spacing, space_after = 10, 1.08, 2
+        # 画像プレースホルダー分だけ列幅が狭くなった（同じ文字数でも折り返しが増える）ので、
+        # 閾値を厳しめにしてある。
+        if total_len > 150:
+            size, spacing, space_after = 8.5, 1.0, 1
+        elif total_len > 90:
+            size, spacing, space_after = 9.5, 1.05, 1.5
         else:
-            size, spacing, space_after = 11, 1.15, 3
+            size, spacing, space_after = 10.5, 1.1, 2
         for i, item in enumerate(items):
             p = ctf.paragraphs[0] if i == 0 else ctf.add_paragraph()
             p.line_spacing = spacing
@@ -284,6 +292,41 @@ def rebuild_body_table(slide, data):
             r_.font.size = Pt(size)
             r_.font.color.rgb = BODY_GRAY
             r_.font.name = "メイリオ"
+
+    return left, top, width, height
+
+
+def add_image_placeholder(slide, left, top, width, height, caption):
+    """画像を後から差し込むための空きスペース（破線の枠＋説明キャプション）を置く。
+    画像が届いたらこの枠を picture に差し替える。"""
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, left, top, width, height)
+    box.fill.solid()
+    box.fill.fore_color.rgb = RGBColor(0xF2, 0xF2, 0xF2)
+    box.line.color.rgb = RGBColor(0xA6, 0xA6, 0xA6)
+    box.line.width = Pt(1.25)
+    box.line.dash_style = MSO_LINE_DASH_STYLE.DASH
+    box.shadow.inherit = False
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.margin_left = Inches(0.1)
+    tf.margin_right = Inches(0.1)
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    r1 = p.add_run()
+    r1.text = "画像挿入予定"
+    r1.font.size = Pt(11)
+    r1.font.bold = True
+    r1.font.color.rgb = RGBColor(0x59, 0x59, 0x59)
+    r1.font.name = "メイリオ"
+    if caption:
+        p2 = tf.add_paragraph()
+        p2.alignment = PP_ALIGN.CENTER
+        p2.space_before = Pt(6)
+        r2 = p2.add_run()
+        r2.text = caption
+        r2.font.size = Pt(9)
+        r2.font.color.rgb = RGBColor(0x80, 0x80, 0x80)
+        r2.font.name = "メイリオ"
 
 
 def edit_topic_slide(slide, data):
@@ -320,7 +363,15 @@ def edit_topic_slide(slide, data):
         header.left = header.left + Inches(0.2)
 
     set_tag_highlight(slide, data["category"])
-    rebuild_body_table(slide, data)
+    t_left, t_top, t_width, t_height = rebuild_body_table(slide, data)
+    add_image_placeholder(
+        slide,
+        t_left + t_width + IMAGE_GAP,
+        t_top,
+        IMAGE_WIDTH,
+        t_height,
+        data.get("image_caption", ""),
+    )
 
 
 def build(out_path, month_label, topics):
