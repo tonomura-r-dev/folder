@@ -50,6 +50,16 @@ CATEGORIES = ["LINE公式アカウント", "開発\nLINE API", "オプション\
 
 TAG_BORDER_BLUE = RGBColor(0x4F, 0x81, 0xBD)
 
+# ネイティブ図形での本文表現（2026-09-17〜、「アップデート内容」「インパクト」の
+# 2ページ構成デモで確定した配色）
+NAVY = RGBColor(0x15, 0x13, 0x3D)
+ACCENT = RGBColor(0x34, 0x67, 0xB2)
+WHITE = RGBColor(0xFF, 0xFF, 0xFF)
+BODY_GRAY = RGBColor(0x33, 0x33, 0x33)
+LIGHT_GRAY = RGBColor(0xF2, 0xF2, 0xF2)
+LIGHT_BLUE = RGBColor(0xEA, 0xF0, 0xFA)
+BORDER_GRAY = RGBColor(0xD9, 0xD9, 0xD9)
+
 
 # ---------- スライド複製 ----------
 
@@ -222,6 +232,217 @@ def add_image(slide, left, top, box_w, box_h, image_path):
     slide.shapes.add_picture(image_path, left_off, top_off, width=w, height=h)
 
 
+def _label_chip(slide, x, y, w, h, text, fill, text_color):
+    chip = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    chip.fill.solid()
+    chip.fill.fore_color.rgb = fill
+    chip.line.fill.background()
+    chip.shadow.inherit = False
+    tf = chip.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.1)
+    tf.margin_right = Inches(0.05)
+    p = tf.paragraphs[0]
+    r = p.add_run()
+    r.text = text
+    r.font.size = Pt(13)
+    r.font.bold = True
+    r.font.color.rgb = text_color
+    r.font.name = "メイリオ"
+
+
+def _content_box(slide, x, y, w, h, lines, fill, border, big_bold_first=False):
+    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    box.fill.solid()
+    box.fill.fore_color.rgb = fill
+    box.line.color.rgb = border
+    box.line.width = Pt(1)
+    box.shadow.inherit = False
+    tf = box.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.2)
+    tf.margin_right = Inches(0.15)
+    tf.margin_top = Inches(0.06)
+    tf.margin_bottom = Inches(0.06)
+    for i, line in enumerate(lines):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.line_spacing = 1.1
+        if i > 0:
+            p.space_before = Pt(5)
+        r = p.add_run()
+        r.text = line
+        if i == 0 and big_bold_first:
+            r.font.size = Pt(16) if len(lines) > 1 else Pt(18)
+            r.font.bold = True
+            r.font.color.rgb = NAVY
+        else:
+            r.font.size = Pt(10.5)
+            r.font.color.rgb = BODY_GRAY
+        r.font.name = "メイリオ"
+
+
+def _merit_card(slide, x, y, w, h, headline, desc):
+    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h)
+    card.adjustments[0] = 0.06
+    card.fill.solid()
+    card.fill.fore_color.rgb = LIGHT_BLUE
+    card.line.color.rgb = ACCENT
+    card.line.width = Pt(1)
+    card.shadow.inherit = False
+    tf = card.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    tf.margin_left = Inches(0.25)
+    tf.margin_right = Inches(0.2)
+    p0 = tf.paragraphs[0]
+    p0.alignment = PP_ALIGN.LEFT
+    r0 = p0.add_run()
+    r0.text = headline
+    r0.font.size = Pt(17)
+    r0.font.bold = True
+    r0.font.color.rgb = NAVY
+    r0.font.name = "メイリオ"
+    p1 = tf.add_paragraph()
+    p1.alignment = PP_ALIGN.LEFT
+    p1.space_before = Pt(6)
+    p1.line_spacing = 1.15
+    r1 = p1.add_run()
+    r1.text = desc
+    r1.font.size = Pt(11)
+    r1.font.color.rgb = BODY_GRAY
+    r1.font.name = "メイリオ"
+
+
+def render_before_after(slide, x, y, w, h, data):
+    """AS-IS/TO-BEの比較（上段・コンパクト）＋メリット2枚（下段・主役）。
+    2026-09-17、③プロモーションスタンプを「アップデート内容」「インパクト」の
+    2ページに分割した際に確定したレイアウト。data のキー：
+    as_is（1行）、to_be_lines（1〜2行）、merits（[(headline, desc), ...] 2件）。"""
+    top_h = Inches(1.0)
+    label_h = Inches(0.3)
+    arrow_w = Inches(0.5)
+    box_w = (w - arrow_w) // 2
+
+    _label_chip(slide, x, y, box_w, label_h, "AS-IS", LIGHT_GRAY, BODY_GRAY)
+    _content_box(slide, x, y + label_h, box_w, top_h - label_h,
+                 [data["as_is"]], LIGHT_GRAY, BORDER_GRAY, big_bold_first=True)
+
+    atb = slide.shapes.add_textbox(x + box_w, y, arrow_w, top_h)
+    atf = atb.text_frame
+    atf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    ap = atf.paragraphs[0]
+    ap.alignment = PP_ALIGN.CENTER
+    ap.text = "▶"
+    for r in ap.runs:
+        r.font.size = Pt(18)
+        r.font.bold = True
+        r.font.color.rgb = ACCENT
+
+    x2 = x + box_w + arrow_w
+    _label_chip(slide, x2, y, box_w, label_h, "TO-BE", NAVY, WHITE)
+    _content_box(slide, x2, y + label_h, box_w, top_h - label_h,
+                 data["to_be_lines"], LIGHT_BLUE, ACCENT, big_bold_first=True)
+
+    merit_y = y + top_h + Inches(0.25)
+    merit_h = Inches(1.5)
+    gap = Inches(0.2)
+    card_w = (w - gap) // 2
+    for i, (headline, desc) in enumerate(data["merits"][:2]):
+        _merit_card(slide, x + i * (card_w + gap), merit_y, card_w, merit_h, headline, desc)
+
+
+def render_impact(slide, x, y, w, h, data):
+    """数字カード（4枚）＋内訳テーブル＋活用メリット。data のキー：
+    stats（[(value, label, note), ...] 4件）、
+    breakdown_headers・breakdown_values（同じ長さの配列、無ければ省略可）、
+    merit_headline・merit_desc。"""
+    gap = Inches(0.15)
+    card_h = Inches(1.5)
+    stats = data["stats"]
+    card_w = (w - gap * (len(stats) - 1)) // len(stats)
+    cx = x
+    for value, label, note in stats:
+        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, cx, y, card_w, card_h)
+        card.adjustments[0] = 0.06
+        card.fill.solid()
+        card.fill.fore_color.rgb = LIGHT_BLUE
+        card.line.color.rgb = ACCENT
+        card.line.width = Pt(1)
+        card.shadow.inherit = False
+        tf = card.text_frame
+        tf.word_wrap = True
+        tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf.margin_left = Inches(0.1)
+        tf.margin_right = Inches(0.1)
+        p0 = tf.paragraphs[0]
+        p0.alignment = PP_ALIGN.CENTER
+        r0 = p0.add_run()
+        r0.text = value
+        r0.font.size = Pt(26)
+        r0.font.bold = True
+        r0.font.color.rgb = NAVY
+        r0.font.name = "メイリオ"
+        p1 = tf.add_paragraph()
+        p1.alignment = PP_ALIGN.CENTER
+        p1.space_before = Pt(2)
+        r1 = p1.add_run()
+        r1.text = label
+        r1.font.size = Pt(11)
+        r1.font.bold = True
+        r1.font.color.rgb = ACCENT
+        r1.font.name = "メイリオ"
+        p2 = tf.add_paragraph()
+        p2.alignment = PP_ALIGN.CENTER
+        p2.space_before = Pt(2)
+        r2 = p2.add_run()
+        r2.text = note
+        r2.font.size = Pt(8)
+        r2.font.color.rgb = BODY_GRAY
+        r2.font.name = "メイリオ"
+        cx += card_w + gap
+
+    y_after = y + card_h
+    headers = data.get("breakdown_headers")
+    values = data.get("breakdown_values")
+    if headers and values:
+        ty = y_after + Inches(0.2)
+        th = Inches(0.9)
+        gframe = slide.shapes.add_table(2, len(headers), x, ty, w, th)
+        table = gframe.table
+        for c, htext in enumerate(headers):
+            cell = table.cell(0, c)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = NAVY
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p = cell.text_frame.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
+            r = p.add_run()
+            r.text = htext
+            r.font.size = Pt(9)
+            r.font.bold = True
+            r.font.color.rgb = WHITE
+            r.font.name = "メイリオ"
+        for c, vtext in enumerate(values):
+            cell = table.cell(1, c)
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = LIGHT_BLUE
+            cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p = cell.text_frame.paragraphs[0]
+            p.alignment = PP_ALIGN.CENTER
+            r = p.add_run()
+            r.text = vtext
+            r.font.size = Pt(14)
+            r.font.bold = True
+            r.font.color.rgb = NAVY
+            r.font.name = "メイリオ"
+        y_after = ty + th
+
+    y3 = y_after + Inches(0.2)
+    _merit_card(slide, x, y3, w, Inches(0.85), data["merit_headline"], data["merit_desc"])
+
+
 def add_image_placeholder(slide, left, top, width, height, caption):
     """画像を後から差し込むための空きスペース（破線の枠＋説明キャプション）を置く。
     画像が届いたらこの枠を picture に差し替える。"""
@@ -290,13 +511,19 @@ def edit_topic_slide(slide, data):
 
     set_tag_highlight(slide, data["category"])
     body_left, body_top, body_width, body_height = find_body_area(slide)
-    image_path = data.get("image_path")
-    if image_path and Path(image_path).exists():
-        add_image(slide, body_left, body_top, body_width, body_height, image_path)
+    render = data.get("render")
+    if render == "before_after":
+        render_before_after(slide, body_left, body_top, body_width, body_height, data)
+    elif render == "impact":
+        render_impact(slide, body_left, body_top, body_width, body_height, data)
     else:
-        add_image_placeholder(
-            slide, body_left, body_top, body_width, body_height, data.get("image_caption", "")
-        )
+        image_path = data.get("image_path")
+        if image_path and Path(image_path).exists():
+            add_image(slide, body_left, body_top, body_width, body_height, image_path)
+        else:
+            add_image_placeholder(
+                slide, body_left, body_top, body_width, body_height, data.get("image_caption", "")
+            )
 
 
 def force_font(prs, font_name="メイリオ"):
