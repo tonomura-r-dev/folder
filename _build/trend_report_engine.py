@@ -443,6 +443,56 @@ def render_impact(slide, x, y, w, h, data):
     _merit_card(slide, x, y3, w, Inches(0.85), data["merit_headline"], data["merit_desc"])
 
 
+def render_flow(slide, x, y, w, h, data):
+    """Nステップの横矢印フロー（申込み〜掲載までの流れ等）＋補足メモ1枚。data のキー：
+    steps（[(day_label, desc), ...]）、note_headline・note_desc（任意）。
+    2026-09-17、⑥LINEオープンキャンペーンのスケジュール専用スライドで追加。"""
+    steps = data["steps"]
+    n = len(steps)
+    arrow_w = Inches(0.35)
+    step_h = Inches(1.5)
+    label_h = Inches(0.4)
+    box_w = (w - arrow_w * (n - 1)) // n
+
+    cx = x
+    for i, (day_label, desc) in enumerate(steps):
+        _label_chip(slide, cx, y, box_w, label_h, day_label, NAVY, WHITE)
+        _content_box(slide, cx, y + label_h, box_w, step_h - label_h,
+                     [desc], LIGHT_BLUE, ACCENT, big_bold_first=False)
+        cx += box_w
+        if i < n - 1:
+            atb = slide.shapes.add_textbox(cx, y, arrow_w, step_h)
+            atf = atb.text_frame
+            atf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            ap = atf.paragraphs[0]
+            ap.alignment = PP_ALIGN.CENTER
+            ap.text = "▶"
+            for r in ap.runs:
+                r.font.size = Pt(16)
+                r.font.bold = True
+                r.font.color.rgb = ACCENT
+            cx += arrow_w
+
+    if data.get("note_headline"):
+        note_y = y + step_h + Inches(0.25)
+        _merit_card(slide, x, note_y, w, Inches(1.0), data["note_headline"], data["note_desc"])
+
+
+def render_grid_notes(slide, x, y, w, h, data):
+    """注意点・条件を2×2のカードで見せる。data のキー：items（[(headline, desc), ...] 最大4件）。
+    2026-09-17、⑥LINEオープンキャンペーンの注意点専用スライドで追加。"""
+    items = data["items"][:4]
+    gap_x = Inches(0.2)
+    gap_y = Inches(0.2)
+    card_w = (w - gap_x) // 2
+    card_h = min((h - gap_y) // 2, Inches(1.6))
+    for i, (headline, desc) in enumerate(items):
+        col, row = i % 2, i // 2
+        cx = x + col * (card_w + gap_x)
+        cy = y + row * (card_h + gap_y)
+        _merit_card(slide, cx, cy, card_w, card_h, headline, desc)
+
+
 def add_image_placeholder(slide, left, top, width, height, caption):
     """画像を後から差し込むための空きスペース（破線の枠＋説明キャプション）を置く。
     画像が届いたらこの枠を picture に差し替える。"""
@@ -516,6 +566,10 @@ def edit_topic_slide(slide, data):
         render_before_after(slide, body_left, body_top, body_width, body_height, data)
     elif render == "impact":
         render_impact(slide, body_left, body_top, body_width, body_height, data)
+    elif render == "flow":
+        render_flow(slide, body_left, body_top, body_width, body_height, data)
+    elif render == "grid_notes":
+        render_grid_notes(slide, body_left, body_top, body_width, body_height, data)
     else:
         image_path = data.get("image_path")
         if image_path and Path(image_path).exists():
