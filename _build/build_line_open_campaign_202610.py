@@ -15,7 +15,6 @@ import trend_report_engine as engine
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = str(ROOT / "LINEオープンキャンペーン_26年10-12月_ご案内.pptx")
-COVER_TITLE = "LINEオープンキャンペーン　26年10-12月　ご案内"
 
 TOPICS = [
     dict(
@@ -86,4 +85,4 @@ for t in TOPICS:
 
 
 if __name__ == "__main__":
-    engine.build_standalone(OUT, COVER_TITLE, TOPICS)
+    engine.build_topics_only(OUT, TOPICS)

@@ -622,6 +622,28 @@ def build(out_path, month_label, topics):
     print(f"saved: {out_path}")
 
 
+def build_topics_only(out_path, topics):
+    """表紙・目次を付けず、本編ページだけの軽いデッキを作る。
+    自分で確認するだけ・社内の一部だけに見せる、といった用途向け。"""
+    prs, cover, agenda, topic_slides = load_base(out_path, len(topics))
+
+    for slide, data in zip(topic_slides, topics):
+        edit_topic_slide(slide, data)
+
+    sldIdLst = prs.slides._sldIdLst
+    ids = list(sldIdLst)
+    drop_ids = {ids[COVER_IDX], ids[AGENDA_IDX]}
+    for sldId in ids:
+        if sldId in drop_ids:
+            prs.part.drop_rel(sldId.rId)
+            sldIdLst.remove(sldId)
+
+    force_font(prs)
+
+    prs.save(out_path)
+    print(f"saved: {out_path}")
+
+
 def build_standalone(out_path, cover_title, topics):
     """トレンドレポートと同じトンマナ（DYM_LINEOA_TREND_FMT.pptx）で、
     特定の案件・キャンペーン専用の単発デッキを作る。topics の形式は build() と同じ。
