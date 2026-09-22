@@ -1173,7 +1173,8 @@
       "Bash(python sync.py 2026-08-31)",
       "Bash(python sync.py)",
       "Bash(python -m uv run --python 3.12 --with gspread --with google-auth tasks.py)",
-      "Bash(git fetch *)"
+      "Bash(git fetch *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/106f9b10-__Ver_SIM_______LINEOA_____ver3.00.xlsx\" \"_templates/DYM_LINEOA_SIM_FMT_ver3.00.xlsx\")"
     ]
   }
 }
