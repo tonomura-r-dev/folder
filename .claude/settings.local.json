@@ -1178,7 +1178,9 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/fd78c3ac-______________LINEOA_____SIM_.xlsx 株式会社チェングロウス御中_LINEOA施策提案【SIM】.xlsx)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/cf603d7e-20260922_______________LINE_____________.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案.pptx)",
       "Bash(mkdir -p _data/zengo)",
-      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp \"_data/zengo/チェングロウス_前後検索_カーディーラー.webp\")"
+      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp \"_data/zengo/チェングロウス_前後検索_カーディーラー.webp\")",
+      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp _data/zengo/チェングロウス_カーディーラー.webp)",
+      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/2.webp _data/zengo/学校_専門学校.webp)"
     ]
   }
 }
