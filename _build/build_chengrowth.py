@@ -483,11 +483,58 @@ band(s, CY0 + 5.7, "配信は月2〜4本。クリックした人でオーディ�
 foot(s, "出典：GoogleトレンドKW「整備士」（山3月・谷12月）／企画の詳細文面は個別に作成")
 
 # ============================================================
-# 削除（末尾から）：P34,P33,P26,P24,P12,P9,P8,P3
+# P33（旧・通知メッセ）→ LY公式実績ページに作り替え（2026-09-23追加）
 # ============================================================
-for idx in sorted([33, 32, 25, 23, 11, 8, 7, 2], reverse=True):
+s = slides[32]
+frame(s, "公式実績【求人・人材 × LINE】",
+      ["LINEヤフー社の公式導入事例より（いずれも実名・公開情報）。"])
+cw2 = (CW - 0.5) / 2
+box(s, CX0, CY0 + 0.2, cw2, 5.2, fill=PALE)
+T(s, CX0 + 0.4, CY0 + 0.5, cw2 - 0.8, 0.6, [one("UZUZ（20代の就職・転職サポート）", 12, True, NAVY)], anchor="m")
+T(s, CX0 + 0.4, CY0 + 1.2, cw2 - 0.8, 0.6, [one("LINE経由の面談予約率", 10.5, None, INK, align="c")], anchor="m")
+T(s, CX0 + 0.4, CY0 + 1.8, cw2 - 0.8, 1.4, [one("55%", 34, True, ORANGE, align="c")], anchor="m")
+T(s, CX0 + 0.4, CY0 + 3.3, cw2 - 0.8, 1.8,
+  [one("・問い合わせの約3割がLINE経由。他チャネル比で高水準", 9.5, None, INK, ls=1.35, sa=2),
+   one("・友だち追加広告（CPF）の獲得単価 約300円", 9.5, None, INK, ls=1.35, sa=2),
+   one("・チャットボットで求人紹介〜面談予約を自動化", 9.5, None, INK, ls=1.35)],
+  anchor="t")
+x2 = CX0 + cw2 + 0.5
+box(s, x2, CY0 + 0.2, cw2, 5.2, fill=PALE)
+T(s, x2 + 0.4, CY0 + 0.5, cw2 - 0.8, 0.6, [one("タウンワーク（求人メディア）", 12, True, NAVY)], anchor="m")
+T(s, x2 + 0.4, CY0 + 1.2, cw2 - 0.8, 0.6, [one("リッチメニュー経由の応募数", 10.5, None, INK, align="c")], anchor="m")
+T(s, x2 + 0.4, CY0 + 1.8, cw2 - 0.8, 1.4, [one("+79%", 34, True, ORANGE, align="c")], anchor="m")
+T(s, x2 + 0.4, CY0 + 3.3, cw2 - 0.8, 1.8,
+  [one("・リッチメニュー改善でタップ数+20%", 9.5, None, INK, ls=1.35, sa=2),
+   one("・その結果、メニュー経由の応募が79%向上", 9.5, None, INK, ls=1.35, sa=2),
+   one("・入口設計への投資が応募数に直結した事例", 9.5, None, INK, ls=1.35)],
+  anchor="t")
+band(s, CY0 + 5.8, "「面談への近さ」と「入口設計の効果」。本提案の2本柱には、どちらも公式実績がある。",
+     fill=NAVY, sz=12.5, h=1.1)
+foot(s, "出典：LINEヤフー for Business 導入事例（UZUZ／タウンワーク）。数値は各事例記事の公表値")
+
+# ============================================================
+# 削除（末尾から）：P34,P26,P24,P12,P9,P8,P3（P33は実績ページとして残す）
+# ============================================================
+for idx in sorted([33, 25, 23, 11, 8, 7, 2], reverse=True):
     delete_slide(prs, idx)
-assert len(prs.slides) == 51, len(prs.slides)
+assert len(prs.slides) == 52, len(prs.slides)
+
+# 実績ページを「想定の費用対効果」の直後へ移動
+sld_ids = prs.slides._sldIdLst
+titles = []
+for i, sl in enumerate(prs.slides):
+    t = ""
+    for sh in sl.shapes:
+        if sh.has_text_frame and sh.text_frame.text.strip():
+            t = sh.text_frame.text.strip().split("\n")[0]
+            break
+    titles.append(t)
+src = next(i for i, t in enumerate(titles) if "公式実績" in t)
+dst = next(i for i, t in enumerate(titles) if "費用対効果" in t)
+ids = list(sld_ids)
+el = ids[src]
+sld_ids.remove(el)
+sld_ids.insert(dst + 1 if src > dst else dst, el)
 
 # ============================================================
 # 残骸チェック（最終・全枚）
