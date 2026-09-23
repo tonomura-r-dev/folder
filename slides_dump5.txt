@@ -1,0 +1,202 @@
+total slides: 75
+
+===== Slide 54 =====
+--- shape 'Google Shape;156;p7' ---
+その他 代表的な活用機能
+--- shape '正方形/長方形 27' ---
+「LINEチャットPlus」は、FAQをもとにしたAIによる自動応答や、
+有人でのチャット対応による細かなサポートを可能にするオプション機能。
+--- shape '正方形/長方形 28' ---
+【LINE】Chat Plus
+--- picture '図 2' ---
+--- shape '正方形/長方形 32' ---
+ホームページから気軽にチャットで
+問い合わせができるようになり
+資料請求や商品の購入に繋がる。
+--- shape 'TextBox 38' ---
+自動応答と有人応答を使い分けることが
+できる
+--- shape 'TextBox 38' ---
+「訪問者管理機能」により、ホームページに訪れたユーザーを一覧で見ることが可能
+--- shape 'TextBox 38' ---
+公式LINEとチャットボットを連携し
+LINE上でも同じチャットボットを活用
+できる
+
+===== Slide 55 =====
+--- shape 'Google Shape;156;p7' ---
+その他 代表的な活用機能
+--- shape '正方形/長方形 3' ---
+「LINEコールPlus」は、LINE公式アカウントの有料オプション機能で、
+LINE公式アカウントからユーザーがカスタマーサポートに電話できるサービス。
+--- shape '正方形/長方形 4' ---
+【LINE】Call Plus
+--- picture '図 5' ---
+--- shape '正方形/長方形 7' ---
+引用：https://prtimes.jp/main/html/rd/p/000003920.000001594.html
+--- shape '正方形/長方形 8' ---
+さらに「LINE Ai Call」を活用するとユーザーの要望に対してAIによる自然な
+対話応答が可能に。要件に応じてAiと有人オペレータの振り分け業務効率化を支援。
+
+===== Slide 56 =====
+--- shape 'Google Shape;156;p7' ---
+その他 代表的な活用機能
+--- shape '正方形/長方形 4' ---
+LINEでログイン
+--- shape '正方形/長方形 7' ---
+引用：https://prtimes.jp/main/html/rd/p/000003920.000001594.html
+--- picture '図 2' ---
+--- shape '正方形/長方形 3' ---
+「LINEでログイン」は、LINE上のユーザー情報を活用してWEBサイト登録が出来る仕組み。
+ID連携を完了することにより、サービス(WEB) ⇔ LINE での効果的なメッセージが可能に。
+
+===== Slide 60 =====
+--- shape 'Google Shape;156;p7' ---
+新規友だちの追加（離脱防止バナー -KaiU- ）
+--- picture 'Google Shape;177;g33c74316bd8_0_26' ---
+--- picture 'Google Shape;178;g33c74316bd8_0_26' ---
+
+===== Slide 61 =====
+--- shape 'Google Shape;156;p7' ---
+新規友だちの追加（通知メッセージ）
+--- shape '正方形/長方形 6' ---
+活用により「新規ユーザーの追加」「利便性の向上」
+を実現している企業様も増えている状況。
+--- picture '図 19' ---
+--- picture '図 20' ---
+--- shape 'Google Shape;92;p12' ---
+ヤマト運輸様でのお荷物お届けのお知らせ
+--- shape 'Google Shape;93;p12' ---
+東京電力様での料金確定のお知らせ
+--- shape 'Google Shape;92;p12' ---
+LIFULL様での資料請求完了時のお知らせ
+--- shape 'Google Shape;93;p12' ---
+JINS様での購入完了のお知らせ
+--- picture '図 11' ---
+--- picture '図 27' ---
+  --- shape 'テキスト ボックス 3' ---
+通知メッセージ
+
+===== Slide 66 =====
+--- shape 'Google Shape;752;p28' ---
+提供施策について
+--- shape 'Google Shape;178;p7' ---
+オフライン動線
+--- shape 'Google Shape;178;p7' ---
+豊富な知見から「WEB」「オフライン」での動線整備もサポート。
+※こちらに関わるデザイン費用は無償で対応。
+--- shape 'Google Shape;178;p7' ---
+事例：車買取
+--- shape 'Google Shape;178;p7' ---
+興味はあるが利用まで
+至らなかったユーザーを
+友だちとして囲い込む。
+--- shape 'Google Shape;178;p7' ---
+店舗や事務所を持つ企業様には
+貴社用QRコードを付与した
+素材(LINE部分) 作成を代行
+--- shape 'Google Shape;178;p7' ---
+事例：中古買取
+--- shape 'Google Shape;178;p7' ---
+店舗内のチラシ、POPに設置。
+設置前と比べて3倍程度の新規追加。
+--- shape 'Google Shape;178;p7' ---
+LINE動線に移動させたユーザー
+から2%程度の引上げを実現。
+ユーザーのLINE友だち追加率3%。
+--- shape 'Google Shape;178;p7' ---
+WEBサイト動線整備
+--- shape 'Google Shape;178;p7' ---
+オフライン動線
+ニュースリリース等
+--- picture '図 15' ---
+--- picture '図 16' ---
+--- picture '図 17' ---
+  --- picture '図 20' ---
+  --- picture '図 21' ---
+  --- picture '図 22' ---
+--- shape 'Google Shape;178;p7' ---
+POPの作成、プレスリリース等
+といった別領域における
+拡散の素材作成も代行
+--- shape 'Google Shape;178;p7' ---
+事例：美容/健康
+--- shape 'Google Shape;178;p7' ---
+ニュースリリース用に
+訴求内容＋QR のクリエイティブ制作
+50,000件程度の友だち追加を達成。
+--- shape 'Google Shape;178;p7' ---
+事例：車買取
+--- shape 'Google Shape;178;p7' ---
+LINE動線に移動させたユーザー
+から2%程度の引上げを実現。
+ユーザーのLINE友だち追加率3%。
+--- shape 'Google Shape;178;p7' ---
+WEBサイト動線整備
+--- picture '図 30' ---
+--- picture '図 31' ---
+--- shape 'Google Shape;178;p7' ---
+友だち紹介
+（LINEポイントコネクト）
+--- shape 'Google Shape;178;p7' ---
+事例：住宅（不動産）
+--- shape 'Google Shape;178;p7' ---
+友だち紹介からの流入が5割程度
+となり、利用率が非常に高い。
+1か月で50件程度が紹介からCV。
+--- picture '図 36' ---
+--- shape 'Google Shape;178;p7' ---
+メールマガジンなど、
+貴社保有リストに対する
+アプローチも対応可能。
+
+===== Slide 67 =====
+--- shape 'Google Shape;752;p28' ---
+提供施策について
+--- picture '図 51' ---
+--- shape '正方形/長方形 52' ---
+LINE広告（友だち追加）
+※CPF広告※
+--- shape '正方形/長方形 53' ---
+LINE公式アカウントの友だちを増やすための広告を、LINE広告の管理画面よりLINEアプリ内で掲載できる機能。
+  --- shape '正方形/長方形 56' ---
+LINE公式アカウントまでの導線
+  --- shape '正方形/長方形 59' ---
+「友だち追加広告」との違い
+--- picture 'table' ---
+--- picture '図 62' ---
+--- shape 'テキスト ボックス 34' ---
+LINEアプリ内から自社アカウントに“直接”誘導
+
+===== Slide 68 =====
+--- shape 'Google Shape;752;p28' ---
+提供施策について
+--- shape 'Google Shape;178;p7' ---
+オフライン動線
+ニュースリリース等
+--- shape 'Google Shape;178;p7' ---
+WEBサイト動線整備
+--- shape 'Google Shape;178;p7' ---
+友だち紹介
+（LINEポイントコネクト）
+--- shape 'Google Shape;178;p7' ---
+LINEポイントAds
+--- shape 'Google Shape;178;p7' ---
+スタンプ施策
+--- shape 'Google Shape;178;p7' ---
+CPF広告
+--- shape 'テキスト ボックス 15' ---
+コンサル発注であれば 無償
+--- shape 'テキスト ボックス 24' ---
+コンサル発注であれば 無償
+--- shape 'テキスト ボックス 26' ---
+サービス停止中
+--- shape 'テキスト ボックス 27' ---
+200万円~（期間合計）
+--- shape 'テキスト ボックス 28' ---
+200万円~（期間合計）
+--- shape 'テキスト ボックス 29' ---
+20万円~（1か月~）
+--- shape '正方形/長方形 30' ---
+各拡張施策についてもMIN金額からの発注、動線設計が可能です。
+LINE友だち追加後の動線設計（特に友だち追加後すぐ）の検証後の拡大施策として用意。

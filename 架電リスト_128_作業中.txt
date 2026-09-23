@@ -1,0 +1,13 @@
+# 架電リスト 第128弾 作業中（Google スポンサー枠＝今配信中広告から抽出・カッコなし社名・重複チェック済み）
+# 形式: 企業名 | LP URL | 業種 | 出稿KW
+# 20社たまったらExcel化＋使用済みリスト追記
+
+1. 株式会社大塚シロアリ研究所 | https://www.otsuka-shiroari.com | シロアリ駆除（徳島） | シロアリ駆除 徳島
+2. 株式会社友清白蟻 | https://www.tomokiyo.co.jp | シロアリ駆除（四国） | シロアリ駆除 徳島
+3. 株式会社Enishi | https://www.enishi-tokushima.co.jp | 外構・エクステリア（徳島） | 外構 エクステリア 徳島
+4. 四電エナジーサービス株式会社 | https://www.yes-e-life.jp | 給湯器・オール電化（四国） | 給湯器交換 徳島
+5. 株式会社Cools | https://ecocute-shikoku.cools-kyutoki.com | エコキュート・給湯器（四国） | 給湯器交換 徳島
+6. ボイラサービスコーポレーション株式会社 | https://bsc-ecolife.jp/lp/tokushima/ | 給湯器交換（徳島・四国） | 給湯器交換 徳島
+7. 株式会社加藤自動車相談所 | https://colorful-tokushima.com/ | 軽自動車販売（徳島・カラフル） | 中古車 販売 徳島
+
+# 保留（社名確認中）: デジタルクリニック / your-pill.jp / zoey.jp / KADODE(kado-de.jp) / 徳島不用品買取センター(bfh.jp)

@@ -1,0 +1,22 @@
+# 架電リスト 第127弾 作業中（ライブ配信中広告のみ・カッコなし社名・重複チェック済み）
+# 形式: 企業名 | LP URL | 業種 | 出稿KW
+# 20社たまったらExcel化＋使用済みリスト追記
+
+1. 株式会社オスカーキャピタル | https://oscar-capital.net/3g7/ | 不動産投資 | 不動産投資 セミナー
+2. 株式会社AGE technologies | https://so-zo-ku.com/ | 相続手続きサービス | 相続 相談
+3. 三井ホーム株式会社 | https://www.mitsuihome.co.jp/lp/works04_05/ | 注文住宅 | 注文住宅 カタログ
+4. 株式会社モノクローム | https://www.monochrome.so/roof | 太陽光（屋根一体型） | 太陽光 蓄電池
+5. 株式会社アレシア | https://bestfactor.jp | ファクタリング（ベストファクター） | ファクタリング 即日
+6. ムスベル株式会社 | https://www.musbell.com | 結婚相談所 | 結婚相談所
+7. 株式会社ライフワン | https://www.k-chikudenchi.com/ga-lp01/ | 蓄電池・太陽光 | 太陽光 蓄電池
+8. 株式会社クレアスライフ | https://sales.clearthlife.co.jp | 不動産投資 | 不動産投資 マンション
+9. ニチコン株式会社 | https://www.nichicon.co.jp | 蓄電池 | 太陽光 蓄電池
+10. 株式会社ラボル | https://www.labol.co.jp | ファクタリング | ファクタリング 即日
+11. 株式会社ラッフルズホーム | https://www.raffles-home.jp | 注文住宅 | 注文住宅
+12. 株式会社ヤマジホーム | https://zesttoku.com/ | 注文住宅 | 注文住宅
+13. 株式会社かみくぼ住宅 | https://kamikuboreform.com/ | リフォーム | リフォーム
+14. 株式会社青木商店 | https://www.aokishoten.net/ | 内窓・リフォーム | 内窓 補助金
+15. 有限会社ベルベ | https://bellbe.net/ | 葬儀・家族葬 | 家族葬
+16. 株式会社YAMABISHI | https://www.yamabishi.co.jp/ad/yrw/ | 産業用蓄電池 | 太陽光 蓄電池
+17. 株式会社はなまる | https://www.hanamaru870.net/lp/car/h/ | 車買取 | 車買取
+18. 株式会社創建 | https://www.k-skn.com/sokenpaint/ | 外壁塗装 | 外壁塗装 見積もり

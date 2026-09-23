@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="715px" preserveAspectRatio="none" style="width:546px;height:715px;" version="1.1" viewBox="0 0 546 715" width="546px" zoomAndPan="magnify"><defs><filter height="300%" id="fbb92qsmtrb8p" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><text fill="#000000" font-family="sans-serif" font-size="18" lengthAdjust="spacingAndGlyphs" textLength="225" x="161" y="28.6855">Web login flow [✅SECURE]</text><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="46.7031" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="237.5" y="156.6016"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="314.2188" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="237.5" y="371.4141"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="168.1094" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="203.3047"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="30.3516" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="474.8203"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="30.3516" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="608.5781"/><line style="stroke: #91DC8A; stroke-width: 1.0; stroke-dasharray: 5.0,5.0;" x1="26" x2="26" y1="124.25" y2="703.6328"/><line style="stroke: #91DC8A; stroke-width: 1.0; stroke-dasharray: 5.0,5.0;" x1="242.5" x2="242.5" y1="124.25" y2="703.6328"/><line style="stroke: #91DC8A; stroke-width: 1.0; stroke-dasharray: 5.0,5.0;" x1="483" x2="483" y1="124.25" y2="703.6328"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="31" x="8" y="121.1738">User</text><ellipse cx="26.5" cy="49.6406" fill="#F0F0F0" filter="url(#fbb92qsmtrb8p)" rx="8" ry="8" style="stroke: #F0F0F0; stroke-width: 2.0;"/><path d="M26.5,57.6406 L26.5,84.6406 M13.5,65.6406 L39.5,65.6406 M26.5,84.6406 L13.5,99.6406 M26.5,84.6406 L39.5,99.6406 " fill="none" filter="url(#fbb92qsmtrb8p)" style="stroke: #F0F0F0; stroke-width: 2.0;"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="31.6094" style="stroke: #F0F0F0; stroke-width: 1.5;" width="74" x="203.5" y="87.6406"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="60" x="210.5" y="109.1738">Web app</text><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="31.6094" style="stroke: #F0F0F0; stroke-width: 1.5;" width="107" x="428" y="87.6406"/><text fill="#000000" font-family="sans-serif" font-size="14" font-weight="bold" lengthAdjust="spacingAndGlyphs" textLength="93" x="435" y="109.1738">LINE Platform</text><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="46.7031" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="237.5" y="156.6016"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="314.2188" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="237.5" y="371.4141"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="168.1094" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="203.3047"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="30.3516" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="474.8203"/><rect fill="#FFFFFF" filter="url(#fbb92qsmtrb8p)" height="30.3516" style="stroke: #91DC8A; stroke-width: 1.0;" width="10" x="478.5" y="608.5781"/><polygon fill="#91DC8A" points="225.5,152.6016,235.5,156.6016,225.5,160.6016,229.5,156.6016" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="26.5" x2="231.5" y1="156.6016" y2="156.6016"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="35" x="33.5" y="151.7451">Log in</text><polygon fill="#91DC8A" points="466.5,199.3047,476.5,203.3047,466.5,207.3047,470.5,203.3047" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="242.5" x2="472.5" y1="203.3047" y2="203.3047"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="212" x="249.5" y="182.0967">Access the LINE Login authorization</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="194" x="249.5" y="198.4482">URL with `redirect_uri` and `state`</text><polygon fill="#91DC8A" points="37.5,229.6563,27.5,233.6563,37.5,237.6563,33.5,233.6563" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="31.5" x2="477.5" y1="233.6563" y2="233.6563"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="107" x="43.5" y="228.7998">LINE Login screen</text><polygon fill="#91DC8A" points="466.5,260.0078,476.5,264.0078,466.5,268.0078,470.5,264.0078" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="26.5" x2="472.5" y1="264.0078" y2="264.0078"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="83" x="33.5" y="259.1514">Authentication</text><polygon fill="#91DC8A" points="37.5,290.3594,27.5,294.3594,37.5,298.3594,33.5,294.3594" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="31.5" x2="477.5" y1="294.3594" y2="294.3594"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="91" x="43.5" y="289.5029">Consent screen</text><polygon fill="#91DC8A" points="466.5,320.7109,476.5,324.7109,466.5,328.7109,470.5,324.7109" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="26.5" x2="472.5" y1="324.7109" y2="324.7109"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="76" x="33.5" y="319.8545">Authorization</text><polygon fill="#91DC8A" points="258.5,367.4141,248.5,371.4141,258.5,375.4141,254.5,371.4141" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="252.5" x2="482.5" y1="371.4141" y2="371.4141"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="184" x="264.5" y="350.2061">Access `redirect_uri`with `state`</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="131" x="264.5" y="366.5576">and authorization code</text><path d="M252,384.4141 L252,443.4141 L508,443.4141 L508,394.4141 L498,384.4141 L252,384.4141 " fill="#87CEFA" filter="url(#fbb92qsmtrb8p)" style="stroke: #333333; stroke-width: 1.0;"/><path d="M498,384.4141 L498,394.4141 L508,394.4141 L498,384.4141 " fill="#87CEFA" style="stroke: #333333; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="235" x="258" y="402.9092">✅ Verify that the `state` sent to the user</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="232" x="258" y="419.2607">is the same as the `state` received from</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="108" x="258" y="435.6123">the LINE Platform.</text><polygon fill="#91DC8A" points="466.5,470.8203,476.5,474.8203,466.5,478.8203,470.5,474.8203" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="247.5" x2="472.5" y1="474.8203" y2="474.8203"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="130" x="254.5" y="469.9639">Request access token</text><polygon fill="#91DC8A" points="258.5,501.1719,248.5,505.1719,258.5,509.1719,254.5,505.1719" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="252.5" x2="482.5" y1="505.1719" y2="505.1719"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="80" x="264.5" y="500.3154">Access token</text><path d="M252,518.1719 L252,577.1719 L478,577.1719 L478,528.1719 L468,518.1719 L252,518.1719 " fill="#FBFB77" filter="url(#fbb92qsmtrb8p)" style="stroke: #333333; stroke-width: 1.0;"/><path d="M468,518.1719 L468,528.1719 L478,528.1719 L468,518.1719 " fill="#FBFB77" style="stroke: #333333; stroke-width: 1.0;"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="205" x="258" y="536.667">Web app can use the access token</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="194" x="258" y="553.0186">to retrieve user profile information</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="116" x="258" y="569.3701">from LINE Platform.</text><polygon fill="#91DC8A" points="466.5,604.5781,476.5,608.5781,466.5,612.5781,470.5,608.5781" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="247.5" x2="472.5" y1="608.5781" y2="608.5781"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="184" x="254.5" y="603.7217">Request user profile information</text><polygon fill="#91DC8A" points="258.5,634.9297,248.5,638.9297,258.5,642.9297,254.5,638.9297" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="252.5" x2="482.5" y1="638.9297" y2="638.9297"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="134" x="264.5" y="634.0732">User profile information</text><polygon fill="#91DC8A" points="37.5,681.6328,27.5,685.6328,37.5,689.6328,33.5,685.6328" style="stroke: #91DC8A; stroke-width: 1.0;"/><line style="stroke: #91DC8A; stroke-width: 2.0;" x1="31.5" x2="241.5" y1="685.6328" y2="685.6328"/><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="96" x="43.5" y="664.4248">You're logged in!</text><text fill="#000000" font-family="sans-serif" font-size="13" lengthAdjust="spacingAndGlyphs" textLength="187" x="43.5" y="680.7764">(Display user profile information)</text><!--MD5=[8795ecac46927761726909c0882ab856]
+@startuml
+/' Formatting '/
+title Web login flow [✅SECURE]
+hide footbox
+!include ../plantuml-stylesheet.puml
+
+actor user as "User"
+participant server as "Web app"
+participant LINEp as "LINE Platform"
+user -> server : Log in
+activate server
+server -> LINEp : Access the LINE Login authorization\nURL with `redirect_uri` and `state` 
+deactivate server
+activate LINEp
+LINEp-> user : LINE Login screen
+user -> LINEp : Authentication
+LINEp -> user : Consent screen
+user -> LINEp : Authorization 
+LINEp -> server : Access `redirect_uri`with `state`\nand authorization code
+deactivate LINEp
+activate server
+note right of server #LightSkyBlue
+  ✅ Verify that the `state` sent to the user
+  is the same as the `state` received from
+  the LINE Platform.
+end note
+
+server -> LINEp : Request access token
+activate LINEp
+LINEp -> server : Access token
+deactivate LINEp
+note right of server
+  Web app can use the access token
+  to retrieve user profile information
+  from LINE Platform.
+end note
+server -> LINEp : Request user profile information
+activate LINEp
+LINEp -> server : User profile information
+deactivate LINEp
+server -> user : You're logged in!\n(Display user profile information)
+deactivate server
+
+@enduml
+
+@startuml
+title Web login flow [✅SECURE]
+hide footbox
+skinparam Sequence {
+    ArrowThickness 2
+    ArrowColor #91dc8a
+    LieLineBorderThickness 2
+    LifeLineBorderColor #91dc8a
+    ParticipantBorderColor #f0f0f0
+    ParticipantBackgroundColor white
+    ParticipantFontStyle bold
+    ActorBorderColor #f0f0f0
+    ActorBackgroundColor #f0f0f0
+    ActorFontStyle bold
+}
+
+skinparam NoteBorderColor #333333
+
+actor user as "User"
+participant server as "Web app"
+participant LINEp as "LINE Platform"
+user -> server : Log in
+activate server
+server -> LINEp : Access the LINE Login authorization\nURL with `redirect_uri` and `state` 
+deactivate server
+activate LINEp
+LINEp-> user : LINE Login screen
+user -> LINEp : Authentication
+LINEp -> user : Consent screen
+user -> LINEp : Authorization 
+LINEp -> server : Access `redirect_uri`with `state`\nand authorization code
+deactivate LINEp
+activate server
+note right of server #LightSkyBlue
+  ✅ Verify that the `state` sent to the user
+  is the same as the `state` received from
+  the LINE Platform.
+end note
+
+server -> LINEp : Request access token
+activate LINEp
+LINEp -> server : Access token
+deactivate LINEp
+note right of server
+  Web app can use the access token
+  to retrieve user profile information
+  from LINE Platform.
+end note
+server -> LINEp : Request user profile information
+activate LINEp
+LINEp -> server : User profile information
+deactivate LINEp
+server -> user : You're logged in!\n(Display user profile information)
+deactivate server
+
+@enduml
+
+PlantUML version 1.2020.10(Sun May 17 18:35:57 JST 2020)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 11.0.2+9
+Operating System: Windows 10
+Default Encoding: MS932
+Language: ja
+Country: JP
+--></g></svg>

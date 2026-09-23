@@ -1,0 +1,15 @@
+# 架電リスト 第129弾 作業中（Google スポンサー枠＝今配信中広告から抽出・カッコなし社名・重複チェック済み）
+# 方針：全国・高予算の広告主を優先。比較/ポータル/代理店/使用済みは除外。
+# 20社たまったらExcel化＋使用済みリスト追記
+
+1. 株式会社バイクワン | https://www.bikeone.jp | バイク買取（全国） | バイク買取
+2. 株式会社カチエックス | https://bike.katix.co.jp | バイク買取 KATIX（全国） | バイク買取
+3. 株式会社中山コーティング | https://www.nakayama-coating.jp | 外壁塗装・屋根 | 外壁塗装
+4. 株式会社ヤサカ | https://www.yasaka-t.jp | 解体工事 | 解体工事
+5. 株式会社シンエイコーポレーション | https://www.shinei.works | 解体工事 | 解体工事
+6. AGビジネスサポート株式会社 | https://www.aiful-bf.co.jp | ビジネスローン・事業資金（全国） | ビジネスローン 事業資金
+7. 株式会社三菱UFJ銀行 | https://bk.mufg.jp | カードローン（バンクイック・全国） | カードローン
+8. 株式会社リンクアカデミー | https://www.daiei-ed.co.jp | 資格スクール大栄（全国） | 資格 通信講座
+9. アサミ美容外科 | http://www.asami-shibuya.com | 脂肪吸引・美容外科 | 脂肪吸引 クリニック
+
+# 保留（社名確認中）: カモシカ探偵社(kamoshika-tantei.com) / あわ水道センター(suidou-awa.com) / 害獣BUZZ(gaiju-buzz.com)

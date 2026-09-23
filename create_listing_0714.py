@@ -1,0 +1,75 @@
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
+
+def make_xlsx(filename, data):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "架電リスト"
+
+    headers = ["企業名", "LP URL", "電話番号", "商材", "検索KW", "業界"]
+
+    header_fill = PatternFill(start_color="1F4E79", end_color="1F4E79", fill_type="solid")
+    header_font = Font(name="メイリオ", bold=True, color="FFFFFF", size=10)
+    center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    left = Alignment(horizontal="left", vertical="center", wrap_text=True)
+    thin = Side(style="thin", color="CCCCCC")
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
+    for row_idx, row in enumerate(data, 2):
+        fill_color = "F2F7FC" if row_idx % 2 == 0 else "FFFFFF"
+        row_fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+        for col_idx, val in enumerate(row, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.fill = row_fill
+            cell.font = Font(name="メイリオ", size=9)
+            cell.alignment = left
+            cell.border = border
+
+    col_widths = [30, 45, 16, 24, 30, 20]
+    for i, w in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    ws.row_dimensions[1].height = 20
+    ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions
+
+    wb.save(filename)
+    print(f"保存完了: {filename}")
+
+
+# 列順: 企業名 | LP URL | 電話番号 | 商材 | 検索KW | 業界
+# 2026-07-14 Meta広告ライブラリで配信中を確認・全社LP実確認済み
+
+data_0714 = [
+    ["株式会社リズメリット", "https://nagoya-merit.com/", "052-775-1388", "家事代行・ベビーシッターサービス", "名古屋 家事代行 / ベビーシッター 名古屋", "家事代行サービス"],
+    ["株式会社ウェルカムバスケット", "https://www.welcome-basket.co.jp/lp/", "052-800-0754", "引越しサービス（東海エリア）", "愛知 引越し業者 / 名古屋 引っ越し 見積もり", "引越しサービス"],
+    ["一誠商事株式会社", "https://www.issei-syoji.co.jp/", "029-852-6611", "不動産売買・空き家対策・相続相談", "茨城 空き家 相談 / つくば 不動産売却", "不動産・相続相談"],
+    ["株式会社ライズ", "https://www.p-gyms.jp/", "", "女性専用パーソナルジム（GYMS）", "パーソナルジム 女性専用 / 大阪 ダイエット ジム", "パーソナルジムFC"],
+    ["株式会社DROPS", "https://kaitori-drop.com/", "0748-77-0099", "ブランド古着宅配買取（drop）", "ブランド古着 買取 / ナチュラル系ブランド 買取", "ブランド買取・リユース"],
+    ["株式会社よちか", "https://www.yochika.com/", "075-257-5844", "ハイブランド品販売・買取（エルメス・シャネル等）", "エルメス バーキン 買取 / 京都 ブランド品 買取", "ブランド品販売・買取"],
+    ["医療法人社団三幸会", "https://femmy-cl.com/", "03-5354-3836", "美容皮膚科・医療脱毛（フェミークリニック）", "医療脱毛 東京 / 美容皮膚科 大阪 梅田", "美容クリニック"],
+    ["イーキュア株式会社", "https://www.ecure.co.jp/", "0263-40-0234", "長野県特化型転職支援サービス（E-CURE）", "長野県 転職 / 長野 Uターン 転職", "転職エージェント（地域特化）"],
+    ["株式会社香川総合経営", "https://kagaten.com/", "", "香川県特化型転職エージェント（かが転）", "香川 転職 / 香川 Uターン 転職", "転職エージェント（地域特化）"],
+    ["株式会社アイネクスト", "https://ainext-agt.co.jp/youme/", "087-861-1177", "保険相談・保険の見直し（ゆめあんしんプラザ）", "香川 保険相談 / 徳島 保険 見直し", "保険代理店"],
+    ["株式会社ドリームクエスト", "https://seino-drone.com/", "058-213-6811", "ドローンスクール（国家資格取得・岐阜/兵庫/富山/石川）", "岐阜 ドローンスクール / ドローン国家資格 安い", "資格スクール（ドローン）"],
+    ["株式会社プロクルー", "https://procrobo.com/", "0749-62-2762", "ドローンスクール（国家資格取得・滋賀）", "滋賀 ドローンスクール / ドローン国家資格 長浜", "資格スクール（ドローン）"],
+    ["株式会社ティエヌ", "https://salon.tn-nail.net/", "", "ネイルサロン（TN・全国約100店舗FC）", "ネイルサロン 15分 / 早い ネイル 安い", "ネイルサロンFC"],
+    ["食空間プロジェクト株式会社", "https://fspj-school.com/", "03-6228-5695", "食空間プロデューサー養成講座（FSPJ）", "テーブルコーディネート 資格 / 食空間 資格スクール", "資格スクール（スキルアップ）"],
+    ["株式会社エンスポーツ", "https://www.ensports.com/", "", "恋活・婚活マッチングアプリ（ENSPORTS）", "婚活アプリ スポーツ / 恋活アプリ おすすめ", "婚活マッチングアプリ"],
+    ["株式会社Hyatt", "https://omiai-travel.com/", "03-6712-7315", "婚活×旅行マッチングサービス（お見合いトラベル）", "婚活ツアー / お見合い 旅行", "婚活マッチングサービス"],
+    ["ひまわりネットワーク株式会社", "https://www.himawari.co.jp/", "0565-35-3311", "地域ケーブルテレビ・格安SIM（豊田市）", "豊田市 格安SIM / 愛知 ケーブルテレビ 乗り換え", "格安スマホ・通信"],
+    ["株式会社シロク", "https://sirok.jp/", "", "オーガニックスキンケアD2C（N organic）", "N organic 定期便 / オーガニックコスメ 通販", "コスメD2C"],
+    ["弁護士法人本田総合法律事務所", "https://hondalaw.jp/", "0766-73-2571", "法律相談（交通事故・相続・離婚等・富山/高岡）", "富山 弁護士 相続 / 高岡 交通事故 弁護士", "法律事務所"],
+    ["株式会社RESコーポレーション", "https://www.res-corp.jp/", "03-5937-4901", "不動産相続ワンストップコンサルティング", "不動産相続 相談 / 実家 相続 どうする", "不動産・相続相談"],
+]
+
+if __name__ == "__main__":
+    make_xlsx("架電リスト_Meta_2026-07-14.xlsx", data_0714)
