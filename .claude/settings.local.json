@@ -1180,7 +1180,9 @@
       "Bash(mkdir -p _data/zengo)",
       "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp \"_data/zengo/チェングロウス_前後検索_カーディーラー.webp\")",
       "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp _data/zengo/チェングロウス_カーディーラー.webp)",
-      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/2.webp _data/zengo/学校_専門学校.webp)"
+      "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/2.webp _data/zengo/学校_専門学校.webp)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b2f014cd-_______LINEOA_____ver2_1.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cand_A_ver2_1.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/fd6ebd3e-_______LINEOA____.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cand_B.pptx)"
     ]
   }
 }
