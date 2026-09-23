@@ -1182,7 +1182,10 @@
       "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/1.webp _data/zengo/チェングロウス_カーディーラー.webp)",
       "Bash(cp /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/images/2.webp _data/zengo/学校_専門学校.webp)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b2f014cd-_______LINEOA_____ver2_1.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cand_A_ver2_1.pptx)",
-      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/fd6ebd3e-_______LINEOA____.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cand_B.pptx)"
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/fd6ebd3e-_______LINEOA____.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cand_B.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/a6bd0b52-20260922_______________LINE_____________ver1.1.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/1a7bf811-_______LINEOA____ver2.1.pptx 学校法人業界_LINEOA施策提案ver2.1.pptx)",
+      "Bash(git commit -q -m 'PC保存名を正として置き換え（チェングロウスver1.1・学校法人ver2.1） *)"
     ]
   }
 }
