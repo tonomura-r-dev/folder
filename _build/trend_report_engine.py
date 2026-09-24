@@ -177,10 +177,32 @@ def edit_cover_custom(cover, full_text):
 
 
 def edit_agenda(agenda, topics):
-    """topics: [{"title": "..."}] の順で P.3, P.4, ... を振る。ページ番号は
-    表紙1・目次1・本編なので3から開始。"""
+    """topics: [{"bracket", "headline", "title"}] の順で P.3, P.4, ... を振る。
+    ページ番号は表紙1・目次1・本編なので3から開始。
+    同じbracketが連続する場合は1つのトピックとみなし、"P.5-6"のように
+    ページ範囲でまとめて1行にする（2026-09-24、殿村さんの指示で
+    「もう少し大きい分割」に変更。1トピックが複数枚に分割されている
+    ③プロモーションスタンプ・⑥LINEオープンキャンペーンが対象）。"""
     sh = find_shape(agenda, lambda t: t.strip() != "" and "目次" not in t)
-    lines = [f"P.{i + 3}　　{t['title']}" for i, t in enumerate(topics)]
+    lines = []
+    page = 3
+    i = 0
+    n = len(topics)
+    while i < n:
+        j = i
+        while j + 1 < n and topics[j + 1]["bracket"] == topics[i]["bracket"]:
+            j += 1
+        span = j - i + 1
+        if span == 1:
+            page_label = f"P.{page}"
+            title = topics[i]["title"]
+        else:
+            page_label = f"P.{page}-{page + span - 1}"
+            headlines = "・".join(t["headline"] for t in topics[i:j + 1])
+            title = f"【{topics[i]['bracket']}】{headlines}"
+        lines.append(f"{page_label}　　{title}")
+        page += span
+        i = j + 1
     set_multiline_text(sh, lines)
 
 
