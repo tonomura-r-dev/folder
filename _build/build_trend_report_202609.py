@@ -9,8 +9,7 @@ LINE公式アカウント 媒体最新情報 2026年9月 トレンドレポー�
   ・［提供終了］リサーチ機能終了 → 先月既出のため除外
   ・既読API（旧）新規受付終了 → 「入れるには渋い」との判断で除外
   ・早期発注特典①の締切 → 期限切れのため除外
-  ・LINE Sales Promotion Manager → 優先度低だが一旦は残す。掲載順は元の号数どおり
-    （オープンキャンペーンより前）
+  ・LINE Sales Promotion Manager 利用停止期間のお知らせ → 2026-09-24、除外に変更
 
 使い方: python3 _build/build_trend_report_202609.py
 """
@@ -139,28 +138,6 @@ TOPICS = [
         source="https://workers-hub.box.com/s/ko2jjwgxk5fs18ejrs97fvfqv3bm3089",
         image_caption="1ミニアプリ→複数公式アカウントへの分岐図",
         image_path=str(ROOT / "_images" / "trend_report_202609" / "topic4.png"),
-    ),
-    dict(
-        bracket="LINE Sales Promotion Manager",
-        headline="利用停止期間のお知らせ",
-        industry="LINEオープンキャンペーンをご利用中の全業種",
-        category="その他",
-        description_lines=[
-            "データベース管理システムのスケール最適化を実施するため、",
-            "対象期間中はLINEで応募の管理画面（LINE Sales Promotion Manager）が利用停止となる。",
-            "対象期間は2026年9月8日（火）〜9月10日（木） 10:00〜14:30の間。",
-        ],
-        overview=["データベース管理システムのスケール最適化実施のため対象期間中は管理画面が利用停止",
-                   "対象メニュー：LINEオープンキャンペーン（抽選型）。アンケート型・季節商品の過去案件も対象"],
-        pricing=["該当なし"],
-        schedule=["社外への案内開始日・リリース日：2026年9月2日",
-                   "対象期間：9月8日（火）〜9月10日（木） 10:00〜14:30の間"],
-        caution=["影響範囲：サマリーレポートの作成・ダウンロードが利用不可",
-                   "LBPMでの案件申請・入稿など、上記以外の機能は通常どおり利用可能",
-                   "稼働中キャンペーンがあるクライアントには事前周知が必要"],
-        source="https://workers-hub.box.com/s/mo3y54qld9vj4kung0c4040z41mfhoip",
-        image_caption="利用停止期間のカレンダー帯グラフ",
-        image_path=str(ROOT / "_images" / "trend_report_202609" / "topic5.png"),
     ),
     dict(
         bracket="LINEオープンキャンペーン",
