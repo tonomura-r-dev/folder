@@ -17,7 +17,7 @@ ORANGE = (237, 125, 49)
 # ---------- 前後検索：色付け ----------
 src = Image.open(ROOT / "_data/zengo/チェングロウス_カーディーラー.webp").convert("RGB")
 white = Image.new("RGB", src.size, "white")
-base = Image.blend(src, white, 0.62)          # 買う人系は薄く
+base = Image.blend(src, white, 0.12)          # 買う人系（緑）も見える濃さを残す
 # 職業・転職系クエリ（点の位置〜ラベル右端）: (x0, y0, x1, y1)
 JOB = [
     (1020, 555, 1252, 587),   # カーディーラー 受付嬢
