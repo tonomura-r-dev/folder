@@ -40,7 +40,7 @@ TOPICS = [
             ("景品はLINEポイント2pt総付",
              "応募者全員にLINEポイント2ptを進呈するアンケート型キャンペーン。対象はLINE公式アカウント・Messaging API対応かつ認証プロバイダー必須。"),
         ],
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -61,7 +61,7 @@ TOPICS = [
         ],
         note_headline="早めの申込みが必須",
         note_desc="期間・条件限定のキャンペーンのため、早めの提案・申込み誘導がカギ。配信枠は先着で埋まるため、審査期間も見込んだ逆算スケジュールを組む。",
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -80,7 +80,7 @@ TOPICS = [
             ("景品変更の可能性あり", "景品はLINEポイント2pt固定だが変更となる場合があり、変更不可のお申し出は受付不可。"),
             ("対象は認証プロバイダー必須", "LINE公式アカウント・Messaging API対応かつ認証プロバイダーのアカウントが対象。"),
         ],
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
 ]
 

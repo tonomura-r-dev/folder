@@ -44,7 +44,7 @@ TOPICS = [
                    "既にお気に入り登録済みのミニアプリにはポップアップは表示されない",
                    "再表示制御：追加後に削除すると720時間（30日間）、「Not now」で見送ると14日間は再表示なし",
                    "同一ミニアプリへの表示上限2回（閉じ切ると永久対象外）。同一ユーザーは1日最大1回まで"],
-        source="https://workers-hub.box.com/s/9uo4m0fiqyxmddz5br3xe9691w0q4ht7",
+        source="代理店情報",
         image_caption="トリガー→ポップアップ表示→アプリタブ追加の3ステップ図",
         image_path=str(ROOT / "_images" / "trend_report_202609" / "topic1.png"),
     ),
@@ -66,7 +66,7 @@ TOPICS = [
         caution=["36カ月より前の実績データが必要なクライアントには変更前の確認・保存を案内",
                    "「分析」タブの一部データはダウンロード可能（詳細は分析マニュアル参照）",
                    "告知日程が流動的なため最新情報を要確認"],
-        source="https://workers-hub.box.com/s/ms8iztyci2dn5z2qna88rklxwxp7o5ja",
+        source="代理店情報",
         image_caption="参照期間のBefore/Afterタイムライン図",
         image_path=str(ROOT / "_images" / "trend_report_202609" / "topic2.png"),
     ),
@@ -92,7 +92,7 @@ TOPICS = [
             ("設定変更・追加費用は一切不要",
              "配信中の案件にも自動適用。広告主様・案件側での対応は一切不要で、即日から効果を享受できる。"),
         ],
-        source="https://workers-hub.box.com/s/rgfhp6hxyusj7domi1irjx68jld23k9r",
+        source="代理店情報",
     ),
     dict(
         bracket="LINEプロモーションスタンプ",
@@ -115,7 +115,7 @@ TOPICS = [
         breakdown_values=["約1.7倍", "約2.8倍", "約3.0倍", "約2.1倍"],
         merit_headline="活用メリット",
         merit_desc="この実績数字を使って、運用中クライアントへの追加提案・実績報告ができる。",
-        source="https://workers-hub.box.com/s/rgfhp6hxyusj7domi1irjx68jld23k9r",
+        source="代理店情報",
     ),
     dict(
         bracket="LINEミニアプリ",
@@ -135,7 +135,7 @@ TOPICS = [
                    "設定はLINE Developersの「友だち追加オプション」から。デフォルト／許可リスト設定で3パターン運用可",
                    "紐づけ条件：同一プロバイダーの公式アカウント／admin権限を持つ操作者。最大1,000件まで",
                    "1回の誘導で選べるのは1アカウントのみ。流入経路ごとに出し分ける（同時に複数へは登録不可）"],
-        source="https://workers-hub.box.com/s/ko2jjwgxk5fs18ejrs97fvfqv3bm3089",
+        source="https://developers.line.biz/ja/docs/line-mini-app/service/add-friend-option/#what-is-add-friend-option",
         image_caption="1ミニアプリ→複数公式アカウントへの分岐図",
         image_path=str(ROOT / "_images" / "trend_report_202609" / "topic4.png"),
     ),
@@ -161,7 +161,7 @@ TOPICS = [
             ("景品はLINEポイント2pt総付",
              "応募者全員にLINEポイント2ptを進呈するアンケート型キャンペーン。対象はLINE公式アカウント・Messaging API対応かつ認証プロバイダー必須。"),
         ],
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -182,7 +182,7 @@ TOPICS = [
         ],
         note_headline="早めの申込みが必須",
         note_desc="期間・条件限定のキャンペーンのため、早めの提案・申込み誘導がカギ。配信枠は先着で埋まるため、審査期間も見込んだ逆算スケジュールを組む。",
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
     dict(
         bracket="LINEオープンキャンペーン",
@@ -201,7 +201,7 @@ TOPICS = [
             ("景品変更の可能性あり", "景品はLINEポイント2pt固定だが変更となる場合があり、変更不可のお申し出は受付不可。"),
             ("対象は認証プロバイダー必須", "LINE公式アカウント・Messaging API対応かつ認証プロバイダーのアカウントが対象。"),
         ],
-        source="https://workers-hub.box.com/s/odilqpe44tp398zlfko148yggcgj68ny",
+        source="https://www.lycbiz.com/jp/service/line-sales-promotion/",
     ),
 ]
 

@@ -182,9 +182,13 @@ def edit_agenda(agenda, topics):
     同じbracketが連続する場合は1つのトピックとみなし、"P.5-6"のように
     ページ範囲でまとめて1行にする（2026-09-24、殿村さんの指示で
     「もう少し大きい分割」に変更。1トピックが複数枚に分割されている
-    ③プロモーションスタンプ・⑥LINEオープンキャンペーンが対象）。"""
+    ③プロモーションスタンプ・⑥LINEオープンキャンペーンが対象）。
+    ページ番号列とタイトル列は別テキストボックスに分ける（同じく2026-09-24、
+    殿村さんの指示。"P.3"と"P.8-10"のように桁数が違うと、1つのテキストボックス
+    内でスペース調整するだけでは【の位置が揃わないため）。"""
     sh = find_shape(agenda, lambda t: t.strip() != "" and "目次" not in t)
-    lines = []
+
+    groups = []
     page = 3
     i = 0
     n = len(topics)
@@ -200,10 +204,30 @@ def edit_agenda(agenda, topics):
             page_label = f"P.{page}-{page + span - 1}"
             headlines = "・".join(t["headline"] for t in topics[i:j + 1])
             title = f"【{topics[i]['bracket']}】{headlines}"
-        lines.append(f"{page_label}　　{title}")
+        groups.append((page_label, title))
         page += span
         i = j + 1
-    set_multiline_text(sh, lines)
+
+    # 既存シェイプ（フォント・行間などの書式を保持）を複製し、
+    # ページ番号列として左側に、タイトル列として右側に配置し直す。
+    page_el = copy.deepcopy(sh._element)
+    sh._element.addprevious(page_el)
+    cnvpr = page_el.find(".//" + qn("p:cNvPr"))
+    if cnvpr is not None:
+        cnvpr.set("id", str(int(cnvpr.get("id")) + 1000))
+        cnvpr.set("name", cnvpr.get("name") + "_page")
+    page_sh = next(s for s in agenda.shapes if s._element is page_el)
+
+    page_col_w = Inches(1.1)
+    gap = Inches(0.15)
+    orig_left, orig_width = sh.left, sh.width
+    page_sh.left = orig_left
+    page_sh.width = page_col_w
+    sh.left = orig_left + page_col_w + gap
+    sh.width = orig_width - page_col_w - gap
+
+    set_multiline_text(page_sh, [g[0] for g in groups])
+    set_multiline_text(sh, [g[1] for g in groups])
 
 
 def set_tag_highlight(slide, category_label):
