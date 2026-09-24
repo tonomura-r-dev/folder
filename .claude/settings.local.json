@@ -1187,7 +1187,9 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/1a7bf811-_______LINEOA____ver2.1.pptx 学校法人業界_LINEOA施策提案ver2.1.pptx)",
       "Bash(git commit -q -m 'PC保存名を正として置き換え（チェングロウスver1.1・学校法人ver2.1） *)",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5c8c8d26-_______LINEOA____ver2.1.pptx\" \"学校法人業界_LINEOA施策提案ver2.1.pptx\")",
-      "Bash(git commit -q -m '学校法人ver2.1: レイアウト調整版（PC保存・2026-09-23）を正として更新 *)"
+      "Bash(git commit -q -m '学校法人ver2.1: レイアウト調整版（PC保存・2026-09-23）を正として更新 *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/75ceaa80-202609___________________LINE______________ver2_3.pptx\" \"202609_株式会社やる気スイッチグループ御中_LINE公式アカウント運用のご提案_ver2_3.pptx\")",
+      "Bash(python3)"
     ]
   }
 }
