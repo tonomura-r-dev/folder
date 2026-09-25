@@ -395,9 +395,9 @@ ROWS9 = [("明光義塾", "大手", "明光義塾\n308,344人", "あり（多数
           "あり\nタイプ別の勉強法・相性チェック", "確認できず\n（教室は電話・Web・LINEで予約）", "あり\nAIが回答"),
          ("個別教室のトライ", "大手", "トライさん\n120,131人", "確認できず", "生徒\n（中高生）",
           "Webの性格診断あり\nLINEでは確認できず", "確認できず\n（Webフォーム）", "あり\nLINE相談窓口"),
-         ("森塾", "中堅", "運営会社名義\n（スプリックス）\n2,043,233人", "確認できず", "確認できず",
-          "確認できず", "確認できず\n（Webフォーム）", "確認できず"),
-         ("ナビ個別指導学院", "中堅", "見つからず", "見つからず", "―", "―", "―", "―")]
+         ("森塾", "中堅", "運営会社名義\n（スプリックス）\n2,043,233人", "見つからず", "確認できず",
+          "確認できず", "サイトに記載なし\n（Webフォームのみ）", "確認できず"),
+         ("ナビ個別指導学院", "中堅", "見つからず", "見つからず", "―", "―", "サイトに記載なし\n（Webフォームのみ）", "―")]
 x = 1.2
 xs = []
 for t, w_ in COLS:
@@ -412,7 +412,7 @@ for r, row in enumerate(ROWS9):
     box(s, xs[0][0], y, xs[0][1] - 0.06, 1.87, PALE, [(tier, 8.5, True, GRAY), (name, 10.5, True, NAVY)], shape=MSO_SHAPE.RECTANGLE, line="E7E6E6", ml=0.05)
     for c, val in enumerate(row[2:]):
         cx_, cw_ = xs[c + 1]
-        miss = val.startswith("確認できず") or val.startswith("見つからず") or val == "―"
+        miss = val.startswith("確認できず") or val.startswith("見つからず") or val.startswith("サイトに記載なし") or val == "―"
         good = val.startswith("あり") or val.startswith("保護者")
         col = GRAY if miss else (GREEN if good else INK)
         lines = val.split("\n")
@@ -426,7 +426,7 @@ box(s, 1.2, 13.3, 12.3, 2.75, PALE, [("明光義塾はLINEで成果を出して�
 box(s, 14.02, 13.3, 12.3, 2.75, BEIGE, [("空いているところ", 10.5, True, INK),
                                          ("・保護者向けに「診断 → 資料請求 → 体験予約」を", 9.5, False, INK),
                                          ("　LINEの中でつないでいる塾は、確認できなかった", 9.5, False, INK),
-                                         ("・トライは生徒向け、森塾は運営会社名義、ナビは本部LINEが見つからない", 9.5, False, INK)],
+                                         ("・トライは生徒向け。森塾・ナビは公式サイトにLINEの導線がない", 9.5, False, INK)],
     line="E0C36A", align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP)
 box(s, 1.2, 16.25, 25.12, 0.95, NAVY, [("保護者向けに、診断から資料請求・体験予約までをLINEでつなぐ。ここはまだ空いている。", 11.5, True, "FFFFFF")])
 
