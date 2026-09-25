@@ -3,19 +3,34 @@
 殿村さんが抜き出した4枚（16:9）をベースに、各スライドの中身を消して組み直す。
 方針：1ページ1メッセージ／1つの箱は1行／表は列を減らし数字を大きく／本文14pt以上・数字20pt以上
   python3 _build/build_juku_blueprint_169.py <入力pptx(4枚)> <出力pptx>
+  本体（4:3）に差し替えるとき：python3 _build/build_juku_blueprint_169.py <ver2.pptx> <出力> 26
+  （4枚目の開始ページを渡す。4:3のときは座標と文字を自動で縮める）
 """
 import sys
 from pptx import Presentation
-from pptx.util import Cm, Pt
+from pptx.util import Cm, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.shapes import MSO_SHAPE, MSO_CONNECTOR
 from pptx.oxml.ns import qn
 
 SRC, OUT = sys.argv[1], sys.argv[2]
+START = int(sys.argv[3]) if len(sys.argv) > 3 else 1
 prs = Presentation(SRC)
-SW = 33.867
-X0, W = 1.2, 31.47
+SW = Emu(prs.slide_width).cm
+X0, W = 1.2, 31.47          # 設計は16:9の座標で書き、4:3のときは下の係数で縮める
+WIDE = SW > 30
+KX = 1.0 if WIDE else 25.12 / 31.47
+KY = 1.0 if WIDE else (17.25 - 3.85) / (18.1 - 3.85)
+KF = 1.0 if WIDE else 0.88
+
+
+def mx(x):
+    return X0 + (x - X0) * KX
+
+
+def map_y(y):
+    return y if y < 3.85 else 3.85 + (y - 3.85) * KY
 NAVY, TNAVY, INK, GRAY, LGRAY = "1F285A", "002060", "333333", "7F7F7F", "D9D9D9"
 PALE, RED, GREEN, LINE_GREEN, BEIGE, ORANGE = "F4F7FF", "C00000", "00897B", "06C755", "FFF2CC", "ED7D31"
 PHASES = ["①接触", "②離脱", "③育成", "④リード獲得", "⑤リード有効化", "⑥再育成", "⑦入会（契約）", "⑧紹介"]
@@ -33,7 +48,8 @@ def meiryo(run):
 
 def box(s, x, y, w, h, fill, lines, color=INK, size=14, bold=False, anchor=MSO_ANCHOR.MIDDLE,
         align=PP_ALIGN.CENTER, line=None, lw=1.25, shape=MSO_SHAPE.ROUNDED_RECTANGLE, ml=0.25, adj=0.08):
-    sp = s.shapes.add_shape(shape, Cm(x), Cm(y), Cm(w), Cm(h))
+    h = h * KY if y >= 3.85 else h
+    sp = s.shapes.add_shape(shape, Cm(mx(x)), Cm(map_y(y)), Cm(w * KX), Cm(h))
     if fill:
         sp.fill.solid()
         sp.fill.fore_color.rgb = RGBColor.from_string(fill)
@@ -59,7 +75,7 @@ def box(s, x, y, w, h, fill, lines, color=INK, size=14, bold=False, anchor=MSO_A
         p.alignment = align
         r = p.add_run()
         r.text = t
-        r.font.size = Pt(sz)
+        r.font.size = Pt(round(sz * KF * 2) / 2)
         r.font.bold = b
         r.font.color.rgb = RGBColor.from_string(c)
         meiryo(r)
@@ -72,7 +88,7 @@ def text(s, x, y, w, h, lines, size=14, color=INK, bold=False, align=PP_ALIGN.LE
 
 
 def arrow(s, x1, y1, x2, y2, color=NAVY, w=2.5):
-    c = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Cm(x1), Cm(y1), Cm(x2), Cm(y2))
+    c = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Cm(mx(x1)), Cm(map_y(y1)), Cm(mx(x2)), Cm(map_y(y2)))
     c.line.color.rgb = RGBColor.from_string(color)
     c.line.width = Pt(w)
     ln = c.line._get_or_add_ln()
@@ -82,7 +98,9 @@ def arrow(s, x1, y1, x2, y2, color=NAVY, w=2.5):
 def header(s, title, lead, phases, foot=None):
     tree = s.shapes._spTree
     for sh in list(s.shapes):
-        tree.remove(sh._element)
+        keep = sh.is_placeholder or (Emu(sh.top).cm < 1.6 and not (sh.has_text_frame and sh.text_frame.text.strip()))
+        if not keep:
+            tree.remove(sh._element)
     text(s, 2.0, 0.3, 28, 1.0, [(title, 18, True, TNAVY)], anchor=MSO_ANCHOR.MIDDLE)
     g = 0.06
     w = (W - g * 7) / 8
@@ -111,7 +129,7 @@ def bubble(s, x, y, w, h, lines, size=11, fill="FFFFFF"):
                anchor=MSO_ANCHOR.MIDDLE, adj=0.12, ml=0.25)
 
 
-S = list(prs.slides)
+S = list(prs.slides)[START - 1:START + 3]
 
 # ================= ① 友だち追加の動線 =================
 s = S[0]
@@ -123,18 +141,18 @@ x = X0
 for t, w_ in COLS:
     box(s, x, 4.3, w_ - 0.2, 0.8, "EEEEEE", [(t, 13, True, INK)], shape=MSO_SHAPE.RECTANGLE)
     x += w_
-ROUTES = [("00", "離脱防止ポップアップ", "「まだ決めなくて大丈夫です」", "2,200人", "月3万円\n初期1.5万円", "28.4万UU×表示55%×クリック12%×追加12%"),
-          ("01", "完了画面からの誘導", "「日程の確認・変更はLINEで」", "300人", "月5万円\n初期10万円", "資料請求・体験予約の完了 月2,000件×15%")]
+ROUTES = [("00", "離脱防止\nポップアップ", "「まだ決めなくて大丈夫です」", "2,200", "月3万円\n初期1.5万円", "28.4万UU×表示55%×クリック12%×追加12%"),
+          ("01", "完了画面からの誘導", "「日程の確認・変更はLINEで」", "300", "月5万円\n初期10万円", "資料請求・体験予約の完了 月2,000件×15%")]
 for i, (no, where, msg, n, fee, calc) in enumerate(ROUTES):
     y = 5.4 + i * 3.9
     h = 3.5
     box(s, X0, y, 7.8, h, "FFFFFF", [], line="8EA9DB", shape=MSO_SHAPE.RECTANGLE)
     box(s, X0 + 0.3, y + h / 2 - 0.62, 1.4, 1.25, NAVY, [(no, 16, True, "FFFFFF")], shape=MSO_SHAPE.OVAL, ml=0.02)
-    text(s, X0 + 1.9, y, 5.85, h, [(where, 15, True, NAVY)], anchor=MSO_ANCHOR.MIDDLE)
+    text(s, X0 + 1.9, y, 5.85, h, [(t, 15, True, NAVY) for t in where.split("\n")], anchor=MSO_ANCHOR.MIDDLE)
     arrow(s, X0 + 7.85, y + h / 2, X0 + 8.45, y + h / 2)
     box(s, X0 + 8.0 + 0.5, y, 12.1, h, "FFFFFF", [(msg, 17, True, INK)], line="8EA9DB", shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.5)
     arrow(s, X0 + 20.65, y + h / 2, X0 + 21.2, y + h / 2)
-    box(s, X0 + 20.6 + 0.65, y, 4.35, h, LINE_GREEN, [(n, 24, True, "FFFFFF"), ("／月", 13, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE)
+    box(s, X0 + 20.6 + 0.65, y, 4.35, h, LINE_GREEN, [(n, 24, True, "FFFFFF"), ("人／月", 13, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE)
     text(s, X0 + 8.6, y + h - 0.75, 11.9, 0.6, [(calc, 10.5, False, GRAY)], align=PP_ALIGN.LEFT)
     box(s, X0 + 25.8, y, 5.47, h, "FFFFFF", [(ln, 14, False, INK) for ln in fee.split("\n")], line="C9D3E6", shape=MSO_SHAPE.RECTANGLE)
 box(s, X0, 13.4, W, 1.7, LINE_GREEN, [("新しい友だち　合計 月2,500人", 24, True, "FFFFFF")], adj=0.15)
@@ -145,23 +163,22 @@ text(s, X0, 15.6, W, 1.6, [("一番大きいのは、サイトから帰ろうと
 s = S[1]
 header(s, "施策の設計図②　効率改善（ステップ配信・企画配信）",
        "14日間のステップ配信と、時期に合わせた企画配信で、資料請求（CV①）と体験予約（CV②）を取る",
-       [3, 5, 6], "※大手1社（サイトUU 約28万／月）のモデル値。開封率・クリック率＝DYM SIMの係数（ステップ 72.5%×12%／企画 78%×10%）、CVR＝0.3〜1.0%。件数は四捨五入。通知メッセージのみ別途費用")
+       [3, 5, 6], "※大手1社（サイトUU約28万／月）のモデル値。開封率・クリック率＝DYM SIMの係数、CVR＝0.3〜1.0%、件数は四捨五入。通知メッセージのみ別途費用")
 HW = (W - 0.8) / 2
 
 
 def table(x, title, rows, sub):
     box(s, x, 4.3, HW, 0.9, NAVY, [(title, 15, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.4)
     text(s, x, 5.25, HW, 0.6, [(sub, 11, False, GRAY)])
-    cw = [3.1, HW - 3.1 - 4.9, 4.9]
+    cw = [2.7, HW - 2.7 - 4.2, 4.2]
     for i, (when, msg, n, cv, calc, hit) in enumerate(rows):
         y = 5.95 + i * 1.95
         h = 1.75
         box(s, x, y, cw[0] - 0.12, h, PALE, [(when, 15, True, NAVY)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", ml=0.05)
-        box(s, x + cw[0], y, cw[1] - 0.12, h, "FFFFFF", [(msg, 14, False, INK)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", align=PP_ALIGN.LEFT, ml=0.3)
+        box(s, x + cw[0], y, cw[1] - 0.12, h, "FFFFFF", [(msg, 14, False, INK), (calc, 9, False, GRAY)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", align=PP_ALIGN.LEFT, ml=0.3)
         f, c = (GREEN, "FFFFFF") if hit else ("F2F2F2", GRAY)
         lines = [(n, 18 if hit else 13, True, c), (cv, 10.5, True, c)]
-        box(s, x + cw[0] + cw[1], y, cw[2], h - 0.42, f, lines, shape=MSO_SHAPE.RECTANGLE, ml=0.05)
-        text(s, x + cw[0] + cw[1], y + h - 0.4, cw[2], 0.4, [(calc, 9, False, GRAY)], align=PP_ALIGN.CENTER)
+        box(s, x + cw[0] + cw[1], y, cw[2], h, f, lines, shape=MSO_SHAPE.RECTANGLE, ml=0.05)
 
 
 table(X0, "[ステップ配信]　友だち追加から14日間・自動",
@@ -173,7 +190,7 @@ table(X0, "[ステップ配信]　友だち追加から14日間・自動",
       "対象：新しい友だち 月2,500人")
 table(X0 + HW + 0.8, "[企画配信]　時期に合わせて月1〜2本",
       [("1〜2月", "新学年で変わること（学年別）＋体験のご案内", "5件", "CV② 体験予約", "6,800人×78%×10%×1.0%", True),
-       ("5月", "中間テスト後（中学生の保護者）：点数の見方＋苦手単元チェック", "2件", "CV② 体験予約", "2,700人×78%×10%×0.8%", True),
+       ("5月", "中間テスト後：苦手単元チェック（中学生の保護者）", "2件", "CV② 体験予約", "2,700人×78%×10%×0.8%", True),
        ("6月", "夏期講習の早期申込特典＋無料体験", "5件", "CV② 体験予約", "6,800人×78%×10%×1.0%", True),
        ("10月", "2学期の中間テスト後＋冬期講習の早期案内", "3件", "CV② 体験予約", "6,800人×78%×10%×0.6%", True),
        ("11月", "冬期講習の前：体験・入会に至らなかった人へ再案内", "実績で計算", "⑥再育成", "通知メッセージ・別途費用", False)],
@@ -221,7 +238,7 @@ for i, (a, b) in enumerate(FL):
     x = X0 + i * (w + g)
     last = i == n - 1
     box(s, x, 5.6, w, 3.0, GREEN if last else "FFFFFF", [(a, 15, False, "FFFFFF" if last else INK), (b, 17, True, "FFFFFF" if last else NAVY)],
-        line=None if last else "8EA9DB", lw=1.75)
+        line=None if last else "8EA9DB", lw=1.75, ml=0.08)
     if not last:
         arrow(s, x + w + 0.05, 7.1, x + w + g - 0.05, 7.1)
 box(s, X0, 9.4, W, 0.9, NAVY, [("[その他]　LINE経由の成果を数える", 15, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.4)
@@ -236,5 +253,18 @@ for i, (a, b) in enumerate(FL2):
         arrow(s, x + w + 0.05, 12.15, x + w + g - 0.05, 12.15)
 box(s, X0, 14.6, W, 1.9, BEIGE, [("教室の手間を増やさずに、LINE経由の成果が毎月数字で見える", 19, True, INK)], adj=0.12)
 
+# ページ番号（4:3の本体で、番号の枠が無いスライドだけ足す）
+if not WIDE:
+    for k, sl in enumerate(S):
+        if sl.slide_layout.name.startswith("2_"):   # 2_レイアウトはページ番号が出ないので足す
+            tb = sl.shapes.add_textbox(Cm(25.6), Cm(18.28), Cm(1.6), Cm(0.7))
+            p = tb.text_frame.paragraphs[0]
+            p.alignment = PP_ALIGN.RIGHT
+            r = p.add_run()
+            r.text = str(START + k)
+            r.font.size = Pt(12)
+            r.font.bold = True
+            r.font.color.rgb = RGBColor.from_string("FFFFFF")
+            meiryo(r)
 prs.save(OUT)
 print("saved", OUT)
