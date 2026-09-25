@@ -386,9 +386,49 @@ box(s, 1.2, 14.7, 25.12, 1.3, BEIGE, [("診断と資料をきっかけにLINEの
 s = rebuild(S(11), "各社LINEの今",
             ["大手・中堅の塾は、LINEで保護者の迷いにどこまで応えているか。",
              "大手2社（個別教室のトライ・明光義塾）と中堅2社（森塾・ナビ個別指導学院）を実際に確認した。"],
-            "出典｜各社LINE公式アカウント（page.line.me）・公式サイト 2026-09-25取得")
+            "出典｜各社LINE公式アカウント（page.line.me・実測）・公式サイト・LINEヤフー for Business 導入事例（明光ネットワークジャパン 2024）2026-09-25取得。「確認できず」＝公開情報で確認できなかったもの。★競合の実名掲載は上司確認")
 P9 = s
-pending(s, 1.2, 4.3, 25.12, 12.6, "【調査中】4社のLINE", "友だち数／アカウントの作り／診断・資料請求・体験予約がLINEでできるか")
+# 調査結果：_data/lineoa_competitors/教育塾_4社LINE_20260925.md
+COLS = [("", 3.9), ("本部アカウント\n（友だち数）", 4.3), ("教室別の\nアカウント", 2.9), ("誰向け", 2.3),
+        ("診断", 3.9), ("LINEで資料請求\n・体験予約", 4.1), ("チャット相談", 3.72)]
+ROWS9 = [("明光義塾", "大手", "明光義塾\n308,344人", "あり（多数）\n例：623人", "保護者",
+          "あり\nタイプ別の勉強法・相性チェック", "確認できず\n（教室は電話・Web・LINEで予約）", "あり\nAIが回答"),
+         ("個別教室のトライ", "大手", "トライさん\n120,131人", "確認できず", "生徒\n（中高生）",
+          "Webの性格診断あり\nLINEでは確認できず", "確認できず\n（Webフォーム）", "あり\nLINE相談窓口"),
+         ("森塾", "中堅", "運営会社名義\n（スプリックス）\n2,043,233人", "確認できず", "確認できず",
+          "確認できず", "確認できず\n（Webフォーム）", "確認できず"),
+         ("ナビ個別指導学院", "中堅", "見つからず", "見つからず", "―", "―", "―", "―")]
+x = 1.2
+xs = []
+for t, w_ in COLS:
+    xs.append((x, w_))
+    if t:
+        box(s, x, 4.15, w_ - 0.06, 1.15, NAVY, [(ln, 9.5, True, "FFFFFF") for ln in t.split("\n")], shape=MSO_SHAPE.RECTANGLE, ml=0.05)
+    x += w_
+for r, row in enumerate(ROWS9):
+    y = 5.38 + r * 1.95
+    f = "FFFFFF" if r % 2 == 0 else "F7F9FC"
+    name, tier = row[0], row[1]
+    box(s, xs[0][0], y, xs[0][1] - 0.06, 1.87, PALE, [(tier, 8.5, True, GRAY), (name, 10.5, True, NAVY)], shape=MSO_SHAPE.RECTANGLE, line="E7E6E6", ml=0.05)
+    for c, val in enumerate(row[2:]):
+        cx_, cw_ = xs[c + 1]
+        miss = val.startswith("確認できず") or val.startswith("見つからず") or val == "―"
+        good = val.startswith("あり") or val.startswith("保護者")
+        col = GRAY if miss else (GREEN if good else INK)
+        lines = val.split("\n")
+        box(s, cx_, y, cw_ - 0.06, 1.87, f, [(lines[0], 9.5, True, col)] + [(ln, 8.5, False, GRAY if miss else INK) for ln in lines[1:]],
+            shape=MSO_SHAPE.RECTANGLE, line="E7E6E6", ml=0.05)
+box(s, 1.2, 13.3, 12.3, 2.75, PALE, [("明光義塾はLINEで成果を出している（LINEヤフー公式事例）", 10.5, True, NAVY),
+                                      ("・サイトの離脱時ポップアップから友だち追加", 9.5, False, INK),
+                                      ("・約5カ月で約20万人の友だち（うち約15万人はスタンプの二次拡散）", 9.5, False, INK),
+                                      ("・資料請求が前年比120％ほど", 9.5, False, INK)],
+    line="8EA9DB", align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP)
+box(s, 14.02, 13.3, 12.3, 2.75, BEIGE, [("空いているところ", 10.5, True, INK),
+                                         ("・保護者向けに「診断 → 資料請求 → 体験予約」を", 9.5, False, INK),
+                                         ("　LINEの中でつないでいる塾は、確認できなかった", 9.5, False, INK),
+                                         ("・トライは生徒向け、森塾は運営会社名義、ナビは本部LINEが見つからない", 9.5, False, INK)],
+    line="E0C36A", align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.TOP)
+box(s, 1.2, 16.25, 25.12, 0.95, NAVY, [("保護者向けに、診断から資料請求・体験予約までをLINEでつなぐ。ここはまだ空いている。", 11.5, True, "FFFFFF")])
 
 # ---- P10 LINEでできること（旧5を作り替え）
 s = rebuild(S(5), "LINEでできること",
