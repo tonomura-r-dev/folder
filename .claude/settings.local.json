@@ -1198,7 +1198,9 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/74d9cd51-20260922_______________LINE_____________ver1.1.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx)",
       "Bash(cp 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cg_pc_0924c.pptx)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/18019f8d-20260922_______________LINE_____________ver1.2.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pptx)",
-      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/e103a4c9-20260922_______________LINE_____________ver1.2.pdf 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pdf)"
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/e103a4c9-20260922_______________LINE_____________ver1.2.pdf 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pdf)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/710bc071-________LINEOA___________.pptx\" \"教育（塾）業界_LINEOA施策提案.pptx\")",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/817320a3-________LINEOA____.pdf\" \"教育（塾）業界_LINEOA施策提案.pdf\")"
     ]
   }
 }
