@@ -261,8 +261,8 @@ AG = [("1", "市場の課題", "子どもは減り、大手・中堅で奪い合
       ("3", "検索データ", "保護者はどう塾を選んでいるか", "P5〜8"),
       ("4", "各社LINEの今", "大手2社・中堅2社のLINE", "P9"),
       ("5", "考え方", "LINEでできること・全体設計・導線", "P10〜12"),
-      ("6", "施策", "友だち追加から入会まで", "P13〜25"),
-      ("7", "運用・費用・スケジュール", "成果の見方・費用・体制", "P26〜31")]
+      ("6", "施策", "友だち追加から入会まで・施策の設計図", "P13〜27"),
+      ("7", "運用・費用・スケジュール", "成果の見方・費用・体制", "P28〜33")]
 for i, (n, t, sub, pg) in enumerate(AG):
     y = 4.3 + i * 1.78
     box(s, 3.0, y, 1.4, 1.4, NAVY, [(n, 16, True, "FFFFFF")], shape=MSO_SHAPE.OVAL)
@@ -460,8 +460,8 @@ s = rebuild(S(12), "全体設計",
             ["軽い申し込み（資料請求）で先につながり、体験予約、入会へ進んでもらう。",
              "入会は教室で行うため、LINEで計測するのは資料請求（CV①）と体験予約（CV②）の2つ。"],
             "⑧紹介は今回の提案には含めない（入会まで）", phases="all")
-DESC = ["広告・チラシ\n・口コミ", "帰る保護者を\n離脱防止でLINEへ", "比べている間\n情報を届ける", "友だち追加\n＋診断", "体験予約へ\n進んでもらう",
-        "予約しなかった人へ\n時期を変えて再案内", "教室で入会\n（LINEでは計測しない）", "今回は\n扱わない"]
+DESC = ["広告・チラシ\n・口コミ", "帰る保護者を\n離脱防止でLINEへ", "比べている間\n情報を届ける", "30秒診断 →\n資料をLINEで", "資料を読む人へ\n追いの配信→体験予約",
+        "体験に来なかった・\n入会しなかった人へ", "教室で入会\n（LINEでは計測しない）", "今回は\n扱わない"]
 w = (25.12 - 0.12 * 7) / 8
 for i, (ph, d) in enumerate(zip(PHASES, DESC)):
     x = 1.2 + i * (w + 0.12)
@@ -477,6 +477,8 @@ for i, t, col in CV:
     c.line.width = Pt(2)
     a_, b_ = (t.split(" ", 1) + [""])[:2] if " " in t else ("入会", "（契約）")
     box(s, x + 0.05, 8.9, w - 0.1, 1.2, col, [(a_, 10, True, "FFFFFF"), (b_, 10, True, "FFFFFF")], adj=0.2, ml=0.05)
+x4 = 1.2 + 3 * (w + 0.12)
+text(s, x4 - 0.3, 10.12, 2 * w + 0.72, 0.45, [("↑ この間に「読んで・比べて・迷う」期間がある ↑", 8.5, True, ORANGE)], align=PP_ALIGN.CENTER)
 box(s, 1.2, 10.6, 25.12, 4.1, PALE, [], line=LGRAY)
 text(s, 1.6, 10.75, 24.3, 0.7, [("CVを2段に分ける理由", 12, True, TNAVY)])
 text(s, 1.6, 11.5, 11.8, 3.1, [("CV① 資料請求（軽い）", 11, True, GREEN),
@@ -844,6 +846,127 @@ for i, (t, sub) in enumerate(IDEA):
     box(s, 14.02, 8.0 + i * 1.85, 12.3, 1.6, "FFFFFF", [(t, 11, True, NAVY), (sub, 9.5, False, INK)], line="8EA9DB", align=PP_ALIGN.LEFT)
 box(s, 1.2, 13.9, 25.12, 1.2, NAVY, [("口コミで選ばれる業界だから、口コミが生まれる場所にLINEの入口を置く。", 12.5, True, "FFFFFF")])
 
+
+# ---- P26・P27 施策の設計図（旧8・旧7を作り替え）
+def rebuild2(s, title_t, lead_lines, foot_t, phases):
+    """2_レイアウトのスライド用：上部の紺ブロック・線・タイトルを残して作り直す"""
+    tree = s.shapes._spTree
+    title = None
+    for sh in list(s.shapes):
+        top = Emu(sh.top).cm
+        if top < 1.6 and Emu(sh.height).cm < 1.7:
+            if sh.has_text_frame and sh.text_frame.text.strip():
+                title = sh
+            continue
+        tree.remove(sh._element)
+    set_para_text(title, [title_t])
+    band(s, phases)
+    text(s, 1.2, 2.2, 25.1, 1.6, [(t, 12, False, INK) for t in lead_lines], anchor=MSO_ANCHOR.MIDDLE)
+    c = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, 0, Cm(3.86), Cm(27.52), Cm(3.86))
+    c.line.color.rgb = RGBColor.from_string(LGRAY)
+    text(s, 1.2, 17.35, 25.12, 0.9, [(foot_t, 7.5, False, GRAY)])
+    return s
+
+
+COLW = [2.4, 4.4, 7.3, 4.9, 3.1, 3.02]    # タイミング／対象（想定数）／訴求／開封×クリック×CVR／件数／費用
+HEADS = ["タイミング", "対象（想定数）", "訴求", "開封率×クリック率×CVR", "件数", "費用"]
+
+
+def flow_head(s, y, heads=HEADS, widths=COLW):
+    x = 1.2
+    for h, w_ in zip(heads, widths):
+        box(s, x, y, w_ - 0.12, 0.55, "EEEEEE", [(h, 9, True, INK)], shape=MSO_SHAPE.RECTANGLE, ml=0.03)
+        x += w_
+
+
+def flow_row(s, y, vals, h=0.92, widths=COLW, cv=None):
+    x = 1.2
+    for i, (v, w_) in enumerate(zip(vals, widths)):
+        lines = v.split("\n")
+        if i == 4 and cv:
+            f, c = (GREEN, "FFFFFF")
+        elif i == 4:
+            f, c = ("F2F2F2", GRAY)
+        else:
+            f, c = ("FFFFFF", INK)
+        box(s, x, y, w_ - 0.12, h, f, [(lines[0], 9.5, i in (0, 4), c)] + [(ln, 8, False, c if i == 4 else GRAY) for ln in lines[1:]],
+            line="C9D3E6", shape=MSO_SHAPE.RECTANGLE, ml=0.08, align=PP_ALIGN.CENTER if i in (0, 3, 4, 5) else PP_ALIGN.LEFT)
+        if i in (1, 2, 3):
+            arrow(s, x + w_ - 0.13, y + h / 2, x + w_ + 0.01, y + h / 2, color=NAVY, w=1.5)
+        x += w_
+
+
+def sec(s, y, t):
+    box(s, 1.2, y, 25.12, 0.6, NAVY, [(t, 10.5, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.3)
+
+
+s = rebuild(S(8), "施策の設計図①　友だち追加とステップ配信",
+            ["1教室あたりのモデル値で、友だち追加から資料請求・体験予約までの件数を置いた。",
+             "開封率・クリック率はDYMのSIMの係数、CVRは0.3〜1.0%で計算している。"],
+            "※友だち追加数は1教室あたりのモデル値（例）。開封率・クリック率＝DYM SIMの係数（ステップ配信 72.5%×12%）。CVR＝0.3〜1.0%。件数は小数点第1位まで",
+            phases=[1, 2, 3, 4, 5])
+sec(s, 4.1, "① 友だち追加の動線（新しい友だち：月250人）")
+W1 = [4.4, 9.3, 4.2, 4.2, 3.02]
+flow_head(s, 4.8, ["箇所", "訴求", "LINE追加", "費用（月）", "初期費用"], W1)
+ROUTES = [("00 サイトの離脱防止\nポップアップ", "「まだ決めなくて大丈夫です」30秒診断と資料をLINEで\n営業のお電話はしません", "200人/月", "3万円", "1.5万円"),
+          ("01 完了画面からの誘導", "資料請求・体験予約の完了画面で「日程の確認・変更はLINEで」", "30人/月", "5万円", "10万円"),
+          ("02 チラシ・教室のQR", "LINE限定「学年別テスト対策プリント」プレゼント", "20人/月", "費用内", "費用内")]
+for i, r in enumerate(ROUTES):
+    y = 5.45 + i * 0.98
+    x = 1.2
+    for j, (v, w_) in enumerate(zip(r, W1)):
+        lines = v.split("\n")
+        f, c = (LINE_GREEN, "FFFFFF") if j == 2 else ("FFFFFF", INK)
+        box(s, x, y, w_ - 0.12, 0.9, f, [(lines[0], 9.5, j in (0, 2), c)] + [(ln, 8, False, GRAY) for ln in lines[1:]],
+            line="C9D3E6", shape=MSO_SHAPE.RECTANGLE, ml=0.08, align=PP_ALIGN.LEFT if j in (0, 1) else PP_ALIGN.CENTER)
+        if j in (0, 1):
+            arrow(s, x + w_ - 0.13, y + 0.45, x + w_ + 0.01, y + 0.45, color=NAVY, w=1.5)
+        x += w_
+sec(s, 8.55, "② 効率改善　[ステップ配信]　友だち追加から14日間・自動（費用：月額費用内）")
+flow_head(s, 9.25)
+STEPS = [("0日後", "友だち追加者全員\n250人", "あいさつ＋30秒診断 → 資料を受け取る", "100% × 12% × 1.0%", "0.3件\nCV① 資料請求", True),
+         ("3日後", "全員\n250人", "家でできる勉強のコツ（売り込みなし）", "72.5% × 12%", "CVは狙わない\n信頼づくり", False),
+         ("5日後", "資料を請求していない人\n約250人", "月謝＋講習費の年間の目安", "72.5% × 12% × 1.0%", "0.2件\nCV① 資料請求", True),
+         ("7日後", "全員\n250人", "同じタイプの子の事例＋体験のご案内①", "72.5% × 12% × 0.8%", "0.2件\nCV② 体験予約", True),
+         ("14日後", "体験を予約していない人\n約250人", "次の定期テストからの逆算＋体験のご案内②", "72.5% × 12% × 1.0%", "0.2件\nCV② 体験予約", True)]
+for i, r in enumerate(STEPS):
+    flow_row(s, 9.9 + i * 0.98, list(r[:5]) + ["費用内"], cv=r[5])
+box(s, 1.2, 14.95, 25.12, 1.3, BEIGE, [("ステップ配信だけで、1教室あたり月に 資料請求 約0.5件・体験予約 約0.4件", 11.5, True, INK),
+                                         ("100教室なら 資料請求 約50件・体験予約 約40件／月（広告費は増やさない）", 10.5, False, INK)])
+
+s = rebuild2(S(7), "施策の設計図②　企画配信・満足度・管理側",
+             ["友だちが貯まってからは、時期に合わせた企画配信で体験予約を取る。",
+              "あわせて、保護者の疑問にすぐ答え、教室の手間を減らす仕組みを入れる。"],
+             "※友だち数は1教室あたりのモデル値（6ヶ月後に累計約1,000人・ブロックを除いて約680人）。開封率・クリック率＝DYM SIMの係数（企画配信 78%×10%）。CVR＝0.3〜1.0%",
+             phases=[3, 5, 6])
+sec(s, 4.1, "② 効率改善　[企画配信]　月1〜2本（費用：月額費用内）")
+flow_head(s, 4.8)
+PLANS = [("新学年・\n講習の前", "友だち全体\n約680人", "講習・新学年の先行案内", "78% × 10% × 1.0%", "0.5件\nCV② 体験・講習申込", True),
+         ("定期テスト\nの前", "中学生の保護者\n約270人", "テスト対策講座・見直しポイント", "78% × 10% × 0.5%", "0.1件\nCV② 体験予約", True),
+         ("資料請求の後", "資料を請求した人\n（件数は実績で）", "同じタイプの事例・費用のQ&A・教室紹介（⑤）", "78% × 10% × 1.0%", "実績で計算\nCV② 体験予約", False),
+         ("講習の時期", "体験に来なかった・\n入会しなかった人（実績で）", "講習のご案内（⑥再育成・通知メッセージ）", "通知メッセージ", "実績で計算\n別途費用", False)]
+for i, r in enumerate(PLANS):
+    flow_row(s, 5.45 + i * 0.98, list(r[:5]) + (["費用内"] if i < 3 else ["別途"]), cv=r[5])
+box(s, 1.2, 9.55, 12.3, 0.6, NAVY, [("③ 満足度改善（ユーザー）", 10.5, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.3)
+box(s, 14.02, 9.55, 12.3, 0.6, NAVY, [("④ 効率改善（管理側）", 10.5, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE, align=PP_ALIGN.LEFT, ml=0.3)
+U3 = [("QA自動化", "料金・コース・対象学年・駐車場などを、キーワード自動応答ですぐ答える"),
+      ("個別チャット", "志望校の相談や日程の調整は、平日14〜21時に教室スタッフが1対1で対応"),
+      ("その他", "リッチメニューの右下に「無料体験・教室見学の予約」を常に置く")]
+U4 = [("自動応答", "体験予約の受付・日程の変更・持ち物の案内を、24時間自動で受け付ける"),
+      ("その他", "GA4のパラメータで、LINE経由の資料請求・体験予約の数を計測する")]
+for i, (t, d) in enumerate(U3):
+    y = 10.3 + i * 1.12
+    box(s, 1.2, y, 2.8, 1.0, PALE, [(f"[{t}]", 9.5, True, NAVY)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", ml=0.05)
+    box(s, 4.1, y, 9.4, 1.0, "FFFFFF", [(d, 9.5, False, INK)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", align=PP_ALIGN.LEFT)
+for i, (t, d) in enumerate(U4):
+    y = 10.3 + i * 1.12
+    box(s, 14.02, y, 2.8, 1.0, PALE, [(f"[{t}]", 9.5, True, NAVY)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", ml=0.05)
+    box(s, 16.92, y, 9.4, 1.0, "FFFFFF", [(d, 9.5, False, INK)], shape=MSO_SHAPE.RECTANGLE, line="C9D3E6", align=PP_ALIGN.LEFT)
+text(s, 25.6, 18.28, 1.6, 0.7, [("27", 12, True, "FFFFFF")], align=PP_ALIGN.RIGHT)
+box(s, 1.2, 14.0, 25.12, 2.2, BEIGE, [("設計図①②を合わせると、1教室あたり月に 資料請求 約0.5件・体験予約 約1.0件", 11.5, True, INK),
+                                        ("100教室なら 資料請求 約50件・体験予約 約100件／月。", 10.5, False, INK),
+                                        ("広告費を増やさず、サイトから帰る保護者をLINEで拾って育てる。", 10.5, False, INK)])
+
 # ---- P26 成果の見方（旧28を作り替え）
 s = rebuild(S(28), "成果の見方",
             ["友だちの数は成果にしない。見るのは、資料請求・体験予約・入会の3つ。", "入会は教室で決まるので、3ヶ月ごとに教室から報告をもらって確認する。"],
@@ -908,7 +1031,7 @@ SRCS = [("P3", "厚労省 人口動態統計／経産省 特定サービス産�
         ("P7・P24", "Googleトレンド 日本 2026年年初来（実測）"),
         ("P9", "各社LINE公式アカウント（page.line.me）・公式サイト 2026-09-25取得"),
         ("P15・P25", "POPER「Comiru」保護者と学習塾の意識調査 2022年 n=300"),
-        ("P30", "オリコンME 2025 学習塾 利用実態データ／インタースペース「ママスタ」2021年 n=1,037")]
+        ("P32", "オリコンME 2025 学習塾 利用実態データ／インタースペース「ママスタ」2021年 n=1,037")]
 box(s, 1.2, 4.2, 3.6, 0.7, NAVY, [("ページ", 10.5, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE)
 box(s, 4.9, 4.2, 21.42, 0.7, NAVY, [("出典", 10.5, True, "FFFFFF")], shape=MSO_SHAPE.RECTANGLE)
 for i, (pg, src) in enumerate(SRCS):
@@ -927,8 +1050,8 @@ box(s, 14.02, 12.9, 12.3, 3.0, "FFF7F7", [("提出前に確認すること", 11,
 
 
 # ================================================================ 並べ替え・削除
-ORDER = [1, 27, 2, 3, 4, 10, 9, 14, 11, 5, 12, 26, 13, 15, 22, 16, 17, 18, 19, 20, 21, 23, 25, 24, 33, 28, 29, 30, 31, 32, 34, 35]
-DROP = [6, 7, 8]
+ORDER = [1, 27, 2, 3, 4, 10, 9, 14, 11, 5, 12, 26, 13, 15, 22, 16, 17, 18, 19, 20, 21, 23, 25, 24, 33, 8, 7, 28, 29, 30, 31, 32, 34, 35]
+DROP = [6]
 lst = prs.slides._sldIdLst
 ids = list(lst)
 for n in DROP:
