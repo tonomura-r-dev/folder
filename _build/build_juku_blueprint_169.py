@@ -219,7 +219,7 @@ box(s, px + pw - 5.6, py + 4.4, 5.3, 1.0, "A6E3A1", [("志望校の相談をし�
 bubble(s, px + 0.3, py + 5.6, pw - 1.6, 1.9, ["（教室長の佐藤です）", "お子さまの学年を教えて", "いただけますか？"], size=11)
 my = py + ph - 3.6
 cw_, ch_ = pw / 3, 1.8
-for k, t in enumerate(["30秒診断", "コース・料金", "教室・講師", "資料を\n受け取る", "友だちと\n体験", "無料体験・\n見学の予約"]):
+for k, t in enumerate(["30秒診断", "コース・料金", "教室・講師", "資料を\n受け取る", "よくある\n質問", "無料体験・\n見学の予約"]):
     last = k == 5
     box(s, px + (k % 3) * cw_, my + (k // 3) * ch_, cw_, ch_, RED if last else "FFFFFF",
         [(ln, 10.5, True, "FFFFFF" if last else NAVY) for ln in t.split("\n")], line="BFBFBF", shape=MSO_SHAPE.RECTANGLE, ml=0.03)
