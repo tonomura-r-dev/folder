@@ -29,6 +29,7 @@ def fill(ws,notify,key):
     ws['C10']='-'; ws['D10']=0
     ws['H8']=6100; ws['H9']=5000; ws['G10']='サイト応募（広告経由）'; ws['H10']=45; ws['H11']=0
     ws['K8']=0; ws['P9']=False
+    ws['I10']=None; ws['I11']=None
     for i,c in enumerate(cols):
         ws[f'{c}13']=f'{i+1}か月目（{mon[i]}）'
         ws[f'{c}14']=round(6100*sd[i]); ws[f'{c}15']=round(5000*sd[i]); ws[f'{c}16']=apps[i]
