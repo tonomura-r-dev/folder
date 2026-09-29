@@ -60,4 +60,6 @@ def fill(ws,notify,key):
     ws['N70']='通知メッセージ初期費用（有のみ）'
     ws['N71']='通知メッセージ：ツール費月8万＋通数×7円（有のみ）'
 fill(wb['SIM1_通知メッセ有'],True,'有'); fill(wb['SIM2_通知メッセ無'],False,'無')
+from openpyxl.workbook.properties import CalcProperties
+wb.calculation=CalcProperties(fullCalcOnLoad=True)
 wb.save(OUT)
