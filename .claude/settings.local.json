@@ -1203,7 +1203,10 @@
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/817320a3-________LINEOA____.pdf\" \"教育（塾）業界_LINEOA施策提案.pdf\")",
       "Bash(python3 - *)",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b930b780-20260929_______________LINEOA_____SIM_ver2.6.xlsx\" \"20260929_株式会社チェングロウス御中_LINEOA施策提案【SIM】ver2.6.xlsx\")",
-      "Bash(git commit -qam 'チェングロウス：SIM ver2.6を殿村さん修正版（CV②修正）に差し替え *)"
+      "Bash(git commit -qam 'チェングロウス：SIM ver2.6を殿村さん修正版（CV②修正）に差し替え *)",
+      "Bash(python3 - /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx 20260929_チェングロウス_LINE施策のビジュアル（①〜④）ver1.1.pptx)",
+      "Bash(git commit -qm 'チェングロウス：施策のビジュアルを殿村さん修正版（件数の整数化）に差し替え *)"
     ]
   }
 }
