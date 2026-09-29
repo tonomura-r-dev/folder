@@ -201,6 +201,20 @@ def imgslot(slide, x, y, w, h, label, note):
     return sp
 
 
+IMG = ROOT / "_images"
+
+
+def fitpic(slide, name, x, y, w, h):
+    """殿村さんが画像生成した画面イメージを、枠(x,y,w,h)に縦横比を保って中央に置く"""
+    from PIL import Image as _I
+    iw, ih = _I.open(IMG / name).size
+    sc = min(w / iw, h / ih)
+    pw, ph = iw * sc, ih * sc
+    pic = slide.shapes.add_picture(str(IMG / name), Cm(x + (w - pw) / 2), Cm(y + (h - ph) / 2), Cm(pw), Cm(ph))
+    pic.line.color.rgb = RGBColor.from_string(BORDER)
+    return pic
+
+
 def table(slide, x, y, w, h, headers, rows, col_w=None, hsz=10.5, bsz=10.5,
           header_fill=NAVY, zebra=PALE, align=None, bold_rows=(), red_cells=()):
     gf = slide.shapes.add_table(len(rows) + 1, len(headers), Cm(x), Cm(y), Cm(w), Cm(h))
@@ -493,14 +507,15 @@ s = new("友だち追加の動線｜サイトに来た人をLINEに残す",
         ["サイトに来た人を、2つの入口でLINEの友だち（登録者）にします。"])
 for i, (tag, head, flow, cost, slot, note) in enumerate([
         ("00", "離脱防止ポップアップ", "求人ページで帰ろうとした人 → 「条件に合う新着求人をLINEでお届け」 → LINE追加",
-         "※月3万円（初期1.5万円）", "離脱防止ポップアップ", "チャットで渡すプロンプト①の画像を貼る"),
+         "※月3万円（初期1.5万円）", "chengrowth_v11_popup.png", ""),
         ("01", "「LINEで登録」ボタン", "求人詳細・会員登録ページ → 「LINEで登録（入力ほぼ不要）」 → LINE追加＋会員登録",
-         "※サイト側で実装（リニューアルの要件）", "「LINEで登録」ボタン", "チャットで渡すプロンプト②の画像を貼る")]):
+         "※サイト側で実装（リニューアルの要件）", "chengrowth_v11_register.png", "")]):
     x = CX0 + i * 12.92
     chip(s, x, 4.3, 12.2, 1.0, f"動線{tag}　{head}", sz=12.5)
     T(s, x, 5.4, 12.2, 1.9, [one(flow, 11, None, INK, ls=1.25), one(cost, 10, True, ORANGE)], ml=0.1)
-    imgslot(s, x, 7.6, 12.2, 7.1, slot, note)
+    fitpic(s, slot, x, 7.6, 12.2, 7.1)
 band(s, 15.2, "応募しなかった人も、帰ろうとした人も、LINEの友だちとして残ります。")
+foot(s, "※画面はイメージです")
 ORDER.append(s)
 
 # ============================================================
@@ -509,7 +524,7 @@ ORDER.append(s)
 s = new("リッチメニューと配信で、応募まで運ぶ",
         ["登録した人が「探したいとき」はリッチメニュー、「まだ迷っているとき」は配信で、応募まで運びます。"])
 chip(s, CX0, 4.3, 8.2, 0.95, "リッチメニュー（いつでも探せる入口）", sz=11.5)
-imgslot(s, CX0, 5.35, 8.2, 5.6, "リッチメニュー", "プロンプト③の画像を貼る")
+fitpic(s, "chengrowth_v11_richmenu.png", CX0, 5.35, 8.2, 5.6)
 T(s, CX0, 11.05, 8.2, 1.6, [one("整備士・営業・近くの求人・資格・未経験OK・新着を、ワンタップで検索結果へ", 10.5, None, INK, ls=1.25)], ml=0)
 chip(s, 9.8, 4.3, 16.52, 0.95, "配信（迷っている人を応募へ）", sz=11.5)
 table(s, 9.8, 5.35, 12.4, 6.6, ["配信", "対象", "内容", "開封×クリック"],
@@ -517,9 +532,9 @@ table(s, 9.8, 5.35, 12.4, 6.6, ["配信", "対象", "内容", "開封×クリッ
        ["新着求人", "条件が合う人", "条件が合う新着だけ", "78%×10%"],
        ["年間の企画", "友だち全員", "3月の山に向けて前倒し\n（月4本）", "78%×10%"]],
       col_w=[2.6, 2.6, 4.4, 2.8], align=["c", "c", "l", "c"], bsz=10.5, hsz=10.5)
-imgslot(s, 22.5, 5.35, 3.82, 6.6, "トーク画面", "プロンプト④")
+fitpic(s, "chengrowth_v11_talk_step.png", 22.5, 5.35, 3.82, 6.6)
 band(s, 13.3, "応募（CV②）は、リッチメニューと配信の両方から生まれます。")
-foot(s, "反応の目安は弊社シミュレーションの前提値（開封率・クリック率）")
+foot(s, "※画面はイメージです／開封×クリックは弊社シミュレーションの前提値")
 ORDER.append(s)
 
 # ============================================================
@@ -535,11 +550,11 @@ for i, (h, b) in enumerate([("面談日程のリマインド", ["前日・当日
                             ("よくある質問の自動応答", ["資格・受験料・勤務地などに", "LINEで24時間すぐ回答"]),
                             ("個別のやりとり", ["日程変更や相談も", "電話なしでLINEで完結"])]):
     card(s, CX0 + i * 5.43, 7.2, 5.0, 4.4, h, b, bsz=10.5, hsz=10.5)
-imgslot(s, 17.7, 4.3, 8.62, 9.2, "応募後のトーク画面", "プロンプト⑤の画像を貼る")
+fitpic(s, "chengrowth_v11_talk_thanks.png", 17.7, 4.3, 8.62, 9.2)
 sp = box(s, CX0, 12.0, 16.0, 1.5, fill=PORANGE, line=ORANGE)
 put_text(sp.text_frame, [one("応募（CV②）の数は増やさず、応募から採用までの取りこぼしを減らす施策です。", 11.5, True, ORANGE, align="c")], anchor="m")
 band(s, 14.1, "応募して終わりにせず、面談・採用まで同じLINEで伴走します。")
-foot(s, "※シミュレーションの応募数・費用には含めていません（応募の先の採用に効く施策のため）")
+foot(s, "※画面はイメージです／シミュレーションの応募数・費用には含めていません（応募の先の採用に効く施策のため）")
 ORDER.append(s)
 
 # ============================================================
