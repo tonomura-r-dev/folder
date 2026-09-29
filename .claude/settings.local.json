@@ -1201,7 +1201,9 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/e103a4c9-20260922_______________LINE_____________ver1.2.pdf 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pdf)",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/710bc071-________LINEOA___________.pptx\" \"教育（塾）業界_LINEOA施策提案.pptx\")",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/817320a3-________LINEOA____.pdf\" \"教育（塾）業界_LINEOA施策提案.pdf\")",
-      "Bash(python3 - *)"
+      "Bash(python3 - *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b930b780-20260929_______________LINEOA_____SIM_ver2.6.xlsx\" \"20260929_株式会社チェングロウス御中_LINEOA施策提案【SIM】ver2.6.xlsx\")",
+      "Bash(git commit -qam 'チェングロウス：SIM ver2.6を殿村さん修正版（CV②修正）に差し替え *)"
     ]
   }
 }
