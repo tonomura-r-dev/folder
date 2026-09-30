@@ -44,9 +44,26 @@ center(s2)
 note = by(S[4], "TextBox 10")
 ts = list(note._element.iter(qn("a:t")))
 full = "".join(t.text or "" for t in ts)
-ts[0].text = "※APIツール（Lステップ等）と併用可／完了画面を増やす場合は追加費用"
+ts[0].text = "※APIツール（Lステップ等）と併用可"
 for t in ts[1:]:
     t.text = ""
+import copy
+para = ts[0].getparent().getparent()          # a:t → a:r → a:p
+p2 = copy.deepcopy(para)
+list(p2.iter(qn("a:t")))[0].text = "※完了画面を増やす場合は追加費用"
+para.addnext(p2)
+
+# S5：費用のチップを大きく（幅・高さ・文字）
+s5 = S[4]
+c1, c2, nt, band = (by(s5, n) for n in ("Rounded Rectangle 8", "Rounded Rectangle 9", "TextBox 10", "Rounded Rectangle 11"))
+y = c1.top
+for sh, x in ((c1, 1.2), (c2, 8.0)):
+    sh.left, sh.width, sh.height = Cm(x), Cm(6.5), Cm(1.3)
+    for r in sh._element.iter(qn("a:rPr")):
+        r.set("sz", "1600")
+nt.left, nt.top, nt.width, nt.height = Cm(14.9), y, Cm(11.42), Cm(1.3)
+band.top = y + Cm(1.3) + Cm(0.8)
+center(s5)
 
 prs.save(str(OUT))
 print("saved:", OUT.name)
