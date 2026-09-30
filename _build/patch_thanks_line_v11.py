@@ -72,17 +72,17 @@ put_text(sp.text_frame, [one("今はメール・電話だけ → 読まれない
 # ============================================================
 s = S[1]
 drop(s, "Rounded Rectangle 15", "Rounded Rectangle 16", "TextBox 17")
-y0 = 13.5
-frame_box = box(s, CX0, y0, CW, 2.3, fill=WHITE, line=BORDER, radius=0.06)
-chip(s, CX0 + 0.4, y0 + 0.7, 2.6, 0.9, "費用", fill=NAVY, sz=13)
-T(s, CX0 + 3.3, y0 + 0.2, 8.6, 1.9,
-  [multi([("初期 ", 12, True, INK), ("10万円", 20, True, NAVY)], sa=2),
-   multi([("月額 ", 12, True, INK), ("3万円〜", 20, True, NAVY)])], anchor="m", ml=0)
-ln = s.shapes.add_connector(1, Cm(CX0 + 11.9), Cm(y0 + 0.35), Cm(CX0 + 11.9), Cm(y0 + 1.95))
+y0 = 13.6
+box(s, CX0, y0, CW, 1.2, fill=WHITE, line=BORDER, radius=0.06)
+chip(s, CX0 + 0.3, y0 + 0.25, 1.8, 0.7, "費用", fill=NAVY, sz=11)
+T(s, CX0 + 2.4, y0, 8.4, 1.2,
+  [multi([("初期 ", 10.5, True, INK), ("10万円", 14, True, NAVY), ("　月額 ", 10.5, True, INK), ("3万円〜", 14, True, NAVY)])],
+  anchor="m", ml=0)
+ln = s.shapes.add_connector(1, Cm(CX0 + 10.9), Cm(y0 + 0.25), Cm(CX0 + 10.9), Cm(y0 + 0.95))
 ln.line.color.rgb = RGBColor.from_string(BORDER); ln.line.width = Pt(1.0)
-T(s, CX0 + 12.3, y0 + 0.2, 12.5, 1.9,
-  [one("✓ 今お使いのAPIツール（Lステップ等）と併用できます", 11, None, INK, sa=6),
-   one("✓ 案内を置く完了画面を増やす場合は、追加費用", 11, None, INK)], anchor="m", ml=0)
+T(s, CX0 + 11.2, y0, 13.7, 1.2,
+  [one("✓ 今お使いのAPIツール（Lステップ等）と併用できます", 9.5, None, INK, sa=1),
+   one("✓ 案内を置く完了画面を増やす場合は、追加費用", 9.5, None, INK)], anchor="m", ml=0)
 
 # ============================================================
 # S5：リードを強く
