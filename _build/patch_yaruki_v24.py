@@ -479,21 +479,21 @@ s = S[9]
 set_lines(by(s, "Google Shape;156;p7"), ["前後検索のまとめ（項目別）"])
 ld = by(s, "Text 7")
 set_lines(ld, ["習い事の比較は検索の当日から後まで続き、その前後には子育て・家族のお出かけへの関心があります。",
-               "項目ごとに、LINEでの打ち手を用意します。"], sz=13)
+               "項目ごとに、LINEでの打ち手を用意します。"], sz=14)
 drop(*[sh for sh in s.shapes if sh.name not in ("Google Shape;156;p7", "Text 7")])
-LW, PW, RW, G = 4.3, 5.3, 4.72, 0.1
+LW, PW, RW, G = 3.6, 5.45, 5.02, 0.1
 xs = [CX0, CX0 + LW + G]
 for i in range(3):
     xs.append(xs[-1] + PW + G)
 y0 = 4.25
-for i, (h, fill) in enumerate([("検索前（-15〜-1日）", NAVY), ("検索当日", NAVY), ("検索後（+1〜+15日）", NAVY), ("LINEでの打ち手", "06C755")]):
-    chip(s, xs[i + 1], y0, RW if i == 3 else PW, 0.85, h, fill=fill, sz=11.5)
+for i, (h, fill) in enumerate([("検索前（-15〜-1日）", NAVY), ("検索当日", NAVY), ("検索後（+1〜15日）", NAVY), ("LINEでの打ち手", "06C755")]):
+    chip(s, xs[i + 1], y0, RW if i == 3 else PW, 0.95, h, fill=fill, sz=12.5)
 ROWS = [
-    (["「公文式教室」", "「ピアノ 習い事」", "「そろばん 効果」", "「英語教室 おすすめ 子供」"],
+    (["「公文式教室」", "「ピアノ 習い事」", "「そろばん 効果」", "「くもん 英語」"],
      ["「習い事 ランキング」", "「ヤマハ音楽教室」", "「そろばん」", "「体操教室」"],
      ["「忍者ナイン 評判」", "「くもん 月謝」", "「小学生 習い事 いくつ」", "「幼児教室」"],
-     "比較の最中に友だち追加していただき、評判・月謝などの疑問にお答えして体験予約へ"),
-    (["「こどもちゃれんじ」", "「スマイルゼミ」", "「集団行動が苦手な子供」", "「9歳の壁」"],
+     "比較の最中に友だち追加。評判・月謝の疑問にお答えし、体験予約へ"),
+    (["「こどもちゃれんじ」", "「スマイルゼミ」", "「子供 イライラする」", "「9歳の壁」"],
      ["「rsウイルス」"],
      ["「小学校受験」", "「小学校一年生」", "「ポピー 教材」", "「児童手当」"],
      "子どもの成長・悩みに寄り添う情報をお届けし、接点を保つ"),
@@ -502,21 +502,22 @@ ROWS = [
      ["「ポケモンセンター」", "「七五三」", "「ハーモニーランド」"],
      "季節の行事（七五三・夏休みなど）に合わせた企画配信"),
 ]
-RH = 3.35
+RH = 3.45
+LABEL2 = [["習い事の", "比較・検討"], ["子育て・", "学び"], ["家族の", "お出かけ・", "楽しみ"]]
 for r, ((name, col, pale), (pre, day, post, line)) in enumerate(zip(CAT, ROWS)):
-    y = y0 + 0.95 + r * (RH + 0.12)
+    y = y0 + 1.05 + r * (RH + 0.12)
     sp = box(s, xs[0], y, LW, RH, fill=col, radius=0.06)
-    put_text(sp.text_frame, [one(name, 12.5, True, WHITE, align="c")], anchor="m", ml=0.2, mr=0.2)
+    put_text(sp.text_frame, [one(n, 14.5, True, WHITE, align="c", ls=1.15) for n in LABEL2[r]], anchor="m", ml=0.1, mr=0.1)
     for i, qs in enumerate((pre, day, post)):
         sp = box(s, xs[i + 1], y, PW, RH, fill=pale, radius=0.04)
-        put_text(sp.text_frame, [one(q, 10.5, None, INK, align="c", sa=1) for q in qs], anchor="m", ml=0.15, mr=0.15)
+        put_text(sp.text_frame, [one(q, 12.5, None, INK, align="c", sa=1) for q in qs], anchor="m", ml=0.1, mr=0.1)
     sp = box(s, xs[4], y, RW, RH, fill=PGREEN, line="06C755", radius=0.06)
-    put_text(sp.text_frame, [one(line, 10.5, True, DGREEN, align="l", ls=1.25)], anchor="m", ml=0.3, mr=0.25)
-yt = y0 + 0.95 + 3 * (RH + 0.12) + 0.1
-T(s, xs[0], yt, LW, 0.8, [one("LINEへの動線", 11, True, NAVY, align="c")], anchor="m", ml=0, mr=0)
+    put_text(sp.text_frame, [one(line, 12.5, True, DGREEN, align="l", ls=1.25)], anchor="m", ml=0.3, mr=0.25)
+yt = y0 + 1.05 + 3 * (RH + 0.12) + 0.12
+T(s, xs[0], yt, LW, 0.95, [one("LINEへの動線", 12, True, NAVY, align="c")], anchor="m", ml=0, mr=0)
 for i, (lab, fill) in enumerate([("離脱防止バナーの掲載", NAVY), ("LINE友だち追加", "06C755"), ("LINE施策（投稿）", "06C755")]):
-    chip(s, xs[i + 1], yt, PW, 0.8, lab, fill=fill, sz=11)
-T(s, CX0, yt + 1.0, CW, 0.5, [one("出典：LINEヤフー社提供の前後検索データ（検索起点：「子ども 習い事」「習い事」）", 8, None, MUT)],
+    chip(s, xs[i + 1], yt, PW, 0.95, lab, fill=fill, sz=13)
+T(s, CX0, yt + 1.1, CW, 0.5, [one("出典：LINEヤフー社提供の前後検索データ（検索起点：「子ども 習い事」「習い事」）", 8, None, MUT)],
   anchor="m", ml=0, mr=0)
 
 # ============================================================
