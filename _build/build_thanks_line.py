@@ -150,6 +150,19 @@ T(s, CX0 + 9.8, 11.1, 15.3, 0.9, [one("※設定する地点（完了画面）�
 band(s, 12.8, "まずは、広告のご提案とあわせて、LINEの設計をご提案します", sz=14, h=1.4)
 
 # ============================================================
+# 本文ブロックを上下中央へ（区切り線〜注記の間の中央に寄せる）
+# ============================================================
+for sl in ORDER:
+    body = [sh for sh in sl.shapes
+            if sh.top is not None and Cm(DIV_Y + 0.1) <= sh.top < Cm(FOOT_Y - 0.1)]
+    top = min(sh.top for sh in body)
+    bottom = max(sh.top + sh.height for sh in body)
+    area_top, area_bottom = Cm(DIV_Y + 0.4), Cm(FOOT_Y - 0.3)
+    dy = int((area_top + area_bottom) / 2 - (top + bottom) / 2)
+    for sh in body:
+        sh.top = sh.top + dy
+
+# ============================================================
 # 並べ替え（5枚だけ残す）
 # ============================================================
 keep = {id(x) for x in ORDER}
