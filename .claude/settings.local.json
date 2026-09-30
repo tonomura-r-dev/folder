@@ -1206,7 +1206,9 @@
       "Bash(git commit -qam 'チェングロウス：SIM ver2.6を殿村さん修正版（CV②修正）に差し替え *)",
       "Bash(python3 - /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx 20260929_チェングロウス_LINE施策のビジュアル（①〜④）ver1.1.pptx)",
-      "Bash(git commit -qm 'チェングロウス：施策のビジュアルを殿村さん修正版（件数の整数化）に差し替え *)"
+      "Bash(git commit -qm 'チェングロウス：施策のビジュアルを殿村さん修正版（件数の整数化）に差し替え *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/70898679-202609___________________LINE______________ver3.1.pptx\" \"202609_株式会社やる気スイッチグループ御中_LINE公式アカウント運用のご提案_ver3.1.pptx\")",
+      "Bash(git commit -qm 'やる気スイッチ ver3.1：殿村さんPC修正版（文末の言い切り化・S38にCPO改善の記述）を正として保存 *)"
     ]
   }
 }
