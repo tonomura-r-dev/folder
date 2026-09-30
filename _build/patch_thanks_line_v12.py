@@ -67,5 +67,28 @@ nt.left, nt.top, nt.width, nt.height = Cm(CX0), y + Cm(1.4), Cm(CW), Cm(0.7)   #
 band.top = y + Cm(1.3) + Cm(1.1)
 center(s5)
 
+# S3・S4・S5：図形を左右中央に寄せる（横幅を0.88倍に縮め、左右の余白を広げる。矢印は大きさを変えず位置だけ寄せる）
+MID, F = Cm(27.52) / 2, 0.88
+for sl in (S[2], S[3], S[4]):
+    for sh in sl.shapes:
+        if not (Cm(DIV_Y + 0.1) <= sh.top < Cm(FOOT_Y - 0.1)):
+            continue
+        cx = sh.left + sh.width / 2
+        new_cx = MID + (cx - MID) * F
+        if "Arrow" not in sh.name:
+            sh.width = int(sh.width * F)
+        sh.left = int(new_cx - sh.width / 2)
+
+# S4：結果の箱が狭く折り返すので、申込みの箱から1cm分を回す（右側の図形を1cm左へ）
+s4, D1 = S[3], Cm(1.0)
+g = lambda n: by(s4, n)
+for n in ("Rounded Rectangle 4", "Rounded Rectangle 7", "Rounded Rectangle 13"):
+    g(n).width = g(n).width - D1
+for n in ("Right Arrow 8", "Rounded Rectangle 9", "Right Arrow 10", "Right Arrow 14", "Rounded Rectangle 15", "Right Arrow 16"):
+    g(n).left = g(n).left - D1
+for n in ("Rounded Rectangle 5", "Rounded Rectangle 11", "Rounded Rectangle 17"):
+    g(n).left = g(n).left - D1
+    g(n).width = g(n).width + D1
+
 prs.save(str(OUT))
 print("saved:", OUT.name)
