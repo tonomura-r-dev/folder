@@ -72,15 +72,16 @@ put_text(sp.text_frame, [one("今はメール・電話だけ → 読まれない
 # ============================================================
 s = S[1]
 drop(s, "Rounded Rectangle 15", "Rounded Rectangle 16", "TextBox 17")
-y0 = 13.6
-box(s, CX0, y0, CW, 1.2, fill=WHITE, line=BORDER, radius=0.06)
-chip(s, CX0 + 0.3, y0 + 0.25, 1.8, 0.7, "費用", fill=NAVY, sz=11)
-T(s, CX0 + 2.4, y0, 8.4, 1.2,
+y0, bw = 13.6, 19.6
+bx = CX0 + (CW - bw) / 2          # 横幅は中身に合わせて小さく、中央に置く
+box(s, bx, y0, bw, 1.2, fill=WHITE, line=BORDER, radius=0.06)
+chip(s, bx + 0.3, y0 + 0.25, 1.8, 0.7, "費用", fill=NAVY, sz=11)
+T(s, bx + 2.3, y0, 7.0, 1.2,
   [multi([("初期 ", 10.5, True, INK), ("10万円", 14, True, NAVY), ("　月額 ", 10.5, True, INK), ("3万円〜", 14, True, NAVY)])],
   anchor="m", ml=0)
-ln = s.shapes.add_connector(1, Cm(CX0 + 10.9), Cm(y0 + 0.25), Cm(CX0 + 10.9), Cm(y0 + 0.95))
+ln = s.shapes.add_connector(1, Cm(bx + 9.5), Cm(y0 + 0.25), Cm(bx + 9.5), Cm(y0 + 0.95))
 ln.line.color.rgb = RGBColor.from_string(BORDER); ln.line.width = Pt(1.0)
-T(s, CX0 + 11.2, y0, 13.7, 1.2,
+T(s, bx + 9.8, y0, 9.7, 1.2,
   [one("✓ 今お使いのAPIツール（Lステップ等）と併用できます", 9.5, None, INK, sa=1),
    one("✓ 案内を置く完了画面を増やす場合は、追加費用", 9.5, None, INK)], anchor="m", ml=0)
 
@@ -92,6 +93,31 @@ put_text(by(s, "TextBox 2").text_frame,
          [one("広告の予算に、月3万円〜を足すだけ。", 14, True, NAVY, ls=1.3, sa=2),
           one("完了画面にLINEへの案内を置けば、広告で集めた申込みを売上までつなげる仕組みが、広告と同時に始められます。",
               12.5, None, INK, ls=1.3)], anchor="m", ml=0, mr=0)
+
+# ============================================================
+# 最新の提案FMT（_templates/DYM_LINEOA_提案FMT_202607）の枠組みに合わせる
+#   区切り線とリード行をやめ、タイトルの直下にメッセージの枠（薄い青・紺の太字）を置く。本文はその下で上下中央
+# ============================================================
+MSG_Y, MSG_H = 1.85, 1.55
+for s in S:
+    for sh in list(s.shapes):
+        if sh.shape_type == 9 and abs(sh.top - Cm(DIV_Y)) < Cm(0.2):      # 区切り線
+            sh._element.getparent().remove(sh._element)
+    lead = by(s, "TextBox 2")
+    lines = ["".join(t.text or "" for t in p.iter(qn("a:t"))) for p in lead._element.iter(qn("a:p"))]
+    lines = [l for l in lines if l.strip()]
+    lead.left, lead.top, lead.width, lead.height = Cm(CX0), Cm(MSG_Y), Cm(CW), Cm(MSG_H)
+    lead.fill.solid(); lead.fill.fore_color.rgb = RGBColor.from_string(PALE)
+    lead.line.color.rgb = RGBColor.from_string(BORDER); lead.line.width = Pt(1.0)
+    put_text(lead.text_frame, [one(l, 13 if len(lines) > 1 else 14, True, NAVY, align="c", ls=1.25) for l in lines],
+             anchor="m", ml=0.3, mr=0.3)
+    # 本文を メッセージ枠の下〜注記の上 の中央へ
+    body = [sh for sh in s.shapes if sh.top is not None and sh.top > Cm(MSG_Y + MSG_H - 0.05) and sh.top < Cm(FOOT_Y - 0.1)]
+    top = min(sh.top for sh in body); bottom = max(sh.top + sh.height for sh in body)
+    a_top, a_bot = Cm(MSG_Y + MSG_H + 0.5), Cm(FOOT_Y - 0.3)
+    dy = int((a_top + a_bot) / 2 - (top + bottom) / 2)
+    for sh in body:
+        sh.top = sh.top + dy
 
 prs.save(str(OUT))
 print("saved:", OUT.name)
