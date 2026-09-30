@@ -12,6 +12,9 @@
   S35  サンクスLINE誘導の費用 初期15万円・月額5万円。直後に【オプション】QA自動化（チャットボット）を新設
   S37  成果報酬型の記載。直後に「CPO改善のご提案｜サンクスLINE誘導」を新設
   S38  サンクスLINE誘導ツール 初期¥150,000・月額¥50,000
+  S8・S9 前後検索「子ども 習い事」「習い事」：タイトルを 前後検索「KW名」 に、画像を色分け版に、リードを分析の結論に、凡例と出典を追加
+  S10  前後検索のまとめを「項目別」（色分けと同じ3項目 × 検索前・当日・後 ＋ LINEでの打ち手）に作り直す
+       色分け画像は _build/make_yaruki_zengo_color.py で作る（分類は _data/zengo/やる気スイッチ_クエリ分類_*.csv）
 
 数字の出どころ：株式会社やる気スイッチグループ_LINEOA施策提案【SIM】_ver3.00.xlsx（成果報酬運営）。
 件数・金額は整数で出す（小数は書かない。殿村さん指示）。
@@ -435,6 +438,85 @@ for row in tbl.rows:
         for p in cells[5].text_frame._txBody.findall(qn("a:p")):
             tx6.append(deepcopy(p))
         replace_in_para(cells[6], "¥150,000", "¥50,000")
+
+# ============================================================
+# S8・S9 前後検索（色分け・結論・凡例・出典）
+# ============================================================
+CAT = [("習い事の比較・検討", "3467B2", "E7EEF8"), ("子育て・学び", "D9661F", "FBEBDD"), ("家族のお出かけ・楽しみ", "8E4EC6", "F1E9F8")]
+
+
+def swap_pic(slide, pic, path):
+    _, rid = slide.part.get_or_add_image_part(str(path))
+    pic._element.blipFill.find(qn("a:blip")).set(qn("r:embed"), rid)
+
+
+for s, kw, img, lead, nocolor in [
+        (S[7], "子ども 習い事", "yaruki_zengo_kodomo_color.png",
+         ["習い事の比較は検索当日に集中し、その前後は「家族のお出かけ・楽しみ」と「子育て」への関心が中心です。",
+          "当日に決めきれなかった方をLINEでつなぎとめ、日々の関心に合わせた配信で接点を保ちます。"], "色なし：その他"),
+        (S[8], "習い事", "yaruki_zengo_naraigoto_color.png",
+         ["習い事の比較は検索の前から後まで続き、検索後は「忍者ナイン 評判」「くもん 月謝」など評判・費用の確認に進みます。",
+          "比較が続くあいだ、LINEで評判・月謝などの疑問にお答えし、体験予約へつなげます。"], "色なし：大人の習い事・趣味、その他")]:
+    set_lines(by(s, "Google Shape;156;p7"), [f"前後検索「{kw}」"])
+    ld = by(s, "Text 7")
+    ld.top, ld.height = Cm(1.8), Cm(1.85)
+    set_lines(ld, lead, sz=13)
+    swap_pic(s, next(sh for sh in s.shapes if sh.shape_type == 13), IMG / img)
+    x = 3.7
+    for name, col, _ in CAT:
+        w = 0.42 * len(name) + 0.8
+        chip(s, x, 3.95, w, 0.58, name, fill=col, sz=10)
+        x += w + 0.2
+    T(s, x + 0.1, 3.95, 7.0, 0.58, [one(nocolor, 9, None, MUT)], anchor="m", ml=0, mr=0)
+    T(s, 1.07, 17.45, 17.0, 0.5, [one(f"出典：LINEヤフー社提供の前後検索データ（検索起点：「{kw}」）", 8, None, MUT)],
+      anchor="m", ml=0, mr=0)
+
+# ============================================================
+# S10 前後検索のまとめ（項目別）
+# ============================================================
+s = S[9]
+set_lines(by(s, "Google Shape;156;p7"), ["前後検索のまとめ（項目別）"])
+ld = by(s, "Text 7")
+set_lines(ld, ["習い事の比較は検索の当日から後まで続き、その前後には子育て・家族のお出かけへの関心があります。",
+               "項目ごとに、LINEでの打ち手を用意します。"], sz=13)
+drop(*[sh for sh in s.shapes if sh.name not in ("Google Shape;156;p7", "Text 7")])
+LW, PW, RW, G = 4.3, 5.3, 4.72, 0.1
+xs = [CX0, CX0 + LW + G]
+for i in range(3):
+    xs.append(xs[-1] + PW + G)
+y0 = 4.25
+for i, (h, fill) in enumerate([("検索前（-15〜-1日）", NAVY), ("検索当日", NAVY), ("検索後（+1〜+15日）", NAVY), ("LINEでの打ち手", "06C755")]):
+    chip(s, xs[i + 1], y0, RW if i == 3 else PW, 0.85, h, fill=fill, sz=11.5)
+ROWS = [
+    (["「公文式教室」", "「ピアノ 習い事」", "「そろばん 効果」", "「英語教室 おすすめ 子供」"],
+     ["「習い事 ランキング」", "「ヤマハ音楽教室」", "「そろばん」", "「体操教室」"],
+     ["「忍者ナイン 評判」", "「くもん 月謝」", "「小学生 習い事 いくつ」", "「幼児教室」"],
+     "比較の最中に友だち追加していただき、評判・月謝などの疑問にお答えして体験予約へ"),
+    (["「こどもちゃれんじ」", "「スマイルゼミ」", "「集団行動が苦手な子供」", "「9歳の壁」"],
+     ["「rsウイルス」"],
+     ["「小学校受験」", "「小学校一年生」", "「ポピー 教材」", "「児童手当」"],
+     "子どもの成長・悩みに寄り添う情報をお届けし、接点を保つ"),
+    (["「キッザニア」", "「スタジオアリス」", "「夏休み 子供 過ごし方」"],
+     ["－"],
+     ["「ポケモンセンター」", "「七五三」", "「ハーモニーランド」"],
+     "季節の行事（七五三・夏休みなど）に合わせた企画配信"),
+]
+RH = 3.35
+for r, ((name, col, pale), (pre, day, post, line)) in enumerate(zip(CAT, ROWS)):
+    y = y0 + 0.95 + r * (RH + 0.12)
+    sp = box(s, xs[0], y, LW, RH, fill=col, radius=0.06)
+    put_text(sp.text_frame, [one(name, 12.5, True, WHITE, align="c")], anchor="m", ml=0.2, mr=0.2)
+    for i, qs in enumerate((pre, day, post)):
+        sp = box(s, xs[i + 1], y, PW, RH, fill=pale, radius=0.04)
+        put_text(sp.text_frame, [one(q, 10.5, None, INK, align="c", sa=1) for q in qs], anchor="m", ml=0.15, mr=0.15)
+    sp = box(s, xs[4], y, RW, RH, fill=PGREEN, line="06C755", radius=0.06)
+    put_text(sp.text_frame, [one(line, 10.5, True, DGREEN, align="l", ls=1.25)], anchor="m", ml=0.3, mr=0.25)
+yt = y0 + 0.95 + 3 * (RH + 0.12) + 0.1
+T(s, xs[0], yt, LW, 0.8, [one("LINEへの動線", 11, True, NAVY, align="c")], anchor="m", ml=0, mr=0)
+for i, (lab, fill) in enumerate([("離脱防止バナーの掲載", NAVY), ("LINE友だち追加", "06C755"), ("LINE施策（投稿）", "06C755")]):
+    chip(s, xs[i + 1], yt, PW, 0.8, lab, fill=fill, sz=11)
+T(s, CX0, yt + 1.0, CW, 0.5, [one("出典：LINEヤフー社提供の前後検索データ（検索起点：「子ども 習い事」「習い事」）", 8, None, MUT)],
+  anchor="m", ml=0, mr=0)
 
 # ============================================================
 # 並べ替え

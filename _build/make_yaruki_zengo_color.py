@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """やる気スイッチ S8・S9 の前後検索（子ども 習い事／習い事）を分類ごとに色分け（2026-09-30）。
 チェングロウスの工場求人ナビ版（make_chengrowth_zengo_kojo3.py）と同じ作り。
-分類：A=習い事の比較・検討／B=子育て・学び／C=家族のお出かけ・イベント／D=お金・制度。
+分類：A=習い事の比較・検討（青）／B=子育て・学び（橙）／C=家族のお出かけ・楽しみ（紫）。
 E（大人の習い事・趣味）とX（その他）は色を付けない（薄いグレーのまま）。
+右端のラベルは点の左側に寄せて描かれている（グラフの右端で終わる）ので、その場合は右端から文字幅ぶんを囲む。
 分類データ：_data/zengo/やる気スイッチ_クエリ分類_{子ども習い事,習い事}.csv（dot_id, x, y, label, cat）
   x, y は点の中心。ラベルは点の右に同じ高さで書かれているので、右へ文字の塊を拾って囲む。
 出力：_images/yaruki_zengo_{kodomo,naraigoto}_color.png
@@ -15,13 +16,18 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
-COL = {"A": (52, 103, 178), "B": (142, 78, 198), "C": (0, 137, 123), "D": (217, 102, 31)}
+COL = {"A": (52, 103, 178), "B": (217, 102, 31), "C": (142, 78, 198)}
+CHW = {"kodomo": 17.5, "naraigoto": 16.3}      # 全角1文字の幅（px）
+RIGHT = 1774                                   # ラベルが寄せられるグラフの右端
 CHARTS = {"kodomo": "子ども習い事", "naraigoto": "習い事"}
 
 
-def label_box(a, dots_xy, x, y, text):
+def label_box(a, dots_xy, x, y, text, chw):
     """点(x,y)の右にあるラベル文字の範囲を、濃い文字の画素を右へたどって決める"""
     h, w = a.shape[:2]
+    est = int(chw * sum(1 if ord(ch) > 0x2000 else 0.55 for ch in text))
+    if x + 8 + est > RIGHT + 11:                               # 右端で左に寄せられたラベル
+        return (RIGHT - est - 6, y - 14, min(RIGHT + 4, w - 1), y + 14)
     dark = a[max(0, y - 9):y + 10].sum(axis=2) < 360          # 文字（濃いグレー）
     col = dark.any(axis=0)
     others = [dx for dx, dy in dots_xy if abs(dy - y) <= 6 and dx > x + 8]
@@ -37,7 +43,7 @@ def label_box(a, dots_xy, x, y, text):
             gap += 1
             if gap > 13:                                      # 全角スペース（約16px）より短い切れ目は同じラベル
                 break
-    exp = x0 + int(17 * sum(1 if ord(ch) > 0x2000 else 0.55 for ch in text))
+    exp = x0 + est
     if x1 < x0 + 10 or x1 > exp + 40:                           # 拾えない・拾いすぎのときは文字数から
         x1 = min(exp, stop)
     return (x0 - 5, y - 14, min(x1 + 6, w - 1), y + 14)
@@ -57,7 +63,8 @@ def render(key):
         if r["cat"] not in COL:
             continue
         x, y, c = int(r["x"]), int(r["y"]), COL[r["cat"]]
-        box = label_box(a, dots_xy, x, y, r["label"])
+        ly = y + 10 if y < 20 else y                           # グラフ上端の点はラベルが少し下に描かれている
+        box = label_box(a, dots_xy, x, ly, r["label"], CHW[key])
         od.rounded_rectangle(box, radius=6, fill=c + (80,))
         items.append((box, c, (x, y)))
     img = Image.alpha_composite(base.convert("RGBA"), over)
@@ -66,6 +73,8 @@ def render(key):
         crop = src.crop(box).convert("L")                      # ラベル文字は原画から濃く戻す
         mask = crop.point(lambda v: 255 if v < 150 else 0)
         img.paste((40, 40, 40, 255), box, mask)
+        if box[0] + 6 < x <= box[2]:                        # 右端で文字に重なる点は塗らない（文字が隠れるため）
+            continue
         d.ellipse((x - 9, y - 9, x + 9, y + 9), fill=c + (255,), outline=(255, 255, 255, 255), width=2)
     out = ROOT / f"_images/yaruki_zengo_{key}_color.png"
     img.convert("RGB").save(out)
