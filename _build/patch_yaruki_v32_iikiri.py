@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""やる気スイッチ ver3.1（殿村さんPC修正版）→ ver3.2：資料の文末を言い切りに揃える（です・ます を外す）。
+"""やる気スイッチ ver3.1（殿村さんPC修正版）→ ver3.2：資料の文末を言い切りに揃える（です・ます を外す）＋字体をメイリオに統一。
 S8の「をLINEで見られます」はLINEの訴求文（ユーザーに見せる文言）なので残す。
   python3 _build/patch_yaruki_v32_iikiri.py <ver3.1.pptx>
 """
@@ -69,6 +69,44 @@ def fix_p(p, where):
 for i, s in enumerate(prs.slides, 1):
     for el in s.shapes._spTree.iter(qn("a:p")):
         fix_p(el, i)
+# 字体をメイリオに統一（"Meiryo" 表記・指定なしも含めて、英数字・日本語・記号すべて）
+nfont = 0
+for s in prs.slides:
+    for tag in ("a:rPr", "a:endParaRPr", "a:defRPr"):
+        for rpr in s.shapes._spTree.iter(qn(tag)):
+            for ft in ("a:latin", "a:ea", "a:cs"):
+                e = rpr.find(qn(ft))
+                if e is None:
+                    e = rpr.makeelement(qn(ft), {})
+                    # latin/ea/cs は solidFill などの後ろに置く決まり
+                    anchor = [c for c in rpr if c.tag in (qn("a:hlinkClick"), qn("a:hlinkMouseOver"), qn("a:rtl"), qn("a:extLst"))]
+                    if anchor:
+                        anchor[0].addprevious(e)
+                    else:
+                        rpr.append(e)
+                if e.get("typeface") != "メイリオ":
+                    e.set("typeface", "メイリオ"); nfont += 1
+    for r in s.shapes._spTree.iter(qn("a:r")):          # rPr の無い run にも付ける
+        if r.find(qn("a:rPr")) is None:
+            rpr = r.makeelement(qn("a:rPr"), {"lang": "ja-JP"})
+            for ft in ("a:latin", "a:ea", "a:cs"):
+                rpr.append(rpr.makeelement(qn(ft), {"typeface": "メイリオ"}))
+            r.insert(0, rpr); nfont += 1
+# latin → ea → cs の順に並べ直す（順番が崩れるとPowerPointで開けないことがある）
+AFTER = {qn(x) for x in ("a:sym", "a:hlinkClick", "a:hlinkMouseOver", "a:rtl", "a:extLst")}
+for s in prs.slides:
+    for tag in ("a:rPr", "a:endParaRPr", "a:defRPr"):
+        for rpr in s.shapes._spTree.iter(qn(tag)):
+            fs = [rpr.find(qn(ft)) for ft in ("a:latin", "a:ea", "a:cs")]
+            for e in fs:
+                rpr.remove(e)
+            nxt = next((c for c in rpr if c.tag in AFTER), None)
+            for e in fs:
+                if nxt is not None:
+                    nxt.addprevious(e)
+                else:
+                    rpr.append(e)
+print("字体を直した箇所:", nfont)
 prs.save(str(OUT))
 for old, _ in REP:
     print(f"{old[:24]:26} → p{hits.get(old)}")
