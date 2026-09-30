@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""チェングロウス本資料 ver2.5 に、SIM ver2.7（CV①の率 1.5%→1.0%、CV②は据え置き）の数字を反映する。
+"""チェングロウス本資料 ver2.5 に、SIM ver2.7（CV①の率 1.5%→1.0%。CV②は殿村さんが直した版）の数字を反映する。
 
   python3 _build/patch_chengrowth_v25_visual.py   # 先に入れ替え版を作る
   python3 _build/patch_chengrowth_v25_sim27.py    # その上に数字を反映（ver2.5を上書き）
@@ -103,7 +103,26 @@ for j, val in enumerate(row(36), start=1):
     set_cell(tbl.rows[2].cells[j], f"{val}件")
 cv1_total = sum(row(36))
 set_cell(tbl.rows[2].cells[7], f"{cv1_total}件")
-sub_all(s, [("501件", f"{cv1_total}件"), ("来訪者の1.5%", "来訪者の1.0%")])
+# CV②・応募単価（殿村さんがSIM ver2.7で直した値）
+from decimal import Decimal, ROUND_HALF_UP
+man = lambda y: f"{Decimal(str(y / 10000)).quantize(Decimal('0.1'), ROUND_HALF_UP)}万円"
+for j, val in enumerate(row(37), start=1):
+    set_cell(tbl.rows[3].cells[j], f"{val}件")
+cv2_total = sum(row(37))
+set_cell(tbl.rows[3].cells[7], f"{cv2_total}件")
+for j, val in enumerate(row(59), start=1):
+    set_cell(tbl.rows[4].cells[j], man(val))
+for x in s.shapes:
+    if x.has_text_frame:
+        t = x.text_frame.text
+        for tt in x.text_frame._txBody.iter(qn("a:t")):
+            if t.startswith("半年の会員登録") and tt.text and "件" in tt.text:
+                tt.text = f"{cv1_total}件"
+            if t.startswith("半年の応募") and tt.text and "件" in tt.text:
+                tt.text = f"{cv2_total}件"
+            if t.startswith("9月の応募単価") and tt.text and "万円" in tt.text and "目標" not in tt.text:
+                tt.text = man(J(59))
+sub_all(s, [("来訪者の1.5%", "来訪者の1.0%")])
 
 prs.save(str(DECK))
 print("saved:", DECK.name)
