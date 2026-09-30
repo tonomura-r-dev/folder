@@ -246,13 +246,14 @@ set_lines(by(S[6], "Text 7"), ["習い事は「3〜5歳」で始める家庭が�
 # ============================================================
 s = S[13]
 drop(*[sh for sh in s.shapes if sh.top >= Cm(4.5)])
-chip(s, CX0, 4.6, 7.2, 0.85, "1　対象範囲（4つの領域）", fill="06C755", sz=12)
-areas = ["① 友だち追加", "② 配信の効率改善", "③ ユーザー満足度改善", "④ 管理側の業務効率化"]
+chip(s, CX0, 4.4, 8.6, 1.0, "1　対象範囲（4つの領域）", fill="06C755", sz=14)
+areas = [("①", "友だち追加"), ("②", "配信の効率改善"), ("③", "ユーザー満足度改善"), ("④", "管理側の業務効率化")]
 bw, gap = (CW - 0.4 * 3) / 4, 0.4
-for i, a in enumerate(areas):
-    sp = box(s, CX0 + i * (bw + gap), 5.7, bw, 1.9, fill=NAVY, radius=0.10)
-    put_text(sp.text_frame, [one(a, 14, True, WHITE, align="c")], anchor="m")
-T(s, CX0, 7.75, CW, 0.8, [one("LINE公式アカウントの4つの領域を対象に、施策を設計します。", 12, None, INK, align="c")],
+for i, (no, a) in enumerate(areas):
+    sp = box(s, CX0 + i * (bw + gap), 5.6, bw, 2.5, fill=NAVY, radius=0.10)
+    put_text(sp.text_frame, [one(no, 16, True, WHITE, align="c", sa=2), one(a, 16, True, WHITE, align="c")],
+             anchor="m", ml=0.1, mr=0.1)
+T(s, CX0, 8.2, CW, 0.9, [one("LINE公式アカウントの4つの領域を対象に、施策を設計します。", 14, None, INK, align="c")],
   anchor="m", ml=0, mr=0)
 cards = [("2　想定UU規模", ["友だち数は、導入できる動線の本数と整備の進み具合で変わります", "数値はレンジの中間を基準にした試算例です"]),
          ("3　数値の位置づけ", ["開封率・クリック率・CVR・獲得件数は、業界一般値・弊社実績にもとづく数値です", "実装できる範囲に合わせ、すり合わせのうえ精緻化します"]),
@@ -260,9 +261,9 @@ cards = [("2　想定UU規模", ["友だち数は、導入できる動線の本�
 cw3 = (CW - 0.4 * 2) / 3
 for i, (hd, body) in enumerate(cards):
     x = CX0 + i * (cw3 + 0.4)
-    chip(s, x, 9.0, cw3, 0.85, hd, fill="06C755", sz=12)
-    sp = box(s, x, 9.95, cw3, 4.2, fill=PALE, line=BORDER, radius=0.06)
-    put_text(sp.text_frame, [one("・" + b, 11.5, None, INK, ls=1.3, sa=6) for b in body], anchor="m", ml=0.35, mr=0.3)
+    chip(s, x, 9.5, cw3, 1.0, hd, fill="06C755", sz=14)
+    sp = box(s, x, 10.6, cw3, 6.0, fill=PALE, line=BORDER, radius=0.05)
+    put_text(sp.text_frame, [one("・" + b, 14, None, INK, ls=1.35, sa=10) for b in body], anchor="m", ml=0.4, mr=0.35)
 center_body(s)
 
 # ============================================================
