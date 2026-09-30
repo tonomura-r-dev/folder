@@ -57,11 +57,15 @@ b8 = by(s, "Rounded Rectangle 8")
 x, y, w, h = b8.left / 360000, b8.top / 360000, b8.width / 360000, b8.height / 360000
 drop(s, "Rounded Rectangle 8", "Rounded Rectangle 10", "Rounded Rectangle 11")
 fill(by(s, "Right Arrow 7"), GREEN); fill(by(s, "Right Arrow 9"), GREEN)
-chip(s, x, y - 1.05, w, 0.8, "ここをLINEに", fill=ORANGE, sz=12)
 node(s, x, y, w, h, ["LINE", "リマインド・配信", "1対1のトーク"], GREEN, WHITE, sz=16)
 node(s, 21.3, y, 5.02, h, ["来店・成約", "リピート"], PGREEN, DGREEN, sz=15, line=GREEN, lw=1.5)
-sp = box(s, x, y + h + 0.4, 11.72, 1.5, fill="EDEDED", radius=0.10)
-put_text(sp.text_frame, [one("今はメール・電話だけ → 読まれない・つながらない", 12, True, GRAY, align="c")], anchor="m")
+# 広告で追えるところ／LINEで追えるところ（流れの真下に範囲の帯）
+drop(s, "TextBox 12")
+yb = y + h + 0.35
+chip(s, CX0, yb, 13.1 - CX0, 0.85, "広告で追えるところ：申込みまで", fill=NAVY, sz=12)
+chip(s, x, yb, 26.32 - x, 0.85, "LINEで追えるところ：来店・成約・リピートまで", fill=GREEN, sz=12)
+sp = box(s, x, yb + 1.15, 26.32 - x, 1.1, fill="EDEDED", radius=0.10)
+put_text(sp.text_frame, [one("今はメール・電話だけ → 読まれない・つながらない", 11, True, GRAY, align="c")], anchor="m")
 
 # ============================================================
 # S2：費用とAPIの話を1つの枠に
