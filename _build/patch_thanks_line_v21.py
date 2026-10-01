@@ -26,7 +26,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Cm, Pt
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "20261001_サンクスLINEのご提案ver2.1.pptx"
+OUT = ROOT / "20261001_サンクスLINEのご提案.pptx"   # 月額3万円〜に変更（殿村さん指示）・名前にverを付けない
 prs = Presentation(sys.argv[1])
 NAVY, GREEN, INK, GRAY = RGBColor(0x1F, 0x28, 0x5A), RGBColor(0x06, 0xC7, 0x55), RGBColor(0x33, 0x33, 0x33), RGBColor(0x7F, 0x7F, 0x7F)
 
@@ -105,7 +105,7 @@ for i, (who, what, big, own) in enumerate(CASES):
 Y = 12.45
 add(tpl_navy, X0, Y, 3.0, 1.3, [("費用", 16, True, WHITE)])
 add(tpl_green, X0 + 3.2, Y, 5.4, 1.3, [("初期 15万円", 18, True, WHITE)])
-add(tpl_green, X0 + 8.8, Y, 5.4, 1.3, [("月額 5万円", 18, True, WHITE)])
+add(tpl_green, X0 + 8.8, Y, 5.4, 1.3, [("月額 3万円〜", 18, True, WHITE)])
 s.shapes._spTree.append(fee_note)
 fn = s.shapes[-1]
 fn.left, fn.top, fn.width, fn.height = Cm(X0 + 14.4), Cm(Y), Cm(3 * W + 2 * G - 14.4), Cm(1.3)
