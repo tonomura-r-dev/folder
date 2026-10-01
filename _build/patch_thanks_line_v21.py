@@ -88,21 +88,21 @@ set_runs(by("TextBox 2"), [("弊社の運用実績と、LINEヤフー公式の�
 
 WHITE = RGBColor(0xFF, 0xFF, 0xFF)
 CASES = [   # (見出し, 何をしたか, 数字, 弊社か)
-    ("弊社実績｜美容クリニック", "完了画面からLINEへ（サンクスLINE）", "来院率 40〜50%改善", True),
-    ("保険見直し本舗", "予約日時をLINEでリマインド", "面談実施率 ＋5ポイント", False),
-    ("琴平バス（観光バス）", "予約の通知をLINEで受け取った方のうち", "友だち追加 約70%", False),
-    ("皮膚科クリニック", "友だち追加後のステップ配信", "予約数 約120%", False),
-    ("UZUZ（就職支援）", "LINEからの問い合わせ", "面談予約率 55%", False),
-    ("サンマルクカフェ", "メッセージを開封した方のうち", "当日に来店 約40%", False),
+    ("弊社実績｜美容クリニック", "完了画面からLINEへ", "来院率／40〜50%改善", True),
+    ("保険見直し本舗", "予約日時をLINEでリマインド", "面談実施率／＋5ポイント", False),
+    ("琴平バス（観光バス）", "予約の通知をLINEで受け取った方のうち", "友だち追加／約70%", False),
+    ("皮膚科クリニック", "友だち追加後のステップ配信", "予約数／約120%", False),
+    ("UZUZ（就職支援）", "LINEからの問い合わせ", "面談予約率／55%", False),
+    ("サンマルクカフェ", "メッセージを開封した方のうち", "当日に来店／約40%", False),
 ]
 X0, W, G = 1.46, 7.93, 0.4
 for i, (who, what, big, own) in enumerate(CASES):
-    x, y = X0 + (i % 3) * (W + G), 4.55 + (i // 3) * 3.85
+    x, y = X0 + (i % 3) * (W + G), 4.55 + (i // 3) * 4.4
     add(tpl_green if own else tpl_navy, x, y, W, 0.9, [(who, 14, True, WHITE)])
-    add(tpl_card, x, y + 1.0, W, 2.6, [(what, 11, False, INK), (big, 18, True, NAVY)])
+    add(tpl_card, x, y + 1.0, W, 3.3, [(what, 10, False, INK)] + [(b, 17, True, NAVY) for b in big.split("／")])
 
 # 費用（元S5の内容）
-Y = 12.45
+Y = 13.5
 add(tpl_navy, X0, Y, 3.0, 1.3, [("費用", 16, True, WHITE)])
 add(tpl_green, X0 + 3.2, Y, 5.4, 1.3, [("初期 15万円", 18, True, WHITE)])
 add(tpl_green, X0 + 8.8, Y, 5.4, 1.3, [("月額 3万円〜", 18, True, WHITE)])
@@ -112,11 +112,11 @@ fn.left, fn.top, fn.width, fn.height = Cm(X0 + 14.4), Cm(Y), Cm(3 * W + 2 * G - 
 set_runs(fn, [("※APIツール（Lステップ等）と併用可", 11, False, GRAY), ("※完了画面を増やす場合は追加費用", 11, False, GRAY)])
 fn.text_frame.vertical_anchor = 3  # 中央
 
-add(tpl_navy, X0, 14.1, 3 * W + 2 * G, 1.3,
+add(tpl_navy, X0, 15.0, 3 * W + 2 * G, 1.3,
     [("広告のご提案とあわせて、LINEへの導線設計からご提案可能", 17, True, WHITE)])
 s.shapes._spTree.append(note_src)
 note = s.shapes[-1]
-note.left, note.top, note.width, note.height = Cm(X0), Cm(15.6), Cm(3 * W + 2 * G), Cm(0.8)
+note.left, note.top, note.width, note.height = Cm(X0), Cm(16.4), Cm(3 * W + 2 * G), Cm(0.8)
 set_runs(note, [("出典：LINEヤフー for Business 導入事例（保険見直し本舗／琴平バス／アクネクリニック／UZUZ／サンマルクカフェ）", 10, False, GRAY)])
 # 複製した図形のIDが重ならないよう振り直す
 for n, c in enumerate(s.shapes._spTree.iter(qn("p:cNvPr")), start=2):
