@@ -13,7 +13,7 @@ from pptx import Presentation
 from pptx.oxml.ns import qn
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "20260930_サンクスLINEのご提案（簡易版）ver1.3.pptx"
+OUT = ROOT / "20260930_サンクスLINEのご提案ver1.3.pptx"
 AD, LINE_FEE, N_AD, N_LINE = 1_000_000, 50_000, 20, 24
 REP = {
     1: [("同じ広告費のまま成果が増えます", "同じ広告費のまま成果が増える")],
