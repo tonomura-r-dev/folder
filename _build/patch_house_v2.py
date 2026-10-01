@@ -182,7 +182,7 @@ for s in prs.slides:
 # 並べ替え：S10・S29・S31を削除、S17・S18を「費用感」（S34）の直後へ
 lst = prs.slides._sldIdLst
 ids = list(lst)
-drop = {10, 29, 31}
+drop = {8, 10, 29, 31}   # 8＝出典のない年代別利用率の表のページ（殿村さん：削除）
 order = [n for n in range(1, 43) if n not in drop and n not in (17, 18)]
 k = order.index(34) + 1
 order[k:k] = [17, 18]
