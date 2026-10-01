@@ -29,6 +29,7 @@ pic = s.shapes.add_picture(str(IMG), Cm((prs.slide_width / 360000 - W) / 2), Cm(
 pic.name = "サンクスLINEの流れ"
 
 # 強み3つ：見出しだけの帯にする
+LABELS = ("関心が一番高い直後に案内", "今の広告の申込みを活用", "前日のお知らせで来院へ")
 CW, G, X0, Y, HH = (24.6 - 0.4) / 3, 0.2, 1.46, 4.15 + H + 0.25, 1.25
 for i, n in enumerate(("Rounded Rectangle 12", "Rounded Rectangle 13", "Rounded Rectangle 14")):
     sh = by(n)
@@ -36,7 +37,11 @@ for i, n in enumerate(("Rounded Rectangle 12", "Rounded Rectangle 13", "Rounded 
     txb = sh.text_frame._txBody
     for p in txb.findall(qn("a:p"))[1:]:
         txb.remove(p)
-    for r in sh.text_frame.paragraphs[0].runs:
+    runs = sh.text_frame.paragraphs[0].runs
+    runs[0].text = LABELS[i]                     # 「広告費ゼロ」は使わない（LINE運用費はかかるため・殿村さん指示）
+    for r in runs[1:]:
+        r.text = ""
+    for r in runs:
         r.font.size = Pt(15)
     sh.text_frame.paragraphs[0].line_spacing = 1.0
     sh.text_frame.vertical_anchor = 3   # 中央
