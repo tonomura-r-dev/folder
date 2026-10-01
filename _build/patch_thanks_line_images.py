@@ -39,15 +39,15 @@ for path in sys.argv[1:]:
             for r in s.shapes[0].text_frame.paragraphs[0].runs[1:]:
                 r.text = ""
             s.shapes[0].text_frame.paragraphs[0].runs[0].text = "実績と費用"
-            W = 20.0
+            W, Y0 = 17.0, 4.5      # 大きすぎないよう幅17cm（殿村さん指示）
             H = W * 941 / 1672
-            pic = s.shapes.add_picture(str(IMG / "thanks_line_jisseki.png"), Cm((SW - W) / 2), Cm(4.15), Cm(W), Cm(H))
+            pic = s.shapes.add_picture(str(IMG / "thanks_line_jisseki.png"), Cm((SW - W) / 2), Cm(Y0), Cm(W), Cm(H))
             pic.name = "実績と費用"
             for sh in s.shapes:
                 txt = sh.text_frame.text if sh.has_text_frame else ""
                 if txt.startswith("広告のご提案とあわせて"):
-                    sh.top, sh.height = Cm(4.15 + H + 0.25), Cm(1.2)
+                    sh.top, sh.height = Cm(Y0 + H + 0.45), Cm(1.2)
                 if txt.startswith("出典"):
-                    sh.top = Cm(4.15 + H + 1.5)
+                    sh.top = Cm(Y0 + H + 1.75)
     prs.save(path)
     print("saved:", path)
