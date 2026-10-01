@@ -1188,7 +1188,8 @@
       "Bash(cp /root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/1e762332-20260904____________________LINE____f.pptx 20260904_ハウス食品グループ株式会社御中_LINE公式アカウント運用のご提案.pptx)",
       "Bash(cp /root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/ece8b993-20260904____________________LINE____f.pdf 20260904_ハウス食品グループ株式会社御中_LINE公式アカウント運用のご提案.pdf)",
       "Bash(git check-ignore *)",
-      "Bash(echo \"ignore-check rc=$?\")"
+      "Bash(echo \"ignore-check rc=$?\")",
+      "Bash(cp \"/root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/a872f9af-20261001_________________LINE_____________ver2.pptx\" \"20261001_ハウス食品グループ株式会社御中_LINE公式アカウント運用のご提案_ver2.pptx\" && ls -la 20261001_ハウス食品*)"
     ]
   }
 }
