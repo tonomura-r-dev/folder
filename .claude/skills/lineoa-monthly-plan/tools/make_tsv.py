@@ -2,25 +2,40 @@
 """企画案の行データ（JSON）から、配信管理シートに貼るタブ区切りの行を作る。
 
 使い方:
-  python3 make_tsv.py <rows.json>          # シートに貼るタブ区切り（1本ずつ）
-  python3 make_tsv.py <rows.json> --view   # 確認用（列名：値）
+  python3 make_tsv.py <rows.json>               # 標準の21列（インクアートのシート）
+  python3 make_tsv.py <rows.json> --fmt norst   # ノーストのシートの並び
+  python3 make_tsv.py <rows.json> --view        # 確認用（列名：値）。--fmt と併用できる
 
-rows.json は行のリスト。キーはシートの列名（COLUMNS）。無いキーは空欄。
-COLUMNS 以外のキー（アイテム名・配信時間の参考・テキストのリンク など）は
+rows.json は行のリスト。キーはシートの列名。無いキーは空欄。
+シートの列に無いキー（配信日・計測URL・画像生成プロンプト など）は
 タブ区切りには入れず、--view にだけ出す（管理画面で入れる物）。
-GA_URL が空なら URL と ga_source／ga_medium／ga_campaign から作る。
+シートの見出しが空の列（結合セルなど）は、いつも空欄で出す。
+標準の形では、GA_URL が空なら URL と ga_source／ga_medium／ga_campaign から作る。
 気になる点（日付のずれ・字数・1行の長さ・空の必須欄）は標準エラーに出す。
 """
 import json
 import re
 import sys
 
-COLUMNS = [
-    "No.", "納品日", "配信日", "Status", "project", "企画案", "狙い概要", "ターゲット",
-    "サイズ", "完成バナー", "テキスト", "備考", "バナー参考", "先方FB", "URL",
-    "ga_source", "ga_medium", "ga_campaign", "aa", "messageID ※投稿後", "GA_URL",
-]
-REQUIRED = ["配信日", "企画案", "狙い概要", "ターゲット", "テキスト", "URL"]
+FORMATS = {
+    "standard": {
+        "columns": [
+            "No.", "納品日", "配信日", "Status", "project", "企画案", "狙い概要", "ターゲット",
+            "サイズ", "完成バナー", "テキスト", "備考", "バナー参考", "先方FB", "URL",
+            "ga_source", "ga_medium", "ga_campaign", "aa", "messageID ※投稿後", "GA_URL",
+        ],
+        "required": ["配信日", "企画案", "狙い概要", "ターゲット", "テキスト", "URL"],
+    },
+    "norst": {
+        # 2026-10-01 殿村さん受領の見出し。"" は見出しが空の列（サイズの右・CR概要の右の9列）
+        "columns": [
+            "No.", "納品日", "ディレクション担当", "制作担当", "進行度合", "用途", "型", "サイズ", "",
+            "アイテム名（表示名）", "企画案", "狙い概要", "ターゲット", "備考", "テキスト",
+            "参考イメージ", "CR概要", "", "", "", "", "", "", "", "", "", "完成バナー",
+        ],
+        "required": ["アイテム名（表示名）", "企画案", "狙い概要", "ターゲット", "テキスト"],
+    },
+}
 TEXT_LIMIT = 500   # LINEのテキストは1吹き出し500字まで（改行も1字）
 LINE_LIMIT = 15    # プレビューの幅は全角14〜15字
 
@@ -43,10 +58,10 @@ def build_ga_url(row):
     return url + ("&" if "?" in url else "?") + query
 
 
-def warnings(row):
+def warnings(row, required):
     name = f"No.{row.get('No.', '?')} {row.get('配信日', '')}"
     found = []
-    for col in REQUIRED:
+    for col in required:
         if not (row.get(col) or "").strip():
             found.append(f"{col}が空")
     m = re.match(r"(\d{4})/(\d{1,2})/(\d{1,2})", row.get("配信日") or "")
@@ -68,22 +83,28 @@ def warnings(row):
 
 
 def main():
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    if not args:
         print(__doc__)
         sys.exit(1)
-    with open(sys.argv[1], encoding="utf-8") as f:
+    fmt = "standard"
+    if "--fmt" in args:
+        fmt = args[args.index("--fmt") + 1]
+    columns = FORMATS[fmt]["columns"]
+    named = [c for c in columns if c]
+    with open(args[0], encoding="utf-8") as f:
         rows = json.load(f)
-    view = "--view" in sys.argv[2:]
+    view = "--view" in args
     for row in rows:
-        if not (row.get("GA_URL") or "").strip():
+        if "GA_URL" in columns and not (row.get("GA_URL") or "").strip():
             row["GA_URL"] = build_ga_url(row)
-        warnings(row)
+        warnings(row, FORMATS[fmt]["required"])
         title = f"No.{row.get('No.', '')} {row.get('配信日', '')} {row.get('企画案', '')}"
         if view:
             print(f"## {title}\n")
-            for col in COLUMNS + [k for k in row if k not in COLUMNS]:
+            for col in named + [k for k in row if k not in named]:
                 value = row.get(col, "")
-                mark = "（管理画面）" if col not in COLUMNS else ""
+                mark = "（シートの列に無い）" if col not in named else ""
                 if "\n" in str(value):
                     print(f"【{col}】{mark}\n```\n{value}\n```")
                 else:
@@ -91,7 +112,7 @@ def main():
             print()
         else:
             print(f"### {title}\n```")
-            print("\t".join(cell(row.get(c, "")) for c in COLUMNS))
+            print("\t".join(cell(row.get(c, "")) if c else "" for c in columns))
             print("```\n")
 
 

@@ -25,6 +25,7 @@ description: 運用中のLINE公式アカウント（インクアート＝プリ
 - **ここで止まって、殿村さんのOKを待つ**
 
 ### 段階2：OKが出たら中身を書く
+- **本文を出すときは、各回の意図を必ず添える**（誰に／何を伝えるか／どう動いてほしいか。2026-10-01 殿村さん「意図がないとどういう訴求かイメージがわからない」）
 - 順番：テキスト（＋アイテム名）→ OK → 備考・バナー参考（画像生成プロンプトは全文）→ URL・ga_*・GA_URL
 - 1本ずつ、シートの列順で出す（`sheet_columns.md`）
 - 最後に、行データを JSON に置いて `tools/make_tsv.py` でシートに貼るタブ区切りを作る。出てきた ⚠️（日付のずれ・字数・1行の長さ・空欄）は直してから出す
@@ -66,7 +67,7 @@ description: 運用中のLINE公式アカウント（インクアート＝プリ
 ## 5. 出力と保存
 - 会話：段階1＝表。段階2＝1本ずつ「【列名】値」＋最後にタブ区切りの行（コードブロック）
 - ファイル：案件ファイルに書いた名前の `_drafts/…_YYYY-MM.md`。行データは同じ名前の `.json`
-  - タブ区切り：`python3 .claude/skills/lineoa-monthly-plan/tools/make_tsv.py <json>`
+  - タブ区切り：`python3 .claude/skills/lineoa-monthly-plan/tools/make_tsv.py <json>`（ノーストは `--fmt norst`。シートの列の並びが違う）
   - 確認用：同じコマンドに `--view`
 - 一区切りしたら commit & push し、`_memory/INDEX.md` と CLAUDE.md の記憶メモを更新する
 - 例：`examples/inkart_20261005.json`（10/5 年賀状 超早割の行）
