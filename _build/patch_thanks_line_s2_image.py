@@ -29,7 +29,7 @@ pic = s.shapes.add_picture(str(IMG), Cm((prs.slide_width / 360000 - W) / 2), Cm(
 pic.name = "サンクスLINEの流れ"
 
 # 強み3つ：見出しだけの帯にする
-LABELS = ("関心が一番高い直後に案内", "今の広告の申込みを活用", "前日のお知らせで来院へ")
+LABELS = ("申込み直後が、いちばん響く", "広告の申込みを、逃さない", "無断キャンセルを、前日に防ぐ")   # 殿村さん決定
 CW, G, X0, Y, HH = (24.6 - 0.4) / 3, 0.2, 1.46, 4.15 + H + 0.25, 1.25
 for i, n in enumerate(("Rounded Rectangle 12", "Rounded Rectangle 13", "Rounded Rectangle 14")):
     sh = by(n)
@@ -42,7 +42,8 @@ for i, n in enumerate(("Rounded Rectangle 12", "Rounded Rectangle 13", "Rounded 
     for r in runs[1:]:
         r.text = ""
     for r in runs:
-        r.font.size = Pt(15)
+        r.font.size = Pt(14)
+    sh.text_frame.margin_left = sh.text_frame.margin_right = Cm(0.1)
     sh.text_frame.paragraphs[0].line_spacing = 1.0
     sh.text_frame.vertical_anchor = 3   # 中央
     sh.text_frame.paragraphs[0].alignment = 2   # 左右も中央
