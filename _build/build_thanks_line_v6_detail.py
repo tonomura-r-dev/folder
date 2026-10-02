@@ -125,6 +125,10 @@ def case_cards(s, y, h, cards, num=None):
         x = 3.0 + i * (w + gap)
         lines = [(name, 13, True, INK), (what, 12, False, INK), (label, 12, False, INK), (num_text, num or (20 if n == 3 else 28), True, NAVY), (note, 11, False, GRAY)]
         c = add(s, "line", x, y, w, h, lines, 1)
+        c.line.fill.background()          # カードの枠線をなくす（殿村さん指示 2026-10-02）
+        c.shadow.inherit = False
+        er = c._element.find(qn("p:style")).find(qn("a:effectRef"))
+        er.set("idx", "0")             # 影もなくす
         tf = c.text_frame
         tf.vertical_anchor = MSO_ANCHOR.TOP
         tf.margin_top, tf.margin_left, tf.margin_right = Cm(1.3), Cm(0.4), Cm(0.4)
