@@ -93,7 +93,7 @@ def add(s, kind, x, y, w, h, lines=None, align=None):
 
 
 def source(s, y, text):
-    sh = add(s, "note", 1.46, y, 24.6, 0.6)
+    sh = add(s, "note", 3.0, y, 21.5, 0.6)
     set_runs(sh, [(text, 10, False, GRAY)])
 
 
@@ -119,65 +119,75 @@ def picture(s, name, x_w, y, crop_bottom=0.0):
 
 
 # 色は紺・白・黒だけ（殿村さん指示 2026-10-02：緑は見づらい）
+# 図解は「導線」だけ。それ以外は文字（殿村さん指示 2026-10-02）。枠は小さめ・周囲に余白。
+X0, CWID = 3.0, 21.5          # 左端・内容の幅（左右に余白）
+
+
+def bullets(s, y, items, h=7.0):
+    """items = [(text, size, bold, color, space_after_pt), ...]"""
+    sh = add(s, "note", X0, y, CWID, h)
+    set_runs(sh, [(tx, sz, b, c) for tx, sz, b, c, _ in items])
+    for para, it in zip(sh.text_frame.paragraphs, items):
+        para.space_after = Pt(it[4])
+    return sh
+
+
+def flow(s, y, h, steps, bw=4.55, gap=1.1):
+    x = X0
+    for i, (kind, text) in enumerate(steps):
+        col = WHITE if kind == "navy" else NAVY
+        add(s, kind, x, y, bw, h, [(tx, 15, True, col) for tx in text.split("\n")])
+        x += bw
+        if i < len(steps) - 1:
+            add(s, "arrow_navy", x + 0.05, y + h / 2 - 0.5, 1.0, 1.0)
+            x += gap
+
+
 # ================= 1枚目：機能 =================
 s = head(0, "サンクスLINE｜機能", "申込み完了画面から、LINEへ移行")
-Y, H = 4.5, 4.8
-add(s, "line", 1.46, Y, 5.8, H, [("申込み完了画面", 20, True, NAVY)])
-add(s, "arrow_navy", 7.4, Y + H / 2 - 0.6, 1.0, 1.2)
-add(s, "navy", 8.55, Y, 5.4, H, [("LINEへ移行", 20, True, WHITE)])
-add(s, "arrow_navy", 14.1, Y + H / 2 - 0.6, 1.0, 1.2)
-add(s, "line", 15.25, Y, 10.81, (H - 0.3) / 2, [("新規 → 友だち追加", 17, True, NAVY)])
-add(s, "line", 15.25, Y + (H + 0.3) / 2, 10.81, (H - 0.3) / 2, [("既存の友だち → トーク画面", 17, True, NAVY)])
-add(s, "line", 1.46, 9.8, 12.2, 3.9, [("入力内容を引き継ぎ、配信の出し分けに活用", 16, True, NAVY)])
-add(s, "line", 13.86, 9.8, 12.2, 3.9, [("今のアカウントにそのまま導入、", 16, True, NAVY), ("APIツールとも併用可", 16, True, NAVY)])
-add(s, "ink", 1.46, 14.1, 24.6, 2.6, [("費用：初期15万円／月額3万円〜", 24, True, WHITE)])
+Y, H = 5.4, 2.8
+add(s, "line", X0, Y, 5.2, H, [("申込み完了画面", 16, True, NAVY)])
+add(s, "arrow_navy", X0 + 5.25, Y + H / 2 - 0.5, 1.0, 1.0)
+add(s, "navy", X0 + 6.4, Y, 4.4, H, [("LINEへ移行", 16, True, WHITE)])
+add(s, "arrow_navy", X0 + 10.85, Y + H / 2 - 0.5, 1.0, 1.0)
+RX = X0 + 12.0
+add(s, "line", RX, Y, CWID - 12.0, 1.3, [("新規 → 友だち追加", 15, True, NAVY)])
+add(s, "line", RX, Y + 1.5, CWID - 12.0, 1.3, [("既存の友だち → トーク画面", 15, True, NAVY)])
+bullets(s, 9.9, [
+    ("・入力内容を引き継ぎ、配信の出し分けに活用", 20, False, INK, 14),
+    ("・今のアカウントにそのまま導入、APIツールとも併用可", 20, False, INK, 14),
+    ("・費用：初期15万円／月額3万円〜", 20, True, NAVY, 0),
+])
 
-# ================= 2枚目：重要性（図形だけで図解）=================
+# ================= 2枚目：重要性（文字）=================
 s = head(1, "サンクスLINE｜重要性", "申込みの直後に、LINEでつながる")
-BX, BW_ = 6.9, 19.16                                   # 棒グラフの左端・全幅
-add(s, "line", 1.46, 4.5, 5.2, 2.3, [("申込み・予約", 16, True, NAVY)])
-add(s, "navy", BX, 4.5, BW_, 2.3, [("予約 100件", 18, True, WHITE)])
-add(s, "line", 1.46, 7.1, 5.2, 2.3, [("来店", 16, True, NAVY)])
-add(s, "navy", BX, 7.1, BW_ * 0.75, 2.3, [("来店", 18, True, WHITE)])
-add(s, "line", BX + BW_ * 0.75 + 0.15, 7.1, BW_ * 0.25 - 0.15, 2.3, [("来店せず", 13, True, INK), ("2〜3割", 16, True, INK)])
-CW, GAP, CY, CH = 7.4, 1.2, 10.0, 5.2
-add(s, "line", 1.46, CY, CW, CH, [("申込み⇒来店までに", 15, True, NAVY), ("一定数が離脱する", 15, True, NAVY), ("（予約の2〜3割が来店せず／", 11, False, INK), ("保険見直し本舗）", 11, False, INK)])
-add(s, "arrow_navy", 1.46 + CW + 0.1, CY + CH / 2 - 0.6, 1.0, 1.2)
-add(s, "line", 1.46 + CW + GAP, CY, CW, CH, [("広告費を増やしても、", 15, True, NAVY), ("この離脱層は減らない", 15, True, NAVY)])
-add(s, "arrow_navy", 1.46 + 2 * CW + GAP + 0.1, CY + CH / 2 - 0.6, 1.0, 1.2)
-add(s, "navy", 1.46 + 2 * (CW + GAP), CY, CW, CH, [("関心が一番高い", 15, True, WHITE), ("申込み直後に、", 15, True, WHITE), ("LINEでつながるのが最適", 15, True, WHITE), ("（開封率 約70%／琴平バス）", 11, False, WHITE)])
-source(s, CY + CH + 0.3, "出典：LINEヤフー for Business 導入事例（保険見直し本舗・琴平バス）")
+bullets(s, 6.0, [
+    ("・申込み⇒来店までに一定数が離脱する", 20, True, NAVY, 2),
+    ("　（予約の2〜3割が来店せず／保険見直し本舗）", 14, False, GRAY, 22),
+    ("・広告費を増やしても、この離脱層は減らない", 20, True, NAVY, 22),
+    ("・関心が一番高い申込み直後に、LINEでつながるのが最適", 20, True, NAVY, 2),
+    ("　（開封率 約70%／琴平バス）", 14, False, GRAY, 0),
+], h=9.5)
+source(s, 16.4, "出典：LINEヤフー for Business 導入事例（保険見直し本舗・琴平バス）")
 
 # ================= 3枚目：シーン1 =================
 s = head(2, "シーン1｜来店・来院の予約", "予約を、来店・来院につなげる")
-Y, H, BW, AW = 4.5, 4.4, 5.25, 1.2
-steps = [("line", "予約完了", NAVY), ("navy", "LINEで予約確認", WHITE), ("navy", "前日にお知らせ", WHITE), ("line", "来店", NAVY)]
-x = 1.46
-for i, (kind, text, col) in enumerate(steps):
-    add(s, kind, x, Y, BW, H, [(tx, 17, True, col) for tx in text.split("\n")])
-    x += BW
-    if i < 3:
-        add(s, "arrow_navy", x + 0.1, Y + H / 2 - 0.6, 1.0, 1.2)
-        x += AW
-add(s, "ink", 1.46, 9.3, 24.6, 1.8, [("無断キャンセルを防ぎ、来店につなげる", 19, True, WHITE)])
-add(s, "navy", 1.46, 11.5, 12.2, 4.6, [("美容クリニック（弊社）", 15, False, WHITE), ("来院率 40〜50%改善", 21, True, WHITE)])
-add(s, "line", 13.86, 11.5, 12.2, 4.6, [("保険見直し本舗", 15, False, NAVY), ("予約100件あたり 面談＋5件", 21, True, NAVY)])
+flow(s, 5.4, 2.8, [("line", "予約完了"), ("navy", "LINEで\n予約確認"), ("navy", "前日に\nお知らせ"), ("line", "来店")])
+bullets(s, 9.9, [
+    ("・無断キャンセルを防ぎ、来店につなげる", 20, False, INK, 18),
+    ("・実績：美容クリニック（弊社）　来院率 40〜50%改善", 20, True, NAVY, 14),
+    ("・実績：保険見直し本舗　予約100件あたり 面談＋5件", 20, True, NAVY, 0),
+])
 source(s, 16.4, "出典：弊社運用実績／LINEヤフー for Business 導入事例（保険見直し本舗）")
 
 # ================= 4枚目：シーン2 =================
 s = head(3, "シーン2｜資料請求", "資料請求を、予約・商談につなげる")
-Y, H, BW, AW = 4.5, 4.4, 5.25, 1.2
-steps = [("line", "資料請求", NAVY), ("navy", "LINEへ案内", WHITE), ("navy", "事例・動画を\n配信", WHITE), ("line", "見学・商談の\n予約", NAVY)]
-x = 1.46
-for i, (kind, text, col) in enumerate(steps):
-    add(s, kind, x, Y, BW, H, [(tx, 17, True, col) for tx in text.split("\n")])
-    x += BW
-    if i < 3:
-        add(s, "arrow_navy", x + 0.1, Y + H / 2 - 0.6, 1.0, 1.2)
-        x += AW
-add(s, "ink", 1.46, 9.3, 24.6, 1.8, [("資料請求のみで終わらせず、予約・商談につなげる", 19, True, WHITE)])
-add(s, "line", 1.46, 11.5, 12.2, 4.6, [("皮膚科クリニック", 15, False, NAVY), ("予約数 約1.2倍", 26, True, NAVY)])
-add(s, "line", 13.86, 11.5, 12.2, 4.6, [("就職支援（UZUZ）", 15, False, NAVY), ("面談予約率 55%", 26, True, NAVY)])
+flow(s, 5.4, 2.8, [("line", "資料請求"), ("navy", "LINEへ案内"), ("navy", "事例・動画を\n配信"), ("line", "見学・商談の\n予約")])
+bullets(s, 9.9, [
+    ("・資料請求のみで終わらせず、予約・商談につなげる", 20, False, INK, 18),
+    ("・実績：皮膚科クリニック　予約数 約1.2倍", 20, True, NAVY, 14),
+    ("・実績：就職支援（UZUZ）　面談予約率 55%", 20, True, NAVY, 0),
+])
 source(s, 16.4, "出典：LINEヤフー for Business 導入事例（アクネクリニック・UZUZ）")
 
 # ---- 5枚目（進め方）を削除 ----
