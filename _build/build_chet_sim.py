@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
-"""CHET Group（Qooo!!）SIM 予算別3パターン（200万・100万・50万）
+"""CHET Group（Qooo!!）SIM LINE運用 月25万前後（LINEの月額込み）
 
 ベースは _templates/DYM_LINEOA_SIM_FMT_ver3.00.xlsx。
 FMTはセル内チェックボックス（xl/featurePropertyBag/）を使っているので、
 openpyxlで保存せず、xlsxを展開して sheet XML を直接書き換える（CLAUDE.md 2026-09-29）。
 
-  SIM1_予算200万 / SIM1_比較 / SIM2_予算100万 / SIM2_比較 / SIM3_予算50万 / SIM3_比較 / SIM考え方
-  （番号順＝強い順）
+  SIM1_LINE月25万 / SIM1_比較 / SIM考え方
+
+  50万・100万・200万はAD提案の予算（別資料）。LINEのSIMには入れない（殿村さん 2026-10-02）。
+  ADからLINEへの友だちはLPから月にわずか → サイトからの自然な追加（UU×0.5%）だけで見る。
 
 使い方:
     python _build/build_chet_sim.py [YYYYMMDD]
@@ -26,7 +28,7 @@ from lxml import etree
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "_templates" / "DYM_LINEOA_SIM_FMT_ver3.00.xlsx"
 STAMP = sys.argv[1] if len(sys.argv) > 1 else date.today().strftime("%Y%m%d")
-OUT = ROOT / f"{STAMP}_株式会社CHET Group御中_LINEOA施策提案【SIM】ver1.0.xlsx"
+OUT = ROOT / f"{STAMP}_株式会社CHET Group御中_LINEOA施策提案【SIM】ver1.1.xlsx"
 
 NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 N = {"m": NS}
@@ -37,16 +39,14 @@ XR_UID = "{http://schemas.microsoft.com/office/spreadsheetml/2014/revision}uid"
 CLIENT = "株式会社CHET Group御中_LINEOA施策提案【SIM】"
 UU = 15661                 # サイトUU（先方から受領）
 FRIENDS_NOW = 12566        # wakaba projectのLINE友だち数（page.line.me・2026/10/1）
-UNIT = 1000                # 友だち1人あたり（先方の良い時の実績）
 POSTS = 4                  # 企画配信 月4本
 STEPS = 10                 # ステップ配信 10本
 BLOCK0, BLOCK_K = 0.406, 0.98          # ブロック率：40.6%から出し分け配信で徐々に低下
 CVR = [0.005, 0.006, 0.007, 0.008, 0.009, 0.010]   # 申込÷想定Click（0.3〜1.0%の目安内で月ごとに上げる）
 INIT_BUILD = 200000        # 初期構築（仮）
-PLANS = [  # (シート番号, 予算, シート名)
-    (1, 2_000_000, "SIM1_予算200万"),
-    (2, 1_000_000, "SIM2_予算100万"),
-    (3, 500_000, "SIM3_予算50万"),
+CONSULT = 200000           # LINE運用（コンサル）月額。LINEの月額（アカウント費・従量課金）と合わせて約25万
+PLANS = [  # (シート番号, 運用費, シート名)
+    (1, CONSULT, "SIM1_LINE月25万"),
 ]
 MONTHS = "EFGHIJ"
 
@@ -134,9 +134,8 @@ def check_shared(root, name):
 
 
 # ---------------- SIMシートの中身 ----------------
-def build_sim(root, budget):
-    man = budget // 10000
-    set_s(root, "A4", f"{CLIENT}（予算{man}万／友だち1人あたり{UNIT:,}円）")
+def build_sim(root, consult):
+    set_s(root, "A4", f"{CLIENT}（LINE運用 月25万前後・LINEの月額込み）")
     # 要件定義
     set_s(root, "C8", "LINE追加（新しい友だち）")
     set_n(root, "D8", 0)
@@ -150,19 +149,12 @@ def build_sim(root, budget):
     set_n(root, "H10", 0)
     set_n(root, "K8", 0)
     set_b(root, "P9", False)
-    # 施策トグル：広告→LP→LINE（CPF行）だけ使う
-    set_s(root, "B17", "友だち追加（広告→LP→LINE）")
+    # 施策トグル：CPF・離脱防止は使わない（ADはAD提案で別。LINEのSIMには入れない）
     for col in MONTHS:
-        set_b(root, f"{col}17", True)
+        set_b(root, f"{col}17", False)
         set_b(root, f"{col}18", False)
-    # 友だち追加（広告）＝ 予算 ÷ 友だち1人あたり
-    set_s(root, "B22", "友だち追加（広告→LP→LINE）")
-    for col in MONTHS:
-        set_f(root, f"{col}22", f"IF({col}17=FALSE,0,ROUND({col}71/$P$30,0))")
-    set_s(root, "N22", f"予算（71行）÷友だち1人あたり{UNIT:,}円（P30）。単価は先方の良い時の実績（広告・運用込みの見込み）")
-    set_s(root, "O30", "友だち1人あたり（広告・運用込み）")
-    set_n(root, "P30", UNIT)
-    set_s(root, "N26", "＋サイトからの自然な追加：UU×0.5%（FMT標準のP15）")
+    set_s(root, "N22", "AD提案（50万・100万・200万）は別資料。ADからLINEへの友だちはLPから月にわずかなので、ここには入れない")
+    set_s(root, "N26", "新しい友だち＝サイト（LP含む）からの自然な追加：UU×0.5%（FMT標準のP15）")
     # ブロック率
     set_n(root, "E27", BLOCK0)
     for prev, col in zip(MONTHS, MONTHS[1:]):
@@ -200,13 +192,9 @@ def build_sim(root, budget):
     set_s(root, "N66", "離脱防止：今回のSIMには入れない")
     set_n(root, "D69", INIT_BUILD)
     for col in MONTHS:
-        set_n(root, f"{col}69", 0)
-    set_s(root, "N69", "初期構築（仮）。月々の運用費は71行の予算に含む")
-    set_s(root, "B71", "予算（友だち追加・運用込み）")
-    set_n(root, "D71", 0)
-    for col in MONTHS:
-        set_n(root, f"{col}71", budget)
-    set_s(root, "N71", f"予算型コンサル：月{man}万（友だち追加の広告と運用を含む）")
+        set_n(root, f"{col}69", consult)
+    set_s(root, "B69", "LINE運用（コンサル）")
+    set_s(root, "N69", f"予算型コンサル：月{consult // 10000}万＋LINEの月額（アカウント費・従量課金）で約25万。初期構築20万は仮")
 
 
 def build_compare(root, sheet_name):
@@ -219,15 +207,6 @@ def build_compare(root, sheet_name):
         set_f(root, f"{col}16", f"+{col}18")
     set_s(root, "A17", "CV①_LINE追加（参考・CPAに含めない）")
     set_s(root, "A18", "CV②_申込（LINE上の申込フォーム）")
-    # 先方のKPI：友だち1人あたり（月の総額÷その月の新しい友だち）
-    set_s(root, "A24", "友だち1人あたり（月の総額÷新しい友だち）")
-    for col in "CDE":
-        c = get_cell(root, f"{col}24")
-        c.set("s", get_cell(root, f"{col}23").get("s", "0"))
-    get_cell(root, "A24").set("s", get_cell(root, "A23").get("s", "0"))
-    set_s(root, "C24", "--")
-    for col in "DE":
-        set_f(root, f"{col}24", f'+IFERROR({col}5/{col}17,"--")')
 
 
 # ---------------- 組み立て ----------------
