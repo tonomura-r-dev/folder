@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-"""サンクスLINEのご提案（事例入り・5枚）  2026-10-02
-1 機能（DYM共通資料 31枚目＝動作画面入り）／2 重要性／3 シーン1（来店・来院の予約）／4 シーン2（資料請求）／5 シーン3（購入・来店の後＝リピート）
+"""サンクスLINEのご提案（事例入り・4枚）  2026-10-02／2026-10-05 4枚に整理
+1 機能（DYM共通資料 31枚目＝動作画面入り）／2 重要性／3 シーン1・2（申込み後のフォロー＝実績3つ）／4 シーン3（購入・来店の後＝リピート）
 実績は「LINEヤフー公式の導入事例」と「弊社実績」だけ。各数字は2026-10-02に元ページで再確認済み。
   python3 _build/build_thanks_line_v6_detail.py <20260930_サンクスLINEのご提案ver1.4.pptx> <LINEOA_BUFFF_3.pptx>
 """
@@ -90,7 +90,8 @@ def head(si, title, lead):
         if sh.name not in ("TextBox 1", "TextBox 2", "Connector 3"):
             sh._element.getparent().remove(sh._element)
     set_runs(shp(si, "TextBox 1"), [(title, 16, True, TITLE)])
-    set_runs(shp(si, "TextBox 2"), [(lead, 18, False, INK)])
+    leads = lead if isinstance(lead, (list, tuple)) else [lead]
+    set_runs(shp(si, "TextBox 2"), [(x, 18, False, INK) for x in leads])
     t2 = shp(si, "TextBox 2")
     t2.top, t2.height = Cm(1.9), Cm(1.2)
     t1 = shp(si, "TextBox 1")
@@ -124,12 +125,14 @@ def case_cards(s, y, h, cards, num=None):
     n = len(cards)
     gap = 0.4
     w = (21.5 - gap * (n - 1)) / n
-    top_h = 3.6
+    top_h = 2.9
     for i, (kind, name, what, label, num_text, note) in enumerate(cards):
         x = 3.0 + i * (w + gap)
         parts = [
             (y, top_h, [(name, 15, True, INK), (what, 13, False, INK)], (6, 0)),
-            (y + top_h + 0.1, h - top_h - 0.1, [(label, 13, False, INK), (num_text, num or (20 if n == 3 else 32), True, NAVY), (note, 11, False, GRAY)], (4, 2, 0)),
+            (y + top_h + 0.1, h - top_h - 0.1, [(label, 13, False, INK), (num_text, num or (20 if n == 3 else 32), True, NAVY)]
+             + [(tx, 11.5 if k == 0 else 10, False, GRAY) for k, tx in enumerate(note if isinstance(note, (list, tuple)) else [note])],
+             (4, 2) + (2,) * 5),
         ]
         for yy, hh, lines, sas in parts:
             c = add(s, "line", x, yy, w, hh, lines, 1)
@@ -145,7 +148,7 @@ def case_cards(s, y, h, cards, num=None):
 
 
 # ================= 重要性（ver1.4 の1枚目を作り替え）=================
-s = head(0, "サンクスLINE｜重要性", "申込みの直後に、LINEでつながる")
+s = head(0, "サンクスLINE｜重要性", ["申込み直後の“熱量が高い瞬間”に、LINEでつながる", "申込み直後からLINEで接点を持ち、来店・商談までの離脱を防止。"])
 t = add(s, "note", 3.0, 4.2, 21.5, 2.9)
 set_runs(t, [("申込み⇒来店までに、一定数が離脱する。", 17, True, NAVY), ("広告費を増やしても、この離脱層は減らない。", 17, True, NAVY),
              ("申込み完了の画面は、関心が一番高い瞬間。ここでLINEにつなげる。", 17, True, NAVY)])
@@ -157,42 +160,28 @@ case_cards(s, 7.3, 8.0, [
 ])
 band(s, 15.7, "関心が一番高い申込み直後に、LINEでつながるのが最適")
 
-# ================= シーン1（ver1.4 の2枚目）=================
-s = head(1, "シーン1｜来店・来院の予約", "予約を、来店・来院につなげる")
-flow(s, 4.8, [("line", "予約完了"), ("navy", "LINEで\n予約確認"), ("navy", "前日に\nお知らせ"), ("line", "来店")])
+# ================= シーン1・2を1枚に統合（ver1.4 の2枚目を使う。3枚目は後で削除）=================
+s = head(1, "シーン1・2｜来店・来院の予約／資料請求", ["申込み後のLINEフォローで、来店・面談までつなげる", "予約確認・リマインド・ステップ配信で、申込み後の離脱を防止"])
+flow(s, 4.8, [("line", "申込み完了"), ("navy", "LINEで\nつながる"), ("navy", "確認・リマインド・\n情報配信"), ("line", "来店・面談・\n商談")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "美容室", "次回予約のリマインドをLINEで自動通知", "次回予約客数", "20%増", "約200→240名。リピート率も88→91%（導入前後の半年比較。LINEミニアプリを併用）"),
-])
-band(s, 15.7, "無断キャンセルを防ぎ、来店につなげる")
-
-# ================= シーン2（ver1.4 の3枚目）=================
-s = head(2, "シーン2｜資料請求", "資料請求を、予約・商談につなげる")
-flow(s, 4.8, [("line", "資料請求"), ("navy", "LINEへ案内"), ("navy", "事例・動画を\n配信"), ("line", "見学・商談\nの予約")])
-case_cards(s, 7.3, 8.0, [
-    ("公式", "皮膚科クリニック", "友だち追加後のステップ配信で、予約を案内", "LINE経由の予約数", "約1.2倍", "ステップ配信の実施前との比較"),
-    ("公式", "就職支援", "LINEのチャットボットで情報を提供し、面談予約へ", "LINEで問い合わせた方のうち", "55%", "が、面談を予約（他のチャネルと比べて高い）"),
-])
-band(s, 15.7, "資料請求のみで終わらせず、予約・商談につなげる")
+    ("公式", "美容室", "予約後のフォロー", "次回予約客数", "20%増", ["約200名 → 約240名", "リピート率も88% → 91%（導入前後の半年比較。LINEミニアプリを併用）"]),
+    ("公式", "皮膚科クリニック", "友だち追加後のステップ配信", "LINE経由の予約数", "約1.2倍", "ステップ配信実施前との比較"),
+    ("公式", "就職支援", "LINEチャットで面談へ誘導", "問い合わせた方のうち", "55%", "が面談予約。他チャネルと比べても高い水準"),
+], num=28)
+band(s, 15.7, "申込み後の離脱を防ぎ、来店・面談・商談につなげる")
 
 # ================= シーン3（ver1.4 の4枚目）=================
-s = head(3, "シーン3｜購入・来店の後", "来店・購入の後も、LINEでつながり続ける")
-flow(s, 4.8, [("line", "購入・来店"), ("navy", "翌日に\nアンケート"), ("navy", "次のタイミングで\nクーポン・案内"), ("line", "再来店\nリピート")])
+s = head(3, "シーン3｜購入・来店の後", ["来店・購入後のLINEフォローで、リピートを伸ばす", "アンケート・クーポン・次回来店タイミングの配信で、再来店を後押し"])
+flow(s, 4.8, [("line", "購入・来店"), ("navy", "翌日に\nアンケート"), ("navy", "適切なタイミングで\nクーポン・案内"), ("line", "再来店・\nリピート")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "居酒屋", "来店翌日にアンケートを配信。再来店の少し前にクーポンを配信（LINEミニアプリを併用）", "リピーターの売上割合", "7.6→12.9%", "2025年1月と3月の比較"),
-    ("公式", "焼肉店", "来店翌日の11時に、アンケートとクーポンを自動配信（LINEミニアプリを併用）", "リピーター率", "19.4→40%超", "2024年1月と2025年1月の比較"),
-])
+    ("公式", "居酒屋", "来店翌日にアンケートを配信。再来店の少し前にクーポンを配信（LINEミニアプリを併用）", "リピーターの売上割合", "7.6% → 12.9%", "2025年1月と3月の比較"),
+    ("公式", "焼肉店", "来店翌日の11時に、アンケートとクーポンを自動配信（LINEミニアプリを併用）", "リピーター率", "19.4% → 40%超", "2024年1月と2025年1月の比較"),
+], num=28)
 band(s, 15.7, "購入・来店の後も、LINEで次の来店につなげる")
 
 source(s, "※サンクスLINE単体の効果ではなく、LINEでつながった後の施策の例")
 
-# ---- ver1.4の5枚目を削除 ----
 lst = prs.slides._sldIdLst
-sid = lst[4]
-prs.part.drop_rel(sid.get(qn("r:id")))
-lst.remove(sid)
-for sl in prs.slides:
-    for n, c in enumerate(sl.shapes._spTree.iter(qn("p:cNvPr")), start=2):
-        c.set("id", str(n))
 
 # ---- 先頭に「機能」（共通資料31枚目）を入れる ----
 new = prs.slides.add_slide(prs.slides[1].slide_layout)
@@ -209,6 +198,14 @@ for el in buff.shapes._spTree:
             _, new_rid = new.part.get_or_add_image_part(io.BytesIO(img.blob))
             blip.set(qn("r:embed"), new_rid)
     new.shapes._spTree.append(el)
+# ---- ver1.4の3枚目（旧シーン2）・5枚目を削除（機能ページの追加後に行う：部品名の重複を避けるため）----
+for k in (4, 2):
+    sid = lst[k]
+    prs.part.drop_rel(sid.get(qn("r:id")))
+    lst.remove(sid)
+for sl in list(prs.slides)[:-1]:
+    for n, c in enumerate(sl.shapes._spTree.iter(qn("p:cNvPr")), start=2):
+        c.set("id", str(n))
 item = lst[-1]
 lst.remove(item)
 lst.insert(0, item)
