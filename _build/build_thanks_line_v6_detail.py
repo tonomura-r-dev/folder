@@ -150,23 +150,11 @@ t = add(s, "note", 3.0, 4.5, 21.5, 2.2)
 set_runs(t, [("申込み⇒来店までに、一定数が離脱する。", 18, True, NAVY), ("広告費を増やしても、この離脱層は減らない。", 18, True, NAVY)])
 for p in t.text_frame.paragraphs:
     p.space_after = Pt(6)
-def plain_box(x, y, w, h, lines, sas):
-    c = add(s, "line", x, y, w, h, lines, 1)
-    c.line.fill.background()
-    c.fill.background()
-    c.shadow.inherit = False
-    c._element.find(qn("p:style")).find(qn("a:effectRef")).set("idx", "0")
-    tf = c.text_frame
-    tf.vertical_anchor = MSO_ANCHOR.TOP
-    tf.margin_top, tf.margin_left, tf.margin_right, tf.margin_bottom = Cm(0.2), Cm(0.5), Cm(0.5), Cm(0.1)
-    for p_, sa in zip(tf.paragraphs, sas):
-        p_.space_after = Pt(sa)
-
-
-# バス会社の2指標は同じ事例なので、見出しを1つにまとめて数字を2つ並べる
-plain_box(3.0, 7.3, 21.5, 3.6, [("バス会社", 15, True, INK), ("申込み直後のLINE通知メッセージは、よく読まれ、クリックもされる", 13, False, INK)], (6, 0))
-plain_box(3.0, 11.0, 10.55, 4.3, [("メッセージの開封率", 13, False, INK), ("約70%", 32, True, NAVY), ("LINE通知メッセージの配信後", 11, False, GRAY)], (4, 2, 0))
-plain_box(13.95, 11.0, 10.55, 4.3, [("クリック率", 13, False, INK), ("約5倍", 32, True, NAVY), ("メルマガのクリック率との比較", 11, False, GRAY)], (4, 2, 0))
+case_cards(s, 7.3, 8.0, [
+    ("公式", "つながる", "申込み完了の画面は、関心が一番高い瞬間", "友だち追加のタイミング", "申込み直後", "完了画面からLINEへ移行"),
+    ("公式", "読まれる", "バス会社：申込み直後のLINE通知メッセージは、よく読まれる", "メッセージの開封率", "約70%", "クリック率はメルマガの約5倍"),
+    ("自社", "動く", "美容クリニック：予約確認・前日のお知らせをLINEで配信", "予約後の来院率", "40〜50%改善", ""),
+], num=20)
 band(s, 15.7, "関心が一番高い申込み直後に、LINEでつながるのが最適")
 
 # ================= シーン1（ver1.4 の2枚目）=================
