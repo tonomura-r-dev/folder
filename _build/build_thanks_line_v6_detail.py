@@ -20,7 +20,7 @@ NAVY, INK, GRAY, WHITE = RGBColor(0x1F, 0x28, 0x5A), RGBColor(0x33, 0x33, 0x33),
 TITLE = RGBColor(0x00, 0x20, 0x60)
 
 prs = Presentation(sys.argv[1])
-buff = Presentation(sys.argv[2]).slides[30]
+buff = Presentation(sys.argv[2]).slides[0 if "事例入り" in sys.argv[2] else 30]
 
 
 def shp(si, name):
@@ -149,11 +149,10 @@ set_runs(t, [("申込み⇒来店までに、一定数が離脱する。", 18, T
 for p in t.text_frame.paragraphs:
     p.space_after = Pt(6)
 imp = [
-    ("保険相談", "予約したのに、面談に来ない方がいる", "来店に至らない割合", "2〜3割", "面談を予約したユーザーのうち"),
     ("バス会社", "申込み直後のLINEは、よく読まれる", "メッセージの開封率", "約70%", "LINE通知メッセージの配信後"),
     ("バス会社", "読まれるだけでなく、クリックもされる", "クリック率", "約5倍", "メルマガのクリック率との比較"),
 ]
-case_cards(s, 7.2, 7.8, [("公式", *c) for c in imp], num=26)
+case_cards(s, 7.2, 7.8, [("公式", *c) for c in imp], num=32)
 band(s, 15.5, "関心が一番高い申込み直後に、LINEでつながるのが最適")
 
 # ================= シーン1（ver1.4 の2枚目）=================
@@ -161,8 +160,7 @@ s = head(1, "シーン1｜来店・来院の予約", "予約を、来店・来�
 flow(s, 4.6, [("line", "予約完了"), ("navy", "LINEで\n予約確認"), ("navy", "前日に\nお知らせ"), ("line", "来店")])
 case_cards(s, 6.8, 8.7, [
     ("自社", "美容クリニック", "予約完了画面からLINEへ誘導し、予約確認・前日のお知らせを配信", "予約後の来院率", "40〜50%改善", ""),
-    ("公式", "保険相談", "予約日時のリマインドを、LINE通知メッセージで配信", "予約からの面談実施率", "5ポイント増", "予約100件あたり、面談が5件増"),
-    ("公式", "美容室", "次回予約のリマインドをLINEで自動通知", "次回予約客数", "約200→240名", "リピート率も88→91%（導入前後の半年比較。LINEミニアプリを併用）"),
+    ("公式", "美容室", "次回予約のリマインドをLINEで自動通知", "次回予約客数", "20%増", "約200→240名。リピート率も88→91%（導入前後の半年比較。LINEミニアプリを併用）"),
 ])
 band(s, 15.7, "無断キャンセルを防ぎ、来店につなげる")
 
@@ -171,7 +169,7 @@ s = head(2, "シーン2｜資料請求", "資料請求を、予約・商談に�
 flow(s, 4.8, [("line", "資料請求"), ("navy", "LINEへ案内"), ("navy", "事例・動画を\n配信"), ("line", "見学・商談\nの予約")])
 case_cards(s, 7.3, 8.0, [
     ("公式", "皮膚科クリニック", "友だち追加後のステップ配信で、予約を案内", "LINE経由の予約数", "約1.2倍", "ステップ配信の実施前との比較"),
-    ("公式", "就職支援", "LINEのチャットボットで情報を提供し、面談予約へ", "LINE経由の問い合わせの面談予約率", "55%", "他のチャネルと比べて高い"),
+    ("公式", "就職支援", "LINEのチャットボットで情報を提供し、面談予約へ", "LINEで問い合わせた方のうち", "55%", "が、面談を予約（他のチャネルと比べて高い）"),
 ])
 band(s, 15.7, "資料請求のみで終わらせず、予約・商談につなげる")
 
@@ -227,28 +225,30 @@ def par(sh, k, text):
         r._r.getparent().remove(r._r)
 
 
-par(by("Google Shape;752;p28")[0], 0, "サンクスLINE｜機能")
-for sh in by("Google Shape;51;p19"):
-    if "初期" in sh.text_frame.text:
-        for p in sh.text_frame.paragraphs:
-            for r in p.runs:
-                r.text = r.text.replace("10", "15")
-for sh in by("テキスト ボックス 9"):
-    sh._element.getparent().remove(sh._element)
-for sh in by("テキスト ボックス 13"):
-    sh.top = Cm(3.9)
-for sh in s1.shapes:
-    if sh.has_text_frame and "40-50%" in sh.text_frame.text:
-        for p in sh.text_frame.paragraphs:
-            if "40-50%" in p.text:
-                runs = p.runs
-                runs[0].text = "美容クリニックでは、予約後来院率が40〜50%改善"
-                for r in runs[1:]:
-                    r._r.getparent().remove(r._r)
-                runs[0].font.color.rgb = NAVY
-                runs[0].font.bold = True
-for sh in by("テキスト ボックス 1042"):
-    sh.left, sh.top = Cm(1.0), Cm(15.0)
+# 共通31枚目の代わりに前回出力の1枚目を渡した場合は、編集済みなので手を加えない
+if "事例入り" not in sys.argv[2]:
+    par(by("Google Shape;752;p28")[0], 0, "サンクスLINE｜機能")
+    for sh in by("Google Shape;51;p19"):
+        if "初期" in sh.text_frame.text:
+            for p in sh.text_frame.paragraphs:
+                for r in p.runs:
+                    r.text = r.text.replace("10", "15")
+    for sh in by("テキスト ボックス 9"):
+        sh._element.getparent().remove(sh._element)
+    for sh in by("テキスト ボックス 13"):
+        sh.top = Cm(3.9)
+    for sh in s1.shapes:
+        if sh.has_text_frame and "40-50%" in sh.text_frame.text:
+            for p in sh.text_frame.paragraphs:
+                if "40-50%" in p.text:
+                    runs = p.runs
+                    runs[0].text = "美容クリニックでは、予約後来院率が40〜50%改善"
+                    for r in runs[1:]:
+                        r._r.getparent().remove(r._r)
+                    runs[0].font.color.rgb = NAVY
+                    runs[0].font.bold = True
+    for sh in by("テキスト ボックス 1042"):
+        sh.left, sh.top = Cm(1.0), Cm(15.0)
 
 # ---- 字体メイリオ・最小8pt ----
 AFTER = {qn(x) for x in ("a:sym", "a:hlinkClick", "a:hlinkMouseOver", "a:rtl", "a:extLst")}
