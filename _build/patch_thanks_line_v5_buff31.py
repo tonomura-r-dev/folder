@@ -73,7 +73,7 @@ for sh in prs.slides[0].shapes:
         for p in sh.text_frame.paragraphs:
             if "40-50%" in p.text:
                 runs = p.runs
-                runs[0].text = "弊社運用の美容クリニック様では、予約後来院率が40〜50%改善"
+                runs[0].text = "美容クリニックでは、予約後来院率が40〜50%改善"
                 for r in runs[1:]:
                     r._r.getparent().remove(r._r)
                 runs[0].font.color.rgb = RGBColor(0x1F, 0x28, 0x5A)

@@ -117,26 +117,29 @@ def band(s, y, text):
 
 
 def case_cards(s, y, h, cards, num=None):
-    """cards = [(区分, 名前, 取り組み, 指標, 数字, 補足)]  区分＝'自社'（弊社実績）か'公式'（LINEヤフー公式事例）"""
+    """cards = [(区分, 業界名, 取り組み, 指標, 数字, 補足)]  実績の出所・社名は書かない（殿村さん指示 2026-10-04）。
+    上（業界名・取り組み）と下（指標・数字・補足）を別の枠にして、数字の高さをカード間でそろえる。枠線・塗りなし。"""
     n = len(cards)
     gap = 0.4
     w = (21.5 - gap * (n - 1)) / n
+    top_h = 3.6
     for i, (kind, name, what, label, num_text, note) in enumerate(cards):
         x = 3.0 + i * (w + gap)
-        lines = [(name, 13, True, INK), (what, 12, False, INK), (label, 12, False, INK), (num_text, num or (20 if n == 3 else 28), True, NAVY), (note, 11, False, GRAY)]
-        c = add(s, "line", x, y, w, h, lines, 1)
-        c.line.fill.background()          # カードの枠線をなくす（殿村さん指示 2026-10-02）
-        c.shadow.inherit = False
-        er = c._element.find(qn("p:style")).find(qn("a:effectRef"))
-        er.set("idx", "0")             # 影もなくす
-        tf = c.text_frame
-        tf.vertical_anchor = MSO_ANCHOR.TOP
-        tf.margin_top, tf.margin_left, tf.margin_right = Cm(1.3), Cm(0.4), Cm(0.4)
-        for p, sa in zip(tf.paragraphs, (6, 8, 10, 2, 0)):
-            p.space_after = Pt(sa)
-        tag_kind = "navy" if kind == "自社" else "line"
-        tag_txt = "弊社実績" if kind == "自社" else "LINEヤフー公式"
-        add(s, tag_kind, x + 0.4, y + 0.3, 4.2 if kind == "公式" else 2.8, 0.7, [(tag_txt, 11, True, WHITE if kind == "自社" else NAVY)])
+        parts = [
+            (y, top_h, [(name, 15, True, INK), (what, 13, False, INK)], (6, 0)),
+            (y + top_h + 0.1, h - top_h - 0.1, [(label, 13, False, INK), (num_text, num or (20 if n == 3 else 32), True, NAVY), (note, 11, False, GRAY)], (4, 2, 0)),
+        ]
+        for yy, hh, lines, sas in parts:
+            c = add(s, "line", x, yy, w, hh, lines, 1)
+            c.line.fill.background()
+            c.fill.background()
+            c.shadow.inherit = False
+            c._element.find(qn("p:style")).find(qn("a:effectRef")).set("idx", "0")
+            tf = c.text_frame
+            tf.vertical_anchor = MSO_ANCHOR.TOP
+            tf.margin_top, tf.margin_left, tf.margin_right, tf.margin_bottom = Cm(0.2), Cm(0.5), Cm(0.5), Cm(0.1)
+            for p, sa in zip(tf.paragraphs, sas):
+                p.space_after = Pt(sa)
 
 
 # ================= 重要性（ver1.4 の1枚目を作り替え）=================
@@ -146,44 +149,42 @@ set_runs(t, [("申込み⇒来店までに、一定数が離脱する。", 18, T
 for p in t.text_frame.paragraphs:
     p.space_after = Pt(6)
 imp = [
-    ("保険見直し本舗", "予約したのに、面談に来ない方がいる", "来店に至らない割合", "2〜3割", "面談を予約したユーザーのうち"),
-    ("琴平バス", "申込み直後のLINEは、よく読まれる", "メッセージの開封率", "約70%", "LINE通知メッセージの配信後"),
-    ("琴平バス", "読まれるだけでなく、クリックもされる", "クリック率", "約5倍", "メルマガのクリック率との比較"),
+    ("保険相談", "予約したのに、面談に来ない方がいる", "来店に至らない割合", "2〜3割", "面談を予約したユーザーのうち"),
+    ("バス会社", "申込み直後のLINEは、よく読まれる", "メッセージの開封率", "約70%", "LINE通知メッセージの配信後"),
+    ("バス会社", "読まれるだけでなく、クリックもされる", "クリック率", "約5倍", "メルマガのクリック率との比較"),
 ]
 case_cards(s, 7.2, 7.8, [("公式", *c) for c in imp], num=26)
 band(s, 15.5, "関心が一番高い申込み直後に、LINEでつながるのが最適")
-source(s, "出典：LINEヤフー for Business 導入事例（保険見直し本舗・琴平バス）")
 
 # ================= シーン1（ver1.4 の2枚目）=================
 s = head(1, "シーン1｜来店・来院の予約", "予約を、来店・来院につなげる")
 flow(s, 4.6, [("line", "予約完了"), ("navy", "LINEで\n予約確認"), ("navy", "前日に\nお知らせ"), ("line", "来店")])
 case_cards(s, 6.8, 8.7, [
-    ("自社", "美容クリニック", "予約完了画面からLINEへ誘導し、予約確認・前日のお知らせを配信", "予約後の来院率", "40〜50%改善", "弊社運用の実績"),
-    ("公式", "保険見直し本舗", "予約日時のリマインドを、LINE通知メッセージで配信", "予約からの面談実施率", "5ポイント増", "予約100件あたり、面談が5件増"),
-    ("公式", "ジャパンプロデュース", "美容室。次回予約のリマインドをLINEで自動通知", "次回予約客数", "約200→240名", "リピート率も88→91%（導入前後の半年比較。LINEミニアプリを併用）"),
+    ("自社", "美容クリニック", "予約完了画面からLINEへ誘導し、予約確認・前日のお知らせを配信", "予約後の来院率", "40〜50%改善", ""),
+    ("公式", "保険相談", "予約日時のリマインドを、LINE通知メッセージで配信", "予約からの面談実施率", "5ポイント増", "予約100件あたり、面談が5件増"),
+    ("公式", "美容室", "次回予約のリマインドをLINEで自動通知", "次回予約客数", "約200→240名", "リピート率も88→91%（導入前後の半年比較。LINEミニアプリを併用）"),
 ])
 band(s, 15.7, "無断キャンセルを防ぎ、来店につなげる")
-source(s, "出典：弊社運用実績／LINEヤフー for Business 導入事例（保険見直し本舗・ジャパンプロデュース）")
 
 # ================= シーン2（ver1.4 の3枚目）=================
 s = head(2, "シーン2｜資料請求", "資料請求を、予約・商談につなげる")
 flow(s, 4.8, [("line", "資料請求"), ("navy", "LINEへ案内"), ("navy", "事例・動画を\n配信"), ("line", "見学・商談\nの予約")])
 case_cards(s, 7.3, 8.0, [
     ("公式", "皮膚科クリニック", "友だち追加後のステップ配信で、予約を案内", "LINE経由の予約数", "約1.2倍", "ステップ配信の実施前との比較"),
-    ("公式", "UZUZ（就職支援）", "LINEのチャットボットで情報を提供し、面談予約へ", "LINE経由の問い合わせの面談予約率", "55%", "他のチャネルと比べて高い"),
+    ("公式", "就職支援", "LINEのチャットボットで情報を提供し、面談予約へ", "LINE経由の問い合わせの面談予約率", "55%", "他のチャネルと比べて高い"),
 ])
 band(s, 15.7, "資料請求のみで終わらせず、予約・商談につなげる")
-source(s, "出典：LINEヤフー for Business 導入事例（アクネクリニック・UZUZ）")
 
 # ================= シーン3（ver1.4 の4枚目）=================
 s = head(3, "シーン3｜購入・来店の後", "来店・購入の後も、LINEでつながり続ける")
 flow(s, 4.8, [("line", "購入・来店"), ("navy", "翌日に\nアンケート"), ("navy", "次のタイミングで\nクーポン・案内"), ("line", "再来店\nリピート")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "Dazy（飲食店）", "来店翌日にアンケートを配信。再来店の少し前にクーポンを配信（LINEミニアプリを併用）", "リピーターの売上割合", "7.6→12.9%", "2025年1月と3月の比較"),
-    ("公式", "たんじろう（飲食店）", "来店翌日の11時に、アンケートとクーポンを自動配信（LINEミニアプリを併用）", "リピーター率", "19.4→40%超", "2024年1月と2025年1月の比較"),
+    ("公式", "居酒屋", "来店翌日にアンケートを配信。再来店の少し前にクーポンを配信（LINEミニアプリを併用）", "リピーターの売上割合", "7.6→12.9%", "2025年1月と3月の比較"),
+    ("公式", "焼肉店", "来店翌日の11時に、アンケートとクーポンを自動配信（LINEミニアプリを併用）", "リピーター率", "19.4→40%超", "2024年1月と2025年1月の比較"),
 ])
 band(s, 15.7, "購入・来店の後も、LINEで次の来店につなげる")
-source(s, "出典：LINEヤフー for Business 導入事例（Dazy・たんじろう）。LINEでつながった後の施策の例")
+
+source(s, "※サンクスLINE単体の効果ではなく、LINEでつながった後の施策の例")
 
 # ---- ver1.4の5枚目を削除 ----
 lst = prs.slides._sldIdLst
@@ -241,7 +242,7 @@ for sh in s1.shapes:
         for p in sh.text_frame.paragraphs:
             if "40-50%" in p.text:
                 runs = p.runs
-                runs[0].text = "弊社運用の美容クリニック様では、予約後来院率が40〜50%改善"
+                runs[0].text = "美容クリニックでは、予約後来院率が40〜50%改善"
                 for r in runs[1:]:
                     r._r.getparent().remove(r._r)
                 runs[0].font.color.rgb = NAVY
