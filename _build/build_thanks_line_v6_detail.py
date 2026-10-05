@@ -130,7 +130,7 @@ def case_cards(s, y, h, cards, num=None, x0=3.0, total_w=21.5):
     for i, (kind, name, what, label, num_text, note) in enumerate(cards):
         x = x0 + i * (w + gap)
         parts = [
-            (y, top_h, [(name, 14 if n == 3 else 15, True, INK), (what, 12.5 if n == 3 else 13, False, INK)], (6, 0)),
+            (y, top_h, [(name, 13 if n == 3 else 15, True, INK), (what, 11.5 if n == 3 else 13, False, INK)], (6, 0)),
             (y + top_h + 0.1, h - top_h - 0.1, [(label, 13, False, INK), (num_text, num or (20 if n == 3 else 32), True, NAVY)]
              + [(tx, 10.5 if k == 0 else 10, False, GRAY) for k, tx in enumerate(note if isinstance(note, (list, tuple)) else [note])],
              (4, 2) + (2,) * 5),
@@ -149,8 +149,18 @@ def case_cards(s, y, h, cards, num=None, x0=3.0, total_w=21.5):
 
 
 def img_frame(s, y, h, name, caption):
-    """追加後のメッセージイメージの差し込み枠（画像はClaudeが作らない＝殿村さん指示。画像名つきの枠だけ置く）。"""
-    c = add(s, "line", 20.4, y, 4.1, h, [(tx, 10.5, True, GRAY) for tx in caption.split("\n")] + [(name, 9, False, GRAY)], 1)
+    """追加後のLINEメッセージのイメージ。画像（_images/thanks_<名前>）があれば貼り、無ければ差し込み枠を置く。
+    画像はClaudeが作らない（殿村さん指示）。殿村さんが画像生成した物を貼る。"""
+    path = ROOT / "_images" / ("thanks_" + name)
+    if path.exists():
+        w = 5.4
+        from PIL import Image
+        iw, ih = Image.open(path).size
+        pic = s.shapes.add_picture(str(path), Cm(19.1), Cm(y), width=Cm(w))
+        pic.line.color.rgb = RGBColor(0xD9, 0xD9, 0xD9)
+        pic.line.width = Pt(1)
+        return pic
+    c = add(s, "line", 19.1, y, 5.4, h, [(tx, 10.5, True, GRAY) for tx in caption.split("\n")] + [(name, 9, False, GRAY)], 1)
     c.line.color.rgb = GRAY
     c.line.dash_style = MSO_LINE.DASH
     c.shadow.inherit = False
@@ -159,7 +169,7 @@ def img_frame(s, y, h, name, caption):
     return c
 
 
-CARD_W = 16.8  # 右に画像枠（幅4.5）を置くため、実績カードは左に寄せる
+CARD_W = 15.5  # 右に画像枠（幅4.5）を置くため、実績カードは左に寄せる
 IMG_Y, IMG_H = 7.3, 7.3
 
 
@@ -179,7 +189,7 @@ flow(s, 4.8, [("line", "申込み完了"), ("navy", "LINEで\nつながる"), ("
 case_cards(s, 7.3, 8.0, [
     ("公式", "美容室", "予約後のフォロー", "次回予約客数", "20%増", "約200名 → 約240名"),
     ("公式", "皮膚科クリニック", "友だち追加後のステップ配信", "LINE経由の予約数", "約20%増", "ステップ配信実施前との比較"),
-    ("公式", "就職支援", "LINEチャットで面談へ誘導", "問い合わせた方のうち", "55%", "が面談予約（他チャネルより高い）"),
+    ("公式", "就職支援", "LINEチャットで面談へ誘導", "問い合わせた方の", "55%", "が面談予約（他チャネルより高い）"),
 ], num=22, total_w=CARD_W)
 img_frame(s, IMG_Y, IMG_H, "msg_s3.png", "［画像］\n予約確認・前日の\nLINEメッセージ")
 band(s, 15.7, "申込み後の離脱を防ぎ、来店・面談・商談につなげる")
@@ -191,7 +201,7 @@ flow(s, 4.8, [("line", "購入・来店"), ("navy", "翌日に\nアンケート"
 case_cards(s, 7.3, 8.0, [
     ("公式", "居酒屋", "来店翌日のアンケートと、再来店前のクーポンを配信", "リピーターの売上割合", "7.6% → 12.9%", "2025年1月と3月の比較"),
     ("公式", "焼肉店", "来店翌日11時に、アンケートとクーポンを自動配信", "リピーター率", "19.4% → 40%超", "2024年1月と2025年1月の比較"),
-], num=22, total_w=CARD_W)
+], num=20, total_w=CARD_W)
 img_frame(s, IMG_Y, IMG_H, "msg_s4.png", "［画像］\nアンケート・クーポンの\nLINEメッセージ")
 band(s, 15.7, "購入・来店の後も、LINEで次の来店につなげる")
 
