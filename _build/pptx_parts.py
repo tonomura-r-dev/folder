@@ -149,3 +149,21 @@ def keep_header_only(slide):
     for sh in list(slide.shapes):
         if sh.name not in ("TextBox 1", "TextBox 2", "Connector 3"):
             sh._element.getparent().remove(sh._element)
+
+
+def set_paras(sh, items):
+    """items = [(text, 元の段落番号)]。元の段落の書式をコピーして文言だけ差し替える。"""
+    txb = sh.text_frame._txBody
+    olds = list(txb.findall(qn("a:p")))
+    news = []
+    for text, k in items:
+        p = copy.deepcopy(olds[k])
+        rs = p.findall(qn("a:r"))
+        for r in rs[1:]:
+            p.remove(r)
+        rs[0].find(qn("a:t")).text = text
+        news.append(p)
+    for p in olds:
+        txb.remove(p)
+    for p in news:
+        txb.append(p)
