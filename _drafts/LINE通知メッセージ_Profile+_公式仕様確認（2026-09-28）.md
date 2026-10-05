@@ -1,0 +1,102 @@
+# LINE通知メッセージ／LINEログイン・Profile+ 公式仕様の確認（2026-09-28）
+
+> LINEヤフー公式（developers.line.biz／lycbiz.com／help.line.me）のみを根拠に、別の担当が出典を開いて再確認したもの（verifiedのみ掲載）。T3（組み合わせの事例）は確認中。
+
+- **T2-01** LINEログインは無料で使えるソーシャルログインです。LINEヤフーの公式ドキュメントは、会員登録時にLINEのプロフィール情報が自動入力されて入力の手間が省けることを、導入の利点として挙げています。（https://developers.line.biz/ja/docs/line-login/overview/）
+- **T2-02** LINEログイン v2.1では、IDトークンでユーザーID（sub）・表示名・プロフィール画像URL・メールアドレスを取得できます。表示名と画像はscopeにprofileを、ユーザーIDはopenidを、メールアドレスはemailを指定したときだけIDトークンに入ります。（https://developers.line.biz/ja/docs/line-login/verify-id-token/）
+- **T2-03** メールアドレスを取るには、事前にLINE Developersコンソールで「メールアドレス取得権限」を申請する必要があります。申請では申請条件への同意と、ユーザーに見せる説明文のスクリーンショットの提出が求められます。scopeにemailを指定するときはopenidも必須です。（https://developers.line.biz/ja/docs/line-login/integrate-line-login/）
+- **T2-04** 要求した権限はユーザーが同意画面で認可するもので、拒否されることもあります。公式は、拒否された場合も想定してサイトを作るよう求めています。（https://developers.line.biz/ja/docs/line-login/integrate-line-login/）
+- **T2-05** 友だち追加オプションは、LINEログインの際に公式アカウントを友だち追加する選択肢を出す機能です。追加先の公式アカウントはLINE Developersコンソールで指定し、認可URLにbot_promptパラメータを付けると表示されます。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-06** bot_prompt=normalは同意画面の中に友だち追加の選択肢を出します。bot_prompt=aggressiveは同意画面の後に、友だち追加するかを確認する画面を別に出します。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-07** LINEログインのチャネルに公式アカウントをリンクする条件は2つです。①公式アカウントのMessaging APIチャネルがLINEログインチャネルと同じプロバイダーにあること。②操作する人がLINEログインチャネルのAdmin権限と、公式アカウントの管理者権限の両方を持っていること。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-08** 1つのLINEログインチャネルにリンクできる公式アカウントは1つだけです。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-09** 同意画面に出る選択肢は友だち関係で変わります。未追加なら「友だち追加」、ブロック中なら「ブロック解除」が出ます。すでに友だちなら「追加済み」と表示されるだけで、選択肢は出ません。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-10** LINEログインチャネルが認証プロバイダーの配下にある場合、bot_prompt=normalで出る友だち追加の選択肢は最初からオンになっています。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-11** ログイン後にサイトへ戻るURLにはfriendship_status_changed（true/false）が付き、そのログインで友だち追加またはブロック解除が起きたかが分かります。このパラメータは、友だち追加の選択肢が画面に出たときだけ付きます。（https://developers.line.biz/ja/docs/line-login/link-a-bot/）
+- **T2-12** リンクした公式アカウントとユーザーが友だちかどうかは、LINEログインのアクセストークンでfriendship/v1/statusのAPIを呼べば取得できます（戻り値はfriendFlag）。このアクセストークンにはprofileスコープが必要です。（https://developers.line.biz/ja/docs/line-login/integrate-line-login/）
+- **T2-13** ユーザーIDはプロバイダーごとに別の値になります。同じプロバイダーの中なら、LINEログインチャネルでもMessaging APIチャネルでも同じIDです。つまり同じプロバイダーにしておけば、ログインで得たIDをそのまま公式アカウントのメッセージ送信先に使え、サイト会員とLINEのIDをつなげられます。（https://developers.line.biz/ja/docs/messaging-api/getting-user-ids/）
+- **T2-14** プロフィール情報の取得に同意していないユーザーは、WebhookにユーザーIDが入りません。iOS版・Android版LINEの利用者は利用開始時に同意済みです。同意できないのは、PC版LINEだけを使っているユーザーなどです。（https://developers.line.biz/ja/docs/messaging-api/getting-user-ids/）
+- **T2-15** LINEログインを使わずに、Messaging APIの「アカウント連携」機能でもサイト会員とLINEアカウントをつなげられます（LINEログインチャネルは不要）。ただし、ユーザーが公式アカウントを友だち追加していることが前提です。（https://developers.line.biz/ja/docs/messaging-api/linking-accounts/）
+- **T2-16** LINEログインを入れたサイトからユーザーが退会したとき、またはLINEとの連携を解除したときは、サイト側が必ず権限取り消しのAPIでユーザーの権限を取り消す必要があります。退会や解除で何が起きるかを、規約などに書くことも必須です。（https://developers.line.biz/ja/docs/line-login/development-guidelines/）
+- **T2-17** LINE Profile+は、ユーザーがLINEアプリの［設定］>［プロフィール］>［LINE Profile+］に登録した情報（氏名・性別・誕生日・電話番号・住所など）です。通常のプロフィール情報と違い、所定の申請等を行った法人ユーザーだけが取得できます。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-18** Profile+の利用は、所定の申請等を行った日本の法人ユーザーに限られます。申込窓口は担当営業か、LINEヤフーのパートナーです。LINEミニアプリで使う場合は、認証済ミニアプリであることも条件です。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-19** Profile+で取れる項目はreal_name（氏名）・gender（性別）・birthdate（誕生日）・phone（電話番号）・address（住所）の5つで、使うものは事前に申請が必要です。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-20** 氏名（real_name）では、姓・名・ミドルネームに加えて、姓と名のカナ（カタカナ）も取れます。性別はmale／female／ユーザーの自由入力のいずれか、誕生日はRFC3339形式、電話番号はE.164形式（+81…）です。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-21** 住所はProfile+に最大10件登録できますが、IDトークンで取れるのは最近更新・利用された1件だけです。項目は郵便番号・都道府県・市区町村・番地等・国で、郵便番号と番地等はユーザーの任意入力なので空の場合があります。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-22** Profile+を使うにはLINEログイン v2.1以上が必要で、v2.0以前では使えません。情報はIDトークンで渡されるため、openidスコープも同時に指定する必要があります。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-23** Webサイトでの取得手順は3段階です。①認可URLのscopeにProfile+の項目を指定 ②アクセストークン発行時に受け取るIDトークンを検証 ③その中身から氏名などを取り出す。公式のURL例では、Profile+の項目とbot_prompt=normal（友だち追加オプション）を1回のログインで同時に指定しています。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-24** LIFFアプリでもProfile+は取得できます。コンソールのLINEログインチャネルの［LIFF］タブでスコープにチェックを入れ、liff.getDecodedIDToken()で取り出します。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-25** phoneスコープを使う場合、一度同意したユーザーにも、前回から一定期間が過ぎたときや電話番号が変わったときは同意画面がもう一度出ます。emailスコープにも同様の条件があります。（https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/）
+- **T2-26** LINEログインのIDトークンで氏名・性別・誕生日・住所・電話番号を取るには、Profile+の「利用契約」が必要と明記されています。一方、料金の記載は公式ドキュメントのどこにもありません。（https://developers.line.biz/ja/docs/basics/user-profile/）
+- **T2-27** Profile+に表示される電話番号は、LINEの［設定］>［アカウント］>［電話番号］の登録内容です。誕生日は［設定］>［プロフィール］>［誕生日］の登録内容です（どちらもLINE本体の登録がそのまま反映されます）。（https://developers.line.biz/ja/docs/basics/user-profile/）
+- **T2-28** ユーザー向けヘルプによると、Profile+対応サービスの登録画面で［LINEで自動入力］か［Profile+で入力］を押し、使う情報を選べば自動入力されます。未登録の項目は、その場で登録してから入力できます。スマートフォン（メイン端末）でだけ使え、対応しているのは一部のサービスだけです。（https://help.line.me/line/smartphone/pc?lang=ja&contentId=20000134）
+- **T2-29** LINEミニアプリには、Profile+とは別の「共通プロフィールのクイック入力」があり、メール・氏名・性別・誕生日・住所・電話番号を取れます。これにはクイック入力の利用申請が別に必要です。（https://developers.line.biz/ja/docs/basics/user-profile/）
+- **T2-30** Profile+とLINE通知メッセージは、どちらも申請が必要な法人ユーザー向けオプションです。通知メッセージは、ユーザーIDが分からない相手にも電話番号を指定して送れる機能と説明されています。（https://developers.line.biz/ja/docs/partner-docs/overview/）
+- **T2-31** 【公式事例・レンズダイレクト（メガネトップ／EC）】LINEログイン機能を持つパートナーのツール「ソーシャルPLUS」を入れた後、新規友だち数は月約1,000人から約3,500人（約3.5倍）に増えました。新規友だちの約70%がLINEログイン経由で、友だち全体の約75%がID連携済みです（2023年5〜6月の実績）。（https://www.lycbiz.com/jp/case-study/line-official-account/rensdirect/）
+- **T2-32** 【公式事例・レンズダイレクト】ECの売上に占める公式アカウント経由の割合は、LINEログイン導入から3年で2.8%→17.7%（約6倍）に伸びました。ID連携済みのユーザーには、注文・発送完了の通知をLINEで自動送信しています。（https://www.lycbiz.com/jp/case-study/line-official-account/rensdirect/）
+- **T2-33** 【lycbiz掲載のパートナー記事・ナースリー（看護用品EC）】LINEログインと友だち追加の機能を入れた後、ターゲットリーチ（配信が届く友だち数）が約3倍になりました。LINE経由の受注額も、導入後1年間の平均で前年同月比273%です。（https://www.lycbiz.com/jp/column/line-official-account/technique/socialplus/）
+- **T2-34** 同じナースリーの記事では、ID連携率を上げるには、既存の友だち向けの施策より、意欲が高い「初回購入時」の必須の新規登録フローにLINEログインを入れる方が効果的と評価されています。（https://www.lycbiz.com/jp/column/line-official-account/technique/socialplus/）
+- **T2-35** 【公式事例PDF・QVCジャパン（通販）】2019年3月にLINEログインを導入した後、公式アカウント経由のEC新規会員登録数は約3.5倍、友だち追加数は1日あたり約4倍になりました（導入前後の3か月平均の比較、QVC調べ）。（https://www.lycbiz.com/static/jp/case-study/DL-pdf/qvcjapan.pdf）
+- **T2-36** 【公式事例・粧苑すきや（化粧品店）】LIFFで、会員登録と同時にLINEアカウントが連携される仕組みを自社開発しました。会員登録の手間が減り、LINEアカウントの連携率は約9割です（友だち4万人超、ブロック率10%以下、2022年7月時点）。（https://www.lycbiz.com/jp/case-study/line-official-account/perfumerie-sukiya/）
+- **T1-01** LINE通知メッセージは電話番号を指定して送るサービスで、ユーザーがLINE公式アカウントを友だち追加していなくても送信できる。利用できるのは日本・タイ・台湾のLINE公式アカウントのみ。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/overview/）
+- **T1-02** 届くのは次の6条件をすべて満たすときだけ。①指定した電話番号がLINEの登録番号と一致、②登録番号が有効（一定期間内にSMS認証済み）、③受信に同意済み、④送信元アカウントをブロックしていない、⑤日本・タイ・台湾で発行され、LINEで電話番号認証ができる番号、⑥2022年3月改定以降のプライバシーポリシーに同意済み。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-03** 利用規約上、照合に使う番号は携帯電話番号で、固定電話番号は対象外。（https://www.lycbiz.com/sites/default/files/media/jp/terms-and-policies/pdf/oa/LINE_Official_Account_Notify_Message_TermsAndPolicies.pdf）
+- **T1-04** 受信設定は「同意（オン）／拒否（オフ）／未設定」の3つ。一度同意すると全企業の通知メッセージに同意したことになる。「未設定」の人には受信同意を求めるメッセージが届き、24時間以内に同意しなければ、そのメッセージは届かずに削除される。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-05** 受け取るには、受信同意に加えて180日に1回のSMS認証が必要（LINEアカウント単位で、全企業共通）。LINEアカウント作成後や電話番号変更後180日以内なら不要。認証を放置した場合、メッセージは届かない。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/flow-when-receiving-message/）
+- **T1-06** 受信のオン／オフはユーザーがLINEアプリの［設定］＞［プライバシー管理］＞［情報の提供］＞［LINE通知メッセージ］で切り替えられ、オフにすると全企業の通知メッセージが止まる。特定の企業だけ止めたい場合は、その企業のアカウントをブロックする。（https://help.line.me/line/smartphone/?contentId=20011418&lang=ja）
+- **T1-07** 送れる内容はLINEヤフーが「有用かつ適切」と判断したものに限られ、営利目的・広告目的は不可。氏名・メールアドレス・電話番号・住所など、個人を特定できる情報もメッセージに入れられない。認められるのは「ユーザーの状態の変化をきっかけにした、利便性の高い通知」。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-08** 利用規約でも広告・宣伝目的の配信は禁止。LINEヤフーは配信内容を事前に審査し、配信の可否を決められる。（https://www.lycbiz.com/sites/default/files/media/jp/terms-and-policies/pdf/oa/LINE_Official_Account_Notify_Message_TermsAndPolicies.pdf）
+- **T1-09** 種類は2つ。「テンプレート」は用意された型を組み合わせて作る。「フレキシブル」はFlex Message等で自由に作れるが、事前のUX審査があり、画像・動画・音声は入れられない。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-10** テンプレート型は、タイトル・説明文が固定で、ヘッダー・フッターも変更不可。自由に書けるのは項目欄だけで、決められた項目名から最大15個を選び、各300文字まで（強調表示の項目は15文字）。ボタンは文言固定で最大2個、リンク先URLは任意。（https://developers.line.biz/ja/reference/line-notification-messages/）
+- **T1-11** テンプレート型は、ポイント・クーポン・マイル系の6種類を除き、UX審査なしで使える。テンプレート型にも画像・音声・動画は入れられない。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-12** ボタンのリンク先は、広告・宣伝ページでないこと、通知の用途と明確に関係があること、自社が管理するページであることが条件。リンク先に個人情報がある場合は、認証をはさむことが必須。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-13** 求人の「応募受付完了」には専用テンプレート「応募受付完了通知」（apply_completed_ja）がある。タイトルは「応募受付完了のお知らせ」、説明文は「お客様のご応募の受付が完了いたしました。」で固定。項目例は企業名・応募内容・応募日・受付番号。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-14** 日本向けテンプレート100種に「面接」「面談」専用のものは無い。近いのは一般の予約用テンプレート（予約完了通知・予約受付通知・予約-前日リマインド通知・予約-リマインド通知）。ただし説明文は「明日のご予約について、お知らせいたします。」のように「ご予約」で固定される。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/template/）
+- **T1-15** 日本向けの項目名には「ご予約日時」「実施日時」「企業名」「応募内容」「応募日」「受付番号」などがあるが、「面接日時」「面接会場」という項目名は無い。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/template/）
+- **T1-16** 会員登録の完了通知用テンプレート「会員登録完了通知」（membership_registration_completed_ja）もある。タイトルは「会員登録完了のお知らせ」で固定。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/template/）
+- **T1-17** 使えるのは所定の申請をした法人だけ。導入の窓口は、LINEヤフーの担当営業かパートナー。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/overview/）
+- **T1-18** LINE公式アカウントが「プレミアムアカウント」か「認証済アカウント」で、プロバイダーが「認証プロバイダー」であることが必須（媒体資料では、認証済アカウントに紐づくMessaging APIチャネルも条件に挙げている）。（https://www.lycbiz.com/jp/service/line-notification-messages/）
+- **T1-19** 実装には、①LINEヤフー認定テクノロジーパートナー（コミュニケーション部門）の送信ソリューションを使うか、②同パートナーが実装を監修した自社の仕組みを使うか、のどちらかが必要。申し込みはSales Partner経由。自社だけで開発して直接使う形は、この資料上は認められていない（パートナーの監修が必須）。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-20** 利用規約上は、連携システムを自社で開発してもよく、第三者のシステムを使ってもよい（パートナー監修が必須という点は T1-19 の媒体資料側の条件）。（https://www.lycbiz.com/sites/default/files/media/jp/terms-and-policies/pdf/oa/LINE_Official_Account_Notify_Message_TermsAndPolicies.pdf）
+- **T1-21** テンプレート型の月額プランは、代理店かLINEヤフー営業に相談したうえでLBPM（代理店向けの申込システム）から申し込み、使うテンプレートの利用申請も出す。前月20日までに申し込めば、翌月1日から使える。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-22** 料金は「月額プラン料金＋上限を超えた分の従量課金」。エッセンシャル：月50万円・10万通まで・超過1通3.0円／パフォーマンス：月200万円・100万通まで・超過1.2円／アンリミテッド：月1,000万円・1,000万通まで・超過0.6円。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-23** 1年間の継続が条件の年間割引プランがあり、月額プラン料金の10%引きを12回に分けて払う。月の途中で解約しても日割りにはならず、その月末までの料金がかかる。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-24** フレキシブル型は、新規利用・用途追加・変更のたびに、1UX（審査1件）ごとに20万円（税抜）の審査費がかかる。費用は審査が承認されたときに発生する。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-25** 月額プランとは別に「ストアビジネス&ECプラン」（従量課金）がある。使えるのはテンプレート型の53種類で、応募受付完了・会員登録完了・ご予約前日・ご予約のリマインドを含む。料金はSales Partnerへの問い合わせ。対象は資本金3億円以下または従業員300人以下の法人（アカウントが店舗単位で開設されている場合は規模を問わない）で、申し込みから5営業日以内に使い始められる。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-26** 課金されるのは、実際にユーザーに届いたメッセージだけ（同意待ちやSMS認証待ちで届かなかった分は対象外）。届いた通数はAPIで取得できる。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-27** 友だちでない人が通知メッセージを受け取ると、その場で友だち追加するかどうかを選べる。追加すればフォローイベント、ブロックすればフォロー解除イベントがWebhookに届く。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-28** 受け取った人は、友だちにならなくてもトーク画面を開いて、デフォルトのリッチメニューを使え、メッセージも送れる。ただし、ユーザーごとに出し分けるリッチメニューは表示されない。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-29** 送信元アカウントをブロック中の人には届かず、「LINE」からの案内も出ない。ブロック解除後に後から届くこともない。APIは成功（200/202）を返すが、配信完了のWebhookは来ない。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-30** すでに友だちの人にも送れる。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+- **T1-31** 通知メッセージを送るたびに、公式の「LINE」アカウントから「LINE通知メッセージが届きました」という案内が必ず届き、送信側で止めることはできない。通知本体には「重要なお知らせ」の表示が付く（LINE 15.9.0以降）。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-32** 電話番号は国際形式（E.164。例：+818000001234）にそろえ、ハイフンを除いてからSHA256でハッシュ化した文字列で渡す。LINEヤフーは宛先の照合だけに使い、照合後すぐに破棄する。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/technical-specs/）
+- **T1-33** APIは1回の呼び出しで宛先1件だけで、複数の番号をまとめて指定することはできない。上限は毎秒2,000回。電話番号リストをまとめて渡して一斉に送る仕組みは、読んだ公式資料には見当たらなかった。（https://developers.line.biz/ja/reference/line-notification-messages/）
+- **T1-34** 実際に届くと配信完了のWebhookが来る。中身はハッシュ化した電話番号か、送信時に付けた任意のタグ（X-Line-Delivery-Tag）。これは「届いた」ことを示すだけで、既読の証明ではない。送信成功から24時間以内に来なければ「届かなかった」という意味。仕様表にLINEのユーザーIDの項目は無い。（https://developers.line.biz/ja/docs/partner-docs/line-notification-messages/message-sending-complete-webhook-event/）
+- **T1-35** 利用規約上、企業は、ユーザーから電話番号を取得すること、それを通知メッセージのためにLINEヤフーへ渡すことについて、同意を取る義務がある。初めて送る相手には、通知内容の説明も送る必要がある。（https://www.lycbiz.com/sites/default/files/media/jp/terms-and-policies/pdf/oa/LINE_Official_Account_Notify_Message_TermsAndPolicies.pdf）
+- **T1-36** ガイドラインでは、初めて送る人に、メール・書面・ホームページなどで「LINEから連絡が届く」ことを事前に知らせるよう求めている。また、電話番号を集める画面に、通知メッセージで使う可能性があることを書くよう求めており、例文も載っている。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-37** 始めるときは、一部のユーザーに絞って試験的に送ることが推奨されている。初回の日・月に1日1万通以上、または月10万通以上を送る予定なら、事前にLINEヤフーの担当への相談が必要。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Notification_Template_UXGuideline.pdf）
+- **T1-38** ハッシュ化した電話番号をLINEへ渡すことが個人情報の第三者提供にあたるかどうかは、LINEヤフーは判断しない。配信する企業側で、法令や自社のプライバシーポリシーに照らして確認する必要がある。（https://www.lycbiz.com/sites/default/files/media/jp/download/LINE_Official_Account_ProductGuide.pdf）
+
+## 公式で確認できなかった点（T1）
+- 面接・面談の日程確認や前日リマインドに、一般の予約用テンプレート（予約完了・予約受付・予約前日リマインド・予約リマインド）を使ってよいかは、公式資料に書かれていない。固定文言が「ご予約」になるため、LINEヤフー（Sales Partner経由）に確認が必要。認められない場合は、フレキシブル型（UX審査1件20万円）で面接用の文言を審査に出すことになる。
+- 求人・人材業界だから使えない、といった業種の制限は、読んだ公式資料では見当たらなかった。ただし、テンプレートが使えるかどうかはアカウントごとに自動で決まる（使えないテンプレートを指定するとAPIが400エラーを返す）ため、チェングロウスのアカウントで「応募受付完了」テンプレートが使えるかは申し込み時に確認が必要。
+- ストアビジネス&ECプランの具体的な料金は非公開（Sales Partnerに問い合わせ）。チェングロウスが規模の条件（資本金3億円以下または従業員300人以下）を満たすかも、会社情報で確認が必要（オートバックスの子会社だが、判定は発注する法人単位と読める）。
+- 電話番号リストをまとめて渡して一斉に送る公式の機能（管理画面からのCSVアップロードなど）は、公式資料で確認できなかった。APIは1回1件なので、応募者管理システム（リクオプ）側や、テクノロジーパートナーのソリューション側に一括送信の機能があるかは、パートナーに確認が必要（パートナー各社のサイトは今回の根拠の対象外）。
+- テクノロジーパートナーの実装監修が必須とされているため、DYMや自社で開発する場合に、監修を受ける手続き・費用・期間がどうなるかは未確認。今のリクオプが通知メッセージ連携に対応しているか（パートナーのソリューションとして使えるか）も未確認。
+- 通知メッセージの送信通数が、LINE公式アカウントの月額プランのメッセージ通数（無料枠・追加メッセージ）にも数えられるのか、別枠なのかは、公式資料で確認できなかった。
+- 配信完了のWebhookには電話番号のハッシュ値かタグしか入らず、LINEのユーザーIDの項目は仕様に無い。通知メッセージから友だち追加した人（フォローイベントのユーザーID）と応募者（電話番号）をどう結び付けるか、LINEログイン会員とどう結び付けるかの公式の方法は、今回読んだ範囲には無い（LINEログイン／Profile+側の調査で確認が必要）。
+- 送れる国の範囲が資料によって違う。開発者向けドキュメントは日本・タイ・台湾、媒体資料のよくある質問はインドネシアも含む。日本の番号には影響しないが、表記の食い違いとして残す。
+- 月額プランに最低契約期間があるか（1ヶ月だけの契約ができるか）は明記されていない。規約上、途中解約には1ヶ月以上前の通知が必要。
+- Webフォームから応募した人に送る場合、応募フォームの同意文にどこまで書けば規約の「合理的な方法での同意」になるかは、LINEヤフーの例文（ガイドラインp.141）以上の基準が示されていない。法務の確認が必要。
+
+## 公式で確認できなかった点（T2）
+- Profile+の料金と契約条件（初期費用・月額・従量の有無）は、公式ドキュメントにもlycbiz.comにも記載がありません。「利用契約が必要」「担当営業かパートナーに問い合わせ」とあるだけなので、LINEヤフーの営業に確認が必要です。
+- Profile+の申請に「審査」があるか、その基準と期間は不明です。求人サイトが応募・会員登録のために電話番号や誕生日を取る用途で承認されるかも、公式には書かれていません（書かれているのは「所定の申請等」と「使う項目の事前申請」だけ）。
+- Profile+を会員登録・フォーム入力に使った公式事例と数値（入力完了率・登録率など）は、lycbiz.com／linecorp.com／lycorp.co.jpでは見つかりませんでした。今回集めた数値事例は、どれもLINEログイン（またはLIFF）によるID連携の事例です。
+- Profile+に氏名カナ・住所などを登録しているユーザーの割合は公式に出ていません。取得できないユーザーが何割いるかは見積もれません（電話番号と誕生日は、LINE本体に登録した内容がProfile+に表示されるとだけ書かれています）。
+- ヘルプにある［LINEで自動入力］［Profile+で入力］ボタンが、LINEログインを使う一般のWebサイトでも出せるのかは不明です。開発者向け文書にあるのは「IDトークンから項目を取り出す」手順だけで、取り出した値をフォームに入れる部分はサイト側で作る前提と読めます。LINE公式のボタン部品は見当たりません。
+- bot_promptのnormalとaggressiveで友だち追加率がどれだけ違うか、公式の数値はありません。
+- 認証プロバイダー（友だち追加の選択肢が最初からオンになる条件）の取得要件は未確認です。コンソール文書の該当ページが今回取得できませんでした。
+- Profile+で取った電話番号を、LINE通知メッセージの送信先に使ってよいか（目的外利用にあたらないか、規約上の扱い）は、公式ページでは確認できませんでした。通知メッセージ側の仕様はT1で確認が必要です。
+- ナースリーとQVCの事例は、パートナーのツール「ソーシャルPLUS」経由の成果です。時期も古く（2019〜2020年）、求人・人材業界の事例ではありません。自動車求人Naviの会員登録率にそのまま当てはめられる根拠はありません。
+- サイトの応募はATS（リクオプ）経由のWebフォームが中心なので、LINEのユーザーIDをATS側に持たせられるかは、LINEの公式文書では判断できません。リクオプ側の仕様確認が必要です。

@@ -1187,7 +1187,26 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/1a7bf811-_______LINEOA____ver2.1.pptx 学校法人業界_LINEOA施策提案ver2.1.pptx)",
       "Bash(git commit -q -m 'PC保存名を正として置き換え（チェングロウスver1.1・学校法人ver2.1） *)",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5c8c8d26-_______LINEOA____ver2.1.pptx\" \"学校法人業界_LINEOA施策提案ver2.1.pptx\")",
-      "Bash(git commit -q -m '学校法人ver2.1: レイアウト調整版（PC保存・2026-09-23）を正として更新 *)"
+      "Bash(git commit -q -m '学校法人ver2.1: レイアウト調整版（PC保存・2026-09-23）を正として更新 *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/75ceaa80-202609___________________LINE______________ver2_3.pptx\" \"202609_株式会社やる気スイッチグループ御中_LINE公式アカウント運用のご提案_ver2_3.pptx\")",
+      "Bash(python3)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/0b23c0fb-20260922_______________LINE_____________ver1.1.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx)",
+      "Bash(cp 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cg_pc_0924b.pptx)",
+      "Bash(rm -rf /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/pc)",
+      "Bash(mkdir -p /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/pc)",
+      "Bash(soffice --headless --convert-to pdf --outdir /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/pc 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/74d9cd51-20260922_______________LINE_____________ver1.1.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx)",
+      "Bash(cp 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.1.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/cg_pc_0924c.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/18019f8d-20260922_______________LINE_____________ver1.2.pptx 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/e103a4c9-20260922_______________LINE_____________ver1.2.pdf 20260922_株式会社チェングロウス御中_LINE公式アカウント運用のご提案ver1.2.pdf)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/710bc071-________LINEOA___________.pptx\" \"教育（塾）業界_LINEOA施策提案.pptx\")",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/817320a3-________LINEOA____.pdf\" \"教育（塾）業界_LINEOA施策提案.pdf\")",
+      "Bash(python3 - *)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b930b780-20260929_______________LINEOA_____SIM_ver2.6.xlsx\" \"20260929_株式会社チェングロウス御中_LINEOA施策提案【SIM】ver2.6.xlsx\")",
+      "Bash(git commit -qam 'チェングロウス：SIM ver2.6を殿村さん修正版（CV②修正）に差し替え *)",
+      "Bash(python3 - /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5fef2e77-20260929_________LINE_____________ver1.1.pptx 20260929_チェングロウス_LINE施策のビジュアル（①〜④）ver1.1.pptx)",
+      "Bash(git commit -qm 'チェングロウス：施策のビジュアルを殿村さん修正版（件数の整数化）に差し替え *)"
     ]
   }
 }
