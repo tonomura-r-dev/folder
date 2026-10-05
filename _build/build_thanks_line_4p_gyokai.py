@@ -3,7 +3,7 @@
 既存の4枚（20261005_サンクスLINE誘導のご提案.pptx）を土台に、別ファイルで作る。
   1 機能性＝サンクスLINE誘導とは（5ステップの流れ＋想定 100件→60人→30人）
   2 重要性＝CVで接点が終わる／LINEで続く の比較だけ
-  3 利用シーン＝人材・不動産投資・ホビー・ハウスメーカー（2×2・CV→LINE→利用シーン）
+  3 利用シーン＝人材・不動産投資・ホビー・ハウスメーカー（2×2・左＝CV→LINE→その後の配信／右＝画面画像 _images/thanks_scene_1〜4.png）
   4 実績＝LINEヤフー公式事例 旅行（観光バス）・クリニック（皮膚科）。出典・対象・比較条件・期間を書く
 事例の出典（2026-10-05 本文で確認）：
   琴平バス https://www.lycbiz.com/jp/case-study/line-official-account/kotobus/
@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from pptx import Presentation
+from pptx.util import Cm
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 
@@ -84,32 +85,34 @@ label(s, x0 + 3 * (w - 0.35), 13.6, w, 0.9, [("その後のご案内・やり取
 s = S[2]
 keep_header_only(s)
 head(s, "ターゲット業界別｜サンクスLINE活用イメージ", "CVの後にLINEで送る内容は、業界ごとに変わる")
-inds = [("人材", "採用・転職・求人サービス", ["応募・", "会員登録"], ["面談日時の案内", "求人紹介", "選考のご案内"]),
-        ("不動産投資", "資料請求・個別相談・セミナー", ["資料請求・", "相談予約"], ["面談のリマインド", "セミナー案内", "物件情報"]),
-        ("ホビー（toC）", "商品購入・会員登録", ["購入・", "会員登録"], ["新商品・再入荷", "限定商品の案内", "キャンペーン・クーポン"]),
-        ("ハウスメーカー", "資料請求・展示場の来場予約", ["資料請求・", "来場予約"], ["来場前日のリマインド", "施工事例", "見学会・個別相談"])]
+inds = [("人材", ["応募・", "会員登録"], "前日リマインド／求人紹介／選考のご案内"),
+        ("不動産投資", ["資料請求・", "相談予約"], "面談リマインド／セミナー案内／物件情報"),
+        ("ホビー（toC）", ["購入・", "会員登録"], "限定商品の案内／キャンペーン・クーポン"),
+        ("ハウスメーカー", ["資料請求・", "来場予約"], "見学会の案内／土地情報／個別相談")]
+IMG = ROOT / "_images"
 TOP, ROWH = 4.5, 6.55
 vline(s, MID, TOP + 0.3, TOP + 2 * ROWH - 0.3, LGRAY, 0.75)
 hline(s, L, R, TOP + ROWH, LGRAY, 0.75)
-for k, (name, sub, cv, scenes) in enumerate(inds):
+for k, (name, cv, after) in enumerate(inds):
     qx = L + (k % 2) * (CW / 2) + (0.6 if k % 2 else 0)
-    qy = TOP + (k // 2) * ROWH + 0.45
+    top = TOP + (k // 2) * ROWH
+    qy = top + 0.45
     qw = CW / 2 - 0.6
-    # 業界名（番号の丸＋名前＋CV例）
+    # 右：LINEの画面イメージ（画像は殿村さんが生成・1122×1402）
+    ih = ROWH - 0.4
+    iw = ih * 1122 / 1402
+    s.shapes.add_picture(str(IMG / f"thanks_scene_{k + 1}.png"), Cm(qx + qw - iw), Cm(top + 0.2), Cm(iw), Cm(ih))
+    # 左：業界名 → CV → LINE → その後の配信
     shape(s, MSO_SHAPE.OVAL, qx, qy, 0.95, 0.95, [(str(k + 1), 12, True, WHITE, 0)], fill=NAVY, margins=(0, 0, 0, 0))
-    label(s, qx + 1.2, qy - 0.1, 6.5, 1.15, [(name, 16, True, NAVY, 0)], anchor=MSO_ANCHOR.MIDDLE)
-    label(s, qx + 1.2 + len(name) * 0.62 + 0.5, qy, 8.0, 0.95, [(sub, 10, False, GRAY, 0)], anchor=MSO_ANCHOR.MIDDLE)
-    # CV → LINE → 利用シーン
-    fy, fh = qy + 1.55, 3.6
-    shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, qx, fy + 0.5, 3.6, fh - 1.0, [(t, 12, True, NAVY, 0) for t in cv], fill=PALE, adj=0.15,
+    label(s, qx + 1.2, qy - 0.1, 7.0, 1.15, [(name, 16, True, NAVY, 0)], anchor=MSO_ANCHOR.MIDDLE)
+    cy = qy + 2.55
+    shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, qx, cy - 1.05, 3.4, 2.1, [(t, 12, True, NAVY, 0) for t in cv], fill=PALE, adj=0.15,
           margins=(0.1, 0, 0.1, 0))
-    arrow_line(s, qx + 3.75, fy + fh / 2, qx + 4.75, fy + fh / 2, NAVY, 1.75)
-    shape(s, MSO_SHAPE.OVAL, qx + 4.9, fy + fh / 2 - 1.15, 2.3, 2.3, [("LINE", 13, True, WHITE, 0)], fill=GREEN, margins=(0, 0, 0, 0))
-    arrow_line(s, qx + 7.35, fy + fh / 2, qx + 8.35, fy + fh / 2, NAVY, 1.75)
-    ch = 1.0
-    for j, t in enumerate(scenes):
-        shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, qx + 8.5, fy + 0.15 + j * (ch + 0.15), qw - 8.5, ch, [(t, 11.5, True, NAVY, 0)],
-              fill=WHITE, line=NAVY, lw=0.75, adj=0.5, margins=(0.1, 0, 0.1, 0))
+    arrow_line(s, qx + 3.55, cy, qx + 4.45, cy, NAVY, 1.75)
+    shape(s, MSO_SHAPE.OVAL, qx + 4.6, cy - 1.0, 2.0, 2.0, [("LINE", 12, True, WHITE, 0)], fill=GREEN, margins=(0, 0, 0, 0))
+    arrow_line(s, qx + 6.75, cy, qx + qw - iw - 0.15, cy, NAVY, 1.75)
+    label(s, qx, qy + 4.0, qw - iw - 0.2, 0.6, [("その後の配信", 9.5, False, GRAY, 0)])
+    label(s, qx, qy + 4.55, qw - iw - 0.2, 0.9, [(after, 11, True, NAVY, 0)])
 label(s, L, 17.55, CW, 0.5, [("※利用シーンは想定例", 9, False, GRAY, 0)])
 
 # ================= 4 実績：LINEヤフー公式事例 =================
