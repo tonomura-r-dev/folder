@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.dml import MSO_LINE
 from pptx.enum.text import MSO_ANCHOR
 from pptx.oxml.ns import qn
 from pptx.util import Cm, Pt
@@ -119,19 +120,19 @@ def band(s, y, text):
     add(s, "ink", 3.0, y, 21.5, 1.2, [(text, 15, True, WHITE)])
 
 
-def case_cards(s, y, h, cards, num=None):
+def case_cards(s, y, h, cards, num=None, x0=3.0, total_w=21.5):
     """cards = [(区分, 業界名, 取り組み, 指標, 数字, 補足)]  実績の出所・社名は書かない（殿村さん指示 2026-10-04）。
     上（業界名・取り組み）と下（指標・数字・補足）を別の枠にして、数字の高さをカード間でそろえる。枠線・塗りなし。"""
     n = len(cards)
     gap = 0.4
-    w = (21.5 - gap * (n - 1)) / n
+    w = (total_w - gap * (n - 1)) / n
     top_h = 2.9
     for i, (kind, name, what, label, num_text, note) in enumerate(cards):
-        x = 3.0 + i * (w + gap)
+        x = x0 + i * (w + gap)
         parts = [
-            (y, top_h, [(name, 15, True, INK), (what, 13, False, INK)], (6, 0)),
+            (y, top_h, [(name, 14 if n == 3 else 15, True, INK), (what, 12.5 if n == 3 else 13, False, INK)], (6, 0)),
             (y + top_h + 0.1, h - top_h - 0.1, [(label, 13, False, INK), (num_text, num or (20 if n == 3 else 32), True, NAVY)]
-             + [(tx, 11.5 if k == 0 else 10, False, GRAY) for k, tx in enumerate(note if isinstance(note, (list, tuple)) else [note])],
+             + [(tx, 10.5 if k == 0 else 10, False, GRAY) for k, tx in enumerate(note if isinstance(note, (list, tuple)) else [note])],
              (4, 2) + (2,) * 5),
         ]
         for yy, hh, lines, sas in parts:
@@ -142,44 +143,59 @@ def case_cards(s, y, h, cards, num=None):
             c._element.find(qn("p:style")).find(qn("a:effectRef")).set("idx", "0")
             tf = c.text_frame
             tf.vertical_anchor = MSO_ANCHOR.TOP
-            tf.margin_top, tf.margin_left, tf.margin_right, tf.margin_bottom = Cm(0.2), Cm(0.5), Cm(0.5), Cm(0.1)
+            tf.margin_top, tf.margin_left, tf.margin_right, tf.margin_bottom = Cm(0.2), Cm(0.3 if n == 3 else 0.5), Cm(0.2 if n == 3 else 0.5), Cm(0.1)
             for p, sa in zip(tf.paragraphs, sas):
                 p.space_after = Pt(sa)
 
 
+def img_frame(s, y, h, name, caption):
+    """追加後のメッセージイメージの差し込み枠（画像はClaudeが作らない＝殿村さん指示。画像名つきの枠だけ置く）。"""
+    c = add(s, "line", 20.4, y, 4.1, h, [(tx, 10.5, True, GRAY) for tx in caption.split("\n")] + [(name, 9, False, GRAY)], 1)
+    c.line.color.rgb = GRAY
+    c.line.dash_style = MSO_LINE.DASH
+    c.shadow.inherit = False
+    c._element.find(qn("p:style")).find(qn("a:effectRef")).set("idx", "0")
+    c.text_frame.vertical_anchor = MSO_ANCHOR.MIDDLE
+    return c
+
+
+CARD_W = 16.8  # 右に画像枠（幅4.5）を置くため、実績カードは左に寄せる
+IMG_Y, IMG_H = 7.3, 7.3
+
+
 # ================= 重要性（ver1.4 の1枚目を作り替え）=================
 s = head(0, "サンクスLINE｜重要性", ["申込み直後の“熱量が高い瞬間”に、LINEでつながる", "申込み直後からLINEで接点を持ち、来店・商談までの離脱を防止。"])
-t = add(s, "note", 3.0, 4.2, 21.5, 2.9)
-set_runs(t, [("申込み⇒来店までに、一定数が離脱する。", 17, True, NAVY), ("広告費を増やしても、この離脱層は減らない。", 17, True, NAVY),
-             ("申込み完了の画面は、関心が一番高い瞬間。ここでLINEにつなげる。", 17, True, NAVY)])
-for p in t.text_frame.paragraphs:
-    p.space_after = Pt(4)
+flow(s, 4.8, [("line", "申込み完了"), ("navy", "LINEで\nつながる"), ("navy", "離脱を\n防ぐ"), ("line", "来店・商談")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "読まれる", "バス会社：申込み直後のLINE通知メッセージは、よく読まれ、クリックもされる", "メッセージの開封率", "約70%", "クリック率はメルマガの約5倍"),
-    ("自社", "動く", "美容クリニック：予約完了画面からLINEへ誘導し、予約確認・前日のお知らせを配信", "予約後の来院率", "40〜50%改善", ""),
-])
+    ("公式", "離脱", "広告費を増やしても、この離脱層は減らない", "申込み⇒来店までに", "一定数が離脱", ""),
+    ("自社", "動く", "美容クリニック：予約確認・前日のお知らせをLINEで配信", "予約後の来院率", "40〜50%改善", ""),
+], num=22, total_w=CARD_W)
+img_frame(s, IMG_Y, IMG_H, "msg_s2.png", "［画像］\n申込み直後の\nLINEメッセージ")
 band(s, 15.7, "関心が一番高い申込み直後に、LINEでつながるのが最適")
 
 # ================= シーン1・2を1枚に統合（ver1.4 の2枚目を使う。3枚目は後で削除）=================
 s = head(1, "実例｜来店・来院の予約／資料請求", ["申込み後のLINEフォローで、来店・面談までつなげる", "予約確認・リマインド・ステップ配信で、申込み後の離脱を防止"])
 flow(s, 4.8, [("line", "申込み完了"), ("navy", "LINEで\nつながる"), ("navy", "確認・リマインド・\n情報配信"), ("line", "来店・面談・\n商談")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "美容室", "予約後のフォロー", "次回予約客数", "20%増", ["約200名 → 約240名", "リピート率も88% → 91%（導入前後の半年比較。LINEミニアプリを併用）"]),
-    ("公式", "皮膚科クリニック", "友だち追加後のステップ配信", "LINE経由の予約数", "約1.2倍", "ステップ配信実施前との比較"),
-    ("公式", "就職支援", "LINEチャットで面談へ誘導", "問い合わせた方のうち", "55%", "が面談予約。他チャネルと比べても高い水準"),
-], num=28)
+    ("公式", "美容室", "予約後のフォロー", "次回予約客数", "20%増", "約200名 → 約240名"),
+    ("公式", "皮膚科クリニック", "友だち追加後のステップ配信", "LINE経由の予約数", "約20%増", "ステップ配信実施前との比較"),
+    ("公式", "就職支援", "LINEチャットで面談へ誘導", "問い合わせた方のうち", "55%", "が面談予約（他チャネルより高い）"),
+], num=22, total_w=CARD_W)
+img_frame(s, IMG_Y, IMG_H, "msg_s3.png", "［画像］\n予約確認・前日の\nLINEメッセージ")
 band(s, 15.7, "申込み後の離脱を防ぎ、来店・面談・商談につなげる")
+source(s, "※美容室：リピート率も88% → 91%（導入前後の半年比較。LINEミニアプリを併用）")
 
 # ================= シーン3（ver1.4 の4枚目）=================
 s = head(3, "実例｜購入・来店の後", ["来店・購入後のLINEフォローで、リピートを伸ばす", "アンケート・クーポン・次回来店タイミングの配信で、再来店を後押し"])
 flow(s, 4.8, [("line", "購入・来店"), ("navy", "翌日に\nアンケート"), ("navy", "適切なタイミングで\nクーポン・案内"), ("line", "再来店・\nリピート")])
 case_cards(s, 7.3, 8.0, [
-    ("公式", "居酒屋", "来店翌日にアンケートを配信。再来店の少し前にクーポンを配信（LINEミニアプリを併用）", "リピーターの売上割合", "7.6% → 12.9%", "2025年1月と3月の比較"),
-    ("公式", "焼肉店", "来店翌日の11時に、アンケートとクーポンを自動配信（LINEミニアプリを併用）", "リピーター率", "19.4% → 40%超", "2024年1月と2025年1月の比較"),
-], num=28)
+    ("公式", "居酒屋", "来店翌日のアンケートと、再来店前のクーポンを配信", "リピーターの売上割合", "7.6% → 12.9%", "2025年1月と3月の比較"),
+    ("公式", "焼肉店", "来店翌日11時に、アンケートとクーポンを自動配信", "リピーター率", "19.4% → 40%超", "2024年1月と2025年1月の比較"),
+], num=22, total_w=CARD_W)
+img_frame(s, IMG_Y, IMG_H, "msg_s4.png", "［画像］\nアンケート・クーポンの\nLINEメッセージ")
 band(s, 15.7, "購入・来店の後も、LINEで次の来店につなげる")
 
-source(s, "※サンクスLINE単体の効果ではなく、LINEでつながった後の施策の例")
+source(s, "※サンクスLINE単体の効果ではなく、LINEでつながった後の施策の例（居酒屋・焼肉店はLINEミニアプリを併用）")
 
 lst = prs.slides._sldIdLst
 
