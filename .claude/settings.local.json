@@ -1216,7 +1216,8 @@
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/05abce18-20260929_________LINE_____________ver4.1.pptx\" \"20260929_チェングロウス_LINE公式アカウント運用のご提案ver4.1.pptx\")",
       "Bash(git commit -q -m 'チェングロウス ver4.1：殿村さんPC保存版を正として収容 *)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/fb98cdf2-LINEOA_BUFFF_3.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/buf/b.pptx)",
-      "Bash(python3 _build/qa_render.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/buf/b.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/buf/o)"
+      "Bash(python3 _build/qa_render.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/buf/b.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/buf/o)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/f9de0089-20261004___________________LINE________ver1.0.pptx\" *)"
     ]
   }
 }
