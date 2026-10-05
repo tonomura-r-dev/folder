@@ -167,3 +167,49 @@ def set_paras(sh, items):
         txb.remove(p)
     for p in news:
         txb.append(p)
+
+
+def rich(s, x, y, w, h, runs_by_para, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE):
+    """runs_by_para = [[(text, size, bold, color), ...], ...]（1段落に書式違いの文字を並べる）"""
+    tb = s.shapes.add_textbox(Cm(x), Cm(y), Cm(w), Cm(h))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = anchor
+    tf.margin_left = tf.margin_right = Cm(0.1)
+    tf.margin_top = tf.margin_bottom = Cm(0.03)
+    for i, runs in enumerate(runs_by_para):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = align
+        p.line_spacing = 1.05
+        p.space_after = Pt(2)
+        for text, size, bold, color in runs:
+            r = p.add_run()
+            r.text = text
+            style_run(r, size, bold, color)
+    return tb
+
+
+def arrow_line(s, x1, y1, x2, y2, color, w=2.0, dash=False):
+    c = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Cm(x1), Cm(y1), Cm(x2), Cm(y2))
+    c.line.color.rgb = rgb(color)
+    c.line.width = Pt(w)
+    if dash:
+        c.line.dash_style = 4
+    ln = c.line._get_or_add_ln()
+    ln.append(ln.makeelement(qn("a:tailEnd"), {"type": "triangle", "w": "med", "len": "med"}))
+    _noeffect(c)
+    return c
+
+
+def conclusion(s, y, text, size=15):
+    hline(s, 2.2, 25.3, y, NAVY, 1.5)
+    label(s, 2.2, y + 0.15, 23.1, 1.3, [(text, size, True, NAVY, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+
+
+def drop_slide(prs, slide):
+    lst = prs.slides._sldIdLst
+    sid = slide.slide_id
+    for e in list(lst):
+        if int(e.get("id")) == sid:
+            prs.part.drop_rel(e.get(qn("r:id")))
+            lst.remove(e)
