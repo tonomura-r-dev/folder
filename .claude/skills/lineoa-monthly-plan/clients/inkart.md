@@ -77,7 +77,8 @@
 
 ## URL・計測
 - 配信：ga_source=LINEOA／ga_medium=crm／ga_campaign=YYYYMMDD_英単語を_でつなぐ（先頭大文字。殿村さんの実際の付け方。
-  例：20260910_Registration_Milion_Coupon（9/10の実配信）、20261005_NewYearCard_EarlyBird）。`YYYYMMDD_message_xxx` の形は使わない（2026-10-05 殿村さん「以下のURLを参考に」）
+  例：20260910_Registration_Milion_Coupon（9/10の実配信）、20261005_NewYearCard_EarlyBird）。前に使っていた `YYYYMMDD_message_xxx` とは名前の付け方が違うだけで、
+  どちらでも計測できる（2026-10-05 殿村さん「そんなに変わらん」）。大きな変更として扱わない
 - リッチメニュー：LINE／social／richmenu（殿村さん確定。配信と分ける。LINEOA／crmを提案し直さない）
 - 主な飛び先（https://www.inkart.jp）：年賀状 /lineup/nenga/／カレンダー総合 /lineup/calendar/／シール（1枚から）/lineup/sticker-print/／
   会員登録 /entry/regist/／見本帳 /guide/request-info/／テンプレート /download/／ノート /lineup/notebook/／レーザーカット /op/laser-cut/
@@ -102,6 +103,10 @@
     → **確定（殿村さん「これでええんちゃうか」）**。期限の行は殿村さんが「～10月31日までの／受付分が対象です」にした（「まで」を付けない決まりより殿村さんの判断を優先）
     → **10/5 設定の当日**：🎍がはじかれたのでアイテム名は「✨年賀状印刷が最大25%OFF！超早割がスタート」。
       リンク＝`https://www.inkart.jp/lineup/nenga/?utm_source=LINEOA&utm_medium=crm&utm_campaign=20261005_NewYearCard_EarlyBird`
+      （実際に入れた名前は設定画面で後ろが切れていて不明。GA4では `20261005` で始まる名前で探す）
+      アイテム名の見直し（殿村さん「シンプルすぎる／toBとなると」）の推し＝「✨毎年の年賀状、今年は超早割で最大25%OFF」（23字）。
+      「取引先への」案は、取引先に出さない人が読み飛ばしやすいので下げた。判断待ち
+  - **自分ごとにする一言で、相手を職業や立場で絞らない**（「お店の方」「取引先への」）。毎年やっている用事・時期の言葉なら誰も外さない
   - **「修正しますか？しませんか？」は要否の確認。作り直しの全文ではなく、要る直しだけを最小で出す**
   - 10/19を「10/13に開いた人だけ」に送る案は未決
 - 11月：`_2026-11.md` は古い（超早割が10/31で終わるので「早割まもなく終了（11/30）」は成立しない）。喪中はがき（割引を混ぜない）・卓上カレンダーは使える。早割の第2弾の有無は先方に確認
