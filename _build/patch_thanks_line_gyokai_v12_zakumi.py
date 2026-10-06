@@ -18,7 +18,7 @@ from pptx_parts import *  # noqa
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "20261006_サンクスLINE誘導のご提案_業界別ver1.2.pptx"
-ORANGE, ORANGE_BG = "EE7800", "FDEEDF"
+ORANGE, ORANGE_BG = "F59B21", "FEF0DE"  # listing.pdf のオレンジ
 LINE_BG = "C9D8EE"
 
 prs = Presentation(sys.argv[1])
