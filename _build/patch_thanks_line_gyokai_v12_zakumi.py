@@ -18,7 +18,8 @@ from pptx_parts import *  # noqa
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "20261006_サンクスLINE誘導のご提案_業界別ver1.2.pptx"
-ORANGE, ORANGE_BG = "F59B21", "FEF0DE"  # listing.pdf のオレンジ
+ORANGE, ORANGE_BG = "F59B21", "FEF0DE"  # listing.pdf のオレンジ（塗り・線）
+ORANGE_TX = "C46A00"  # 白・薄いオレンジの上の文字は濃いオレンジ（殿村さん指示：読みやすく）
 LINE_BG = "C9D8EE"
 
 prs = Presentation(sys.argv[1])
@@ -50,7 +51,7 @@ BX = (X2 + W2 + X3) / 2     # AD／LINEの境目
 
 # 領域の帯
 rect(s, X1, 5.15, X2 + W2 - X1, 0.14, ORANGE)
-label(s, X1, 4.45, 6.0, 0.7, [("AD領域", 13, True, ORANGE, 0)], anchor=MSO_ANCHOR.MIDDLE)
+label(s, X1, 4.45, 6.0, 0.7, [("AD領域", 13, True, ORANGE_TX, 0)], anchor=MSO_ANCHOR.MIDDLE)
 rect(s, X3, 5.15, X5 + W5 - X3, 0.14, GREEN)
 label(s, X3, 4.45, 6.0, 0.7, [("LINE領域", 13, True, GREEN_TX, 0)], anchor=MSO_ANCHOR.MIDDLE)
 vline(s, BX, 4.5, Y1 + 0.2, LGRAY, 1.25, dash=True)
@@ -65,10 +66,10 @@ def column(x, w, head, head_fill, head_color, body_fill, line):
 column(X1, W1, "広告で反響獲得", ORANGE, WHITE, WHITE, ORANGE)
 label(s, X1, Y0 + HH + 0.5, W1, 3.4, [(t, 13, False, INK, 6) for t in ("検索広告", "SNS広告", "その他WEB広告")], align=PP_ALIGN.CENTER)
 hline(s, X1 + 0.6, X1 + W1 - 0.6, Y1 - 1.6, LGRAY, 0.75)
-label(s, X1, Y1 - 1.5, W1, 1.3, [("サイト・LPへ集客", 13, True, ORANGE, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+label(s, X1, Y1 - 1.5, W1, 1.3, [("サイト・LPへ集客", 13, True, ORANGE_TX, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 
 # 2 CVを獲得
-column(X2, W2, "CVを獲得", ORANGE_BG, ORANGE, WHITE, ORANGE)
+column(X2, W2, "CVを獲得", ORANGE_BG, ORANGE_TX, WHITE, ORANGE)
 label(s, X2, Y0 + HH + 0.5, W2, 4.6, [(t, 12, False, INK, 5) for t in ("申込", "問い合わせ", "購入", "資料請求 など")], align=PP_ALIGN.CENTER)
 
 # 3 サンクスLINE誘導（LINE領域の入口）
