@@ -1222,7 +1222,10 @@
       "Bash(sed -i 's/ORANGE, ORANGE_BG = \"EE7800\", \"FDEEDF\"/ORANGE, ORANGE_BG = \"F59B21\", \"FEF0DE\"  # listing.pdf のオレンジ/' _build/patch_thanks_line_gyokai_v12_zakumi.py)",
       "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/485503cd-20261005_____LINE__________ver1.1.pptx\" \"20261005_サンクスLINE誘導のご提案_業界別ver1.1.pptx\")",
       "Bash(python3 _build/patch_thanks_line_gyokai_v12_zakumi.py \"20261005_サンクスLINE誘導のご提案_業界別ver1.1.pptx\")",
-      "Bash(python3 _build/qa_render.py \"20261006_サンクスLINE誘導のご提案_業界別ver1.2.pptx\" _images/thanks_line_gyokai_v12)"
+      "Bash(python3 _build/qa_render.py \"20261006_サンクスLINE誘導のご提案_業界別ver1.2.pptx\" _images/thanks_line_gyokai_v12)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/a25db768-20261006_____LINE__________ver1.3.pptx\" \"20261006_サンクスLINE誘導のご提案_業界別ver1.3.pptx\")",
+      "Bash(python3 _build/patch_thanks_line_gyokai_v20_restructure.py \"20261006_サンクスLINE誘導のご提案_業界別ver1.3.pptx\")",
+      "Bash(python3 _build/qa_render.py \"20261006_サンクスLINE誘導のご提案_業界別ver2.0.pptx\" _images/thanks_line_gyokai_v20)"
     ]
   }
 }
