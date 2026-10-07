@@ -1227,7 +1227,10 @@
       "Bash(python3 _build/patch_thanks_line_gyokai_v20_restructure.py \"20261006_サンクスLINE誘導のご提案_業界別ver1.3.pptx\")",
       "Bash(python3 _build/qa_render.py \"20261006_サンクスLINE誘導のご提案_業界別ver2.0.pptx\" _images/thanks_line_gyokai_v20)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/b2d85c88-_______LINEOA____ver2.2.pptx 学校法人業界_LINEOA施策提案ver2.2.pptx)",
-      "Bash(python3 _build/qa_render.py \"学校法人業界_LINEOA施策提案ver2.2.pptx\" _images/gakko_v22)"
+      "Bash(python3 _build/qa_render.py \"学校法人業界_LINEOA施策提案ver2.2.pptx\" _images/gakko_v22)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/248fcd1b-20261007_____LINE__________ver3.6.pptx 20261007_サンクスLINE誘導のご提案_業界別ver3.6.pptx)",
+      "Bash(python3 _build/convert_thanks_line_gyokai_to_4x3.py 20261007_サンクスLINE誘導のご提案_業界別ver3.6.pptx /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/29c1f45b-________ver3.1.pptx)",
+      "Bash(python3 _build/qa_render.py \"20261007_サンクスLINE誘導のご提案_業界別ver3.7.pptx\" _images/thanks_line_gyokai_v37)"
     ]
   }
 }
