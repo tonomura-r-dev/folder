@@ -62,29 +62,42 @@ for i in range(2):
     xa = BX[i] + BW[i] + 0.15
     shape(s, MSO_SHAPE.RIGHT_ARROW, xa, 9.6, GAPB - 0.3, 1.3, None, fill=NAVY, adj=0.45)
 
-# ---- ① 前後検索の画面風の表（キーワードは伏せた帯で抽象化）----
+# ---- ① 前後検索の画面風（横軸＝検索起点からの日数、縦軸＝UU、点＝キーワード。文字は伏せた帯で抽象化）----
+import random
 x, w = BX[0], BW[0]
-gy0, gy1 = BY0 + 0.3, BY0 + 4.6
-colw = (w - 0.4) / 2
-heads = [("検索前のキーワード", PALE2, NAVY), ("検索後のキーワード", NAVY, WHITE)]
-# 伏せたキーワードの帯の長さ（左＝検索前・右＝検索後）と、検索量の帯の割合
-rows_l = [(0.62, 1.0), (0.48, 0.75), (0.70, 0.55), (0.40, 0.4), (0.55, 0.3)]
-rows_r = [(0.55, 1.0), (0.68, 0.8), (0.42, 0.6), (0.60, 0.45), (0.46, 0.3)]
-rh = (gy1 - gy0 - 0.7) / len(rows_l)
-for ci, ((hd, hf, hc), rows) in enumerate(zip(heads, (rows_l, rows_r))):
-    cx0 = x + ci * (colw + 0.4)
-    rect(s, cx0, gy0, colw, 0.7, hf, [(hd, 9, True, hc, 0)])
-    shape(s, MSO_SHAPE.RECTANGLE, cx0, gy0 + 0.7, colw, gy1 - gy0 - 0.7, None, fill=WHITE, line=LGRAY, lw=0.75)
-    for k, (kw, vol) in enumerate(rows):
-        ry = gy0 + 0.7 + k * rh
-        if k:
-            hline(s, cx0 + 0.1, cx0 + colw - 0.1, ry, OFF, 0.5)
-        label(s, cx0 + 0.05, ry, 0.5, rh, [(str(k + 1), 8, True, GRAY, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-        kw_w = (colw - 2.1) * kw
-        shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, cx0 + 0.55, ry + rh * 0.3, kw_w, rh * 0.4, None, fill="D9D9D9", adj=0.5)
-        vb = 1.3 * vol
-        rect(s, cx0 + colw - 1.45, ry + rh * 0.32, vb, rh * 0.36, PALE2 if ci == 0 else NAVY)
-label(s, x, gy1 + 0.05, w, 0.5, [("※実際の前後検索データをもとに分析（キーワードは案件ごと）", 8, False, GRAY, 0)], align=PP_ALIGN.CENTER)
+gy0, gy1 = BY0 + 0.2, BY0 + 4.7
+TEAL = "2EC4B6"
+ax0, ax1 = x + 0.7, x + w - 0.1          # プロット域（横）
+ay0, ay1 = gy0 + 0.2, gy1 - 0.1          # プロット域（縦）
+hline(s, ax0, ax1, ay1, GRAY, 0.75)
+vline(s, ax0, ay0, ay1, GRAY, 0.75)
+cx = (ax0 + ax1) / 2
+vline(s, cx, ay0, ay1, GRAY, 0.75)
+label(s, x - 0.1, ay0 + 0.5, 0.8, 0.5, [("UU", 7, False, GRAY, 0)], align=PP_ALIGN.CENTER)
+ticks = [("-15日", 0.0), ("-7日", 0.17), ("-3日", 0.33), ("0日(検索起点)", 0.5), ("3日", 0.67), ("7日", 0.83), ("15日", 1.0)]
+for tname, tp in ticks:
+    tx = ax0 + (ax1 - ax0) * tp
+    tb = label(s, tx - 1.1, ay1 + 0.02, 2.2, 0.4, [(tname, 6.5, False, GRAY, 0)], align=PP_ALIGN.CENTER)
+    tb.text_frame.word_wrap = False
+rng = random.Random(7)
+pts = []
+for _ in range(70):
+    # 検索起点の近くに密集、日数が離れるほどまばら。上に行くほど少ない
+    d = rng.gauss(0, 0.32)
+    d = max(-1, min(1, d))
+    u = rng.random() ** 2.2
+    if abs(d) < 0.03:
+        u = max(u, rng.random() ** 1.2)
+    pts.append((d, u))
+pts.sort(key=lambda p: -p[1])
+for i, (d, u) in enumerate(pts):
+    px = cx + d * (ax1 - ax0) / 2
+    py = ay1 - 0.15 - u * (ay1 - ay0 - 0.4)
+    shape(s, MSO_SHAPE.OVAL, px - 0.07, py - 0.07, 0.14, 0.14, None, fill=TEAL)
+    if i % 4 == 0 and px + 0.9 < ax1:
+        lw_ = 0.3 + rng.random() * 0.45
+        shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, px + 0.12, py - 0.07, lw_, 0.14, None, fill="C9CED9", adj=0.5)
+label(s, x, gy1 + 0.35, w, 0.5, [("※実際の前後検索データをもとに分析（キーワードは案件ごと）", 8, False, GRAY, 0)], align=PP_ALIGN.CENTER)
 label(s, x + 0.3, gy1 + 0.9, w - 0.6, 3.0, [(t, 10.5, False, INK, 4) for t in
                                             ("検討前に何を検索しているか", "検討後に何を検索しているか", "ユーザーの不安・比較軸・関心テーマを把握")])
 
