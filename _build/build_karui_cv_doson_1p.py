@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from pptx_parts import *  # noqa
 
 ROOT = Path(__file__).resolve().parent.parent
-OUT = ROOT / "20261007_簡易ページからサンクスLINEへの導線.pptx"
+OUT = ROOT / "20261007_簡易ページからサンクスLINEへの導線ver1.1.pptx"
 ORANGE, ORANGE_BG, ORANGE_TX = "F59B21", "FEF0DE", "C46A00"
 PALE = "E4E8F6"
 L, R = 2.2, 31.7
