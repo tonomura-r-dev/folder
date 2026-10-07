@@ -2,7 +2,7 @@
 """1枚もの「ハードルの低いCVからLINEにつなぎ、最終成果へ」（2026-10-07 殿村さん指示・新規・単体で完結）。
 土台＝業界別資料（16:9・DYMヘッダー/フッター）の1枚を残して中身を作り直す。
   広告→簡易ページ→ハードルの低いCV｜サンクスLINE誘導→LINE友だち追加→LINEでナーチャリング→購入・契約などの最終成果
-  左＝AD・獲得領域（オレンジ）／右＝LINE領域（緑）。簡易ページの下に低ハードルCVの例、ナーチャリングの下に施策例。
+  左＝AD・獲得領域（紺。2026-10-07 殿村さん指示でオレンジ→紺）／右＝LINE領域（緑）。簡易ページの下に低ハードルCVの例、ナーチャリングの下に施策例。
   下部1文「簡易ページの作成から、サンクスLINE誘導・ナーチャリングまで一連で設計」。
 想定値・CPA/CPO・機能詳細・料金・実績・効果数値・前後検索は入れない。
   python3 _build/build_karui_cv_doson_1p.py <業界別ver3.6.pptx>
@@ -38,9 +38,9 @@ set_paras(find(s, "TextBox 1"), [("ハードルの低いCVからLINEにつなぎ
 set_paras(find(s, "TextBox 2"), [("低ハードルのCVで接点をつくり、LINEで最終成果まで引き上げる", 0)])
 
 # ---- 横の導線（7ステップ）----
-steps = [(["広告"], ORANGE_BG, ORANGE_TX, 3.0),
-         (["簡易ページ"], ORANGE, WHITE, 3.8),
-         (["ハードルの", "低いCV"], ORANGE, WHITE, 3.8),
+steps = [(["広告"], PALE, NAVY, 3.0),
+         (["簡易ページ"], NAVY, WHITE, 3.8),
+         (["ハードルの", "低いCV"], NAVY, WHITE, 3.8),
          (["サンクス", "LINE誘導"], GREEN, WHITE, 3.8),
          (["LINE", "友だち追加"], GREEN_BG, GREEN_TX, 3.8),
          (["LINEで", "ナーチャリング"], GREEN_BG, GREEN_TX, 4.9),
@@ -60,8 +60,8 @@ for i, (ls, f, tc, wr) in enumerate(steps):
 # ---- 領域の帯と境目 ----
 ad_end = xs[2][0] + xs[2][1] - 0.15
 line_start = xs[3][0] + 0.25
-rect(s, L, 6.0, ad_end - L, 0.14, ORANGE)
-label(s, L, 5.25, 8.0, 0.75, [("AD・獲得領域", 13, True, ORANGE_TX, 0)], anchor=MSO_ANCHOR.MIDDLE)
+rect(s, L, 6.0, ad_end - L, 0.14, NAVY)
+label(s, L, 5.25, 8.0, 0.75, [("AD・獲得領域", 13, True, NAVY, 0)], anchor=MSO_ANCHOR.MIDDLE)
 rect(s, line_start, 6.0, R - line_start, 0.14, GREEN)
 label(s, line_start, 5.25, 8.0, 0.75, [("LINE領域", 13, True, GREEN_TX, 0)], anchor=MSO_ANCHOR.MIDDLE)
 vline(s, (ad_end + line_start) / 2, 5.3, 14.6, LGRAY, 1.25, dash=True)
@@ -76,7 +76,7 @@ def tags(i, items, line, color):
               lw=0.75, adj=0.5, margins=(0.05, 0, 0.05, 0))
 
 
-tags(1, ["簡易診断", "チェックコンテンツ", "資料DL"], ORANGE, ORANGE_TX)
+tags(1, ["簡易診断", "チェックコンテンツ", "資料DL"], NAVY, NAVY)
 tags(5, ["情報提供", "リマインド", "セグメント配信", "個別フォロー"], GREEN, GREEN_TX)
 
 # ---- 下部メッセージ（1文）----
