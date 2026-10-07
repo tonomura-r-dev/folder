@@ -62,23 +62,29 @@ for i in range(2):
     xa = BX[i] + BW[i] + 0.15
     shape(s, MSO_SHAPE.RIGHT_ARROW, xa, 9.6, GAPB - 0.3, 1.3, None, fill=NAVY, adj=0.45)
 
-# ---- ① 抽象化した検索推移（棒グラフ）----
+# ---- ① 前後検索の画面風の表（キーワードは伏せた帯で抽象化）----
 x, w = BX[0], BW[0]
-gy0, gy1 = BY0 + 0.6, BY0 + 4.6
-heights = [0.15, 0.2, 0.3, 0.45, 0.65, 0.85, 1.0, 0.8, 0.6, 0.5, 0.4, 0.3, 0.2]
-n = len(heights)
-bw_ = (w - 1.0) / n
-mid = 6
-for k, h in enumerate(heights):
-    bx = x + 0.5 + k * bw_
-    bh = (gy1 - gy0 - 0.3) * h
-    rect(s, bx + 0.08, gy1 - bh, bw_ - 0.16, bh, PALE2 if k < mid else NAVY)
-hline(s, x + 0.4, x + w - 0.4, gy1, GRAY, 0.75)
-cx = x + 0.5 + mid * bw_ + bw_ / 2
-vline(s, cx, gy0 - 0.3, gy1, NAVY, 1.0, dash=True)
-label(s, cx - 1.2, gy0 - 0.85, 2.4, 0.55, [("検索", 9.5, True, NAVY, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-label(s, x + 0.4, gy1 + 0.05, (cx - x - 0.4), 0.5, [("検索前", 9.5, False, GRAY, 0)], align=PP_ALIGN.CENTER)
-label(s, cx, gy1 + 0.05, x + w - 0.4 - cx, 0.5, [("検索後", 9.5, False, GRAY, 0)], align=PP_ALIGN.CENTER)
+gy0, gy1 = BY0 + 0.3, BY0 + 4.6
+colw = (w - 0.4) / 2
+heads = [("検索前のキーワード", PALE2, NAVY), ("検索後のキーワード", NAVY, WHITE)]
+# 伏せたキーワードの帯の長さ（左＝検索前・右＝検索後）と、検索量の帯の割合
+rows_l = [(0.62, 1.0), (0.48, 0.75), (0.70, 0.55), (0.40, 0.4), (0.55, 0.3)]
+rows_r = [(0.55, 1.0), (0.68, 0.8), (0.42, 0.6), (0.60, 0.45), (0.46, 0.3)]
+rh = (gy1 - gy0 - 0.7) / len(rows_l)
+for ci, ((hd, hf, hc), rows) in enumerate(zip(heads, (rows_l, rows_r))):
+    cx0 = x + ci * (colw + 0.4)
+    rect(s, cx0, gy0, colw, 0.7, hf, [(hd, 9, True, hc, 0)])
+    shape(s, MSO_SHAPE.RECTANGLE, cx0, gy0 + 0.7, colw, gy1 - gy0 - 0.7, None, fill=WHITE, line=LGRAY, lw=0.75)
+    for k, (kw, vol) in enumerate(rows):
+        ry = gy0 + 0.7 + k * rh
+        if k:
+            hline(s, cx0 + 0.1, cx0 + colw - 0.1, ry, OFF, 0.5)
+        label(s, cx0 + 0.05, ry, 0.5, rh, [(str(k + 1), 8, True, GRAY, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        kw_w = (colw - 2.1) * kw
+        shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, cx0 + 0.55, ry + rh * 0.3, kw_w, rh * 0.4, None, fill="D9D9D9", adj=0.5)
+        vb = 1.3 * vol
+        rect(s, cx0 + colw - 1.45, ry + rh * 0.32, vb, rh * 0.36, PALE2 if ci == 0 else NAVY)
+label(s, x, gy1 + 0.05, w, 0.5, [("※実際の前後検索データをもとに分析（キーワードは案件ごと）", 8, False, GRAY, 0)], align=PP_ALIGN.CENTER)
 label(s, x + 0.3, gy1 + 0.9, w - 0.6, 3.0, [(t, 10.5, False, INK, 4) for t in
                                             ("検討前に何を検索しているか", "検討後に何を検索しているか", "ユーザーの不安・比較軸・関心テーマを把握")])
 
