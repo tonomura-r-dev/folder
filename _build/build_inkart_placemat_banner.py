@@ -20,6 +20,8 @@ INK = (0x33, 0x33, 0x33)
 GOLD = (0xB8, 0x97, 0x5A)
 WHITE = (255, 255, 255)
 
+LEFT_W = 530  # 左の写真の幅（右の写真は残り）
+
 FONT_DIR = "/usr/share/fonts/opentype/noto/"
 SERIF_B = FONT_DIR + "NotoSerifCJK-Bold.ttc"
 SANS_B = FONT_DIR + "NotoSansCJK-Bold.ttc"
@@ -127,17 +129,20 @@ def build(left, right, out):
     draw_text_center(d, "風合い豊かな和紙も選べます", f_sub, W / 2, y, INK, 3)
     y += text_height(f_sub, "風合い豊かな和紙も選べます") + 26
 
-    # 5. 写真2枚（左＝商品、右＝和紙など）
+    # 5. 写真2枚（左＝商品、右＝和紙など）。左を広めにとる
     top, bottom = y, 814
-    paste_rounded(c, left, (40, top, 514, bottom), 8)
-    paste_rounded(c, right, (526, top, 1000, bottom), 8)
-    #   裏面印刷も可能！（左の写真の右下）
+    split = 40 + LEFT_W
+    paste_rounded(c, left, (40, top, split, bottom), 8)
+    paste_rounded(c, right, (split + 12, top, 1000, bottom), 8)
+    for bx in ((40, top, split, bottom), (split + 12, top, 1000, bottom)):
+        rrect(d, bx, 8, outline=(0xDD, 0xDD, 0xDD), width=1)
+    #   裏面印刷も可能！（左の写真の左上の角に札として重ねる）
     f_lab = font(SANS_B, 28)
     lab = "裏面印刷も可能！"
     lw = text_width(f_lab, lab, 1) / S + 36
-    lx2, ly2 = 514 - 14, bottom - 14
-    rrect(d, (lx2 - lw, ly2 - 50, lx2, ly2), 4, fill=GREEN)
-    draw_text(d, lab, f_lab, lx2 - lw + 18, ly2 - 25 - text_height(f_lab, lab) / 2, WHITE, 1)
+    lx1, ly1 = 40 + 12, top + 12
+    rrect(d, (lx1, ly1, lx1 + lw, ly1 + 50), 4, fill=GREEN)
+    draw_text(d, lab, f_lab, lx1 + 18, ly1 + 25 - text_height(f_lab, lab) / 2, WHITE, 1)
 
     # 6. 札3つ
     f_chip = font(SANS_B, 30)
