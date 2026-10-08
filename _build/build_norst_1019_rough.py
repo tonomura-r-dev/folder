@@ -2,14 +2,13 @@
 
 競合から借りた2つを入れた形：
   ①安心の事実をアイコンで横に並べる列（完全個室／男性スタッフのみ／全国に36院／カウンセリング無料）
-  ②実績を月桂樹のバッジで見せる（37年目・診療実績40万件）
+  ②実績を白い円で見せる（37年目・診療実績40万件。過去のノーストのバナーと同じ白い円＋オレンジの輪）
 必ず残す4つ（緑が主・37年目・診療実績40万件・ロゴ）は入れている。
 ラフなので、文字の位置と量を見るためのもの。仕上げはデザイナーか画像生成で行う。
 
 使い方:
   python3 _build/build_norst_1019_rough.py [出力]
 """
-import math
 import sys
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
@@ -25,8 +24,6 @@ GREEN_DARK = (0x00, 0x5E, 0x4F)
 TEAL = (0x00, 0xA9, 0x8F)        # 明るい緑（HPのボタン）
 ORANGE = (0xEE, 0x78, 0x00)      # 強調のオレンジ
 PALE = (0xE8, 0xF5, 0xF3)        # 淡水色
-GOLD = (0xC9, 0xA2, 0x4A)
-GOLD_DARK = (0xA0, 0x7E, 0x2E)
 INK = (0x33, 0x33, 0x33)
 GRAY = (0x66, 0x66, 0x66)
 WHITE = (255, 255, 255)
@@ -74,46 +71,22 @@ def ellipse(d, box, fill=None, outline=None, width=1):
     d.ellipse((x1 * S, y1 * S, x2 * S, y2 * S), fill=fill, outline=outline, width=int(width * S))
 
 
-def leaf(canvas, cx, cy, length, angle_deg, color):
-    """細長い葉を1枚、中心(cx,cy)・向き angle で置く。"""
-    w, h = int(length * S), int(length * 0.42 * S)
-    im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    ImageDraw.Draw(im).ellipse((0, 0, w - 1, h - 1), fill=color)
-    im = im.rotate(angle_deg, resample=Image.BICUBIC, expand=True)
-    canvas.paste(im, (int(cx * S - im.width / 2), int(cy * S - im.height / 2)), im)
-
-
-def laurel_badge(c, d, cx, cy, r):
-    """月桂樹のバッジ：白い円の中に 37年目／診療実績40万件。周りに金の葉。"""
-    # 葉（左右に1本ずつの枝）
-    for side in (-1, 1):
-        n = 9
-        for i in range(n):
-            t = i / (n - 1)
-            a = math.radians(118 + t * 110)          # 左の枝は 118°→228°（下から上へ）
-            if side == 1:
-                a = math.pi - a
-            lx = cx + (r + 16) * math.cos(a)
-            ly = cy + (r + 16) * math.sin(a)
-            tang = math.degrees(math.atan2(math.cos(a), -math.sin(a))) * -1
-            for k, (dr, col) in enumerate(((10, GOLD), (-10, GOLD_DARK))):
-                ox = lx + dr * math.cos(a)
-                oy = ly + dr * math.sin(a)
-                leaf(c, ox, oy, 30 - t * 6, tang + (25 if k == 0 else -25) * side, col)
-    ellipse(d, (cx - r, cy - r, cx + r, cy + r), fill=WHITE, outline=GOLD, width=4)
+def jisseki_badge(c, d, cx, cy, r):
+    """実績の円：白い円に太いオレンジの輪。37年目／診療実績40万件（過去のノーストのバナーの円と同じ形）。"""
+    ellipse(d, (cx - r, cy - r, cx + r, cy + r), fill=WHITE, outline=ORANGE, width=8)
     f1, f1s = font(52), font(26)
     f2, f3 = font(24), font(42)
     # 37年目
     w = tw(f1, "37") + tw(f1s, "年目") + 4
     x = cx - w / 2
-    text(d, "37", f1, x, cy - 66, ORANGE)
-    text(d, "年目", f1s, x + tw(f1, "37") + 4, cy - 66 + th(f1, "37") - th(f1s, "年目"), GREEN)
-    d.line(((cx - r + 30) * S, (cy - 2) * S, (cx + r - 30) * S, (cy - 2) * S), fill=GOLD, width=2 * S)
+    text(d, "37", f1, x, cy - 64, ORANGE)
+    text(d, "年目", f1s, x + tw(f1, "37") + 4, cy - 64 + th(f1, "37") - th(f1s, "年目"), GREEN)
+    d.line(((cx - r + 30) * S, (cy - 2) * S, (cx + r - 30) * S, (cy - 2) * S), fill=GREEN, width=2 * S)
     text_c(d, "診療実績", f2, cx, cy + 10, GREEN)
     w = tw(f3, "40") + tw(f2, "万件") + 4
     x = cx - w / 2
-    text(d, "40", f3, x, cy + 42, ORANGE)
-    text(d, "万件", f2, x + tw(f3, "40") + 4, cy + 42 + th(f3, "40") - th(f2, "万件"), GREEN)
+    text(d, "40", f3, x, cy + 40, ORANGE)
+    text(d, "万件", f2, x + tw(f3, "40") + 4, cy + 40 + th(f3, "40") - th(f2, "万件"), GREEN)
 
 
 def icon_door(d, cx, cy):
@@ -153,8 +126,8 @@ def build(out):
     logo = white_logo(230 * S)
     c.paste(logo, (36 * S, 30 * S), logo)
 
-    # 月桂樹のバッジ（右上）
-    laurel_badge(c, d, 905, 128, 88)
+    # 実績の円（右上）
+    jisseki_badge(c, d, 905, 128, 88)
 
     # 心の声（吹き出し）
     f_v = font(34)

@@ -1,6 +1,6 @@
 """ノーストのバナーのラフ 3パターン（1040×1040）と、3つを並べた見比べ用の1枚。
 
-A＝安心の事実をアイコンで並べる＋実績のバッジ（10/19 No.7 のラフ。build_norst_1019_rough.py）
+A＝安心の事実をアイコンで並べる＋実績の円（10/19 No.7 のラフ。build_norst_1019_rough.py）
 B＝2つを左右に並べて比べる形（ひとりで悩み続ける／無料カウンセリングで確かめる）
 C＝本人の気持ちだけで押す一言（今年のうちに、自分のために一歩。）
 
@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import build_norst_1019_rough as A  # noqa: E402
 from build_norst_1019_rough import (  # noqa: E402
     S, W, H, GREEN, GREEN_DARK, TEAL, ORANGE, PALE, INK, GRAY, WHITE,
-    font, tw, th, text, text_c, rrect, ellipse, laurel_badge, white_logo,
+    font, tw, th, text, text_c, rrect, ellipse, jisseki_badge, white_logo,
     icon_door, icon_person, icon_pin,
 )
 
@@ -53,11 +53,11 @@ def footer(d):
 
 
 def head(c, d, panel_bottom):
-    """深緑の面＋ロゴ（左上）＋実績のバッジ（右上）。"""
+    """深緑の面＋ロゴ（左上）＋実績の円（右上）。"""
     d.rectangle((0, 0, W * S, panel_bottom * S), fill=GREEN)
     logo = white_logo(230 * S)
     c.paste(logo, (36 * S, 30 * S), logo)
-    laurel_badge(c, d, 905, 128, 88)
+    jisseki_badge(c, d, 905, 128, 88)
 
 
 def check(d, x, y, col):
