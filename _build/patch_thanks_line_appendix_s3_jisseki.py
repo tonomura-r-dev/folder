@@ -35,7 +35,7 @@ set_paras(find(s, "TextBox 2"), [("LINE活用の参考事例と、サンクスLI
 TY, TH = 4.3, 3.85
 shape(s, MSO_SHAPE.RECTANGLE, L, TY, CW, TH, None, fill=WHITE, line=LGRAY, lw=1.0)
 label(s, L + 0.35, TY + 1.2, 8.7, 0.7, [("クリニック｜LINE活用による来院率改善", 12, True, NAVY, 0)], anchor=MSO_ANCHOR.MIDDLE)
-shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, L + 0.45, TY + 1.95, 4.3, 0.55, [("LINEヤフーの参考事例", 8.5, True, GRAY, 0)],
+shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, L + 0.45, TY + 1.95, 4.3, 0.55, [("弊社運用の実績", 8.5, True, GRAY, 0)],
       fill=WHITE, line=LGRAY, lw=0.75, adj=0.5, margins=(0.05, 0, 0.05, 0))
 # 流れ（3ステップ）
 fx, bw, gap, bh = 10.7, 2.75, 0.4, 1.15
@@ -107,7 +107,7 @@ hline(s, cx0 + 0.2, R - 0.1, base, GRAY, 0.75)
 BY = 15.55
 rect(s, L, BY, CW, 0.95, NAVY, [("サンクスLINE誘導ツールの導入後、友だち増加数が導入前比137.3%、前年比127.5%に改善。", 12, True, WHITE, 0)])
 label(s, L, 16.65, CW, 0.95,
-      [("※上段はLINEヤフーの参考事例（LINE活用による来院率の改善例）。サンクスLINE誘導ツールの実績とは別。", 8, False, GRAY, 1),
+      [("※上段は弊社運用の実績（美容クリニック・LINE活用による来院率の改善）。サンクスLINE誘導ツールの実績とは別。", 8, False, GRAY, 1),
        ("※下段はサンクスLINE誘導ツール導入前後の友だち増加数（人材業界）。", 8, False, GRAY, 0)])
 
 prs.save(str(OUT))
