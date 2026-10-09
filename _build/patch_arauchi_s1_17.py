@@ -142,6 +142,42 @@ def set_color(shape, para_idx, hex_):
             rpr.insert(0, fill)
 
 
+def set_spc_before(shape, para_idx, pts100):
+    """段落 para_idx の前の間隔を pts100（1/100pt）にする"""
+    from lxml import etree
+    p_el = shape.text_frame._txBody.findall(qn("a:p"))[para_idx]
+    ppr = p_el.find(qn("a:pPr"))
+    if ppr is None:
+        ppr = etree.Element(qn("a:pPr"))
+        p_el.insert(0, ppr)
+    for old in ppr.findall(qn("a:spcBef")):
+        ppr.remove(old)
+    sb = etree.Element(qn("a:spcBef"))
+    etree.SubElement(sb, qn("a:spcPts"), val=str(pts100))
+    ln = ppr.find(qn("a:lnSpc"))
+    (ln.addnext(sb) if ln is not None else ppr.insert(0, sb))
+
+
+def set_line_spacing(shape, pct):
+    """全段落の行間を pct（%）にする"""
+    from lxml import etree
+    for p_el in shape.text_frame._txBody.findall(qn("a:p")):
+        ppr = p_el.find(qn("a:pPr"))
+        if ppr is None:
+            ppr = etree.Element(qn("a:pPr"))
+            p_el.insert(0, ppr)
+        for old in ppr.findall(qn("a:lnSpc")):
+            ppr.remove(old)
+        ln = etree.Element(qn("a:lnSpc"))
+        etree.SubElement(ln, qn("a:spcPct"), val=str(int(pct * 1000)))
+        ppr.insert(0, ln)
+
+
+def set_size_all(shape, pt):
+    for rpr in list(shape.text_frame._txBody.iter(qn("a:rPr"))) + list(shape.text_frame._txBody.iter(qn("a:endParaRPr"))):
+        rpr.set("sz", str(int(pt * 100)))
+
+
 def no_side_inset(shape):
     """左右の余白を0にする（文字を小さくせずに1行に収めるため）"""
     bp = shape.text_frame._txBody.find(qn("a:bodyPr"))
@@ -193,6 +229,11 @@ def s2():
     ])
     set_paras(b[53], [[("リッチメニュー未設置・あいさつにボタンなし。改善の余地あり。", None)]])
     set_paras(b[189], [[("有（サイト・動画）", None)]])   # プロフィールにサイト・紹介動画へのリンクあり（S4と揃える）
+    # 値の文字を10ptにそろえる（WEB側は10pt、LINE側は9pt・問い合わせは8ptだった）
+    for k in (120, 171, 173, 175, 179, 181, 183, 185, 187, 189):
+        set_size_all(b[k], 10)
+        if b[k].height < Inches(0.28):
+            b[k].height = Inches(0.28)
 
 
 # ---------------------------------------------------------------- S3 想定動線（カスタマージャーニー）
@@ -216,6 +257,11 @@ def s3():
     delete(b[44])
     delete(b[27])
     b[33].top = Inches(4.635) - b[33].height // 2      # 「電話／WEB」を②からの線の上へ
+    S[2].shapes._spTree.append(b[33]._element)         # 線より手前に出す（線が文字の上を通らないように）
+    for k in (33, 55):                                   # 薄い青の地に白8ptでは読めないので、9pt・紺に
+        set_size_all(b[k], 9)
+        for i in range(len(b[k].text_frame.paragraphs)):
+            set_color(b[k], i, "1F285A")
     set_paras(b[55], ["LINE"])
     # ②→③の縦の矢印（元の点線の矢印を複製して、まっすぐ下向きにする）
     arrow = copy.deepcopy(b[22]._element)
@@ -281,8 +327,8 @@ def market(slide, summary, cards, sources):
     src = clone_into(slide, S11_ORIG[15])
     src.top, src.height = Inches(5.42), Inches(1.33)
     lines = []
-    for name, url in sources:
-        lines += [[(name, False)], [("　" + url, False)]]
+    for name, url, two_lines in sources:     # 長いURLは名前と別の行に（URLの途中で折り返さないように）
+        lines += [[(name, False)], [("　" + url, False)]] if two_lines else [[(name + "　" + url, False)]]
     set_paras(src, [[("出典（2026年10月9日確認）", True)]] + lines)
     ps = src.text_frame._txBody.findall(qn("a:p"))
     for i, p_el in enumerate(ps):
@@ -302,9 +348,11 @@ def s5():
             ]),
             ("03", "問い合わせ先は物件数で選ぶ", [
                 "・問い合わせる不動産会社を選ぶ基準は「取り扱っている物件数が多い」が1位（経験者26.6％・検討者47.7％）",
+                "・100円賃貸は、お客様が見つけた物件の仲介に対応（100円賃貸が対応できる物件に限ります）",
             ])],
-           [("・アットホーム「2025年の賃貸市場における4大ニュース」", "https://www.athome.co.jp/corporate/news/data/questionnaire/yondai-news-202512/"),
-            ("・アットホーム「オンラインでの住まい探しに関する調査 2025 賃貸編」", "https://www.athome.co.jp/corporate/news/data/questionnaire/online-chintai-202510/")])
+           [("・アットホーム「2025年の賃貸市場における4大ニュース」", "https://www.athome.co.jp/corporate/news/data/questionnaire/yondai-news-202512/", True),
+            ("・アットホーム「オンラインでの住まい探しに関する調査 2025 賃貸編」", "https://www.athome.co.jp/corporate/news/data/questionnaire/online-chintai-202510/", True),
+            ("・100円賃貸", "https://100en.net/", False)])
 
 
 def s6():
@@ -315,13 +363,15 @@ def s6():
                "・内見予約のやり取りの希望は、電話33.4％に対し、メール・SMSが52.6％",
            ]),
             ("02", "手続きもオンラインで", [
-                "・オンラインで契約したい検討者は36.4％、重要事項説明を受けたい検討者は29.6％",
+                "・オンラインで契約したい検討者は36.4％、オンラインで重要事項説明を受けたい検討者は29.6％",
+                "・100円賃貸は、テレビ電話・郵送・ネットでのお申込み・ご契約に対応",
             ]),
             ("03", "URLを送るだけの競合も", [
                 "・タダスム：見つけた物件のURLをLINEで送ると、空室確認・内見調整。仲介手数料は「0円or最大50%」",
             ])],
-           [("・アットホーム「オンラインでの住まい探しに関する調査 2025 賃貸編」", "https://www.athome.co.jp/corporate/news/data/questionnaire/online-chintai-202510/"),
-            ("・タダスム", "https://tadasumu.com/　https://tadasumu.com/navi/tadasumu-toha/")])
+           [("・アットホーム「オンラインでの住まい探しに関する調査 2025 賃貸編」", "https://www.athome.co.jp/corporate/news/data/questionnaire/online-chintai-202510/", True),
+            ("・タダスム", "https://tadasumu.com/　https://tadasumu.com/navi/tadasumu-toha/", False),
+            ("・100円賃貸", "https://100en.net/", False)])
 
 
 # ---------------------------------------------------------------- S7 LINE運用ツールの選定
@@ -352,6 +402,7 @@ def s7():
         set_color(b[13], i, "333333")
     for i in (0, 2, 4):
         set_color(b[13], i, "00B050")
+    set_spc_before(b[9], 2, 600)
     for pl, pr in zip(b[9].text_frame._txBody.findall(qn("a:p")), b[13].text_frame._txBody.findall(qn("a:p"))):
         ppl, ppr = pl.find(qn("a:pPr")), pr.find(qn("a:pPr"))
         if ppl is not None:
@@ -382,7 +433,16 @@ def s8():
         delete(b[sid])
     # 初期設計項目
     set_paras(b[35], ["・プロフィール", "・リッチメニュー", "・あいさつ", "・応答メッセージ",
-                      "・チャットタグ", "・計測タグ", "・離脱防止（別途）", "・サイトのボタン"], size=8)
+                      "・チャットタグ", "・計測タグ", "・離脱防止（別途）", "・サイトのボタン"], size=9)
+    set_line_spacing(b[35], 90)
+    b[35].height = Inches(1.25)
+    for k in (34, 25):
+        set_size_all(b[k], 9)
+        bp = b[k].text_frame._txBody.find(qn("a:bodyPr"))
+        bp.set("tIns", "0")
+        bp.set("bIns", "0")
+        b[k].height = Inches(0.22)
+    b[25].width = Inches(1.75)
     set_paras(b[31], [[("企画配信（月4本）", None)]])
     set_paras(b[32], [[("ステップ配信（全10通・14日）", None)]])
     set_paras(b[33], [[("リサーチ", None)]])
@@ -416,7 +476,7 @@ def s9():
     b = ids(S[8])
     set_paras(b[68], [
         [("新しい友だちには物件の送り方を、今の友だちには配信とリッチメニューで問い合わせのきっかけを届けます。", None)],
-        [("「どの物件が対象か」が分からないこと", True), ("がハードルのため、100円チェッカーを前面に出します。", False)],
+        [("「どの物件が対象か」が分からないこと", True), ("がハードルになっていると考え、100円チェッカーを前面に出します。", False)],
     ])
     # 1・2行目：友だち追加の2つの導線
     set_paras(b[11], ["100円賃貸のサイト"])
@@ -429,7 +489,7 @@ def s9():
     set_paras(b[38], ["個別チャット", "→ 空室確認・内見の手配"])
     # 3行目：今の友だち・新しい友だちへの配信
     set_paras(b[17], ["今の友だち（1,241人）", "新しい友だち"])
-    set_paras(b[48], ["企画配信（月4本）", "→ 問い合わせ済みは除く"])
+    set_paras(b[48], ["企画配信（月4本）", "→ 送り方・費用など"])
     set_paras(b[49], ["リッチメニュー", "→ 100円チェッカーなど"])
     # 4〜7行目：問い合わせを後押しする対応
     set_paras(b[19], ["問い合わせた方"])
@@ -446,12 +506,15 @@ def s9():
     set_paras(b[58], ["→ 物件の送信"])
     set_paras(b[28], ["他社で内見済みの方"])
     set_paras(b[30], ["企画配信"])
-    set_paras(b[60], ["内見済みでも相談可", "（できない場合あり）"])
+    set_paras(b[60], ["内見済みでも相談可", "（お受けできない場合も）"])
     set_paras(b[61], ["→ 物件の送信"])
-    # 表の中の文字は原本の8ptでは小さいので9.5ptに上げる（文言は1行12字以内にしてある）
+    # 表の中の文字は原本の8pt・薄いグレーでは読みにくいので、10pt・濃いグレー・行間100%・上下中央に（文言は1行12字以内）
     for k in (34, 35, 37, 38, 48, 49, 51, 52, 54, 55, 57, 58, 60, 61):
-        for rpr in list(b[k].text_frame._txBody.iter(qn("a:rPr"))) + list(b[k].text_frame._txBody.iter(qn("a:endParaRPr"))):
-            rpr.set("sz", "950")
+        set_size_all(b[k], 10)
+        for i in range(len(b[k].text_frame.paragraphs)):
+            set_color(b[k], i, "595959")
+        set_line_spacing(b[k], 100)
+        b[k].text_frame._txBody.find(qn("a:bodyPr")).set("anchor", "ctr")
     # 右の数字（試算）。25→52％＝SIMの問い合わせ①÷新しい友だち（1か月目 6÷22.4、6か月目 12÷23.0）
     # 0.3→1.2％＝SIMのCVR（問い合わせ②÷クリック。1か月目0.34％、6か月目1.20％）
     set_paras(b[40], [[("問い合わせ率", None)], [("※試算の想定", None)]])
@@ -479,7 +542,7 @@ def s11():
         "・友だちは1,241人で、増やす仕組みが少ない",
     ])
     set_paras(b[21], [
-        "・「どの物件が対象か」「本当に100円になるか」が分からないと、物件を送るのをためらう",
+        "・「どの物件が対象か」「本当に100円になるか」が分からないと、物件を送るのをためらう可能性がある",
         "・内見予約のやり取りは、電話（33.4％）よりメール・SMS（52.6％）を希望する方が多い（出典は6ページ）",
     ])
     set_paras(b[27], [
@@ -497,7 +560,7 @@ def s11():
 def s12():
     b = ids(S[11])
     set_paras(b[27], [[("LINE経由の物件問い合わせを増やす", None)]])
-    set_paras(b[34], [[("問い合わせ　1か月目 月8件 → 6か月目 月18件（試算）", None)]], size=20)
+    set_paras(b[34], [[("LINE経由の問い合わせ 1か月目 月8件→6か月目 月18件（試算）", None)]], size=20)
     set_paras(b[2], [[("離脱防止ポップアップ", None)]])
     set_paras(b[5], [[("あいさつメッセージの改善", None)]])
     set_paras(b[6], [[("リッチメニュー・自動応答", None)]])
@@ -541,7 +604,7 @@ def s13():
     note.left, note.top, note.width, note.height = Inches(0.29), Inches(6.58), Inches(10.26), Inches(0.5)
     set_paras(note, [
         "※初期＝コンサル20万円＋離脱防止1.5万円／月額＝コンサル10万円＋離脱防止3万円＋LINE公式アカウント0.5万円",
-        "※6か月後は6か月目の月間の試算。問い合わせ①＝友だち追加直後の物件の問い合わせ、②＝配信・リッチメニューから",
+        "※6か月後は6か月目の月間の試算。問い合わせ①＝友だち追加直後の物件の問い合わせ（送る方の割合は仮）、②＝配信・リッチメニューから",
     ], size=9, align="l")
 
 
@@ -565,8 +628,8 @@ def s14():
     set_paras(b[61], [[("9〜14日後", None)]])
     for k in (20, 48, 61):
         no_side_inset(b[k])
-    set_paras(b[12], [[("ねらい", None)]])
-    set_paras(b[22], [[("ねらい", None)]])
+    set_paras(b[12], [[("ねらい", None)]], size=9.5)
+    set_paras(b[22], [[("ねらい", None)]], size=9.5)
     step = (
         (24, "新しい友だち", 32, "追加後に自動配信", 36, ["仲介手数料のしくみ", "100円チェッカー"], 40, "物件URLの送信"),
         (49, "新しい友だち", 52, "追加後に自動配信", 55, ["ポータルでの探し方", "内見済みでも相談可"], 57, "比較中の方の後押し"),
