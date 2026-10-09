@@ -12,7 +12,9 @@ from pptx.oxml.ns import qn
 from pptx.util import Cm, Pt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pptx_parts import INK, NAVY, GRAY, find, keep_header_only, rich, set_paras, style_run  # noqa: E402
+from pptx.enum.shapes import MSO_SHAPE  # noqa: E402
+from pptx_parts import (GRAY, INK, NAVY, WHITE, arrow_line, find, keep_header_only, rect, rich,  # noqa: E402
+                        set_paras, shape)
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = Path(sys.argv[1])
@@ -32,7 +34,7 @@ SLIDES = [
 ]
 
 X, W = 1.79, 23.97          # 本文の左端・幅（リード行と同じ左端）
-Y0 = 4.8                    # 本文の開始位置（区切り線 3.86 の下）
+Y0 = 4.5                    # 本文の開始位置（区切り線 3.86 の下）
 B = 16                      # 本文の文字サイズ
 
 
@@ -72,26 +74,98 @@ for s, (title, lead) in zip(prs.slides, SLIDES):
         r.set("sz", "1600")
 
 s1, s2, s3, s4, s5 = prs.slides
+S = 13  # 本文の文字サイズ
 
-# 1. 課題（リードは1行にそろえ、数値は本文へ）
-y = table_rows(s1, Y0, [("フリークエンシー", "5.24"), ("CPA", "15,000円以上")])
-text(s1, y + 0.6, [[("オーディエンスの少ないエリアに予算が多い", B, False, INK)]])
-table_rows(s1, y + 1.8, [("三鷹", "10,700〜12,600"), ("高松", "上限25,000"), ("日向", "4,400")])
+
+def head(s, y, txt):
+    """見出し（紺の縦棒＋紺の太字）"""
+    rect(s, X, y + 0.14, 0.15, 0.5, NAVY)
+    text(s, y, [[(txt, 13.5, True, NAVY)]], h=0.8, x=X + 0.35, w=W - 0.35)
+    return y + 0.85
+
+
+def rows(s, y, items, kw=4.6, h=0.72, size=S):
+    for i, it in enumerate(items):
+        k, v = it[0], it[1]
+        text(s, y + i * h, [[(k, size, True, INK)]], h=h, x=X + 0.35, w=kw)
+        text(s, y + i * h, [[(v, size, False, INK)]], h=h, x=X + 0.35 + kw, w=W - 0.35 - kw)
+    return y + len(items) * h
+
+
+def rows3(s, y, items, w1=3.2, w2=5.6, h=0.72, size=S):
+    for i, (a, b, c) in enumerate(items):
+        text(s, y + i * h, [[(a, size, True, INK)]], h=h, x=X + 0.35, w=w1)
+        text(s, y + i * h, [[(b, size, False, INK)]], h=h, x=X + 0.35 + w1, w=w2)
+        text(s, y + i * h, [[(c, 12, False, GRAY)]], h=h, x=X + 0.35 + w1 + w2, w=W - 0.35 - w1 - w2)
+    return y + len(items) * h
+
+
+def flow(s, y, items, h=1.35, gap=0.75, size=11.5):
+    """横一列の流れ図。最後の箱だけ紺の塗り"""
+    x0, ww = X + 0.35, W - 0.35
+    bw = (ww - gap * (len(items) - 1)) / len(items)
+    for i, t in enumerate(items):
+        last = i == len(items) - 1
+        x = x0 + i * (bw + gap)
+        paras = [(ln, size, last, WHITE if last else INK, 0) for ln in t.split("\n")]
+        shape(s, MSO_SHAPE.RECTANGLE, x, y, bw, h, paras, fill=NAVY if last else WHITE, line=NAVY, lw=1.0,
+              margins=(0.1, 0.05, 0.1, 0.05))
+        if not last:
+            arrow_line(s, x + bw + 0.1, y + h / 2, x + bw + gap - 0.1, y + h / 2, NAVY, w=1.5)
+    return y + h
+
+
+# 1. 課題
+y = head(s1, Y0, "現状の数値")
+y = rows(s1, y, [("フリークエンシー", "5.24（同じ方が月に5回以上、同じ広告を見ている）"),
+                 ("CPA", "15,000円以上（予約1件あたりの広告費）")])
+y = head(s1, y + 0.5, "なぜ効率が落ちるのか")
+y = flow(s1, y + 0.1, ["オーディエンスが少ない", "予算を使い切るため、\n同じ方に繰り返し表示", "予約は増えず、\nCPAだけ上がる"])
+y = head(s1, y + 0.6, "オーディエンスの少ないエリア（例）")
+rows(s1, y, [("三鷹", "10,700〜12,600"), ("高松", "上限25,000"), ("日向", "4,400")])
 
 # 2. 方針
-table_rows(s2, Y0, [("例", "銀座店 30万円 → 20万円"), ("使い道", "LINE広告（通常）")])
+y = head(s2, Y0, "見直しの基準")
+y = rows(s2, y, [("削る順番", "オーディエンス数に対して予算が多いエリアから削る"),
+                 ("例", "銀座店 30万円 → 20万円")])
+y = head(s2, y + 0.5, "予算の流れ")
+y = flow(s2, y + 0.1, ["Meta広告\n（各エリアの予算）", "見直しで浮いた予算\n（全体で10〜30万円）", "LINE広告（通常）\n20万円"])
+y = head(s2, y + 0.6, "費用について")
+rows(s2, y, [("広告費の総額", "変わらない（今のMeta広告の予算の中で振り替える）"),
+             ("LINE広告", "20万円は全店舗の合計")])
 
 # 3. LINE広告（通常）
-table_rows(s3, Y0, [("予約", "仮に予算20万円 → クリック2,000 → 予約20件"), ("予約1件あたり", "10,000円")])
+y = head(s3, Y0, "LINEの特徴")
+y = rows(s3, y, [("利用者数", "国内の月間利用者数 1億人以上（2025年12月時点・LINEヤフー公表）"),
+                 ("届く方", "Instagram・Facebookをあまり使わない方にも届く"),
+                 ("絞り込み", "地域・年齢・性別で配信先を絞れる")])
+y = head(s3, y + 0.5, "仮の数値（月）")
+flow(s3, y + 0.1, ["予算\n20万円", "クリック 2,000\n（CPC 100円）", "予約 20件\n（予約率 1.0%）", "予約1件あたり\n10,000円"])
 
 # 4. サンクスLINE
-table_rows(s4, Y0, [("来場率", "仮に 50% → 70%（申込100件あたり 来場50 → 70人）"),
-                    ("費用", "初期15万円・月額3万円〜")])
+y = head(s4, Y0, "流れ")
+y = flow(s4, y + 0.1, ["申込フォーム", "申込完了画面", "LINE\n友だち追加", "前日・当日の\nお知らせ", "来場"],
+         h=1.5, gap=0.6)
+y = head(s4, y + 0.6, "仮の数値（申込100件あたり）")
+y = rows(s4, y, [("LINE友だち", "30人（友だち登録率 30%）"),
+                 ("来場率", "LINEでつながった方 50% → 70%"),
+                 ("来場", "50人 → 56人")])
+y = head(s4, y + 0.5, "実績・費用")
+rows(s4, y, [("実績", "弊社運用の美容クリニックで、予約後の来院率 40〜50%改善"),
+             ("費用", "初期15万円・月額3万円〜")])
 
 # 5. 配信と仮の数値
-y = table_rows(s5, Y0, [("登録直後", "概要・予約"), ("2週間前", "見どころ"), ("3日前", "リマインド・アクセス"),
-                        ("当日朝", "開催のお知らせ"), ("終了後", "お礼・次回案内")])
-table_rows(s5, y + 0.6, [("予約", "仮に 26件／月"), ("予約1件あたり", "8,846円（現状：15,000円以上）")])
+y = head(s5, Y0, "配信のタイミングと内容")
+y = rows3(s5, y, [("登録直後", "概要・予約", "「〇月〇日から〇〇で展示会を開催します。ご予約はこちら」"),
+                  ("2週間前", "見どころ", "「今回の見どころをご紹介します」"),
+                  ("3日前", "リマインド・アクセス", "「ご来場まであと3日です。会場へのアクセスはこちら」"),
+                  ("当日朝", "開催のお知らせ", "「本日開催です。お気をつけてお越しください」"),
+                  ("終了後", "お礼・次回案内", "「ご来場ありがとうございました。次回もご案内します」")])
+y = head(s5, y + 0.5, "仮の数値（月）")
+y = rows(s5, y, [("予約", "26件（LINE広告 20件＋今の友だちへの配信 6件）"),
+                 ("費用", "23万円（LINE広告 20万円＋サンクスLINE 3万円）"),
+                 ("予約1件あたり", "8,846円（現状：15,000円以上）")])
+text(s5, y + 0.2, [[("※今の友だちへの配信は、仮に友だち3,000人・クリック率20%・予約率1.0%で計算", 10.5, False, GRAY)]], h=0.6)
 
 # 字体をメイリオに統一（latin → ea → cs の順）
 AFTER = {qn(x) for x in ("a:sym", "a:hlinkClick", "a:hlinkMouseOver", "a:rtl", "a:extLst")}
