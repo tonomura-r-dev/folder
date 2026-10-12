@@ -46,3 +46,4 @@ teian_paste*.tsv
 attack_list*.xlsx
 attack_list*.tsv
 契約形態マスタ.tsv
+_qa_tmp/
