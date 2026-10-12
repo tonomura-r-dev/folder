@@ -29,12 +29,12 @@ def market_cards(slide):
         move(sh[num_id], y=1.66, h=0.62)
         move(sh[title_id], y=2.28, h=0.52)
         set_size_all(sh[title_id], CARD_TITLE_PT)
-        move(sh[body_id], y=2.80, h=2.48)
+        move(sh[body_id], y=2.80, h=2.46)
         set_size_all(sh[body_id], CARD_BODY_PT)
 
     # 出典（見出し11pt・各行10pt）
     src = sh[42]
-    move(src, y=5.42, h=1.64)
+    move(src, y=5.40, h=1.48)
     tb = txbody(src)
     for i, p_el in enumerate(tb.findall(qn("a:p"))):
         pt = SRC_HEAD_PT if i == 0 else SRC_LINE_PT

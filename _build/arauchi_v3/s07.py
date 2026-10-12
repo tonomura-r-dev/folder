@@ -21,6 +21,8 @@ def apply(ctx):
     for bid in (9, 13):
         move(sh[bid], y=1.904, h=3.90)
         set_size_all(sh[bid], 14)
+        # 左右の余白を 0.194→0.14in に詰め、「…工数がかかる」の「る」だけが次の行に落ちないようにする
+        set_insets(sh[bid], l=0.14, r=0.14)
 
     # 結論
     con = sh[15]

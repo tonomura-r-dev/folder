@@ -69,7 +69,7 @@ def apply(ctx):
 
     # 6か月後：ラベル（緑）と数字（赤）
     r_lab_x, r_lab_w = 7.45, 1.56
-    r_val_x, r_val_w = 9.05, 1.45
+    r_val_x, r_val_w = 9.03, 1.45
     r_pitch, r_h = 0.52, 0.44
     for i, (lid, vid) in enumerate(RESULT_ROWS):
         y = AMT_Y + i * r_pitch
@@ -84,7 +84,8 @@ def apply(ctx):
     tot = sh[31]
     set_size_all(tot, 14)
     set_autofit_none(tot)
-    move(tot, x=r_val_x + r_val_w / 2 - 0.95, y=AMT_Y + 4 * r_pitch, w=1.9, h=0.40)
+    move(tot, x=r_val_x + r_val_w / 2 - 1.05, y=AMT_Y + 4 * r_pitch, w=2.1, h=0.40)
+    set_insets(tot, l=0.02, r=0.02)
     set_anchor(tot, "ctr")
 
     # 注記（9→10pt）
