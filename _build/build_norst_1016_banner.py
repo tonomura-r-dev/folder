@@ -19,6 +19,16 @@ from build_norst_1019_rough import (  # noqa: E402
 )
 from build_norst_rough_patterns import cta, footer  # noqa: E402
 
+
+def icon_calendar_check(d, cx, cy):
+    """カレンダーにチェック（その日に決めなくても大丈夫）。"""
+    rrect(d, (cx - 26, cy - 22, cx + 26, cy + 26), 5, outline=WHITE, width=4)
+    d.rectangle(((cx - 26) * S, (cy - 22) * S, (cx + 26) * S, (cy - 10) * S), fill=WHITE)
+    for dx in (-13, 13):
+        d.line(((cx + dx) * S, (cy - 30) * S, (cx + dx) * S, (cy - 16) * S), fill=WHITE, width=5 * S)
+    d.line([((cx - 12) * S, (cy + 7) * S), ((cx - 3) * S, (cy + 16) * S), ((cx + 14) * S, (cy - 2) * S)],
+           fill=WHITE, width=5 * S, joint="curve")
+
 PANEL_BOTTOM = 516
 
 
@@ -63,44 +73,47 @@ def build(out):
     text_c(d, s3, f_2, W / 2 + 4, 390 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
     text_c(d, s3, f_2, W / 2, 390, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
 
-    # 札4つ（ラフAと同じ）
+    # 札4つ（2026-10-13 殿村さん「完全個室は省いたほうが良い」→ その日に決めなくても大丈夫 に差し替え）
     cards = [
-        (icon_door, ["完全個室"], [None]),
         (icon_person, ["男性スタッフ", "のみ"], [None, ORANGE]),
         (icon_pin, ["全国に", "36院"], [None, ORANGE]),
         (icon_bubble, ["カウンセリング", "無料"], [None, ORANGE]),
+        (icon_calendar_check, ["その日に決めなくても", "大丈夫"], ["small", ORANGE]),
     ]
-    cw, gap, top, bot = 226, 12, 532, 708
+    cw, gap, top, bot = 226, 12, 526, 694
     x0 = (W - (cw * 4 + gap * 3)) / 2
-    f_c, f_cb = font(27), font(34)
+    f_c, f_cb, f_cs = font(27), font(34), font(21)
     for i, (icon, lines, colors) in enumerate(cards):
         x1 = x0 + i * (cw + gap)
         rrect(d, (x1, top, x1 + cw, bot), 14, fill=WHITE, outline=TEAL, width=3)
-        icx, icy = x1 + cw / 2, top + 54
-        ellipse(d, (icx - 42, icy - 42, icx + 42, icy + 42), fill=GREEN)
+        icx, icy = x1 + cw / 2, top + 46
+        ellipse(d, (icx - 37, icy - 37, icx + 37, icy + 37), fill=GREEN)
         icon(d, icx, icy)
-        y = top + 110 if len(lines) == 2 else top + 124
-        for s, col in zip(lines, colors):
-            f = f_cb if col else f_c
-            text_c(d, s, f, icx, y, col or INK)
-            y += th(f, s) + 8
+        y = top + 92
+        for s_, col in zip(lines, colors):
+            f = f_cs if col == "small" else (f_cb if col else f_c)
+            text_c(d, s_, f, icx, y + (6 if col == "small" else 0), INK if col in (None, "small") else col)
+            y += th(f_c, s_) + 7
 
-    # 当日の流れ（ラフAと同じ）
-    fy1, fy2 = 724, 794
-    rrect(d, (40, fy1, 1000, fy2), 36, fill=WHITE, outline=GREEN, width=2)
+    # 当日の流れ（②の「完全個室で」を外した）
+    fy1, fy2 = 706, 764
+    rrect(d, (40, fy1, 1000, fy2), 30, fill=WHITE, outline=GREEN, width=2)
     f_l = f_s = font(25)
-    rrect(d, (48, fy1 + 8, 200, fy2 - 8), 28, fill=GREEN)
+    rrect(d, (48, fy1 + 7, 200, fy2 - 7), 24, fill=GREEN)
     text_c(d, "当日の流れ", f_l, 124, (fy1 + fy2) / 2 - th(f_l, "当日の流れ") / 2, WHITE)
-    steps = ["①ご予約", "②完全個室で1対1", "③治療法やご不安をご相談"]
-    total = sum(tw(f_s, s) for s in steps) + 30 * 2 + 20 * 2
+    steps = ["①ご予約", "②スタッフと1対1", "③治療法やご不安をご相談"]
+    total = sum(tw(f_s, s_) for s_ in steps) + 30 * 2 + 20 * 2
     x = 200 + (1000 - 200 - total) / 2
-    for i, s in enumerate(steps):
-        text(d, s, f_s, x, (fy1 + fy2) / 2 - th(f_s, s) / 2, GREEN_DARK)
-        x += tw(f_s, s) + 20
+    for i, s_ in enumerate(steps):
+        text(d, s_, f_s, x, (fy1 + fy2) / 2 - th(f_s, s_) / 2, GREEN_DARK)
+        x += tw(f_s, s_) + 20
         if i < 2:
             ay = (fy1 + fy2) / 2
             d.polygon([(x * S, (ay - 10) * S), ((x + 14) * S, ay * S), (x * S, (ay + 10) * S)], fill=ORANGE)
             x += 30
+
+    # 時期の一言（予約ボタンの上）
+    text_c(d, "＼年内に、とお考えの方へ／", font(30), W / 2, 774, GREEN_DARK, 1)
 
     cta(c, d, 812, 952)
     footer(d)
@@ -109,4 +122,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v2_1040.jpg"))
