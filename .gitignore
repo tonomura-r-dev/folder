@@ -47,3 +47,6 @@ attack_list*.xlsx
 attack_list*.tsv
 契約形態マスタ.tsv
 _qa_tmp/
+
+# 修復の切り分け用に作った確認用zip（`_build/arauchi_v4/bisect.py` でいつでも作り直せる。殿村さんには送付済み）
+_drafts/あらうち_切り分け*.zip
