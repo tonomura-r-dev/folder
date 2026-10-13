@@ -64,7 +64,7 @@ def build(out):
     # 深緑の面・ロゴ・実績の円
     d.rectangle((0, 0, W * S, PANEL_BOTTOM * S), fill=GREEN)
     logo = white_logo(230 * S)
-    c.paste(logo, (36 * S, 30 * S), logo)
+    c.paste(logo, ((W * S - logo.width) // 2, 30 * S), logo)  # 2026-10-13 殿村さん「ロゴは中央に」
     counsel_badge(d, 905, 128, 88)
 
     # 心の声（吹き出し）
@@ -152,4 +152,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v4_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v5_1040.jpg"))
