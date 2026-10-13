@@ -129,12 +129,12 @@ y += 2.6
 cw = (WI - 0.6) / 2
 for i, (lab, body) in enumerate([("再アプローチ対象の特徴", "一度は警備の仕事に関心を示し、\n応募した方"),
                                  ("再アプローチの課題",
-                                  "一人ずつの連絡は手間がかかり、\n次の募集を届け続ける仕組みがない")]):
+                                  "メール・電話での一人ずつの連絡は\n手間がかかり、\n次の募集を届け続ける仕組みがない")]):
     x = XI + i * (cw + 0.6)
-    box(s1, x, y, cw, 2.9, None, fill=CARD, line=LGRAY)
-    rect(s1, x, y, 0.18, 2.9, NAVY)
+    box(s1, x, y, cw, 3.4, None, fill=CARD, line=LGRAY)
+    rect(s1, x, y, 0.18, 3.4, NAVY)
     text(s1, x + 0.5, y + 0.25, cw - 0.8, 0.7, [[(lab, 13, True, NAVY)]])
-    text(s1, x + 0.5, y + 0.95, cw - 0.8, 1.8, [[(l, 15, True, INK)] for l in body.split("\n")])
+    text(s1, x + 0.5, y + 0.95, cw - 0.8, 2.3, [[(l, 15, True, INK)] for l in body.split("\n")])
 
 # ───────── 2. 方針（過去の応募者 → 友だち追加 → Lステップ → CV） ─────────
 head(s2, Y0, "追客の流れ")
