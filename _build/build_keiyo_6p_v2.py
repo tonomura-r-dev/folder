@@ -28,9 +28,9 @@ SRC = Path(sys.argv[1])
 OUT = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "20261013_セキュリティー京葉御中_LINE採用追客のご提案.pptx"
 
 SLIDES = [
-    ("課題｜一度外れた応募者が、そのまま離れている", "警備を含む保安職業の求人倍率は6.41倍。集めた応募者を、選考の途中で手放さない"),
+    ("課題｜一度外れた応募者が、そのまま離れている", "警備を含む保安職業の求人倍率は6.41倍。\n一度応募した方との接点を維持・再構築する導線を設計"),
     ("方針｜過去の応募者をLINEでつなぎ、追い続ける", "面接に来なかった方・辞退した方をLINEでつなぎ、応募・面接予約まで追う"),
-    ("ステップ配信｜働き方を少しずつ届ける", "給与・働き方・現場の様子を順番に届け、もう一度応募したくなる状態をつくる"),
+    ("ステップ配信｜14日間で応募・面接予約を目指す", "友だち追加から14日間、働き方を順番に届け、応募・面接予約につなげる"),
     ("Lステップ｜応募者の状況ごとに配信を変える", "タグで応募者の状況を管理し、状況・希望に合わせた配信で面接予約までつなげる"),
     ("進め方｜アカウント開設から運用・改善まで", "LINE公式アカウントの開設から、運用・改善までまとめて支援"),
     ("費用", "初期構築費10万円・月額費用30万円で、開設から運用・改善まで支援"),
@@ -92,7 +92,7 @@ for s, (title, lead) in zip(prs.slides, SLIDES):
     t1.left, t1.top, t1.width, t1.height = Cm(1.52), Cm(0.38), Cm(18.1), Cm(0.94)
     t2.left, t2.top, t2.width, t2.height = Cm(1.79), Cm(2.27), Cm(25.31), Cm(0.96)
     set_paras(t1, [(title, 0)])
-    set_paras(t2, [(lead, 0)])
+    set_paras(t2, [(ln, 0) for ln in lead.split("\n")])
     for t in (t1, t2):
         for r in t.text_frame._txBody.iter(qn("a:rPr")):
             r.set("sz", "1600")
@@ -127,13 +127,14 @@ for i, t in enumerate(items):
         arrow(s1, x + bw + 0.1, y + 1.1, x + bw + gap - 0.1, y + 1.1)
 y += 2.6
 cw = (WI - 0.6) / 2
-for i, (lab, body) in enumerate([("外れた方の共通点", "一度は応募している＝\n警備の仕事に関心がある方"),
-                                 ("いまの対応", "電話・メールでの再連絡は\n手間がかかり、続けにくい")]):
+for i, (lab, body) in enumerate([("再アプローチ対象の特徴", "一度は警備の仕事に関心を示し、\n応募した方"),
+                                 ("再アプローチ上の課題（仮説）",
+                                  "電話・メールだけでは継続的な連絡に\n工数がかかり、相手からの反応に\nつながりにくい可能性がある")]):
     x = XI + i * (cw + 0.6)
-    box(s1, x, y, cw, 2.9, None, fill=CARD, line=LGRAY)
-    rect(s1, x, y, 0.18, 2.9, NAVY)
+    box(s1, x, y, cw, 3.4, None, fill=CARD, line=LGRAY)
+    rect(s1, x, y, 0.18, 3.4, NAVY)
     text(s1, x + 0.5, y + 0.25, cw - 0.8, 0.7, [[(lab, 13, True, NAVY)]])
-    text(s1, x + 0.5, y + 0.95, cw - 0.8, 1.8, [[(l, 15, True, INK)] for l in body.split("\n")])
+    text(s1, x + 0.5, y + 0.95, cw - 0.8, 2.3, [[(l, 15, True, INK)] for l in body.split("\n")])
 
 # ───────── 2. 方針（過去の応募者 → 友だち追加 → Lステップ → CV） ─────────
 head(s2, Y0, "追客の流れ")
@@ -168,34 +169,48 @@ text(s2, X0, 15.45, X1 - X0, 1.2,
      [[("※過去の応募者へのご案内は、連絡先の利用目的・ご連絡の許諾を確認のうえ実施", 11.5, False, GRAY)],
       [("※今後の応募者も、応募完了後にLINEへご案内可能（採用管理サービスと連携できる場合）", 11.5, False, GRAY)]])
 
-# ───────── 3. ステップ配信（タイムライン） ─────────
-y = head(s3, Y0, "配信の流れ（例）")
-steps = [("登録直後", "お礼・働き方の紹介", "「ご応募ありがとうございました。改めて働き方をご紹介します」"),
-         ("3日後", "給与・条件", "「1現場10,500円（2現場で19,500円）。直行直帰OK・夜勤なし」"),
-         ("1週間後", "働く方の声", "「平均年齢64歳。84歳の方も活躍しています」"),
-         ("2週間後", "短期・スポット勤務", "「年末年始だけ、などのスポット勤務もあります」"),
-         ("1か月後", "現場・面接のご案内", "「柏・松戸・熊谷で現場があります。面接日はこちら」"),
-         ("以降 月1回", "募集のお知らせ", "「今月の募集をお知らせします」")]
-g = 0.3
-cw = (WI - g * 5) / 6
+# ───────── 3. ステップ配信（14日間のタイムライン → 14日以降は別施策の企画配信） ─────────
+y = head(s3, Y0, "14日間のステップ配信（例）")
+steps = [("登録直後", "お礼・\n働き方の紹介", "興味喚起", "「ご応募ありがとうございました。改めて働き方をご紹介します」"),
+         ("3日後", "給与・\n勤務条件の紹介", "条件面の理解", "「1現場10,500円（2現場で19,500円）。直行直帰OK・夜勤なし」"),
+         ("7日後", "働く方の声・\n安心材料", "不安の解消", "「平均年齢64歳。84歳の方も活躍中。資格取得の支援もあります」"),
+         ("10日後", "スポット勤務・\n希望条件の確認", "応募ハードルの\n低減", "「スポット勤務もあります。ご希望の勤務地・日数を教えてください」"),
+         ("14日後", "再応募・\n面接予約の案内", "CV①・CV②への\n誘導", "「柏・松戸・熊谷で現場があります。応募・面接予約はこちら」")]
+g = 0.35
+cw = (WI - g * 4) / 5
 ly = y + 0.35
-hline(s3, XI + cw / 2, XI + 5 * (cw + g) + cw / 2, ly, NAVY, 2.5)
-for i, (tm, ttl, msg) in enumerate(steps):
+ch = 5.75
+hline(s3, XI + cw / 2, XI + 4 * (cw + g) + cw / 2, ly, NAVY, 2.5)
+for i, (tm, ttl, aim, msg) in enumerate(steps):
     x = XI + i * (cw + g)
-    shape(s3, MSO_SHAPE.OVAL, x + cw / 2 - 0.28, ly - 0.28, 0.56, 0.56, None, fill=NAVY if i < 5 else GREEN, line=None)
-    box(s3, x, ly + 0.55, cw, 0.85, [P(tm, 13, True, WHITE, 0)], fill=NAVY, line=NAVY, margins=(0.05, 0.02, 0.05, 0.02))
-    box(s3, x, ly + 1.6, cw, 5.0, None, fill=WHITE, line=LGRAY)
-    text(s3, x + 0.15, ly + 1.75, cw - 0.3, 1.3, [[(ttl, 13, True, NAVY)]])
-    text(s3, x + 0.15, ly + 3.2, cw - 0.3, 3.3, [[(msg, 12, False, INK)]])
-y = head(s3, ly + 7.1, "そのほかに伝えられること")
+    last = i == 4
+    tc, bc = (WHITE, WHITE) if last else (NAVY, INK)
+    shape(s3, MSO_SHAPE.OVAL, x + cw / 2 - 0.3, ly - 0.3, 0.6, 0.6, None, fill=GREEN if last else NAVY, line=None)
+    box(s3, x, ly + 0.55, cw, 0.85, [P(tm, 14, True, WHITE, 0)], fill=GREEN if last else NAVY,
+        line=GREEN if last else NAVY, margins=(0.05, 0.02, 0.05, 0.02))
+    box(s3, x, ly + 1.6, cw, ch, None, fill=NAVY if last else WHITE, line=NAVY if last else LGRAY,
+        lw=1.5 if last else 1.0)
+    text(s3, x + 0.2, ly + 1.75, cw - 0.4, 1.3, [[(l, 13.5, True, tc)] for l in ttl.split("\n")])
+    text(s3, x + 0.2, ly + 3.1, cw - 0.4, 1.45, [[("狙い", 10.5, True, WHITE if last else GRAY)]]
+         + [[(l, 12, True, WHITE if last else "0B7A3B")] for l in aim.split("\n")])
+    text(s3, x + 0.2, ly + 4.9, cw - 0.4, 2.4, [[(msg, 12, False, bc)]])
+# 14日以降＝別施策（ステップ配信とは分けて見せる）
+by = ly + 1.6 + ch + 0.35
+box(s3, XI, by, WI, 1.25, None, fill=WHITE, line=GRAY, lw=1.0)
+box(s3, XI + 0.25, by + 0.2, 4.6, 0.85, [P("14日以降（別施策）", 13, True, WHITE, 0)], fill=GRAY, line=GRAY,
+    margins=(0.05, 0.02, 0.05, 0.02))
+text(s3, XI + 5.15, by, WI - 5.4, 1.25,
+     [[("月1回程度の企画配信（募集・現場のお知らせなど）で、継続的に接点を維持", 13.5, False, INK)]],
+     anchor=MSO_ANCHOR.MIDDLE)
+y = head(s3, by + 1.45, "そのほかに伝えられること")
 cw2 = (WI - 0.6) / 2
 for i, (lab, body) in enumerate([("待遇", "ガソリン代・駐車場代の全額支給\n空調服・ネッククーラー支給"),
                                  ("安心材料", "資格取得の支援\n月15日以上の勤務で社会保険に加入")]):
     x = XI + i * (cw2 + 0.6)
-    box(s3, x, y + 0.05, cw2, 2.1, None, fill=CARD, line=LGRAY)
-    rect(s3, x, y + 0.05, 0.18, 2.1, NAVY)
-    text(s3, x + 0.5, y + 0.2, 2.4, 1.8, [[(lab, 14, True, NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
-    text(s3, x + 2.8, y + 0.2, cw2 - 2.95, 1.8, [[(l, 13, False, INK)] for l in body.split("\n")],
+    box(s3, x, y + 0.05, cw2, 1.9, None, fill=CARD, line=LGRAY)
+    rect(s3, x, y + 0.05, 0.18, 1.9, NAVY)
+    text(s3, x + 0.5, y + 0.15, 2.4, 1.7, [[(lab, 14, True, NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
+    text(s3, x + 2.8, y + 0.15, cw2 - 2.95, 1.7, [[(l, 13, False, INK)] for l in body.split("\n")],
          anchor=MSO_ANCHOR.MIDDLE)
 
 # ───────── 4. Lステップ（タグ → 配信） ─────────
