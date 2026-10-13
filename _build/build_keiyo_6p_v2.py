@@ -183,9 +183,7 @@ for yy, lab, main, sub in [(cv1y, "CV①", "応募数", "（再応募を含む�
     paras = [P(lab, 12, True, WHITE, 0), P(main, 18, True, WHITE, 0)] + ([P(sub, 11, False, WHITE, 0)] if sub else [])
     box(s2, cx, yy, cvw, cvh, paras, fill=NAVY, line=NAVY, margins=(0.1, 0.05, 0.1, 0.05))
 arrow(s2, cx + cvw / 2, cv1y + cvh + 0.08, cx + cvw / 2, cv2y - 0.08)
-text(s2, X0, 15.65, X1 - X0, 1.2,
-     [[("※過去の応募者へのご案内は、連絡先の利用目的・ご連絡の許諾を確認のうえ実施", 11.5, False, GRAY)],
-      [("※応募時のSMSは、採用管理サービスでの設定を確認のうえ実施", 11.5, False, GRAY)]])
+# 注記（連絡の許諾・SMSの設定確認）は殿村さんがPCで削除済み（2026-10-13）。許諾は打ち合わせで口頭確認する
 
 # ───────── 3. ステップ配信（14日間のタイムライン → 長期ステップ → 企画配信） ─────────
 y = head(s3, Y0, "14日間のステップ配信（例）")
