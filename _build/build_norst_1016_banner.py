@@ -112,8 +112,8 @@ def build(out):
             d.polygon([(x * S, (ay - 10) * S), ((x + 14) * S, ay * S), (x * S, (ay + 10) * S)], fill=ORANGE)
             x += 30
 
-    # 時期の一言（予約ボタンの上）
-    text_c(d, "＼年内に、とお考えの方へ／", font(30), W / 2, 774, GREEN_DARK, 1)
+    # 予約ボタンの上の一言（2026-10-13 殿村さん「年内に は外したい」→ 案1に決定）
+    text_c(d, "＼電話なしで、このままWEB予約できます／", font(30), W / 2, 774, GREEN_DARK, 1)
 
     cta(c, d, 812, 952)
     footer(d)
@@ -122,4 +122,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v2_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v3_1040.jpg"))
