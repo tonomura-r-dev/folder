@@ -216,7 +216,7 @@ for i, (tm, ttl, aim, msg) in enumerate(steps):
     text(s3, x + 0.2, ct + 1.75, cw - 0.4, 1.7, [[("狙い", 11, True, WHITE if last else GRAY)]]
          + [[(l, 13.5, True, WHITE if last else "0B7A3B")] for l in aim.split("\n")])
     # 配信イメージ（吹き出し風の枠）
-    box(s3, x + 0.15, ct + 3.6, cw - 0.3, 4.25, [P(l, 12, False, NAVY if last else INK, 2) for l in msg],
+    box(s3, x + 0.15, ct + 3.9, cw - 0.3, 4.0, [P(l, 12, False, NAVY if last else INK, 2) for l in msg],
         fill=WHITE if last else CARD, line=None if last else LGRAY, align=PP_ALIGN.LEFT,
         anchor=MSO_ANCHOR.MIDDLE, margins=(0.12, 0.1, 0.03, 0.1))
 by = ct + ch + 0.45
