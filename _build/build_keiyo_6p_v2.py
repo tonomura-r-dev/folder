@@ -162,13 +162,13 @@ box(s2, lx, cy - 2.5, lw_, 5.0,
     fill=WHITE, line=NAVY, lw=1.5, align=PP_ALIGN.LEFT, margins=(0.4, 0.2, 0.3, 0.2))
 cx = lx + lw_ + 0.75
 cvw = X1 - cx
-jx2 = lx + lw_ + 0.35
-hline(s2, lx + lw_, jx2, cy, NAVY, 2.0)
-vline(s2, jx2, cy - 1.45, cy + 1.45, NAVY, 2.0)
-for yy, lab, main, sub in [(cy - 2.5, "CV①", "応募数", "（再応募を含む）"), (cy + 0.4, "CV②", "面接予約数", "")]:
+# CV① → CV② の順番（応募の次に面接予約）。Lステップから CV① へ入り、CV① から CV② へ下りる
+cv1y, cv2y, cvh = cy - 2.5, cy + 0.4, 2.1
+arrow(s2, lx + lw_ + 0.08, cv1y + cvh / 2, cx - 0.08, cv1y + cvh / 2)
+for yy, lab, main, sub in [(cv1y, "CV①", "応募数", "（再応募を含む）"), (cv2y, "CV②", "面接予約数", "")]:
     paras = [P(lab, 12, True, WHITE, 0), P(main, 18, True, WHITE, 0)] + ([P(sub, 11, False, WHITE, 0)] if sub else [])
-    box(s2, cx, yy, cvw, 2.1, paras, fill=NAVY, line=NAVY, margins=(0.1, 0.05, 0.1, 0.05))
-    arrow(s2, jx2, yy + 1.05, cx - 0.08, yy + 1.05)
+    box(s2, cx, yy, cvw, cvh, paras, fill=NAVY, line=NAVY, margins=(0.1, 0.05, 0.1, 0.05))
+arrow(s2, cx + cvw / 2, cv1y + cvh + 0.08, cx + cvw / 2, cv2y - 0.08)
 text(s2, X0, 15.45, X1 - X0, 1.2,
      [[("※過去の応募者へのご案内は、連絡先の利用目的・ご連絡の許諾を確認のうえ実施", 11.5, False, GRAY)],
       [("※サンクスLINE誘導は、採用管理サービスとの連携可否を確認のうえ実施", 11.5, False, GRAY)]])
@@ -262,9 +262,11 @@ vline(s5, x5, by - 0.25, by, GREEN, 1.5)
 vline(s5, x5 + sw, by - 0.25, by, GREEN, 1.5)
 text(s5, x5, by + 0.1, sw, 0.7, [[("月額の運用", 15, True, "0B7A3B")]], align=PP_ALIGN.CENTER)
 y = head(s5, by + 1.15, "改善で見る指標")
-kw = (WI - 0.6) / 2
+kg = 1.4                  # CV① → CV② の矢印を置く間隔
+kw = (WI - kg) / 2
+arrow(s5, XI + kw + 0.25, y + 0.8, XI + kw + kg - 0.25, y + 0.8, w=2.5)
 for i, (lab, main) in enumerate([("CV①", "応募数（再応募を含む）"), ("CV②", "面接予約数")]):
-    x = XI + i * (kw + 0.6)
+    x = XI + i * (kw + kg)
     box(s5, x, y + 0.05, kw, 1.5, None, fill=CARD, line=LGRAY)
     box(s5, x + 0.3, y + 0.3, 1.8, 1.0, [P(lab, 14, True, WHITE, 0)], fill=NAVY, line=NAVY, margins=(0, 0, 0, 0))
     text(s5, x + 2.4, y + 0.05, kw - 2.6, 1.5, [[(main, 16, True, NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
