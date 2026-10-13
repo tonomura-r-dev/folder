@@ -84,7 +84,7 @@ mid = (cx[0] + cx[-1]) / 2
 vline(s, mid, y_bus, y_line, GREEN, 2.5)
 bx, bw = sx0, W - LW
 box(s, bx, y_line, bw, 2.4, [P("LINE広告の予算枠（全店舗共通で1つ）", 14, True, WHITE, 4),
-                              P("広告費 月30万円 ＋ 運用手数料20%（6万円）＝ 月36万円", 15, True, WHITE)],
+                              P("通常20万円 ＋ CPF10万円 ＋ 運用手数料6万円 ＝ 月36万円", 15, True, WHITE)],
     fill=GREEN, line=GREEN)
 label(s, X0, y_line + 0.6, LW - 0.2, "追加の予算", GREEN_TX, 13)
 label(s, X0, y_line + 1.2, LW - 0.2, "（ご提案）", GREEN_TX, 10.5)
