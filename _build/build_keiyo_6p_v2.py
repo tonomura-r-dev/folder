@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""株式会社セキュリティー京葉 LINE採用追客のご提案（6枚・4:3）修正版。2026-10-13 殿村さんの修正指示。
+"""株式会社セキュリティー京葉 LINE採用追客のご提案（7枚・4:3）修正版。2026-10-13 殿村さんの修正指示。
 - 通知メッセージは使わない。入口は過去の応募者＝SMS・メール等で友だち追加をご案内
 - サンクスLINE誘導は使わない。入口の主＝応募時の採用管理サービスのSMS（「面接の日程・場所はLINEでお送りします」の理由付き）、補助＝過去の応募者（営業の指摘 2026-10-13）
 - 友だち追加後はLステップのタグ（面接未参加・辞退・再応募希望・面接予約済み・希望勤務地・勤務条件）とセグメント配信で追客
@@ -31,6 +31,7 @@ SLIDES = [
     ("課題｜一度外れた応募者が、そのまま離れている", "警備を含む保安職業の求人倍率は6.41倍。\n一度応募した方との接点を維持・再構築する導線を設計"),
     ("方針｜応募の時点でLINEにつなぎ、追い続ける", "応募時からLINEでつながり、外れても応募・面接予約まで追い続ける"),
     ("ステップ配信｜14日間で応募・面接予約を目指す", "友だち追加から14日間、働き方を順番に届け、応募・面接予約につなげる"),
+    ("長期ステップ｜14日以降も接点を持ち続ける", "14日で応募に至らなかった方にも、時期をあけて声をかけ続ける"),
     ("Lステップ｜応募者の状況ごとに配信を変える", "タグで応募者の状況を管理し、状況・希望に合わせた配信で面接予約までつなげる"),
     ("進め方｜アカウント開設から運用・改善まで", "LINE公式アカウントの開設から、運用・改善までまとめて支援"),
     ("費用", "初期構築費10万円・月額費用20万円で、開設から運用・改善まで支援"),
@@ -74,12 +75,12 @@ HDR = {"TextBox 1", "TextBox 2", "Connector 3"}
 donor = next(s for s in slides if HDR <= {sh.name for sh in s.shapes})
 for s in slides:
     names = {sh.name for sh in s.shapes}
-    if "TextBox 1" in names and not HDR <= names:
-        for nm in ("TextBox 2", "Connector 3"):
+    if not HDR <= names:
+        for nm in ("TextBox 1", "TextBox 2", "Connector 3"):
             if nm not in names:
                 s.shapes._spTree.append(copy.deepcopy(find(donor, nm)._element))
-keep = [i for i, s in enumerate(prs.slides) if HDR <= {sh.name for sh in s.shapes}][:6]
-assert len(keep) == 6, keep
+keep = [i for i, s in enumerate(prs.slides) if HDR <= {sh.name for sh in s.shapes}][:7]
+assert len(keep) == 7, keep
 lst = prs.slides._sldIdLst
 for i, el in reversed(list(enumerate(list(lst)))):
     if i not in keep:
@@ -97,7 +98,7 @@ for s, (title, lead) in zip(prs.slides, SLIDES):
         for r in t.text_frame._txBody.iter(qn("a:rPr")):
             r.set("sz", "1600")
 
-s1, s2, s3, s4, s5, s6 = prs.slides
+s1, s2, s3, s3L, s4, s5, s6 = prs.slides
 
 # ───────── 1. 課題 ─────────
 y = head(s1, Y0, "警備員の採用環境")
@@ -185,57 +186,84 @@ for yy, lab, main, sub in [(cv1y, "CV①", "応募数", "（再応募を含む�
 arrow(s2, cx + cvw / 2, cv1y + cvh + 0.08, cx + cvw / 2, cv2y - 0.08)
 # 注記（連絡の許諾・SMSの設定確認）は殿村さんがPCで削除済み（2026-10-13）。許諾は打ち合わせで口頭確認する
 
-# ───────── 3. ステップ配信（14日間のタイムライン → 長期ステップ → 企画配信） ─────────
+# ───────── 3. ステップ配信（14日間）。14日以降は次のページ（殿村さん 2026-10-13） ─────────
 y = head(s3, Y0, "14日間のステップ配信（例）")
-steps = [("登録直後", "お礼・\n働き方の紹介", "興味喚起", "「ご応募ありがとうございました。改めて働き方をご紹介します」"),
-         ("3日後", "勤務条件の\n紹介", "条件面の理解", "「1現場3〜5時間で負担少なめ。直行直帰OK・日勤メインで夜勤なし」"),
-         ("7日後", "働く方の声・\n安心材料", "不安の解消", "「平均年齢64歳。84歳の方も活躍中。資格取得の支援もあります」"),
-         ("10日後", "スポット勤務・\n希望条件の確認", "応募ハードルの\n低減", "「スポット勤務もあります。ご希望の勤務地・日数を教えてください」"),
-         ("14日後", "再応募・\n面接予約の案内", "CV①・CV②への\n誘導", "「ご希望に合う現場・日程をご案内します。応募・面接予約はこちら」")]
-g = 0.35
+steps = [("登録直後", "お礼・\n働き方の紹介", "興味喚起",
+          ["ご応募ありがとう", "ございました。", "改めて働き方を", "ご紹介します"]),
+         ("3日後", "勤務条件の\n紹介", "条件面の理解",
+          ["1現場あたり", "3〜5時間。", "直行直帰OK・", "日勤メインで", "夜勤なし"]),
+         ("7日後", "働く方の声・\n安心材料", "不安の解消",
+          ["平均年齢64歳。", "84歳の方も", "活躍中。", "資格取得の支援も", "あります"]),
+         ("10日後", "スポット勤務・\n希望条件の確認", "応募ハードルの\n低減",
+          ["スポット勤務も", "あります。", "ご希望の勤務地・", "日数を教えて", "ください"]),
+         ("14日後", "再応募・\n面接予約の案内", "CV①・CV②\nへの誘導",
+          ["ご希望に合う", "現場・日程を", "ご案内します。", "応募・面接予約は", "こちら"])]
+g = 0.3
 cw = (WI - g * 4) / 5
 ly = y + 0.35
-ch = 5.75
+ct, ch = ly + 1.65, 8.1
 hline(s3, XI + cw / 2, XI + 4 * (cw + g) + cw / 2, ly, NAVY, 2.5)
 for i, (tm, ttl, aim, msg) in enumerate(steps):
     x = XI + i * (cw + g)
     last = i == 4
-    tc, bc = (WHITE, WHITE) if last else (NAVY, INK)
+    tc = WHITE if last else NAVY
     shape(s3, MSO_SHAPE.OVAL, x + cw / 2 - 0.3, ly - 0.3, 0.6, 0.6, None, fill=GREEN if last else NAVY, line=None)
-    box(s3, x, ly + 0.55, cw, 0.85, [P(tm, 14, True, WHITE, 0)], fill=GREEN if last else NAVY,
+    box(s3, x, ly + 0.55, cw, 0.9, [P(tm, 14.5, True, WHITE, 0)], fill=GREEN if last else NAVY,
         line=GREEN if last else NAVY, margins=(0.05, 0.02, 0.05, 0.02))
-    box(s3, x, ly + 1.6, cw, ch, None, fill=NAVY if last else WHITE, line=NAVY if last else LGRAY,
+    box(s3, x, ct, cw, ch, None, fill=NAVY if last else WHITE, line=NAVY if last else LGRAY,
         lw=1.5 if last else 1.0)
-    text(s3, x + 0.2, ly + 1.75, cw - 0.4, 1.3, [[(l, 13.5, True, tc)] for l in ttl.split("\n")])
-    text(s3, x + 0.2, ly + 3.1, cw - 0.4, 1.45, [[("狙い", 10.5, True, WHITE if last else GRAY)]]
-         + [[(l, 12, True, WHITE if last else "0B7A3B")] for l in aim.split("\n")])
-    text(s3, x + 0.2, ly + 4.9, cw - 0.4, 2.4, [[(msg, 12, False, bc)]])
-# 14日以降：長期のステップ（1か月後・3か月後・6か月後）→ 企画配信（随時）。殿村さん 2026-10-13
-hy = ly + 1.6 + ch + 0.25
-y = head(s3, hy, "14日以降の長期ステップ（例）")
-text(s3, XI + 9.0, hy + 0.15, WI - 9.0, 0.6,
+    text(s3, x + 0.2, ct + 0.2, cw - 0.4, 1.45, [[(l, 15, True, tc)] for l in ttl.split("\n")])
+    text(s3, x + 0.2, ct + 1.75, cw - 0.4, 1.7, [[("狙い", 11, True, WHITE if last else GRAY)]]
+         + [[(l, 13.5, True, WHITE if last else "0B7A3B")] for l in aim.split("\n")])
+    # 配信イメージ（吹き出し風の枠）
+    box(s3, x + 0.15, ct + 3.6, cw - 0.3, 4.25, [P(l, 12, False, NAVY if last else INK, 2) for l in msg],
+        fill=WHITE if last else CARD, line=None if last else LGRAY, align=PP_ALIGN.LEFT,
+        anchor=MSO_ANCHOR.MIDDLE, margins=(0.12, 0.1, 0.03, 0.1))
+by = ct + ch + 0.45
+box(s3, XI, by, WI, 1.2, None, fill=WHITE, line=NAVY, lw=1.0)
+box(s3, XI + 0.2, by + 0.2, 3.0, 0.8, [P("自動で配信", 13, True, WHITE, 0)], fill=NAVY, line=NAVY,
+    margins=(0.05, 0.02, 0.05, 0.02))
+text(s3, XI + 3.5, by, WI - 3.7, 1.2,
+     [[("友だち追加の日から、Lステップが順番に配信。担当者の個別連絡は不要", 13.5, False, INK)]],
+     anchor=MSO_ANCHOR.MIDDLE)
+
+# ───────── 3L. 長期ステップ・企画配信（14日以降） ─────────
+hy = Y0
+y = head(s3L, hy, "長期ステップ（例）")
+text(s3L, XI + 9.0, hy + 0.15, WI - 9.0, 0.6,
      [[("※どの配信にも応募・面接予約の入口を付け、応募・面接予約済みの方には送らない", 10.5, False, GRAY)]],
      align=PP_ALIGN.RIGHT)
-longs = [("1か月後", "近況・希望の確認", "「その後いかがですか？ご希望の勤務地・日数を教えてください」"),
-         ("3か月後", "待遇のご紹介", "「ガソリン代・駐車場代は全額支給。空調服・ネッククーラーも支給」"),
-         ("6か月後", "長く働ける安心材料", "「月15日以上の勤務で社会保険に加入できます。面接日はこちら」")]
-lg = 0.4
-lw3 = (WI - lg * 2) / 3
-for i, (tm, ttl, msg) in enumerate(longs):
-    x = XI + i * (lw3 + lg)
-    box(s3, x, y + 0.05, lw3, 2.2, None, fill=CARD, line=LGRAY)
-    box(s3, x + 0.2, y + 0.2, 2.0, 0.65, [P(tm, 12.5, True, WHITE, 0)], fill=NAVY, line=NAVY,
-        margins=(0.02, 0.02, 0.02, 0.02))
-    text(s3, x + 2.35, y + 0.17, lw3 - 2.5, 0.7, [[(ttl, 12.5, True, NAVY)]], anchor=MSO_ANCHOR.MIDDLE)
-    text(s3, x + 0.2, y + 0.95, lw3 - 0.4, 1.25, [[(msg, 11.5, False, INK)]])
-# 企画配信（ステップ配信とは分けて見せる）
-by = y + 2.45
-box(s3, XI, by, WI, 1.05, None, fill=WHITE, line=GRAY, lw=1.0)
-box(s3, XI + 0.2, by + 0.15, 4.2, 0.75, [P("企画配信（随時）", 12.5, True, WHITE, 0)], fill=GRAY, line=GRAY,
-    margins=(0.05, 0.02, 0.05, 0.02))
-text(s3, XI + 4.65, by, WI - 4.9, 1.05,
-     [[("新しい現場・募集が出るたびに、希望勤務地・勤務条件のタグごとに配信", 13, False, INK)]],
-     anchor=MSO_ANCHOR.MIDDLE)
+longs = [("1か月後", "近況・希望の確認", "希望条件の更新", ["その後いかがですか？", "ご希望の勤務地・日数を", "教えてください"]),
+         ("3か月後", "待遇のご紹介", "関心の再喚起", ["ガソリン代・駐車場代は", "全額支給。", "空調服・ネッククーラーも支給"]),
+         ("6か月後", "長く働ける安心材料", "応募の後押し", ["月15日以上の勤務で", "社会保険に加入できます。", "面接日はこちら"])]
+g3 = 0.5
+cw3 = (WI - g3 * 2) / 3
+ly = y + 0.35
+ct = ly + 1.65
+hline(s3L, XI + cw3 / 2, XI + 2 * (cw3 + g3) + cw3 / 2, ly, NAVY, 2.5)
+for i, (tm, ttl, aim, msg) in enumerate(longs):
+    x = XI + i * (cw3 + g3)
+    shape(s3L, MSO_SHAPE.OVAL, x + cw3 / 2 - 0.3, ly - 0.3, 0.6, 0.6, None, fill=NAVY, line=None)
+    box(s3L, x, ly + 0.55, cw3, 0.9, [P(tm, 14.5, True, WHITE, 0)], fill=NAVY, line=NAVY,
+        margins=(0.05, 0.02, 0.05, 0.02))
+    box(s3L, x, ct, cw3, 5.0, None, fill=WHITE, line=LGRAY)
+    text(s3L, x + 0.25, ct + 0.2, cw3 - 0.5, 0.75, [[(ttl, 15, True, NAVY)]])
+    text(s3L, x + 0.25, ct + 0.95, cw3 - 0.5, 0.65, [[("狙い　", 11, True, GRAY), (aim, 13, True, "0B7A3B")]])
+    box(s3L, x + 0.2, ct + 1.75, cw3 - 0.4, 3.0, [P(l, 13, False, INK, 0) for l in msg],
+        fill=CARD, line=LGRAY, align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE, margins=(0.2, 0.1, 0.1, 0.1))
+y = head(s3L, ct + 5.4, "企画配信（随時）")
+text(s3L, XI, y, WI, 0.7, [[("新しい現場・募集が出るたびに、希望勤務地・勤務条件のタグごとに配信", 13.5, False, INK)]])
+y += 0.8
+plans = [("新しい現場が出たとき", "希望勤務地が近い方へ", "お近くで新しい現場があります"),
+         ("スポット募集が出たとき", "短期・スポット希望の方へ", "年末年始だけの募集があります"),
+         ("面接日を追加したとき", "面接未参加・辞退の方へ", "新しい面接日をご案内します")]
+for i, (when, who, msg) in enumerate(plans):
+    x = XI + i * (cw3 + g3)
+    box(s3L, x, y, cw3, 2.5, None, fill=CARD, line=LGRAY)
+    rect(s3L, x, y, 0.18, 2.5, GRAY)
+    text(s3L, x + 0.45, y + 0.15, cw3 - 0.6, 0.65, [[(when, 13.5, True, NAVY)]])
+    text(s3L, x + 0.45, y + 0.8, cw3 - 0.6, 0.6, [[("→ " + who, 12.5, True, "0B7A3B")]])
+    text(s3L, x + 0.35, y + 1.5, cw3 - 0.45, 0.8, [[("「" + msg + "」", 12, False, INK)]])
 
 # ───────── 4. Lステップ（タグ → 配信） ─────────
 y = head(s4, Y0, "タグごとに配信を変える")
