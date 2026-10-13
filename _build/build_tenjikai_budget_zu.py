@@ -84,7 +84,7 @@ mid = (cx[0] + cx[-1]) / 2
 vline(s, mid, y_bus, y_line, GREEN, 2.5)
 bx, bw = sx0, W - LW
 box(s, bx, y_line, bw, 2.4, [P("LINE広告の予算枠（全店舗共通で1つ）", 14, True, WHITE, 4),
-                              P("広告費 月10万円 ＋ 運用手数料20%（2万円）＝ 月12万円", 15, True, WHITE)],
+                              P("広告費 月30万円 ＋ 運用手数料20%（6万円）＝ 月36万円", 15, True, WHITE)],
     fill=GREEN, line=GREEN)
 label(s, X0, y_line + 0.6, LW - 0.2, "追加の予算", GREEN_TX, 13)
 label(s, X0, y_line + 1.2, LW - 0.2, "（ご提案）", GREEN_TX, 10.5)
@@ -107,7 +107,7 @@ label(s, X0, y_flow + 0.65, LW - 0.2, "来場まで追う", NAVY, 13)
 
 # 下の一文
 rich(s, bx, y_flow + 2.4, bw, 1.3,
-     [[("店舗ごとに30万円を足すのではなく、全店舗で1つの枠（月12万円）", 13.5, True, NAVY)],
+     [[("店舗ごとに30万円を足すのではなく、1店舗分（30万円）で全店舗のエリアに配信", 13.5, True, NAVY)],
       [("サンクスLINE：初期15万円・月額3万円〜", 11.5, False, GRAY)]],
      align=PP_ALIGN.LEFT, anchor=MSO_ANCHOR.MIDDLE)
 
