@@ -53,6 +53,8 @@ def make_para(runs, size, bold=False, color=TEXT, align="l", before=None, after=
         rid = None
         if opt.get("link"):
             rid = slide.part.relate_to(opt["link"], RT.HYPERLINK, is_external=True)
+        if text == "" and len(runs) == 1:
+            continue
         for k, part in enumerate(text.split("\n")):
             if k:
                 br = etree.SubElement(p, qn("a:br"))
@@ -153,6 +155,12 @@ def add_table(slide, x, y, col_w, row_h, rows, name="表"):
         tr = etree.SubElement(tbl, qn("a:tr"), h=str(emu(row_h[r])))
         for c in cells:
             tc = etree.SubElement(tr, qn("a:tc"))
+            for attr in ("gridSpan", "rowSpan"):            # 結合セル（先頭のセルに span、結合された側に hMerge / vMerge）
+                if c.get(attr):
+                    tc.set(attr, str(c[attr]))
+            for attr in ("hMerge", "vMerge"):
+                if c.get(attr):
+                    tc.set(attr, "1")
             tx = etree.SubElement(tc, qn("a:txBody"))
             etree.SubElement(tx, qn("a:bodyPr"))
             etree.SubElement(tx, qn("a:lstStyle"))

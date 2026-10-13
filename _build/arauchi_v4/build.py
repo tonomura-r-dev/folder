@@ -23,8 +23,12 @@ DECL = b'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'
 SLIDE_RE = re.compile(r"^ppt/slides/slide(\d+)\.xml$")
 
 
+_NOBLANK = etree.XMLParser(remove_blank_text=True)
+
+
 def c14n(data):
-    return etree.tostring(etree.fromstring(data), method="c14n")
+    """XMLの比較用の正規形。要素と要素の間の空白（LibreOffice保存のファイルにある）は無視する"""
+    return etree.tostring(etree.fromstring(data, _NOBLANK), method="c14n")
 
 
 def rel_set(data):
