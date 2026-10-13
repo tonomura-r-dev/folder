@@ -8,6 +8,7 @@
 - 画面全体を使う：大きい数字・流れ図・タイムライン・タグ図
 器はDYMの4:3マスターの既存PPTX（サンクスLINE Appendix ver1.2）。
   python3 _build/build_keiyo_6p_v2.py <Appendix ver1.2.pptx> [出力.pptx]
+  → そのあと先頭に会社紹介3枚を差し込む：python3 _build/insert_company_intro.py <出力.pptx> _templates/LINEOA_BUFFF_3.pptx（2026-10-13〜 全10枚）
 """
 import copy
 import sys
