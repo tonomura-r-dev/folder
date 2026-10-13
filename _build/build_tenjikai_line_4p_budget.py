@@ -141,6 +141,21 @@ y = head(s4, y + 0.5, "実績・費用")
 rows(s4, y, [("実績", "弊社運用の美容クリニックで、予約後の来院率 40〜50%改善"),
              ("費用", "CPFは2枚目の枠に含む／サンクスLINEは初期15万円・月額3万円〜")])
 
+# 本文を上下の真ん中に寄せる（殿村さん 2026-10-13「情報量を真ん中に寄せたい」）
+# 本文の範囲＝区切り線（3.86cm）〜フッターの上（18.2cm）。ヘッダー3つ（タイトル・リード・区切り線）は動かさない
+HDR_NAMES = {"TextBox 1", "TextBox 2", "Connector 3"}
+AREA_TOP, AREA_BOTTOM = 3.86, 18.2
+for sl in prs.slides:
+    body = [sh for sh in sl.shapes if sh.name not in HDR_NAMES]
+    if not body:
+        continue
+    top = min(sh.top for sh in body)
+    bottom = max(sh.top + sh.height for sh in body)
+    shift = int((Cm(AREA_TOP) + Cm(AREA_BOTTOM)) / 2 - (top + bottom) / 2)
+    if shift > 0:
+        for sh in body:
+            sh.top = sh.top + shift
+
 # 字体をメイリオに統一（latin → ea → cs の順）
 AFTER = {qn(x) for x in ("a:sym", "a:hlinkClick", "a:hlinkMouseOver", "a:rtl", "a:extLst")}
 for s in prs.slides:
