@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """あらうち資料 v9（CV一本化・フォーム）の自動チェック。
 
-    python -m _build.arauchi_v9.checks_form <直す前のv9（506784f）.pptx> <直した後のv9.pptx> [<前回納品したv9（3a29a22）.pptx>]
+    python -m _build.arauchi_v9.checks_form <直す前のv9（506784f）.pptx> <直した後のv9.pptx> [<前回納品したv9（66a63c8）.pptx>]
 
 変えたページ・消すべき言葉・新しい数字（SIMの合計CV・累計・S2のアクティブ数とブロック率）・棒グラフの寸法・1行に収まるはずの文・字体・図形ID・パッケージ（ほかのパーツが1バイトも違わない）を見る。
-3つ目のファイルを渡すと、前回納品した版から変わったスライドが S2・S9・S12・S13・S16 だけであることも見る。
+3つ目のファイルを渡すと、前回納品した版から変わったスライドが S9・S12・S13・S16 だけであることも見る。
 （見た目のはみ出しは、LibreOfficeの画像と、行間を1.29倍にした確認用コピーの画像で別に見る）
 """
 import difflib
@@ -16,7 +16,7 @@ from pptx import Presentation
 from pptx.util import Emu
 
 from _build.arauchi_v4.build import c14n, slide_order
-from _build.arauchi_v9.form import ACTIVE, BLOCK, CHANGED, CV, TOTAL
+from _build.arauchi_v9.form import ACTIVE, BLOCK, CHANGED, CV, FRIENDS6, TOTAL
 
 A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 FAILS, OKS = [], []
@@ -89,7 +89,9 @@ def main(base, out, prev=None):
               # 前の版（新規33＋既存54＝87件）の言葉・数字
               "87件", "21件", "約8件", "約13件", "新規友だち経由", "既存友だち経由", "新規＋既存", "グラフ_新規",
               # S2の前の値
-              "約807", "35%（仮）"]
+              "約807", "35%（仮）",
+              # 15時版の数字
+              "55件", "1,377"]
     for w in banned:
         hits = [i + 1 for i, t in enumerate(texts) if w in t]
         check(not hits, f"「{w}」がどのページにも無い {hits if hits else ''}")
@@ -99,14 +101,14 @@ def main(base, out, prev=None):
         hits = [n for n in (9, 12, 13, 16) if w in texts[n - 1]]
         check(not hits, f"「{w}」が数字を直したページ（S9・S12・S13・S16）に無い {hits if hits else ''}")
 
-    # ---- 新しい数字（殿村さんのSIM・15時保存：CV 6,7,9,10,11,12／累計55・ブロック率30.5%・アクティブ数約862）
+    # ---- 新しい数字（殿村さんのSIM・16時保存：CV 13,14,14,15,16,17／累計89・友だち約1,450・ブロック率30.5%・アクティブ数約862）
     n_last, n_first = CV[-1], CV[0]
     t = {i + 1: x for i, x in enumerate(texts)}
-    check(CV == [6, 7, 9, 10, 11, 12] and TOTAL == 55 and ACTIVE == 862 and BLOCK == "30.5%", "数字の正本（6,7,9,10,11,12／累計55／アクティブ数862／ブロック率30.5%）")
+    check(CV == [13, 14, 14, 15, 16, 17] and TOTAL == 89 and ACTIVE == 862 and BLOCK == "30.5%" and FRIENDS6 == "1,450", "数字の正本（13,14,14,15,16,17／累計89／友だち約1,450／アクティブ数862／ブロック率30.5%）")
     check(f"約{ACTIVE}（仮）" in t[2] and f"{BLOCK}（仮）" in t[2] and "1,241" in t[2], "S2 のアクティブ数・ブロック率（SIMの現状値）")
     check(f"1か月目 月{n_first}件 → 6か月目 月{n_last}件（試算）" in t[12], "S12 の配信目標の文")
     check(f"6か月目にLINE経由の問い合わせ月{n_last}件を見込みます（試算）。" in t[13], "S13 の見出し")
-    check(f"{n_last}件/月" in t[13] and "6か月累計" in t[13] and f"{TOTAL}件" in t[13] and "約1,377人" in t[13], "S13 の問い合わせ・累計・友だち数")
+    check(f"{n_last}件/月" in t[13] and "6か月累計" in t[13] and f"{TOTAL}件" in t[13] and f"約{FRIENDS6}人" in t[13], "S13 の問い合わせ・累計・友だち数")
     check("問い合わせ①" not in t[13] and "合計" not in t[13] and "問い合わせ" in t[13], "S13 に①②・合計の箱が無い")
     check("¥215,000" in t[13] and "¥135,000" in t[13] and "21.5万円" in t[13] and "13.5万円" in t[13], "S13 の費用はそのまま")
     box13 = [p for p in paras(so[12]) if p.startswith("＜試算の前提＞") or p.startswith("プラン①｜総合運用の基本施策") or p.startswith("API連携") or p.startswith("成果を保証")]
@@ -144,7 +146,7 @@ def main(base, out, prev=None):
     check(f"{TOTAL}件（試算）" in sh12["グラフ_累計"].text_frame.text and "6か月累計" in sh12["グラフ_累計"].text_frame.text, "S12 の累計")
     check(sh12["グラフ_凡例文字"].text_frame.text.replace("\n", "").replace("\x0b", "") in ("問い合わせ（フォーム送信）",), "S12 の凡例")
     check(not [n for n in sh12 if "①" in n or "②" in n or "内訳" in n or "新規" in n or "既存" in n], "S12 のグラフに①②・内訳・新規・既存の図形が無い")
-    check(sum(CV) == TOTAL == 55, "累計 55 ＝ 6+7+9+10+11+12")
+    check(sum(CV) == TOTAL == 89, "累計 89 ＝ 13+14+14+15+16+17")
 
     # ---- 1行に収まるはずの文：元の行（殿村さんのPowerPointで1行に収まっていた）より長くないこと
     def find(paras_, head):
@@ -188,15 +190,15 @@ def main(base, out, prev=None):
     names = set(zo.namelist())
     check(set(re.findall(r'PartName="/([^"]+)"', ct)) <= names, "[Content_Types] の Override が全部実在する")
 
-    # ---- 前回納品した版（3a29a22）から変わったのは S2・S9・S12・S13・S16 だけ。ほかのパーツは1バイトも変わらない
+    # ---- 前回納品した版（66a63c8）から変わったのは S9・S12・S13・S16 だけ。ほかのパーツは1バイトも変わらない
     if prev:
         zp = zipfile.ZipFile(prev)
         op = slide_order(zp)
         check(op == oo, "前回版とスライドの並び（パーツ名）が同じ")
         ch = [i + 1 for i, n in enumerate(oo) if c14n(zp.read(op[i])) != c14n(zo.read(n))]
-        check(ch == [2, 9, 12, 13, 16], f"前回版から変わったスライド＝[2, 9, 12, 13, 16] / 実際 {ch}")
+        check(ch == [9, 12, 13, 16], f"前回版から変わったスライド＝[9, 12, 13, 16] / 実際 {ch}")
         dp = [n for n in zp.namelist() if zp.read(n) != zo.read(n)]
-        check(sorted(dp) == sorted(oo[i - 1] for i in (2, 9, 12, 13, 16)), f"前回版から変わったパーツはその5枚のXMLだけ {dp}")
+        check(sorted(dp) == sorted(oo[i - 1] for i in (9, 12, 13, 16)), f"前回版から変わったパーツはその4枚のXMLだけ {dp}")
 
     print(f"\nOK {len(OKS)} / NG {len(FAILS)}")
     return not FAILS
