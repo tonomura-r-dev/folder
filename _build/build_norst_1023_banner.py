@@ -76,7 +76,7 @@ def build(out):
     f_v = font(30)
     v1, v2 = "「自分だけ、", "　なのかな？」"
     vw = max(tw(f_v, v1), tw(f_v, v2)) + 40
-    bx1, by1, by2 = 40, 100, 186
+    bx1, by1, by2 = 40, 58, 144  # v9：殿村さん「吹き出しもう少し上に」
     rrect(d, (bx1, by1, bx1 + vw, by2), 26, fill=WHITE)
     d.polygon([(66 * S, (by2 - 2) * S), (90 * S, (by2 - 2) * S), (62 * S, (by2 + 18) * S)], fill=WHITE)
     text(d, v1, f_v, bx1 + 18, by1 + 13, GREEN_DARK)
@@ -134,4 +134,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v8_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v9_1040.jpg"))
