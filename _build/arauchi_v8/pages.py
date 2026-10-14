@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """あらうち提案資料 v8（2026-10-13 殿村さん指示）の直し。元＝殿村さんがPowerPointで保存したv7（48枚）。
 
+  S8  想定動線           … 下段の見出し「CV以降の流れ（個別対応はあらうち様）」・右の列「当社の定期対応項目」・上段「プラン①｜総合運用」
   S9  想定セグメント×成果 … 新規友だち／既存友だちそれぞれの施策・導線・6か月目の成果（試算）を明確に。転換率の表示は外す
   S12 要件定義           … 配信目標を新SIM（1か月目10件→6か月目33件）に。棒グラフ（問い合わせ①＋②の積み上げ）を足す
   S13 想定の費用対効果   … 問い合わせ②20件／合計33件／6か月累計126件。試算の前提に「紹介による追加成果は含まない」を足す
@@ -20,7 +21,8 @@ import copy
 
 from lxml import etree
 
-from _build.arauchi_v4.lib import NAVY, TEXT, add_box, add_table, delete, emu, make_para, move, qn, set_paras
+from _build.arauchi_v4.lib import NAVY, TEXT, add_box, add_table, delete, emu, make_para, move, qn, set_paras, set_size_all
+from _build.arauchi_v4.lib import set_spacing
 from _build.arauchi_v6.pages import GRID, NAVY_TINT, body_cell, hdr_cell, merged_away, plan_head
 from _build.arauchi_v7.pages import set_body
 
@@ -103,6 +105,16 @@ def set_run_color(shape, hex_):
         (ln.addnext(fill) if ln is not None else rpr.insert(0, fill))
 
 
+def set_run_fmt(shape, para_idx, run_idx, size=None, bold=None):
+    """段落 para_idx の run_idx 番目のrunの大きさ・太字を変える"""
+    p = shape.text_frame._txBody.findall(qn("a:p"))[para_idx]
+    rpr = p.findall(qn("a:r"))[run_idx].find(qn("a:rPr"))
+    if size is not None:
+        rpr.set("sz", str(int(round(size * 100))))
+    if bold is not None:
+        rpr.set("b", "1" if bold else "0")
+
+
 def label(s, x, y, w, h, text, size, bold=False, color=TEXT, align="ctr", anchor="ctr", name=None):
     """枠・塗りなしの文字だけの箱（グラフの目盛りや凡例に使う）"""
     paras = [[(t, {})] for t in text] if isinstance(text, list) else [[(text, {})]]
@@ -114,30 +126,68 @@ def label(s, x, y, w, h, text, size, bold=False, color=TEXT, align="ctr", anchor
 def p08(s):
     n = replace_in_paragraphs(s, "月4本", "月4回程度")
     assert n == 2, n
+    # 下段の箱には、あらうち様の個別対応のほか、当社の運用項目（チャットタグ・企画配信・定期対応）も入っている
+    # → 見出しは「個別対応はあらうち様」に絞り、右の列は「当社の」と明記する（S18の役割分担とそろえる）
+    set_paras(shape_by_id(s, 183), ["<参考：CV以降の流れ（個別対応はあらうち様）／当社の計測対象外>"])
+    d = shape_by_id(s, 194)
+    set_paras(d, ["当社の定期対応項目(一部抽出)"])
+    move(d, w=2.82)
+    # 上段の内容（ステップ配信・月4回程度の企画配信など）はプラン①の場合
+    set_paras(shape_by_id(s, 182), ["<対新規ユーザー領域（プラン①｜総合運用）>"])
 
 
 def p18(s):
     head = shape_by_id(s, 386)
     assert "月4本" in head.text_frame.text
-    set_br_text(head, "友だち追加から14日間のステップ配信（全10通）と月4回程度の企画配信で、\n物件URLの送信を後押しします")
+    set_br_text(head, "友だち追加から14日間のステップ配信（全10通）と月4回程度の企画配信で、\n物件URLの送信を後押しします（プラン①｜総合運用）")
     m = replace_in_paragraphs(s, "お申込みの後押し", "物件の送信の後押し")
     assert m == 2, m
 
 
 def p21(s):
+    # ★＝実施想定の友だち追加動線。サンクスLINE誘導は今回の提案に入れない（S19・S15/S16のプランに無い）ので★を外す
+    star = shape_by_id(s, 523)
+    assert star.name.startswith("星")
+    delete(star)
     sh = shape_by_id(s, 505)
     assert "成果報酬" in sh.text_frame.text
     set_paras(sh, ["CPF約100-200円台。", "かなり安価で、友だち1人あたりの", "課金で友だちを増やす広告。"])
 
 
+def p19(s):
+    """役割分担の注記：プラン③は月額コンサル費が無いので「当社の対応は運用コンサル費用に含みます」は当てはまらない。
+    2つ目のrun（12pt）の文字だけ差し替える（役割分担＝16pt太字は残す。長くすると右の注記と重なる）。
+    あわせて、メイリオの行間（約1.55em）だと①の箱の文字が箱の下にはみ出す（行間1.29倍の確認で、役割分担の見出しに重なった）ので、
+    箱の中の文字を14pt→13ptにする"""
+    n = replace_in_paragraphs(s, "当社の対応は運用コンサル費用に含みます", "配信運用・改善支援は月額コンサル費に含みます")
+    assert n == 1, n
+    for sid in (466, 468, 470, 473, 475):
+        set_size_all(shape_by_id(s, sid), 13)
+    for sid in (466, 468, 470):                                    # 上下の余白と段落の間隔を少し詰める（3つのカードで同じにする）
+        set_body(shape_by_id(s, sid), ins=(0.10, 0.07, 0.08, 0.04))
+        set_spacing(shape_by_id(s, sid), before=1)
+    # 右の注記（計測範囲）は右寄せにして、左の見出しと離す
+    note = shape_by_id(s, 478)
+    set_paras(note, [note.text_frame.text], align="r")
+
+
+def p27(s):
+    """都度発注は「プラン」ではなく追加作業の費用表。誤字（ご依頼依頼）も直す"""
+    set_paras(shape_by_id(s, 642), ["都度発注メニュー"])
+    n = replace_in_paragraphs(s, "ご依頼依頼も", "ご依頼も")
+    assert n == 1, n
+    move(shape_by_id(s, 647), y=6.80)          # 表の行がメイリオで伸びると、下の注記（y=6.61）に重なるので少し下げる
+
+
 # ---------------------------------------------------------------- S9 想定セグメント×成果
 def p09(s):
     set_paras(shape_by_id(s, 236), ["対象"])                      # 「流入元」→「対象」（下の4行は状況別の対象）
+    set_paras(shape_by_id(s, 237), ["LINE上の接点"])               # 「LINE誘導」→下の行（個別チャット・自動応答・リッチメニュー・企画配信）も含む呼び名に
     new_box = shape_by_id(s, 242)                                # 新規友だち（サイトから）＝離脱防止ポップアップとサイトのボタンの2行をまとめる
     delete(shape_by_id(s, 243))
     move(new_box, y=2.19, h=1.28)
     set_paras(new_box, [[("新規友だち", True)], [("（100円賃貸の", False)], [("サイトから）", False)]])
-    set_paras(shape_by_id(s, 248), [[("既存友だち（今の友だち 1,241人）", True)], [("＋追加後の新しい友だちにも配信", False)]])
+    set_paras(shape_by_id(s, 248), [[("既存友だち（今の友だち 1,241人）", True)]])
     n = replace_in_paragraphs(s, "月4本", "月4回程度")
     assert n == 1, n
     set_paras(shape_by_id(s, 282), ["お申込み・ご契約の案内", "（あらうち様が対応）"])   # CV以降は当社の対象外
@@ -156,8 +206,16 @@ def p09(s):
     set_paras(shape_by_id(s, 293), [
         [("新しい友だちには物件の送り方を、今の友だちには配信とリッチメニューで問い合わせのきっかけを届けます。", None)],
         [("今の友だちは見込み顧客として活用し、将来的な紹介にもつなげます（紹介による成果は試算に含みません）。", None)],
-        [("※問い合わせ①＝友だち追加直後の物件の送信、②＝配信経由。新規・既存の内訳は②をクリック数の比で振り分けた試算", None)],
+        [("※プラン①の試算。①＝友だち追加直後の物件の送信、②＝配信経由。新規・既存の内訳は②をクリック数の比で振り分け", None)],
     ])
+
+
+# ---------------------------------------------------------------- S11 課題
+def p11(s):
+    """殿村さん保存版では S5・S6 の出典の枠が無くなっている（生成版v7にはあった）。参照先が無いので「（出典は6ページ）」を外す。
+    出典を戻す場合は、生成版v7のS5・S6の出典の枠（リンクつき）を戻して、この一文も戻す"""
+    n = replace_in_paragraphs(s, "（出典は6ページ）", "")
+    assert n == 1, n
 
 
 # ---------------------------------------------------------------- S12 要件定義
@@ -167,11 +225,18 @@ def p12(s):
     body = shape_by_id(s, 322)
     move(body, x=0.55, y=1.25, w=3.05, h=1.72)
     set_br_text(body, "LINE経由の\n物件問い合わせを\n増やす")
-    move(shape_by_id(s, 324), x=3.70, y=0.85, w=6.58, h=0.40)
+    head = shape_by_id(s, 324)
+    move(head, x=3.70, y=0.85, w=6.58, h=0.40)
+    set_paras(head, [[("配信目標", None), ("　問い合わせ＝LINE上での物件情報の送信（CV）", None)]])
+    set_run_fmt(head, 0, 1, size=12, bold=False)
     goal = shape_by_id(s, 325)
     move(goal, x=3.70, y=1.25, w=6.58, h=1.72)
     set_paras(goal, ["1か月目 月10件 → 6か月目 月33件（試算）"], size=18)
     set_body(goal, anchor="t", ins=(0.1, 0.03, 0.1, 0.04))
+
+    method = shape_by_id(s, 336)                                   # 手法（ステップ配信・月4回程度の配信はプラン①の場合）
+    set_paras(method, [[("手法", None), ("　（プラン①｜総合運用の場合）", None)]])
+    set_run_fmt(method, 0, 1, size=13, bold=False)
 
     # 棒グラフ（問い合わせ①＋②の積み上げ。合計を棒の上に）
     n = replace_in_paragraphs(s, "月4本", "月4回程度")
@@ -288,7 +353,7 @@ def p16(s):
     rows.append([body_cell("月額費用", fill=NAVY, size=13, bold=True, color="FFFFFF"),
                  body_cell("135,000円", fill=NAVY_TINT, size=16, bold=True, color=NAVY),
                  body_cell("85,000円", fill=NAVY_TINT, size=16, bold=True, color=NAVY),
-                 body_cell(TOOL3, fill=NAVY_TINT, size=13, bold=True, color=NAVY)])
+                 body_cell([[("継続利用するツールの", {})], [(TOOL3, {})]], fill=NAVY_TINT, size=13, bold=True, color=NAVY)])
     ops = [("離脱防止ポップアップ", ["導入・運用", "導入・運用", "初期導入支援"]),
            ("あいさつメッセージ改善", ["対応", "対応", "初期構築"]),
            ("リッチメニュー", ["設置", "設置", "初期構築"]),
@@ -298,7 +363,7 @@ def p16(s):
            ("API連携・開発", ["必要に応じて\n別途見積もり", "なし", "なし"])]
     for label_, vals in ops:
         rows.append([body_cell(label_, fill=NAVY_TINT, size=13, bold=True, color=NAVY)] + [body_cell(v, size=13) for v in vals])
-    heights = [0.62, 0.55] + [0.45, 0.45, 0.45, 0.45, 0.45, 0.45, 0.62]
+    heights = [0.62, 0.66] + [0.45, 0.45, 0.45, 0.45, 0.45, 0.45, 0.62]
     add_table(s, 0.42, 1.48, COLS3, heights, rows, name="運用内容比較表")
     y = 1.48 + sum(heights) + 0.14
     notes = [
@@ -314,9 +379,12 @@ def apply(prs):
     sl = list(prs.slides)
     p08(sl[7])
     p09(sl[8])
+    p11(sl[10])
     p12(sl[11])
     p13(sl[12])
     p15(sl[14])
     p16(sl[15])
     p18(sl[17])
+    p19(sl[18])
     p21(sl[20])
+    p27(sl[26])

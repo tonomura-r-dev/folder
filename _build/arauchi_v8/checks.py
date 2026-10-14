@@ -62,7 +62,7 @@ def main(base, out):
         j = i if i < DROP_INDEX else i + 1
         if c14n(zb.read(ob[j])) != c14n(zo.read(n_out)):
             changed.append(j + 1)
-    check(changed == [8, 9, 12, 13, 15, 16, 18, 21], f"変えたスライド（元の番号）＝8,9,12,13,15,16,18,21 / 実際 {changed}")
+    check(changed == [8, 9, 11, 12, 13, 15, 16, 18, 19, 21, 27], f"変えたスライド（元の番号）＝8,9,11,12,13,15,16,18,19,21,27 / 実際 {changed}")
     check(ob[DROP_INDEX] not in zo.namelist(), "プラン④のスライド（元S17）のパーツが残っていない")
 
     texts = [slide_text(s) for s in so]
@@ -70,7 +70,8 @@ def main(base, out):
 
     # ---- 消すべき言葉
     banned = ["成果報酬", "プラン④", "有効CV", "8,000", "8000", "184,000", "専用フォーム", "別途実費", "実費のみ", "松竹梅", "おすすめ",
-              "スコープ", "17ページ", "4つのプラン", "4プラン", "コンサル型", "成果連動", "月額費用完全無料", "完全無料"]
+              "スコープ", "17ページ", "4つのプラン", "4プラン", "コンサル型", "成果連動", "月額費用完全無料", "完全無料",
+              "出典は6ページ", "都度発注プラン", "ご依頼依頼", "運用コンサル費用に含みます", "お申込みの後押し"]
     for w in banned:
         hits = [i + 1 for i, t in enumerate(texts) if w in t]
         check(not hits, f"「{w}」がどのページにも無い {hits if hits else ''}")
@@ -131,11 +132,32 @@ def main(base, out):
     check(row16["月額費用"][:2] == row15["月額費用"][:2], "S15 と S16 の月額費用が一致")
     check(row16["ステップ配信"] == ["14日間・10通", "なし", "なし"], "S16 ステップ配信")
     check(row16["企画配信（定期配信）"] == ["月4回程度", "月1〜2回程度", "なし"], "S16 配信頻度")
-    check(row16["月額費用"][2] == "ツール利用料＋DYM手数料", "S16 プラン③の月額費用")
+    check(row16["月額費用"][2] == "継続利用するツールのツール利用料＋DYM手数料", "S16 プラン③の月額費用（条件つき）")
     t15txt, t16txt = texts[14], texts[15]
     check("ツール利用料" in t15txt and "DYM手数料" in t15txt and "月額のコンサルティング費用はありません" in t15txt, "S15 プラン③の説明（ツール利用料＋DYM手数料・月額コンサルなし）")
     check("無料" not in t15txt + t16txt and not re.search(r"(?<![\d,])0円", t15txt + t16txt), "S15・S16 にプラン③を無料と読ませる表現が無い")
     check("13ページの試算（6か月目に月33件）" in t16txt, "S16 の注記の13ページ・33件")
+
+    # ---- レビューで直したところ
+    t8, t9, t18, t19 = texts[7], texts[8], texts[16], texts[17]
+    check("<参考：CV以降の流れ（個別対応はあらうち様）／当社の計測対象外>" in t8 and "当社の定期対応項目(一部抽出)" in t8 and "（プラン①｜総合運用）" in t8,
+          "S8 下段の見出し（個別対応はあらうち様）・右列（当社の定期対応項目）・上段（プラン①）")
+    check("LINE上の接点" in t9 and "既存友だち（今の友だち 1,241人）" in t9 and "＋追加後の新しい友だちにも配信" not in t9, "S9 列の見出し・既存友だちのセル")
+    check("リッチメニュー\n→ 物件の送信（CV）" in t9, "S9 既存友だちの導線の終点がCV")
+    check("配信目標　問い合わせ＝LINE上での物件情報の送信（CV）" in s12 and "手法　（プラン①｜総合運用の場合）" in s12, "S12 見出しにCVの定義・手法はプラン①の場合")
+    check("（プラン①｜総合運用）" in t18 and "月4回程度の企画配信" in t18, "S17 リード文にプラン①")
+    check("役割分担　※配信運用・改善支援は月額コンサル費に含みます" in t19, "S18 役割分担の注記（プラン③に当てはまらない書き方を直した）")
+    t26 = texts[25]
+    check("都度発注メニュー" in t26 and "ご依頼も。" in t26, "S26 都度発注メニュー・誤字")
+    stars = [sh for sh in so[19].shapes if sh.name.startswith("星")]
+    check(len(stars) == 1, f"S20 ★は離脱防止バナーの1つだけ（{len(stars)}）")
+    check("継続利用するツールのツール利用料＋DYM手数料" in table_of(so[15])[1][3].replace("\x0b", ""), "S16 プラン③の月額費用に条件（継続利用するツール）")
+    w = est_width_in("役割分担", 16) + est_width_in("　※配信運用・改善支援は月額コンサル費に含みます", 12)
+    note_w = est_width_in("※物件情報の送信（CV）以降は、当社の計測対象外です", 12)
+    note_left = 5.50 + 4.72 - 0.04 - note_w                                    # 右寄せにした注記の文字の左端
+    check(0.47 + 0.1 + w + 0.3 <= note_left, f"S18 役割分担の見出しの右端 {0.57 + w:.2f}in が、右寄せの注記の左端 {note_left:.2f}in に届かない")
+    check(est_width_in("<参考：CV以降の流れ（個別対応はあらうち様）／当社の計測対象外>", 14) <= 6.8 - 0.2 - 0.3, "S8 下段の見出しが1行に収まる")
+    check(est_width_in("※プラン①の試算。①＝友だち追加直後の物件の送信、②＝配信経由。新規・既存の内訳は②をクリック数の比で振り分け", 11) <= 9.62 - 0.22 - 0.3, "S9 注記が1行に収まる")
 
     # ---- ページの参照
     for i, t in enumerate(texts, 1):
@@ -159,7 +181,7 @@ def main(base, out):
     bad = scan(out)
     check(not bad or sum(sum(c.values()) for c in bad.values()) == 0, "メイリオ以外・指定なしの文字が0か所")
     small = []
-    for i in (8, 9, 12, 13, 15, 16, 18, 21):
+    for i in (8, 9, 11, 12, 13, 15, 16, 18, 19, 21):        # 27（都度発注）は元の表の6〜9pt注記がそのまま残っているので除く
         sl = so[i - 1 if i < 17 else i - 2]
         for rpr in sl._element.iter("{%s}rPr" % A):
             sz = rpr.get("sz")
