@@ -51,12 +51,13 @@ def list_card(d, x1, y1, x2, y2, head, items, col):
     d.rectangle((x1 * S, (y1 + 30) * S, x2 * S, (y1 + 50) * S), fill=col)  # 帯の下の角は四角に
     f_h = font(27)
     text_c(d, head, f_h, (x1 + x2) / 2, y1 + 25 - th(f_h, head) / 2, WHITE)
-    f_i = font(26)
+    f_i = font(30)  # v6：2026-10-14 殿村さん「中の文をもう少し大きく」26→30
     step = (y2 - y1 - 50) / len(items)
     for i, s in enumerate(items):
         cy = y1 + 50 + step * (i + 0.5)
-        check(d, x1 + 20, cy, col)
-        text(d, s, f_i, x1 + 60, cy - th(f_i, s) / 2, INK)
+        check(d, x1 + 16, cy, col)
+        text(d, s, f_i, x1 + 54, cy - th(f_i, s) / 2, INK)
+        assert x1 + 54 + tw(f_i, s) <= x2 - 20, s  # 枠に触れない
 
 
 def build(out):
@@ -70,23 +71,23 @@ def build(out):
     c.paste(logo, ((W * S - logo.width) // 2, 18 * S), logo)
     counsel_badge(d, 920, 112, 78)
 
-    # 心の声（2行。アイテム名と同じ言葉）
-    f_v = font(38)
+    # 心の声（2行。アイテム名と同じ言葉）。v6：殿村さん「吹き出しと中の文字はもう少し小さく」38→30
+    f_v = font(30)
     v1, v2 = "「自分だけ、", "　なのかな？」"
-    vw = max(tw(f_v, v1), tw(f_v, v2)) + 48
-    bx1, by1, by2 = 40, 96, 204
-    rrect(d, (bx1, by1, bx1 + vw, by2), 30, fill=WHITE)
-    d.polygon([(72 * S, (by2 - 2) * S), (100 * S, (by2 - 2) * S), (68 * S, (by2 + 20) * S)], fill=WHITE)
-    text(d, v1, f_v, bx1 + 22, by1 + 14, GREEN_DARK)
-    text(d, v2, f_v, bx1 + 22, by1 + 60, GREEN_DARK)
+    vw = max(tw(f_v, v1), tw(f_v, v2)) + 40
+    bx1, by1, by2 = 40, 100, 186
+    rrect(d, (bx1, by1, bx1 + vw, by2), 26, fill=WHITE)
+    d.polygon([(66 * S, (by2 - 2) * S), (90 * S, (by2 - 2) * S), (62 * S, (by2 + 18) * S)], fill=WHITE)
+    text(d, v1, f_v, bx1 + 18, by1 + 13, GREEN_DARK)
+    text(d, v2, f_v, bx1 + 18, by1 + 49, GREEN_DARK)
 
-    # 診療のタグ3つ（吹き出しの右・横の真ん中あたり）
+    # 診療のタグ3つ。v6：殿村さん「中心に添えたい／亀頭増大が真ん中に来るように」＝真ん中のタグの中心を横の中央に
     f_t = font(26)
     tags = ["包茎治療", "亀頭増大", "ED治療"]
     widths = [tw(f_t, t) + 32 for t in tags]
-    total = sum(widths) + 10 * (len(tags) - 1)
-    tx = max(bx1 + vw + 24, (W - total) / 2)
-    ty1, ty2 = 168, 204
+    tx = W / 2 - widths[1] / 2 - 10 - widths[0]
+    assert tx >= bx1 + vw + 16, (tx, bx1 + vw)  # 吹き出しに重ならない
+    ty1, ty2 = 160, 196
     for t, w_ in zip(tags, widths):
         rrect(d, (tx, ty1, tx + w_, ty2), 18, fill=GREEN_DARK, outline=WHITE, width=2)
         text(d, t, f_t, tx + 16, (ty1 + ty2) / 2 - th(f_t, t) / 2, WHITE)
@@ -117,18 +118,18 @@ def build(out):
         stat_card(d, x1, top, x1 + cw, bot, label, num, unit)
 
     # 淡い面：こんなお悩み／安心のカウンセリング
-    ly1, ly2 = 552, 732
+    ly1, ly2 = 552, 742
     list_card(d, 40, ly1, 512, ly2, "こんなお悩み、ありませんか？",
               ["見た目が気になる", "においや蒸れが気になる", "人に見せるのをためらう"], ORANGE)
     list_card(d, 528, ly1, 1000, ly2, "安心のカウンセリング",
               ["費用は無料です", "男性スタッフのみで対応", "その日に決めなくても大丈夫"], GREEN)
 
-    text_c(d, "＼電話なしで、このままWEB予約できます／", font(32), W / 2, 752, GREEN_DARK, 1)
-    cta(c, d, 800, 934)
-    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 970, GRAY)
+    text_c(d, "＼電話なしで、このままWEB予約できます／", font(32), W / 2, 760, GREEN_DARK, 1)
+    cta(c, d, 806, 940)
+    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 974, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v5_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v6_1040.jpg"))
