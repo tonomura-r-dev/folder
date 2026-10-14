@@ -18,7 +18,7 @@ from build_norst_1019_rough import (  # noqa: E402
 )
 from build_norst_rough_patterns import cta  # noqa: E402
 
-PANEL_BOTTOM = 560
+PANEL_BOTTOM = 636
 
 
 def stat_card(d, x1, y1, x2, y2, label_top, num, unit, label_bottom=None):
@@ -79,15 +79,18 @@ def build(out):
     d.polygon([((W / 2 - 18) * S, 166 * S), ((W / 2 + 18) * S, 166 * S), (W / 2 * S, 190 * S)], fill=WHITE)
     text_c(d, v, f_v, W / 2, 136 - th(f_v, v) / 2, GREEN_DARK)
 
-    # 主役：同じ悩みに、向き合ってきました。
-    f_1, f_2 = font(44), font(70)
-    text_c(d, "同じ悩みに、", f_1, W / 2, 208, WHITE, 2)
-    s2 = "向き合ってきました。"
-    text_c(d, s2, f_2, W / 2 + 4, 266 + 4, GREEN_DARK, 2, stroke=8, stroke_fill=GREEN_DARK)  # 影
-    text_c(d, s2, f_2, W / 2, 266, WHITE, 2, stroke=1.2, stroke_fill=WHITE)
+    # 主役：一度、お話を聞かせてください。（2026-10-14 殿村さん「これは上の方やな」＝v1では予約ボタンの上にあった）
+    f_1, f_2 = font(52), font(84)
+    text_c(d, "一度、お話を", f_1, W / 2, 206, WHITE, 2)
+    s2 = "聞かせてください。"
+    text_c(d, s2, f_2, W / 2 + 4, 272 + 4, GREEN_DARK, 2, stroke=8, stroke_fill=GREEN_DARK)  # 影
+    text_c(d, s2, f_2, W / 2, 272, WHITE, 2, stroke=1.2, stroke_fill=WHITE)
+
+    # 数字の前の一言（v1の主役を小さくしてここへ）
+    text_c(d, "同じ悩みに、向き合ってきました。", font(34), W / 2, 388, WHITE, 1)
 
     # 数字の札2枚：37年目／診療実績40万件
-    cy1, cy2 = 362, 530
+    cy1, cy2 = 444, 606
     stat_card(d, 60, cy1, 500, cy2, "おかげさまで", "37", "年目")  # 「開院から」は確かめていないので使わない
     stat_card(d, 540, cy1, 980, cy2, "診療実績", "40", "万件")
 
@@ -97,14 +100,11 @@ def build(out):
     w2 = 70 + tw(f_c, "男性スタッフのみ") + 30
     gap = 24
     x = (W - (w1 + gap + w2)) / 2
-    chip(d, x, 594, icon_pin_s, "全国に36院", "36院")
-    chip(d, x + w1 + gap, 594, icon_person_s, "男性スタッフのみ")
+    chip(d, x, 664, icon_pin_s, "全国に36院", "36院")
+    chip(d, x + w1 + gap, 664, icon_person_s, "男性スタッフのみ")
 
-    # 一度、話をさせてください
-    text_c(d, "＼一度、お話を聞かせてください／", font(42), W / 2, 694, GREEN_DARK, 1)
-
-    cta(c, d, 760, 894)
-    text_c(d, "電話なしで、このままWEB予約できます", font(28), W / 2, 922, GREEN_DARK)
+    cta(c, d, 766, 900)
+    text_c(d, "電話なしで、このままWEB予約できます", font(28), W / 2, 926, GREEN_DARK)
     text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 996, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
@@ -124,4 +124,4 @@ def icon_person_s(d, cx, cy):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v1_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v2_1040.jpg"))
