@@ -21,7 +21,22 @@ from build_norst_rough_patterns import cta  # noqa: E402
 from build_norst_1016_banner import counsel_badge  # noqa: E402
 from build_norst_1023_banner import stat_card, list_card  # noqa: E402
 
-PANEL_BOTTOM = 502
+PANEL_BOTTOM = 518
+
+
+def stat_card_big(d, x1, y1, x2, y2, label, num, unit):
+    """実績の札（3本目より数字を大きく）。v2：殿村さん「もう少し実績を押したバナーに」"""
+    rrect(d, (x1 + 6, y1 + 6, x2 + 6, y2 + 6), 20, fill=GREEN_DARK)  # 影
+    rrect(d, (x1, y1, x2, y2), 20, fill=WHITE, outline=ORANGE, width=4)
+    cx = (x1 + x2) / 2
+    f_l, f_n, f_u = font(30), font(124), font(50)
+    text_c(d, label, f_l, cx, y1 + 16, GREEN_DARK)
+    w = tw(f_n, num) + tw(f_u, unit) + 4
+    x = cx - w / 2
+    top = y1 + 58
+    text(d, num, f_n, x, top, ORANGE)
+    text(d, unit, f_u, x + tw(f_n, num) + 4, top + th(f_n, num) - th(f_u, unit), GREEN_DARK)
+    assert top + th(f_n, num) <= y2 - 12, (label, top + th(f_n, num), y2)
 
 
 def build(out):
@@ -56,14 +71,16 @@ def build(out):
         text(d, t, f_t, tx + 16, (ty1 + ty2) / 2 - th(f_t, t) / 2, WHITE)
         tx += w_ + 10
 
-    # 主役：その2つ、／先にお答えします。（「先に」をオレンジに）
-    f_1, f_2 = font(56), font(98)
+    # 主役：その2つの不安には、／実績でお応えします。（「実績」をオレンジに）
+    # v2：殿村さん「もう少し実績を押したバナーに」。v1の「その2つ、先にお答えします。」は画像の中で答えていなかった
+    f_1, f_2 = font(48), font(90)
     y1 = 152
-    s1 = "その2つ、"
+    s1 = "その2つの不安には、"
     text_c(d, s1, f_1, W / 2, y1, WHITE, 2, stroke=1, stroke_fill=WHITE)
-    a_, b_ = "先に", "お答えします。"
+    a_, b_ = "実績", "でお応えします。"
     y2 = y1 + th(f_1, s1) + 10
     w2 = tw(f_2, a_ + b_, 2) + 2
+    assert w2 <= W - 80, w2
     x = W / 2 - w2 / 2
     for s_, col in ((a_, ORANGE), (b_, WHITE)):
         text(d, s_, f_2, x + 4, y2 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
@@ -71,29 +88,29 @@ def build(out):
         x += tw(f_2, s_, 2) + 2
     main_bottom = y2 + th(f_2, a_ + b_) + 14
 
-    # 実績の数字3つ（3本目と同じ）
-    cw, gap, top, bot = 296, 16, 330, 480
-    assert main_bottom <= top - 10, main_bottom
+    # 実績の数字3つ（3本目より大きく・オレンジの枠）
+    cw, gap, top, bot = 304, 12, 322, 498
+    assert main_bottom <= top - 8, main_bottom
     x0 = (W - (cw * 3 + gap * 2)) / 2
     for i, (label, num, unit) in enumerate([("おかげさまで", "37", "年目"),
                                             ("診療実績", "40", "万件"),
                                             ("全国に", "36", "院")]):
         x1 = x0 + i * (cw + gap)
-        stat_card(d, x1, top, x1 + cw, bot, label, num, unit)
+        stat_card_big(d, x1, top, x1 + cw, bot, label, num, unit)
 
     # 淡い面：2つの不安に1枠ずつ答える
-    ly1, ly2 = 522, 732
+    ly1, ly2 = 536, 742
     list_card(d, 40, ly1, 512, ly2, "費用が心配な方へ",
               ["カウンセリングは無料", "費用の目安を先にご説明", "その日に決めなくても大丈夫"], ORANGE)
     list_card(d, 528, ly1, 1000, ly2, "人に知られたくない方へ",
               ["男性スタッフのみで対応", "電話なしでWEB予約できる", "LINEでも問い合わせできる"], GREEN)
 
-    text_c(d, "＼費用を聞くだけでも、大丈夫です／", font(36), W / 2, 750, GREEN_DARK, 1)
-    cta(c, d, 800, 934)
-    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(24), W / 2, 966, GRAY)
+    text_c(d, "＼費用を聞くだけでも、大丈夫です／", font(36), W / 2, 758, GREEN_DARK, 1)
+    cta(c, d, 804, 938)
+    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(24), W / 2, 970, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1030_banner_demo_v1_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1030_banner_demo_v2_1040.jpg"))
