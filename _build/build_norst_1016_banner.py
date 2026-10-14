@@ -4,16 +4,14 @@
 写真は使わない（2026-10-13 殿村さん「バナー画像は添付のようなもの」＝ラフA・Cの形）。
 下半分（札4つ・当日の流れ・予約ボタン・注記）はラフAと同じ。言葉はテキスト（499字）と同じ。
 
-イラスト版（2026-10-14 殿村さん「一応イラストverも作成したくて、さっきの男性のやつ、同じように修正して欲しい」）は
-緑の面の右側に男性の写真（`_images/norst_1016_banner_A_v1.webp` の右上を切り出し）を入れ、主役を左寄せにする。下半分は同じ。
+男性のイラスト入りの版は `_build/build_norst_1016_banner_illust.py`。
 
 使い方:
   python3 _build/build_norst_1016_banner.py [出力]
-  python3 _build/build_norst_1016_banner.py --photo [出力]
 """
 import sys
 from pathlib import Path
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_norst_1019_rough import (  # noqa: E402
@@ -61,45 +59,15 @@ def counsel_badge(d, cx, cy, r):
 
 PANEL_BOTTOM = 516
 
-PHOTO_SRC = "_images/norst_1016_banner_A_v1.webp"  # 1254×1254。右上（文字の無い所）だけ使う
-PHOTO_CROP = (800, 0, 1254, 510)
-PHOTO_FADE = 110  # 写真の左端を緑に溶かす幅
-
-
-def paste_photo(c):
-    """緑の面の右側に男性の写真を置き、左端を緑に溶かす。"""
-    src = Image.open(PHOTO_SRC).convert("RGB").crop(PHOTO_CROP)
-    h = PANEL_BOTTOM * S
-    w = round(src.width * h / src.height)
-    src = src.resize((w, h), Image.LANCZOS)
-    mask = Image.new("L", (w, h), 255)
-    fade = PHOTO_FADE * S
-    for x in range(fade):
-        mask.paste(int(255 * x / fade), (x, 0, x + 1, h))
-    c.paste(src, (W * S - w, 0), mask)
-    return W - w / S  # 写真の左端（1040基準）
-
-
-def build(out, photo=False):
+def build(out):
     c = Image.new("RGB", (W * S, H * S), PALE)
     d = ImageDraw.Draw(c)
 
     # 深緑の面・ロゴ・実績の円
     d.rectangle((0, 0, W * S, PANEL_BOTTOM * S), fill=GREEN)
-    if photo:
-        paste_photo(c)
     logo = white_logo(290 * S)  # 2026-10-13 殿村さん「ロゴもう少し大きく」230→290
-    lx, ly = (W * S - logo.width) // 2, 22 * S  # 2026-10-13 殿村さん「ロゴは中央に」
-    if photo:
-        # ロゴの右端が写真の明るい所にかかるので、うしろに深緑のぼかしを敷いて読みやすくする
-        glow = Image.new("RGBA", logo.size, GREEN_DARK + (0,))
-        glow.putalpha(logo.getchannel("A").filter(ImageFilter.MaxFilter(9)).filter(ImageFilter.GaussianBlur(10 * S)))
-        c.paste(glow, (lx, ly), glow)
-    c.paste(logo, (lx, ly), logo)
-    if photo:
-        counsel_badge(d, 952, 428, 78)  # 顔にかからないよう、右下（肩のあたり）へ
-    else:
-        counsel_badge(d, 905, 128, 88)
+    c.paste(logo, ((W * S - logo.width) // 2, 22 * S), logo)  # 2026-10-13 殿村さん「ロゴは中央に」
+    counsel_badge(d, 905, 128, 88)
 
     # 心の声（吹き出し）
     f_v = font(34)
@@ -125,11 +93,7 @@ def build(out, photo=False):
     f_1 = font(56)
     s1 = "その“何とか”を、"  # 2026-10-14 殿村さん「“何とか”を、に変えておいて」
     y1 = 220
-    left = 40  # イラスト版は左寄せ（右に写真があるため）
-    if photo:
-        text(d, s1, f_1, left, y1, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
-    else:
-        text_c(d, s1, f_1, W / 2, y1, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
+    text_c(d, s1, f_1, W / 2, y1, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
 
     f_2 = font(94)
     a, b = "医師が", "一緒に"
@@ -137,18 +101,14 @@ def build(out, photo=False):
     y2 = y1 + th(f_1, s1) + 12
     y3 = y2 + th(f_2, a + b) + 12
     w2 = tw(f_2, a + b, 2) + 12
-    x = left if photo else W / 2 - w2 / 2
+    x = W / 2 - w2 / 2
     for s, col in ((a, WHITE), (b, ORANGE)):
         text(d, s, f_2, x + 4, y2 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
         text(d, s, f_2, x, y2, col, 2, stroke=8 if col == ORANGE else 1.5,
              stroke_fill=WHITE)
         x += tw(f_2, s, 2) + 12
-    if photo:
-        text(d, s3, f_2, left + 4, y3 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
-        text(d, s3, f_2, left, y3, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
-    else:
-        text_c(d, s3, f_2, W / 2 + 4, y3 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
-        text_c(d, s3, f_2, W / 2, y3, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
+    text_c(d, s3, f_2, W / 2 + 4, y3 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
+    text_c(d, s3, f_2, W / 2, y3, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
     shadow_bottom = y3 + th(f_2, s3) + 14  # 影のずれ4＋影のフチ10
     assert shadow_bottom <= PANEL_BOTTOM - 20, shadow_bottom
 
@@ -206,9 +166,4 @@ def build(out, photo=False):
 
 
 if __name__ == "__main__":
-    args = sys.argv[1:]
-    photo = "--photo" in args
-    args = [a for a in args if a != "--photo"]
-    default = ("_images/norst_1016_banner_nantoka_photo_v1_1040.jpg" if photo
-               else "_images/norst_1016_banner_nantoka_v9_1040.jpg")
-    print(build(args[0] if args else default, photo=photo))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v9_1040.jpg"))
