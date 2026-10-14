@@ -18,7 +18,7 @@ from build_norst_1019_rough import (  # noqa: E402
 )
 from build_norst_rough_patterns import cta  # noqa: E402
 
-PANEL_BOTTOM = 636
+PANEL_BOTTOM = 612
 
 
 def stat_card(d, x1, y1, x2, y2, label_top, num, unit, label_bottom=None):
@@ -86,11 +86,10 @@ def build(out):
     text_c(d, s2, f_2, W / 2 + 4, 272 + 4, GREEN_DARK, 2, stroke=8, stroke_fill=GREEN_DARK)  # 影
     text_c(d, s2, f_2, W / 2, 272, WHITE, 2, stroke=1.2, stroke_fill=WHITE)
 
-    # 数字の前の一言（v1の主役を小さくしてここへ）
-    text_c(d, "同じ悩みに、向き合ってきました。", font(34), W / 2, 388, WHITE, 1)
+    # （v2にあった「同じ悩みに、向き合ってきました。」は外した。2026-10-14 殿村さん「主役と共存できない」）
 
     # 数字の札2枚：37年目／診療実績40万件
-    cy1, cy2 = 444, 606
+    cy1, cy2 = 420, 582
     stat_card(d, 60, cy1, 500, cy2, "おかげさまで", "37", "年目")  # 「開院から」は確かめていないので使わない
     stat_card(d, 540, cy1, 980, cy2, "診療実績", "40", "万件")
 
@@ -100,11 +99,11 @@ def build(out):
     w2 = 70 + tw(f_c, "男性スタッフのみ") + 30
     gap = 24
     x = (W - (w1 + gap + w2)) / 2
-    chip(d, x, 664, icon_pin_s, "全国に36院", "36院")
-    chip(d, x + w1 + gap, 664, icon_person_s, "男性スタッフのみ")
+    chip(d, x, 644, icon_pin_s, "全国に36院", "36院")
+    chip(d, x + w1 + gap, 644, icon_person_s, "男性スタッフのみ")
 
-    cta(c, d, 766, 900)
-    text_c(d, "電話なしで、このままWEB予約できます", font(28), W / 2, 926, GREEN_DARK)
+    cta(c, d, 752, 886)
+    text_c(d, "電話なしで、このままWEB予約できます", font(28), W / 2, 914, GREEN_DARK)
     text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 996, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
@@ -124,4 +123,4 @@ def icon_person_s(d, cx, cy):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v2_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v3_1040.jpg"))
