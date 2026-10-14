@@ -20,7 +20,7 @@ from build_norst_1019_rough import (  # noqa: E402
 from build_norst_rough_patterns import cta  # noqa: E402
 from build_norst_1016_banner import counsel_badge  # noqa: E402
 
-PANEL_BOTTOM = 552
+PANEL_BOTTOM = 532
 
 
 def check(d, x, cy, col=ORANGE):
@@ -64,42 +64,51 @@ def build(out):
     d = ImageDraw.Draw(c)
 
     # 深緑の面＋ロゴ（中央）＋右上の円「カウンセリング無料」（2本目と同じ）
+    # v5：2026-10-14 殿村さん「吹き出しを2行に／治療例をもう少し真ん中に／全体的に上に」
     d.rectangle((0, 0, W * S, PANEL_BOTTOM * S), fill=GREEN)
     logo = white_logo(290 * S)
-    c.paste(logo, ((W * S - logo.width) // 2, 22 * S), logo)
-    counsel_badge(d, 920, 116, 80)
+    c.paste(logo, ((W * S - logo.width) // 2, 18 * S), logo)
+    counsel_badge(d, 920, 112, 78)
 
-    # 心の声（アイテム名と同じ言葉）
-    f_v = font(36)
-    v = "「自分だけなのかな？」"
-    vw = tw(f_v, v) + 48
-    rrect(d, (40, 104, 40 + vw, 162), 29, fill=WHITE)
-    d.polygon([(72 * S, 160 * S), (100 * S, 160 * S), (68 * S, 182 * S)], fill=WHITE)
-    text(d, v, f_v, 64, 133 - th(f_v, v) / 2, GREEN_DARK)
+    # 心の声（2行。アイテム名と同じ言葉）
+    f_v = font(38)
+    v1, v2 = "「自分だけ、", "　なのかな？」"
+    vw = max(tw(f_v, v1), tw(f_v, v2)) + 48
+    bx1, by1, by2 = 40, 96, 204
+    rrect(d, (bx1, by1, bx1 + vw, by2), 30, fill=WHITE)
+    d.polygon([(72 * S, (by2 - 2) * S), (100 * S, (by2 - 2) * S), (68 * S, (by2 + 20) * S)], fill=WHITE)
+    text(d, v1, f_v, bx1 + 22, by1 + 14, GREEN_DARK)
+    text(d, v2, f_v, bx1 + 22, by1 + 60, GREEN_DARK)
 
-    # 診療のタグ3つ（2本目と同じ）
+    # 診療のタグ3つ（吹き出しの右・横の真ん中あたり）
     f_t = font(26)
-    tx = 118
-    for t in ["包茎治療", "亀頭増大", "ED治療"]:
-        w_ = tw(f_t, t) + 32
-        rrect(d, (tx, 176, tx + w_, 212), 18, fill=GREEN_DARK, outline=WHITE, width=2)
-        text(d, t, f_t, tx + 16, 194 - th(f_t, t) / 2, WHITE)
+    tags = ["包茎治療", "亀頭増大", "ED治療"]
+    widths = [tw(f_t, t) + 32 for t in tags]
+    total = sum(widths) + 10 * (len(tags) - 1)
+    tx = max(bx1 + vw + 24, (W - total) / 2)
+    ty1, ty2 = 168, 204
+    for t, w_ in zip(tags, widths):
+        rrect(d, (tx, ty1, tx + w_, ty2), 18, fill=GREEN_DARK, outline=WHITE, width=2)
+        text(d, t, f_t, tx + 16, (ty1 + ty2) / 2 - th(f_t, t) / 2, WHITE)
         tx += w_ + 10
 
     # 主役：一度、お話を／聞かせてください。（「聞かせて」をオレンジに）
     f_1, f_2 = font(52), font(90)
-    text_c(d, "一度、お話を", f_1, W / 2, 230, WHITE, 2, stroke=1, stroke_fill=WHITE)
-    a, b = "聞かせて", "ください。"
-    y2 = 230 + th(f_1, "一度、お話を") + 16
-    w2 = tw(f_2, a + b, 2) + 2
+    y1 = 216
+    text_c(d, "一度、お話を", f_1, W / 2, y1, WHITE, 2, stroke=1, stroke_fill=WHITE)
+    a_, b_ = "聞かせて", "ください。"
+    y2 = y1 + th(f_1, "一度、お話を") + 10
+    w2 = tw(f_2, a_ + b_, 2) + 2
     x = W / 2 - w2 / 2
-    for s, col in ((a, ORANGE), (b, WHITE)):
-        text(d, s, f_2, x + 4, y2 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
-        text(d, s, f_2, x, y2, col, 2, stroke=8 if col == ORANGE else 1.5, stroke_fill=WHITE)
-        x += tw(f_2, s, 2) + 2
+    for s_, col in ((a_, ORANGE), (b_, WHITE)):
+        text(d, s_, f_2, x + 4, y2 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
+        text(d, s_, f_2, x, y2, col, 2, stroke=8 if col == ORANGE else 1.5, stroke_fill=WHITE)
+        x += tw(f_2, s_, 2) + 2
+    main_bottom = y2 + th(f_2, a_ + b_) + 14
 
     # 実績の数字3つ（これくらいの数値感で）
-    cw, gap, top, bot = 296, 16, 404, 528
+    cw, gap, top, bot = 296, 16, 386, 510
+    assert main_bottom <= top - 10, main_bottom
     x0 = (W - (cw * 3 + gap * 2)) / 2
     for i, (label, num, unit) in enumerate([("おかげさまで", "37", "年目"),
                                             ("診療実績", "40", "万件"),
@@ -108,18 +117,18 @@ def build(out):
         stat_card(d, x1, top, x1 + cw, bot, label, num, unit)
 
     # 淡い面：こんなお悩み／安心のカウンセリング
-    ly1, ly2 = 572, 752
+    ly1, ly2 = 552, 732
     list_card(d, 40, ly1, 512, ly2, "こんなお悩み、ありませんか？",
               ["見た目が気になる", "においや蒸れが気になる", "人に見せるのをためらう"], ORANGE)
     list_card(d, 528, ly1, 1000, ly2, "安心のカウンセリング",
               ["費用は無料です", "男性スタッフのみで対応", "その日に決めなくても大丈夫"], GREEN)
 
-    text_c(d, "＼電話なしで、このままWEB予約できます／", font(32), W / 2, 768, GREEN_DARK, 1)
-    cta(c, d, 816, 950)
-    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 988, GRAY)
+    text_c(d, "＼電話なしで、このままWEB予約できます／", font(32), W / 2, 752, GREEN_DARK, 1)
+    cta(c, d, 800, 934)
+    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 970, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v4_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v5_1040.jpg"))
