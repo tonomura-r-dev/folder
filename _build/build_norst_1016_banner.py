@@ -75,28 +75,33 @@ def build(out):
     d.polygon([(70 * S, 158 * S), (98 * S, 158 * S), (66 * S, 180 * S)], fill=WHITE)
     text(d, v, f_v, 62, 132 - th(f_v, v) / 2, GREEN_DARK)
 
-    # 何の話か（吹き出しの右に小さなタグ）
-    f_t = font(28)
-    tx1 = 40 + vw + 22
-    rrect(d, (tx1, 112, tx1 + tw(f_t, "包茎治療") + 40, 152), 20, fill=GREEN_DARK, outline=WHITE, width=2)
-    text(d, "包茎治療", f_t, tx1 + 20, 132 - th(f_t, "包茎治療") / 2, WHITE)
+    # 診療のタグ3つ（吹き出しの下。2026-10-14 殿村さん「包茎治療以外に、2つくらい治療法も記載したい」。
+    # 9/16の1本目で先方が通したのと同じ3つ）
+    f_t = font(26)
+    tags = ["包茎治療", "亀頭増大", "ED治療"]
+    tx = 118
+    for t in tags:
+        tw_ = tw(f_t, t) + 32
+        rrect(d, (tx, 176, tx + tw_, 212), 18, fill=GREEN_DARK, outline=WHITE, width=2)
+        text(d, t, f_t, tx + 16, 194 - th(f_t, t) / 2, WHITE)
+        tx += tw_ + 10
 
-    # 主役3行
-    f_1 = font(66)
-    text_c(d, "その“何とか”、", f_1, W / 2, 190, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
+    # 主役3行（タグの分だけ少し小さく・下げた）
+    f_1 = font(60)
+    text_c(d, "その“何とか”、", f_1, W / 2, 228, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
 
-    f_2 = font(112)
+    f_2 = font(104)
     a, b = "医師が", "一緒に"
     w2 = tw(f_2, a + b, 2) + 12
     x = W / 2 - w2 / 2
     for s, col in ((a, WHITE), (b, ORANGE)):
-        text(d, s, f_2, x + 4, 266 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
-        text(d, s, f_2, x, 266, col, 2, stroke=8 if col == ORANGE else 1.5,
+        text(d, s, f_2, x + 4, 296 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
+        text(d, s, f_2, x, 296, col, 2, stroke=8 if col == ORANGE else 1.5,
              stroke_fill=WHITE)
         x += tw(f_2, s, 2) + 12
     s3 = "考えます。"
-    text_c(d, s3, f_2, W / 2 + 4, 390 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
-    text_c(d, s3, f_2, W / 2, 390, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
+    text_c(d, s3, f_2, W / 2 + 4, 408 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
+    text_c(d, s3, f_2, W / 2, 408, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
 
     # 札4つ（2026-10-13 殿村さん「完全個室は省いたほうが良い」→ その日に決めなくても大丈夫 に差し替え）
     cards = [
@@ -152,4 +157,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v6_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v7_1040.jpg"))
