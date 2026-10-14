@@ -87,7 +87,7 @@ def build(out):
     widths = [tw(f_t, t) + 32 for t in tags]
     tx = W / 2 - widths[1] / 2 - 10 - widths[0]
     assert tx >= bx1 + vw + 16, (tx, bx1 + vw)  # 吹き出しに重ならない
-    ty1, ty2 = 160, 196
+    ty1, ty2 = 100, 136  # v7：殿村さん「治療例もっと上に／ロゴとの間無駄」＝ロゴのすぐ下
     for t, w_ in zip(tags, widths):
         rrect(d, (tx, ty1, tx + w_, ty2), 18, fill=GREEN_DARK, outline=WHITE, width=2)
         text(d, t, f_t, tx + 16, (ty1 + ty2) / 2 - th(f_t, t) / 2, WHITE)
@@ -132,4 +132,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v6_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v7_1040.jpg"))
