@@ -37,33 +37,26 @@ WHITE = "FFFFFF"
 
 X0, W = 0.47, 9.76            # 内容の左端と全体の幅
 
-# ---------------------------------------------------------------- 中身（文言）
+# ---------------------------------------------------------------- 中身（文言）  ※文字量を絞った版（2026-10-14 殿村さん「文字量もっと減らして」）
 LEAD = [
-    "LINE公式アカウントの機能を拡張する、LINE専用のマーケティングツールです。",
-    "自動配信・顧客管理・効果分析ができ、月額0円（初期費用なし）から始められます。",
+    "LINE公式アカウントの機能を拡張する、LINE専用のツールです。",
+    "月額0円・初期費用なしから始められます。",
 ]
-FEATURES = [
-    dict(color=C_NAVY, title="① 配信を自動化", sub="お客様の行動に合わせて自動で届ける",
-         items=[("ステップ配信", "順番に自動で配信"), ("セグメント配信", "狙った方だけに配信"),
-                ("リマインダ配信", "予約前に自動で通知"), ("自動応答", "質問に自動で返信")]),
-    dict(color=C_BLUE, title="② お客様を管理", sub="友だちごとの情報と対応状況を一元管理",
-         items=[("友だち情報", "属性や行動を記録"), ("個別トーク", "1対1でチャット対応"),
-                ("回答フォーム", "アンケート・申込受付"), ("予約管理", "LINEで予約を受付")]),
-    dict(color=C_SLATE, title="③ 効果を分析", sub="どこから来て何に反応したかを把握",
-         items=[("流入経路分析", "どこから追加したか"), ("URLクリック測定", "誰が押したか"),
-                ("ファネル分析", "離脱ポイントを把握"), ("行動スコアリング", "関心度を点数化")]),
+FEATURES = [  # (色, 見出し, ひとこと, 主な機能)
+    (C_NAVY, "① 配信を自動化", "行動に合わせて自動で配信", ["ステップ配信", "セグメント配信", "自動応答"]),
+    (C_BLUE, "② お客様を管理", "情報と対応状況をまとめて管理", ["友だち情報", "個別トーク", "予約管理"]),
+    (C_SLATE, "③ 効果を分析", "来た経路と反応を数字で把握", ["流入経路分析", "クリック測定", "ファネル分析"]),
 ]
-PLANS = [  # (名前, 色, 月額, 配信数, こんな方, 追加される機能)  ※機能は改行位置を決めてある（途中で言葉が切れないように）
-    ("フリープラン", "7A8294", "0", "〜200通", "まずは気軽に試したい方", "基本機能（自動応答など）\n※1社1アカウントまで"),
-    ("スタートプラン", C_BLUE, "5,000", "〜5,000通", "小さく始めたい方", "＋Lフレックス\n（デザイン自由なメッセージ）"),
-    ("スタンダードプラン", "2F4A82", "21,780", "〜30,000通", "リッチメニューも使いたい方", "＋リッチメニューの出し分け\n＋URLクリック測定"),
-    ("プロプラン", C_NAVY, "32,780", "〜50,000通", "分析まで使いこなしたい方", "＋流入経路分析・ファネル分析\n＋広告連携など（全機能）"),
+PLANS = [  # (名前, 色, 月額, 配信数, ひとこと)
+    ("フリープラン", "7A8294", "0", "月200通まで", "まずはお試し"),
+    ("スタートプラン", C_BLUE, "5,000", "月5,000通まで", "小さく始める"),
+    ("スタンダードプラン", "2F4A82", "21,780", "月30,000通まで", "本格的に運用"),
+    ("プロプラン", C_NAVY, "32,780", "月50,000通まで", "分析まで全機能"),
 ]
 NOTES = [
-    [("※別途、LINE公式アカウントの月額費用がかかります。配信数は、LINE公式アカウント側の上限までとなります。", dict(bold=True, color=NAVY))],
-    [("※初期費用0円・初月料金0円（新規ご契約のみ）。表示価格は税込。課金後の解約は3か月後（3回課金後）から可能です。", {})],
-    [("※初期設定サポートは無料。有料オプション：Webhook転送 月5,500円／API連携（プロプラン以上）月11,000円。", {})],
-    [("出典：", {}), ("Lステップ公式サイト", dict(link=SRC_URL)), ("・サービス資料（ソーシャルデータバンク株式会社）", {})],
+    [("※別途、LINE公式アカウントの月額費用がかかります。", dict(bold=True, color=NAVY))],
+    [("※初期費用0円／表示価格は税込／解約は3か月後（3回課金後）から可能です。", {})],
+    [("出典：", {}), ("Lステップ公式サイト", dict(link=SRC_URL)), ("・サービス資料", {})],
 ]
 
 
@@ -81,53 +74,54 @@ def compose(slide):
         rpr.attrib.pop("altLang", None)
     set_paras(shp["lead"], [[(LEAD[0], False)], [(LEAD[1], True)]])
 
-    def chip(y, label, sub):
-        add_box(slide, X0, y, 1.00, 0.28, [label], size=13, bold=True, color=WHITE, fill=C_NAVY, line=C_NAVY,
-                align="ctr", shape="round", ins=(0.05, 0.02, 0.05, 0.02), name=f"見出し：{label}").adjustments[0] = 0.25
-        add_box(slide, X0 + 1.10, y, W - 1.10, 0.28, [sub], size=12.5, bold=True, color=NAVY, align="l",
-                ins=(0.04, 0.02, 0.04, 0.02), name=f"見出しの説明：{label}")
-
     def rr(shape, adj):
         shape.adjustments[0] = adj
         return shape
 
+    def chip(y, label, sub):
+        rr(add_box(slide, X0, y, 1.10, 0.32, [label], size=14, bold=True, color=WHITE, fill=C_NAVY, line=C_NAVY,
+                   align="ctr", shape="round", ins=(0.05, 0.02, 0.05, 0.02), name=f"見出し：{label}"), 0.25)
+        add_box(slide, X0 + 1.20, y, W - 1.20, 0.32, [sub], size=13, bold=True, color=NAVY, align="l",
+                ins=(0.04, 0.02, 0.04, 0.02), name=f"見出しの説明：{label}")
+
     # ---- 機能 ----
-    chip(1.60, "機能", "Lステップの3つの特徴｜配信の自動化・顧客管理・効果分析")
+    chip(1.62, "機能", "Lステップの3つの特徴")
     cw, gap = 3.05, (W - 3 * 3.05) / 2
-    for i, f in enumerate(FEATURES):
+    for i, (col, title, sub, items) in enumerate(FEATURES):
         x = X0 + i * (cw + gap)
-        rr(add_box(slide, x, 1.92, cw, 0.60, [[(f["title"], dict(size=14, bold=True))], [(f["sub"], dict(size=10.5, bold=False))]],
-                   size=14, bold=True, color=WHITE, fill=f["color"], line=f["color"], align="l", shape="round",
-                   ins=(0.14, 0.03, 0.10, 0.03), name=f"機能の見出し{i + 1}"), 0.12)
-        paras = [[("・" + n, dict(bold=True, color=NAVY)), ("｜" + g, {})] for n, g in f["items"]]
-        rr(add_box(slide, x, 2.56, cw, 1.20, paras, size=11, color=TEXT, fill=C_BODY, line=C_LINE, align="l", anchor="t",
-                   shape="round", ins=(0.12, 0.07, 0.08, 0.04), before=2, name=f"機能の中身{i + 1}"), 0.08)
+        rr(add_box(slide, x, 1.98, cw, 0.44, [title], size=16, bold=True, color=WHITE, fill=col, line=col, align="l",
+                   shape="round", ins=(0.16, 0.03, 0.10, 0.03), name=f"機能の見出し{i + 1}"), 0.14)
+        paras = [[(sub, dict(size=12, bold=True, color=NAVY))]] + [[("・" + n, {})] for n in items]
+        body = add_box(slide, x, 2.46, cw, 1.40, paras, size=12, color=TEXT, fill=C_BODY, line=C_LINE, align="l",
+                       anchor="t", shape="round", ins=(0.16, 0.09, 0.08, 0.04), name=f"機能の中身{i + 1}")
+        rr(body, 0.08)
+        for k, pt in enumerate(body._element.findall(".//" + qn("a:p"))):          # 段落の前の間隔（pt）
+            sb = etree.Element(qn("a:spcBef"))
+            etree.SubElement(sb, qn("a:spcPts"), val=str({0: 0, 1: 4}.get(k, 2) * 100))
+            pt.find(qn("a:pPr")).insert(0, sb)
 
     # ---- 費用感 ----
-    chip(3.84, "費用感", "月額料金（税込）｜上位プランほど、配信数と使える機能が増えます")
+    chip(3.98, "費用感", "月額料金（税込）｜上位プランほど機能が増えます")
     pw, pg = (W - 3 * 0.14) / 4, 0.14
-    for i, (name, col, price, cnt, who, feat) in enumerate(PLANS):
+    for i, (name, col, price, cnt, tag) in enumerate(PLANS):
         x = X0 + i * (pw + pg)
-        rr(add_box(slide, x, 4.16, pw, 0.32, [name], size=13, bold=True, color=WHITE, fill=col, line=col, align="ctr",
+        rr(add_box(slide, x, 4.34, pw, 0.38, [name], size=14, bold=True, color=WHITE, fill=col, line=col, align="ctr",
                    shape="round", ins=(0.05, 0.02, 0.05, 0.02), name=f"プラン名{i + 1}"), 0.2)
         paras = [
-            [(price, dict(size=21, bold=True, color=NAVY)), ("円", dict(size=13, bold=True, color=NAVY)), ("／月", dict(size=10.5, color=C_MUTE))],
-            [("月の配信数 ", dict(size=10.5, color=C_MUTE)), (cnt, dict(size=12, bold=True))],
-            [(who, dict(size=11, bold=True, color=NAVY))],
-            [(feat, dict(size=10))],
+            [(price, dict(size=26, bold=True, color=NAVY)), ("円", dict(size=15, bold=True, color=NAVY)), ("／月", dict(size=11, color=C_MUTE))],
+            [(cnt, dict(size=12, bold=True))],
+            [(tag, dict(size=11, color=C_MUTE))],
         ]
-        shp_ = add_box(slide, x, 4.52, pw, 1.64, paras, size=10.5, color=TEXT, fill=C_BODY, line=C_LINE, align="ctr", anchor="t",
-                       shape="round", ins=(0.08, 0.04, 0.08, 0.04), name=f"プランの中身{i + 1}")
-        rr(shp_, 0.06)
-        for k, pt in enumerate(shp_._element.findall(".//" + qn("a:p"))):          # 段落の前の間隔（pt）
-            before = {0: 0, 1: 0, 2: 4, 3: 2}[k]
-            ppr = pt.find(qn("a:pPr"))
+        box = add_box(slide, x, 4.76, pw, 1.28, paras, size=12, color=TEXT, fill=C_BODY, line=C_LINE, align="ctr",
+                      anchor="t", shape="round", ins=(0.08, 0.05, 0.08, 0.04), name=f"プランの中身{i + 1}")
+        rr(box, 0.06)
+        for k, pt in enumerate(box._element.findall(".//" + qn("a:p"))):
             sb = etree.Element(qn("a:spcBef"))
-            etree.SubElement(sb, qn("a:spcPts"), val=str(before * 100))
-            ppr.insert(0, sb)
+            etree.SubElement(sb, qn("a:spcPts"), val=str({0: 0, 1: 0, 2: 3}[k] * 100))
+            pt.find(qn("a:pPr")).insert(0, sb)
 
     # ---- 注記・出典 ----
-    add_box(slide, X0, 6.22, W, 0.86, NOTES, size=10, color="444444", align="l", anchor="t",
+    add_box(slide, X0, 6.14, W, 0.82, NOTES, size=11, color="444444", align="l", anchor="t",
             ins=(0.04, 0.02, 0.04, 0.02), name="注記・出典")
 
 
