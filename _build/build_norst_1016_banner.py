@@ -82,26 +82,33 @@ def build(out):
     tx = 118
     for t in tags:
         tw_ = tw(f_t, t) + 32
-        rrect(d, (tx, 176, tx + tw_, 212), 18, fill=GREEN_DARK, outline=WHITE, width=2)
-        text(d, t, f_t, tx + 16, 194 - th(f_t, t) / 2, WHITE)
+        rrect(d, (tx, 172, tx + tw_, 208), 18, fill=GREEN_DARK, outline=WHITE, width=2)
+        text(d, t, f_t, tx + 16, 190 - th(f_t, t) / 2, WHITE)
         tx += tw_ + 10
 
-    # 主役3行（タグの分だけ少し小さく・下げた）
-    f_1 = font(60)
-    text_c(d, "その“何とか”、", f_1, W / 2, 228, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
+    # 主役3行（2026-10-14 殿村さん「考えますが中央のラインに被らないように」→ 少し小さくして上から積み、
+    # 「考えます。」の影の下端が緑の面の下端（中央のライン）より20px以上上に来るようにした）
+    f_1 = font(56)
+    s1 = "その“何とか”、"
+    y1 = 220
+    text_c(d, s1, f_1, W / 2, y1, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
 
-    f_2 = font(104)
+    f_2 = font(94)
     a, b = "医師が", "一緒に"
+    s3 = "考えます。"
+    y2 = y1 + th(f_1, s1) + 12
+    y3 = y2 + th(f_2, a + b) + 12
     w2 = tw(f_2, a + b, 2) + 12
     x = W / 2 - w2 / 2
     for s, col in ((a, WHITE), (b, ORANGE)):
-        text(d, s, f_2, x + 4, 296 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
-        text(d, s, f_2, x, 296, col, 2, stroke=8 if col == ORANGE else 1.5,
+        text(d, s, f_2, x + 4, y2 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)  # 影
+        text(d, s, f_2, x, y2, col, 2, stroke=8 if col == ORANGE else 1.5,
              stroke_fill=WHITE)
         x += tw(f_2, s, 2) + 12
-    s3 = "考えます。"
-    text_c(d, s3, f_2, W / 2 + 4, 408 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
-    text_c(d, s3, f_2, W / 2, 408, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
+    text_c(d, s3, f_2, W / 2 + 4, y3 + 4, GREEN_DARK, 2, stroke=10, stroke_fill=GREEN_DARK)
+    text_c(d, s3, f_2, W / 2, y3, WHITE, 2, stroke=1.5, stroke_fill=WHITE)
+    shadow_bottom = y3 + th(f_2, s3) + 14  # 影のずれ4＋影のフチ10
+    assert shadow_bottom <= PANEL_BOTTOM - 20, shadow_bottom
 
     # 札4つ（2026-10-13 殿村さん「完全個室は省いたほうが良い」→ その日に決めなくても大丈夫 に差し替え）
     cards = [
@@ -157,4 +164,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v7_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v8_1040.jpg"))
