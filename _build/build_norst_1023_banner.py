@@ -20,7 +20,7 @@ from build_norst_1019_rough import (  # noqa: E402
 from build_norst_rough_patterns import cta  # noqa: E402
 from build_norst_1016_banner import counsel_badge  # noqa: E402
 
-PANEL_BOTTOM = 532
+PANEL_BOTTOM = 502
 
 
 def check(d, x, cy, col=ORANGE):
@@ -35,11 +35,11 @@ def stat_card(d, x1, y1, x2, y2, label, num, unit):
     rrect(d, (x1 + 5, y1 + 5, x2 + 5, y2 + 5), 18, fill=GREEN_DARK)  # 影
     rrect(d, (x1, y1, x2, y2), 18, fill=WHITE)
     cx = (x1 + x2) / 2
-    f_l, f_n, f_u = font(26), font(88), font(38)
+    f_l, f_n, f_u = font(28), font(104), font(44)
     text_c(d, label, f_l, cx, y1 + 16, GREEN_DARK)
     w = tw(f_n, num) + tw(f_u, unit) + 4
     x = cx - w / 2
-    top = y1 + 56
+    top = y1 + 58
     text(d, num, f_n, x, top, ORANGE)
     text(d, unit, f_u, x + tw(f_n, num) + 4, top + th(f_n, num) - th(f_u, unit), GREEN_DARK)
 
@@ -47,14 +47,15 @@ def stat_card(d, x1, y1, x2, y2, label, num, unit):
 def list_card(d, x1, y1, x2, y2, head, items, col):
     """見出しの帯＋チェックの並び。"""
     rrect(d, (x1, y1, x2, y2), 16, fill=WHITE, outline=col, width=3)
-    rrect(d, (x1, y1, x2, y1 + 50), 16, fill=col)
-    d.rectangle((x1 * S, (y1 + 30) * S, x2 * S, (y1 + 50) * S), fill=col)  # 帯の下の角は四角に
-    f_h = font(27)
-    text_c(d, head, f_h, (x1 + x2) / 2, y1 + 25 - th(f_h, head) / 2, WHITE)
+    hh = 54
+    rrect(d, (x1, y1, x2, y1 + hh), 16, fill=col)
+    d.rectangle((x1 * S, (y1 + 30) * S, x2 * S, (y1 + hh) * S), fill=col)  # 帯の下の角は四角に
+    f_h = font(29)
+    text_c(d, head, f_h, (x1 + x2) / 2, y1 + hh / 2 - th(f_h, head) / 2, WHITE)
     f_i = font(30)  # v6：2026-10-14 殿村さん「中の文をもう少し大きく」26→30
-    step = (y2 - y1 - 50) / len(items)
+    step = (y2 - y1 - hh) / len(items)
     for i, s in enumerate(items):
-        cy = y1 + 50 + step * (i + 0.5)
+        cy = y1 + hh + step * (i + 0.5)
         check(d, x1 + 16, cy, col)
         text(d, s, f_i, x1 + 54, cy - th(f_i, s) / 2, INK)
         assert x1 + 54 + tw(f_i, s) <= x2 - 20, s  # 枠に触れない
@@ -94,8 +95,9 @@ def build(out):
         tx += w_ + 10
 
     # 主役：一度、お話を／聞かせてください。（「聞かせて」をオレンジに）
-    f_1, f_2 = font(52), font(90)
-    y1 = 216
+    # v8：殿村さん「全体的に上にできるよね／都度文字も大きくできるよね」＝空きを詰めて、浮いた分で文字を大きく
+    f_1, f_2 = font(56), font(98)
+    y1 = 152
     text_c(d, "一度、お話を", f_1, W / 2, y1, WHITE, 2, stroke=1, stroke_fill=WHITE)
     a_, b_ = "聞かせて", "ください。"
     y2 = y1 + th(f_1, "一度、お話を") + 10
@@ -108,7 +110,7 @@ def build(out):
     main_bottom = y2 + th(f_2, a_ + b_) + 14
 
     # 実績の数字3つ（これくらいの数値感で）
-    cw, gap, top, bot = 296, 16, 386, 510
+    cw, gap, top, bot = 296, 16, 330, 480
     assert main_bottom <= top - 10, main_bottom
     x0 = (W - (cw * 3 + gap * 2)) / 2
     for i, (label, num, unit) in enumerate([("おかげさまで", "37", "年目"),
@@ -118,18 +120,18 @@ def build(out):
         stat_card(d, x1, top, x1 + cw, bot, label, num, unit)
 
     # 淡い面：こんなお悩み／安心のカウンセリング
-    ly1, ly2 = 552, 742
+    ly1, ly2 = 522, 732
     list_card(d, 40, ly1, 512, ly2, "こんなお悩み、ありませんか？",
               ["見た目が気になる", "においや蒸れが気になる", "人に見せるのをためらう"], ORANGE)
     list_card(d, 528, ly1, 1000, ly2, "安心のカウンセリング",
               ["費用は無料です", "男性スタッフのみで対応", "その日に決めなくても大丈夫"], GREEN)
 
-    text_c(d, "＼電話なしで、このままWEB予約できます／", font(32), W / 2, 760, GREEN_DARK, 1)
-    cta(c, d, 806, 940)
-    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 974, GRAY)
+    text_c(d, "＼電話なしで、このままWEB予約できます／", font(36), W / 2, 750, GREEN_DARK, 1)
+    cta(c, d, 800, 934)
+    text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(24), W / 2, 966, GRAY)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v7_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1023_banner_demo_v8_1040.jpg"))
