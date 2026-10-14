@@ -89,7 +89,7 @@ def build(out):
     # 主役3行（2026-10-14 殿村さん「考えますが中央のラインに被らないように」→ 少し小さくして上から積み、
     # 「考えます。」の影の下端が緑の面の下端（中央のライン）より20px以上上に来るようにした）
     f_1 = font(56)
-    s1 = "その“何とか”、"
+    s1 = "その“何とか”を、"  # 2026-10-14 殿村さん「“何とか”を、に変えておいて」
     y1 = 220
     text_c(d, s1, f_1, W / 2, y1, WHITE, 1, stroke=1.2, stroke_fill=WHITE)
 
@@ -164,4 +164,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v8_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1016_banner_nantoka_v9_1040.jpg"))
