@@ -71,13 +71,14 @@ def build(out):
         text(d, t, f_t, tx + 16, (ty1 + ty2) / 2 - th(f_t, t) / 2, WHITE)
         tx += w_ + 10
 
-    # 主役：その2つの不安には、／実績でお応えします。（「実績」をオレンジに）
+    # 主役：その2つ、ぜひ／無料カウンセリングで。（「無料」をオレンジに）
+    # v3：殿村さん「その二つの訴求に対して、実績で答えるものではない／ぜひ、無料カウンセリングでっていう話に」
     # v2：殿村さん「もう少し実績を押したバナーに」。v1の「その2つ、先にお答えします。」は画像の中で答えていなかった
-    f_1, f_2 = font(48), font(90)
+    f_1, f_2 = font(52), font(82)
     y1 = 152
-    s1 = "その2つの不安には、"
+    s1 = "その2つ、ぜひ"
     text_c(d, s1, f_1, W / 2, y1, WHITE, 2, stroke=1, stroke_fill=WHITE)
-    a_, b_ = "実績", "でお応えします。"
+    a_, b_ = "無料", "カウンセリングで。"
     y2 = y1 + th(f_1, s1) + 10
     w2 = tw(f_2, a_ + b_, 2) + 2
     assert w2 <= W - 80, w2
@@ -113,4 +114,4 @@ def build(out):
 
 
 if __name__ == "__main__":
-    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1030_banner_demo_v2_1040.jpg"))
+    print(build(sys.argv[1] if len(sys.argv) > 1 else "_images/norst_1030_banner_demo_v3_1040.jpg"))
