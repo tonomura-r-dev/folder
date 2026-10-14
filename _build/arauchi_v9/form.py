@@ -10,14 +10,18 @@
   ・CVは1つのフォームの送信だけ（新規作成。チャットでURLを送る形のままでは計測できないため）。新規CV・リピートCVの区別はしない
   ・「フォームで計測をする」（S4。「チャットで受けているので計測できない」とは書かない）／現状の言い方は「厚くできる」（S2・S4）
   ・ツールは離脱防止のみ（Lステップ・Lメッセージは入れない）。標準機能で運用
-  ・件数は殿村さんのSIM（2026-10-14 14:14保存）：CV＝5,7,8,10,12,13／累計55件。**数値感はまだ直し中なので、ここ（CV）だけ差し替えれば全ページに反映される**
-  ・既存の友だち（1,241人）経由の問い合わせは試算に入れず「上積み」（SIMにはまだ入れていない）
+  ・件数は殿村さんのSIM（2026-10-14 夜に修正。スクショ＋表で受領。xlsxは未受領）：
+      新規友だち経由 3,4,5,6,7,8（計33）／既存友だち経由 5,7,8,10,11,13（計54）／合計 8,11,13,16,18,21（累計87件）
+    **数値を直すときは NEW・EXIST だけ差し替えれば全ページに反映される**
+  ・既存の友だち（1,241人）経由の問い合わせも試算に入れる（SIMに入った）。紹介による成果は引き続き試算に含めない
   ・CVRは触らない（殿村さん：あらうちはこれ以上言われても面倒なので一旦スルー）
+  ・「運用開始から／運用一か月目」の断り書きは入れない（殿村さん指示）
   ・フォームの作成・設置の費用の扱いは未確定 → 資料には書かない（初期設計項目にも入れない）
+  ・S15・S16の料金・施策内容は変えない（S16は注記の件数だけ）
 
 変えるページ（v9の番号）
   S2 現状把握／S3 想定動線／S4 LINEアカウントの現状／S8 想定動線／S9 想定セグメント×成果／S11 要件定義（課題）／
-  S12 要件定義（配信目標・棒グラフを1系列に）／S13 想定の費用対効果／S16 運用内容の比較（注記の件数）／S17 実施施策
+  S12 要件定義（配信目標・棒グラフ＝新規＋既存の積み上げ）／S13 想定の費用対効果／S16 運用内容の比較（注記の件数）／S17 実施施策
 """
 import sys
 import zipfile
@@ -31,12 +35,15 @@ from _build.arauchi_v4.build import c14n, normalize_decl, rel_set, slide_order
 from _build.arauchi_v4.lib import TEXT, add_box, delete, move, set_paras
 from _build.arauchi_v8.pages import label, replace_in_paragraphs, shape_by_id
 
-# ---------------------------------------------------------------- 数字の正本（殿村さんのSIM・2026-10-14 14:14保存。CV＝①の「物件問い合わせ」だけ）
-CV = [5, 7, 8, 10, 12, 13]
+# ---------------------------------------------------------------- 数字の正本（殿村さんのSIM・2026-10-14 夜に修正。CV＝「物件問い合わせ」だけ）
+NEW = [3, 4, 5, 6, 7, 8]               # 新規友だち経由の問い合わせ（月）
+EXIST = [5, 7, 8, 10, 11, 13]          # 既存友だち経由の問い合わせ（月）
+CV = [a + b for a, b in zip(NEW, EXIST)]
 TOTAL = sum(CV)
-assert TOTAL == 55 and CV[0] == 5 and CV[-1] == 13
+assert CV == [8, 11, 13, 16, 18, 21] and TOTAL == 87 and sum(NEW) == 33 and sum(EXIST) == 54
 
-BAR = "1F497D"          # S12の見出しの紺
+BAR_NEW = "1F497D"      # 新規友だち（S12の見出しの紺）
+BAR_EXIST = "7FA7D9"    # 既存友だち（同じ青の明るい側）
 RED_TXT = "FF3300"      # S12の目標の赤
 CHANGED = [2, 3, 4, 8, 9, 11, 12, 13, 16, 17]
 
@@ -87,15 +94,12 @@ def p09(s):
     one(s, "→ 物件URLの送信", "→ フォームで物件を送信")
     one(s, "→ 物件の送信（CV）", "→ フォーム送信（CV）")
     one(s, "→ 物件の送信", "→ フォームで物件を送信", n=2)
-    # 右の列：6か月目の問い合わせ（新規友だち経由のみ。既存友だち経由は上積み＝試算に入れない）
-    set_paras(shape_by_id(s, 272), [f"約{CV[-1]}件", "新規友だち経由", "（フォーム送信）"])
-    set_paras(shape_by_id(s, 273), ["上積み", "既存友だち経由", "（試算には含みません）"])
-    hd = shape_by_id(s, 293)
-    set_paras(hd, [
-        "新しい友だちには物件の送り方を、今の友だちには配信とリッチメニューで問い合わせのきっかけを届けます。",
-        "今の友だちは見込み顧客として活用し、上積みの問い合わせや将来の紹介につなげます（試算に含みません）。",
-        "※問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規友だち経由の月間の試算",
-    ])
+    # 右の列：6か月目の問い合わせ（新規友だち経由／既存友だち経由。SIMの値）
+    set_paras(shape_by_id(s, 272), [f"約{NEW[-1]}件", "新規友だち経由", "（フォーム送信）"])
+    set_paras(shape_by_id(s, 273), [f"約{EXIST[-1]}件", "既存友だち経由", "（フォーム送信）"])
+    # 見出しの3行目（1・2行目は元のまま＝「今の友だちは見込み顧客として活用し、将来的な紹介にもつなげます（紹介による成果は試算に含みません）」）
+    one(s, "※問い合わせ①＝友だち追加直後の物件の送信、②＝配信経由。新規・既存の内訳は②をクリック数の比で振り分けた試算",
+        "※問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規＝新しい友だち、既存＝今の友だち")
 
 
 # ---------------------------------------------------------------- S11 課題
@@ -103,26 +107,33 @@ def p11(s):
     one(s, "「物件を送る」まで案内します", "「フォームで物件を送る」まで案内します")
 
 
-# ---------------------------------------------------------------- S12 要件定義：配信目標・棒グラフ（1系列）
+# ---------------------------------------------------------------- S12 要件定義：配信目標・棒グラフ（新規＋既存の積み上げ）
 def p12(s):
     set_paras(shape_by_id(s, 325), [f"1か月目 月{CV[0]}件 → 6か月目 月{CV[-1]}件（試算）"])
     set_paras(shape_by_id(s, 331), ["フォームでの送り方に加え、営業電話なし・確認だけでも可などの送る理由と、フォームへのボタンを追加"])
     groups = [sh for sh in s.shapes if sh.shape_type == 6 and sh.name.startswith("グラフ（問い合わせ件数")]
     assert len(groups) == 1
     delete(groups[0])
-    x0, pitch, bar_w, base_y, scale = 4.18, 0.70, 0.44, 2.52, 0.55 / max(CV)         # 最大の月＝0.55in（これまでの33件の棒と同じ高さ）
+    # 「新規＋既存」の見出し（5字）が入るよう、棒を右へ寄せて間隔を詰める（凡例の位置はそのまま）。最大の月＝0.55in（これまでの33件の棒と同じ高さ）
+    x0, pitch, bar_w, base_y, scale = 4.55, 0.64, 0.42, 2.52, 0.55 / max(CV)
     before = {sh.shape_id for sh in s.shapes}
     add_box(s, x0, base_y, pitch * 6, 0.012, [[("", {})]], fill="A6A6A6", line=None, name="グラフ_基準線")
-    for i, v in enumerate(CV):
+    for i, (n_, e_, t_) in enumerate(zip(NEW, EXIST, CV)):
         cx = x0 + pitch * i + pitch / 2
-        h = v * scale
-        add_box(s, cx - bar_w / 2, base_y - h, bar_w, h, [[("", {})]], fill=BAR, line=None, name=f"グラフ_問い合わせ_{i + 1}か月目")
+        h_n, h_e = n_ * scale, e_ * scale
+        add_box(s, cx - bar_w / 2, base_y - h_n, bar_w, h_n, [[("", {})]], fill=BAR_NEW, line=None, name=f"グラフ_新規友だち_{i + 1}か月目")
+        add_box(s, cx - bar_w / 2, base_y - h_n - h_e, bar_w, h_e, [[("", {})]], fill=BAR_EXIST, line=None, name=f"グラフ_既存友だち_{i + 1}か月目")
         edge = i in (0, len(CV) - 1)
-        label(s, cx - pitch / 2, base_y - h - 0.32, pitch, 0.30, f"{v}件" if edge else str(v), 14 if edge else 12,
-              bold=True, color=RED_TXT if edge else TEXT, name=f"グラフ_件数_{i + 1}か月目")
+        label(s, cx - pitch / 2, base_y - h_n - h_e - 0.32, pitch, 0.30, f"{t_}件" if edge else str(t_), 14 if edge else 12,
+              bold=True, color=RED_TXT if edge else TEXT, name=f"グラフ_合計_{i + 1}か月目")
         label(s, cx - pitch / 2, base_y + 0.03, pitch, 0.21, f"{i + 1}か月目", 10, color="595959", name=f"グラフ_月_{i + 1}")
-    add_box(s, 8.58, 1.76, 0.14, 0.14, [[("", {})]], fill=BAR, line=None, name="グラフ_凡例")
-    label(s, 8.78, 1.70, 1.45, 0.48, ["問い合わせ", "（フォーム送信）"], 11, color=TEXT, align="l", anchor="t", name="グラフ_凡例文字")
+        label(s, cx - pitch / 2, base_y + 0.23, pitch, 0.21, f"{n_}＋{e_}", 10, color="595959", name=f"グラフ_内訳_{i + 1}か月目")
+    tag = label(s, 3.74, base_y + 0.23, 0.74, 0.21, "新規＋既存", 10, color="595959", align="r", name="グラフ_内訳の見出し")
+    tag.text_frame._txBody.find(qn("a:bodyPr")).set("wrap", "none")        # 狭い箱で折り返さない
+    # 凡例と累計
+    for y, color, text, nm in ((1.70, BAR_NEW, "新規友だち", "新規"), (1.96, BAR_EXIST, "既存友だち", "既存")):
+        add_box(s, 8.58, y + 0.06, 0.14, 0.14, [[("", {})]], fill=color, line=None, name=f"グラフ_凡例_{nm}")
+        label(s, 8.78, y, 1.45, 0.26, text, 11, color=TEXT, align="l", name=f"グラフ_凡例文字_{nm}")
     label(s, 8.58, 2.46, 1.65, 0.47, ["6か月累計", f"{TOTAL}件（試算）"], 11, bold=True, color=TEXT, align="l", anchor="t", name="グラフ_累計")
     grp = s.shapes.add_group_shape(shapes=[sh for sh in s.shapes if sh.shape_id not in before])
     grp.name = "グラフ（問い合わせ件数・月間の試算）"
@@ -131,24 +142,14 @@ def p12(s):
 # ---------------------------------------------------------------- S13 想定の費用対効果
 def p13(s):
     one(s, "月33件を見込みます", f"月{CV[-1]}件を見込みます")
-    set_paras(shape_by_id(s, 362), ["問い合わせ"])
-    set_paras(shape_by_id(s, 376), [f"{CV[-1]}件/月"])
-    for sid in (363, 377, 379):                                     # 問い合わせ②・その件数・「（6か月累計126件）」
-        delete(shape_by_id(s, sid))
-    lab, val = shape_by_id(s, 364), shape_by_id(s, 378)             # 「合計 33件/月」→「6か月累計 55件」（②の段へ詰める）
-    set_paras(lab, ["6か月累計"])
-    set_paras(val, [f"{TOTAL}件"])
-    move(lab, y=3.18)
-    move(val, y=3.18)
-    box = shape_by_id(s, 382)                                       # 試算の前提：既存の友だち経由は上積み（試算外）を足す。箱は空いた分だけ上へ
-    set_paras(box, ["＜試算の前提＞",
-                    "プラン①｜総合運用の基本施策を対象とした想定値です。",
-                    "API連携・追加開発、紹介による追加成果は含みません。",
-                    "既存の友だち経由は上積み（試算外）。",
-                    "成果を保証するものではありません。"])
-    move(box, y=4.12, h=2.10)
+    set_paras(shape_by_id(s, 362), ["新規友だち経由"])                 # 「問い合わせ①」→ 新規友だち経由
+    set_paras(shape_by_id(s, 363), ["既存友だち経由"])                 # 「問い合わせ②」→ 既存友だち経由
+    set_paras(shape_by_id(s, 376), [f"{NEW[-1]}件/月"])
+    set_paras(shape_by_id(s, 377), [f"{EXIST[-1]}件/月"])
+    set_paras(shape_by_id(s, 378), [f"{CV[-1]}件/月"])
+    set_paras(shape_by_id(s, 379), [f"（6か月累計{TOTAL}件）"])
     one(s, "問い合わせ①＝友だち追加直後の物件の問い合わせ、②＝ステップ配信・企画配信などからの問い合わせ",
-        "問い合わせ＝フォームでの物件情報の送信（CV）の件数")
+        "問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規＝新しい友だち、既存＝今の友だち")
 
 
 # ---------------------------------------------------------------- S16 運用内容の比較（注記の件数）

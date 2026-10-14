@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """あらうち資料 v9（CV一本化・フォーム）の自動チェック。
 
-    python -m _build.arauchi_v9.checks_form <直す前のv9.pptx> <直した後のv9.pptx>
+    python -m _build.arauchi_v9.checks_form <直す前のv9（506784f）.pptx> <直した後のv9.pptx> [<前回納品したv9（9fe98a6）.pptx>]
 
-変えたページ・消すべき言葉・新しい数字・棒グラフの寸法・1行に収まるはずの文・字体・図形ID・パッケージ（ほかのパーツが1バイトも違わない）を見る。
+変えたページ・消すべき言葉・新しい数字（新規＋既存＝合計・累計）・積み上げ棒グラフの寸法・1行に収まるはずの文・字体・図形ID・パッケージ（ほかのパーツが1バイトも違わない）を見る。
+3つ目のファイルを渡すと、前回納品した版から変わったスライドが S9・S12・S13・S16 だけであることも見る。
 （見た目のはみ出しは、LibreOfficeの画像と、行間を1.29倍にした確認用コピーの画像で別に見る）
 """
 import difflib
@@ -15,7 +16,7 @@ from pptx import Presentation
 from pptx.util import Emu
 
 from _build.arauchi_v4.build import c14n, slide_order
-from _build.arauchi_v9.form import CHANGED, CV, TOTAL
+from _build.arauchi_v9.form import CHANGED, CV, EXIST, NEW, TOTAL
 
 A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 FAILS, OKS = [], []
@@ -53,7 +54,7 @@ def walk(shapes):
             yield from walk(sh.shapes)
 
 
-def main(base, out):
+def main(base, out, prev=None):
     pb, po = Presentation(base), Presentation(out)
     sb, so = list(pb.slides), list(po.slides)
     check(len(sb) == len(so) == 47, "スライド数 47 のまま")
@@ -84,22 +85,33 @@ def main(base, out):
     # ---- 消すべき言葉
     banned = ["33件", "126件", "問い合わせ①", "問い合わせ②", "20件/月", "約15件", "約18件", "①＋②", "13＋20", "月10件",
               "改善の余地", "一方で、あいさつに送る", "DYM手数料", "成果報酬", "スコープ", "専用フォーム", "松竹梅", "おすすめ",
-              "計測できない", "月4本", "有効CV"]
+              "計測できない", "月4本", "有効CV", "上積み", "既存の友だち経由は", "（試算には含みません）"]
     for w in banned:
         hits = [i + 1 for i, t in enumerate(texts) if w in t]
         check(not hits, f"「{w}」がどのページにも無い {hits if hits else ''}")
 
-    # ---- 新しい数字（SIMの値）
+    # 「運用開始から／運用一か月目」の断り書きは入れない（殿村さん指示）。S31（スケジュール）の元からある「運用開始」は対象外＝数字を直したページだけ見る
+    for w in ("運用開始", "運用一か月目", "運用1か月目"):
+        hits = [n for n in (9, 12, 13, 16) if w in texts[n - 1]]
+        check(not hits, f"「{w}」が数字を直したページ（S9・S12・S13・S16）に無い {hits if hits else ''}")
+
+    # ---- 新しい数字（殿村さんのSIM：新規33＋既存54＝87件）
     n_last, n_first = CV[-1], CV[0]
     t = {i + 1: x for i, x in enumerate(texts)}
+    check(CV == [8, 11, 13, 16, 18, 21] and TOTAL == 87 and sum(NEW) == 33 and sum(EXIST) == 54, "数字の正本（8,11,13,16,18,21／累計87／新規33＋既存54）")
     check(f"1か月目 月{n_first}件 → 6か月目 月{n_last}件（試算）" in t[12], "S12 の配信目標の文")
     check(f"6か月目にLINE経由の問い合わせ月{n_last}件を見込みます（試算）。" in t[13], "S13 の見出し")
-    check(f"{n_last}件/月" in t[13] and "6か月累計" in t[13] and f"{TOTAL}件" in t[13] and "約1,377人" in t[13], "S13 の問い合わせ・累計・友だち数")
-    check("問い合わせ①" not in t[13] and "合計" not in t[13], "S13 に①②・合計の箱が無い")
+    check(f"{NEW[-1]}件/月" in t[13] and f"{EXIST[-1]}件/月" in t[13] and f"{n_last}件/月" in t[13] and f"（6か月累計{TOTAL}件）" in t[13] and "約1,377人" in t[13],
+          "S13 の新規・既存・合計・累計・友だち数")
+    check("新規友だち経由" in t[13] and "既存友だち経由" in t[13] and "合計" in t[13] and "問い合わせ①" not in t[13] and "問い合わせ②" not in t[13], "S13 のラベル（新規友だち経由・既存友だち経由・合計）")
     check("¥215,000" in t[13] and "¥135,000" in t[13] and "21.5万円" in t[13] and "13.5万円" in t[13], "S13 の費用はそのまま")
-    check("既存の友だち経由は上積み（試算外）。" in t[13] and "紹介による追加成果は含みません" in t[13], "S13 の試算の前提（上積み・紹介を含まない）")
-    check(f"約{n_last}件" in t[9] and "新規友だち経由" in t[9] and "上積み" in t[9] and "既存友だち経由" in t[9] and "（試算には含みません）" in t[9], "S9 右の列（新規＝13件／既存＝上積み）")
-    check("※問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規友だち経由の月間の試算" in t[9], "S9 の注記")
+    check("紹介による追加成果は含みません" in t[13] and "既存" not in "\n".join(p for p in paras(so[12]) if p.startswith("＜試算の前提＞") or p.startswith("プラン①｜総合運用の基本施策") or p.startswith("API連携")),
+          "S13 の試算の前提（紹介を含まない）")
+    check("問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規＝新しい友だち、既存＝今の友だち" in t[13], "S13 の注記")
+    check(f"約{NEW[-1]}件" in t[9] and f"約{EXIST[-1]}件" in t[9] and "新規友だち経由" in t[9] and "既存友だち経由" in t[9], "S9 右の列（新規＝8件／既存＝13件）")
+    check(t[9].count("（フォーム送信）") == 2, "S9 右の列の補足が2つ（フォーム送信）")
+    check("今の友だちは見込み顧客として活用し、将来的な紹介にもつなげます（紹介による成果は試算に含みません）。" in t[9], "S9 見出し2行目（元のまま）")
+    check("※問い合わせ＝フォームでの物件情報の送信（CV）の件数。新規＝新しい友だち、既存＝今の友だち" in t[9], "S9 の注記")
     check(f"6か月目に月{n_last}件" in t[16], "S16 の注記の件数")
     check("フォームで計測をします" in t[4] and "厚くし" in t[4], "S4 フォームで計測をする・厚くする")
     check("標準機能のまま厚くできると想定" in t[2] and "標準機能で厚くできる余地あり" in t[2], "S2 厚くできる")
@@ -114,21 +126,36 @@ def main(base, out):
     check(not any("フォーム" in p for p in s8_items), f"S8 の初期設計項目にフォームを入れていない {s8_items}")
     check(not re.search(r"フォーム.{0,12}(費用|料金|円|無料|込み)", allt), "フォームの費用・料金に触れていない")
 
-    # ---- S12 の棒グラフ
+    # ---- S12 の棒グラフ（新規＋既存の積み上げ）
     sh12 = {sh.name: sh for sh in walk(so[11].shapes)}
     grp = [sh for sh in so[11].shapes if sh.shape_type == 6]
     check(len(grp) == 1 and grp[0].name == "グラフ（問い合わせ件数・月間の試算）", "S12 のグラフが1つのグループ")
     scale = Emu(914400 * 0.55).emu / max(CV)
     base_line = sh12["グラフ_基準線"]
-    for i, v in enumerate(CV, 1):
-        lab = sh12[f"グラフ_件数_{i}か月目"].text_frame.text
-        check(lab in (str(v), f"{v}件"), f"S12 {i}か月目のラベル {lab} == {v}")
-        bar = sh12[f"グラフ_問い合わせ_{i}か月目"]
-        check(abs(bar.height - v * scale) <= 2, f"S12 {i}か月目の棒の高さ＝{v}件分")
-        check(abs((bar.top + bar.height) - base_line.top) <= 2, f"S12 {i}か月目の棒の底が基準線に載っている")
-    check(f"{TOTAL}件（試算）" in sh12["グラフ_累計"].text_frame.text, "S12 の累計")
-    check(not [n for n in sh12 if "①" in n or "②" in n or "内訳" in n], "S12 のグラフに①②・内訳の図形が残っていない")
-    check(sum(CV) == TOTAL == 55, "累計 55 ＝ 5+7+8+10+12+13")
+    for i, (n_, e_, v) in enumerate(zip(NEW, EXIST, CV), 1):
+        lab = sh12[f"グラフ_合計_{i}か月目"].text_frame.text
+        check(lab in (str(v), f"{v}件"), f"S12 {i}か月目の合計ラベル {lab} == {v}")
+        check(sh12[f"グラフ_内訳_{i}か月目"].text_frame.text == f"{n_}＋{e_}", f"S12 {i}か月目の内訳 {n_}＋{e_}")
+        bn, be = sh12[f"グラフ_新規友だち_{i}か月目"], sh12[f"グラフ_既存友だち_{i}か月目"]
+        check(abs(bn.height - n_ * scale) <= 2 and abs(be.height - e_ * scale) <= 2, f"S12 {i}か月目の棒の高さ＝新規{n_}・既存{e_}")
+        check(abs((bn.top + bn.height) - base_line.top) <= 2, f"S12 {i}か月目の新規の底が基準線に載っている")
+        check(abs((be.top + be.height) - bn.top) <= 2, f"S12 {i}か月目の既存が新規の真上に積まれている")
+        check(abs(be.left - bn.left) <= 2 and abs(be.width - bn.width) <= 2, f"S12 {i}か月目の新規・既存の棒が同じ位置・幅")
+    check(f"{TOTAL}件（試算）" in sh12["グラフ_累計"].text_frame.text and "6か月累計" in sh12["グラフ_累計"].text_frame.text, "S12 の累計")
+    check(sh12["グラフ_内訳の見出し"].text_frame.text == "新規＋既存", "S12 の内訳の見出し")
+    check(sh12["グラフ_凡例文字_新規"].text_frame.text == "新規友だち" and sh12["グラフ_凡例文字_既存"].text_frame.text == "既存友だち", "S12 の凡例")
+    check(not [n for n in sh12 if "①" in n or "②" in n], "S12 のグラフに①②の図形が残っていない")
+    # 見出しの右端が最初の月の内訳ラベルに掛からない／左の枠（配信目標の箱の左端 3.70in）に食い込まない
+    tag, first = sh12["グラフ_内訳の見出し"], sh12["グラフ_内訳_1か月目"]
+    tag_w = est_width_in("新規＋既存", 10)
+    tag_left = (tag.left + tag.width) / 914400 - tag_w
+    first_left = (first.left + first.width / 2) / 914400 - est_width_in("3＋5", 10) / 2
+    check(tag_left >= 3.70 + 0.05, f"S12 見出しの左端 {tag_left:.2f}in が配信目標の箱の左端 3.70in に掛からない")
+    check((tag.left + tag.width) / 914400 + 0.10 <= first_left, f"S12 見出しの右端と最初の内訳ラベルの間が空いている（{first_left - (tag.left + tag.width) / 914400:.2f}in）")
+    last_right = max((sh12[f"グラフ_月_{i}"].left + sh12[f"グラフ_月_{i}"].width) / 914400 for i in range(1, 7))
+    leg_left = sh12["グラフ_凡例_新規"].left / 914400
+    check(last_right + 0.05 <= leg_left, f"S12 最後の月の列の右端 {last_right:.2f}in が凡例 {leg_left:.2f}in に掛からない")
+    check(sum(CV) == TOTAL == 87, "累計 87 ＝ 8+11+13+16+18+21")
 
     # ---- 1行に収まるはずの文：元の行（殿村さんのPowerPointで1行に収まっていた）より長くないこと
     def find(paras_, head):
@@ -146,7 +173,11 @@ def main(base, out):
     not_longer("今の友だちは見込み顧客", "今の友だちは見込み顧客", 9, 13, "S9 見出し2行目")
     not_longer("※問い合わせ＝", "※問い合わせ①", 9, 11, "S9 見出し3行目")
     not_longer("1か月目 月", "1か月目 月", 12, 18, "S12 配信目標の文")
-    check(est_width_in("（試算には含みません）", 11) <= 1.95 - 0.1, "S9 「（試算には含みません）」が1行に収まる")
+    check(est_width_in("（フォーム送信）", 11) <= 1.95 - 0.1, "S9 「（フォーム送信）」が1行に収まる")
+    note13 = find(paras(so[12]), "※6か月後は6か月目の月間の試算。")
+    check(est_width_in(note13, 10) * 1.10 <= 10.3 - 0.2, f"S13 注記が1行に収まる（{est_width_in(note13, 10):.2f}in／箱10.3in）")
+    for lab_ in ("新規友だち経由", "既存友だち経由"):
+        check(est_width_in(lab_, 14) * 1.05 <= 1.56 - 0.1, f"S13 「{lab_}」がラベルの箱（1.56in・左右0.05in）に1行で収まる（{est_width_in(lab_, 14):.2f}in）")
 
     # ---- 字体・サイズ
     from _build.fontcheck import scan
@@ -170,9 +201,19 @@ def main(base, out):
     names = set(zo.namelist())
     check(set(re.findall(r'PartName="/([^"]+)"', ct)) <= names, "[Content_Types] の Override が全部実在する")
 
+    # ---- 前回納品した版（9fe98a6）から変わったのは S9・S12・S13・S16 だけ。ほかのパーツは1バイトも変わらない
+    if prev:
+        zp = zipfile.ZipFile(prev)
+        op = slide_order(zp)
+        check(op == oo, "前回版とスライドの並び（パーツ名）が同じ")
+        ch = [i + 1 for i, n in enumerate(oo) if c14n(zp.read(op[i])) != c14n(zo.read(n))]
+        check(ch == [9, 12, 13, 16], f"前回版から変わったスライド＝[9, 12, 13, 16] / 実際 {ch}")
+        dp = [n for n in zp.namelist() if zp.read(n) != zo.read(n)]
+        check(sorted(dp) == sorted(oo[i - 1] for i in (9, 12, 13, 16)), f"前回版から変わったパーツはその4枚のXMLだけ {dp}")
+
     print(f"\nOK {len(OKS)} / NG {len(FAILS)}")
     return not FAILS
 
 
 if __name__ == "__main__":
-    sys.exit(0 if main(*sys.argv[1:3]) else 1)
+    sys.exit(0 if main(*sys.argv[1:4]) else 1)
