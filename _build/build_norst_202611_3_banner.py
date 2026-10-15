@@ -7,8 +7,11 @@
 - 引数なし：イラストなしの版。形は11月1本目のイラストなし版（`build_norst_202611_1_banner.py`）と同じで、上の深緑の面の言葉だけ差し替え。
 - --illust：殿村さんが生成した男性入りの版（`_images/norst_202611_3_holiday_illust_v1.webp`）の吹き出しの文字を差し替え、公式ロゴを貼る。
 
+- --worry：イラストなしの版で、吹き出しを悩みの心の声「平日は、仕事で時間が取れない…」にする（案A）。
+- --band：イラストなしの版で、吹き出しをやめて「11/21〜23は、勤労感謝の日の3連休」の帯にする（案B）。
+
 使い方:
-  python3 _build/build_norst_202611_3_banner.py [--illust] [出力]
+  python3 _build/build_norst_202611_3_banner.py [--illust | --worry | --band] [出力]
 """
 import sys
 from pathlib import Path
@@ -77,7 +80,8 @@ def lower_half(c, d):
     text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 996, GRAY)
 
 
-def build(out):
+def build(out, bubble=BUBBLE, band=False):
+    """bubble＝吹き出しの言葉。band=True なら吹き出しのしっぽを付けず、事実の帯として置く。"""
     c = Image.new("RGB", (W * S, H * S), PALE)
     d = ImageDraw.Draw(c)
 
@@ -87,12 +91,13 @@ def build(out):
     c.paste(logo, ((W * S - logo.width) // 2, 22 * S), logo)
     counsel_badge(d, 905, 128, 88)
 
-    # 吹き出し＝読む人の心の声
+    # 吹き出し＝読む人の心の声（band=True のときは、しっぽの無い白い帯）
     f_v = font(34)
-    vw = tw(f_v, BUBBLE) + 44
+    vw = tw(f_v, bubble) + 44
     rrect(d, (40, 104, 40 + vw, 160), 28, fill=WHITE)
-    d.polygon([(70 * S, 158 * S), (98 * S, 158 * S), (66 * S, 180 * S)], fill=WHITE)
-    text(d, BUBBLE, f_v, 62, 132 - th(f_v, BUBBLE) / 2, GREEN_DARK)
+    if not band:
+        d.polygon([(70 * S, 158 * S), (98 * S, 158 * S), (66 * S, 180 * S)], fill=WHITE)
+    text(d, bubble, f_v, 62, 132 - th(f_v, bubble) / 2, GREEN_DARK)
 
     # 診療のタグ3つ（吹き出しの下）
     f_t = font(26)
@@ -148,5 +153,11 @@ if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if "--illust" in sys.argv:
         print(paste_logo(args[0] if args else "_images/norst_202611_3_holiday_illust_v2_logo_1040.jpg"))
+    elif "--worry" in sys.argv:
+        # イラストなし版の吹き出しを悩みの心の声に（2026-10-15 殿村さん「イラスト無しverの吹き出しはこれじゃまずい」）
+        print(build(args[0] if args else "_images/norst_202611_3_holiday_v2a_1040.jpg", bubble="「平日は、仕事で時間が取れない…」"))
+    elif "--band" in sys.argv:
+        # 吹き出しをやめて、3連休の日付を事実の帯で置く
+        print(build(args[0] if args else "_images/norst_202611_3_holiday_v2b_1040.jpg", bubble="11/21〜23は、勤労感謝の日の3連休", band=True))
     else:
         print(build(args[0] if args else "_images/norst_202611_3_holiday_v1_1040.jpg"))
