@@ -6,7 +6,7 @@
   お手本：`_templates/構成お手本_20261009_J.P.Returns_アドアフィ×LINE×Meta広告集客のご提案v11.pdf`
   1. タイトルを「論点：結論」に（サマリー・本質課題はお手本どおり、結論をKEY TAKEAWAY枠に入れる）
   2. 並べ替え：課題を施策より前に、施策の詳細を費用より前に
-  3. 足す：サマリー／本質課題／次のステップ／Appendixの区切り（v9の章の区切りページ12・25・30・37を作り直す）
+  3. 足す：サマリー／本質課題／Appendixの区切り（v9の章の区切りページ12・25・37を作り直す。30は外す）
   4. まとめる：v9のS10（目標）を S11（費用対効果）に入れて1枚に（S10は外す）。月ごとの件数は S11 に表で残す
   5. 「月17件」は新15ページだけ：v9のS8の右の列は「ゴール：フォーム送信（CV）」に
   6. 使わない施策・汎用ページは、中身を変えずに裏表紙の後ろ（Appendix）へ
@@ -24,11 +24,11 @@ from lxml import etree
 from pptx import Presentation
 from pptx.oxml.ns import qn
 
-from _build.arauchi_v4.lib import NAVY, RED, TEXT, add_box, add_table, delete, move, set_paras
+from _build.arauchi_v4.lib import NAVY, RED, TEXT, add_box, delete, move, set_paras
 
 N_BASE = 45
-DROP = [10]
-NEW_ORDER = [1, 12, 2, 4, 5, 9, 25, 3, 7, 8, 6, 17, 15, 16, 11, 13, 14, 27, 28, 29, 30, 45,      # 本編（22枚）
+DROP = [10, 30]                                            # S30（区切り）は「次のステップ」に使ったが、殿村さん「いらない」で外す
+NEW_ORDER = [1, 12, 2, 4, 5, 9, 25, 3, 7, 8, 6, 17, 15, 16, 11, 13, 14, 27, 28, 29, 45,          # 本編（21枚）
              37, 18, 19, 20, 21, 22, 23, 24, 26, 31, 32, 33, 34, 35, 36, 38, 39, 40, 41, 42, 43, 44]  # Appendix
 assert sorted(NEW_ORDER + DROP) == list(range(1, N_BASE + 1))
 assert NEW_ORDER.index(11) + 1 == 15                       # 費用対効果＝新15ページ（S14の注記で参照）
@@ -61,7 +61,6 @@ TITLES = {   # v9の番号: (タイトルの図形id, 文字, 幅を広げるか
     27: (681, "効果計測：配信・リッチメニューのリンクごとに成果を数値化", True),
     28: (684, "体制：戦略から運用・制作まで一貫して対応", True),
     29: (718, "スケジュール：お申込みから運用開始までの5ステップ", True),
-    30: (736, "次のステップ：運用開始に向けて伺いたいこと", True),
     37: (980, "Appendix", False),
 }
 TITLE_W = 8.40      # ロゴ（x≒9.3in）の手前まで
@@ -187,26 +186,6 @@ def p_honshitsu(s, src11):
     ], body_h=1.15, foot=["離脱防止ポップアップ", "あいさつ・リッチメニュー・自動応答", "ステップ配信・企画配信"])
 
 
-def p_next(s, src11):
-    clear_body(s, 736)
-    lead_band(s, src11, "以下を伺ったうえで、初期設計（約1か月）に入る")
-    items = [
-        ("サイトの「LINEでお問い合わせ」ボタンのリンク先を、友だち追加用のURLに変えてよいか", "友だちの入口（サイトのボタン）"),
-        ("対応できない物件の条件と、送られた物件を確認するご担当者・手順", "あいさつ・自動応答の案内"),
-        ("LINEでの返信の目安（受付時間・返信までの時間）", "あいさつ・受付時間外の自動返信"),
-        ("物件を送った方へのステップ配信を止めるか", "ステップ配信の設計"),
-        ("文面・画像・リッチメニューを最終確認するご担当者", "公開までの進め方"),
-    ]
-    border = {k: (0.75, LINE_C) for k in "lrtb"}
-    head = dict(fill=NAVY, color="FFFFFF", bold=True, size=12, borders=border)
-    rows = [[dict(text="#", **head), dict(text="伺いたいこと", **head), dict(text="反映するところ", **head)]]
-    for i, (q, use) in enumerate(items, 1):
-        rows.append([dict(text=str(i), size=13, bold=True, color=NAVY, fill=TINT, borders=border),
-                     dict(text=q, size=12, align="l", borders=border, ins=(0.12, 0.04, 0.1, 0.04)),
-                     dict(text=use, size=12, align="l", borders=border, ins=(0.12, 0.04, 0.1, 0.04))])
-    add_table(s, 0.55, 1.95, [0.55, 5.45, 3.73], [0.45] + [0.70] * len(items), rows, name="伺いたいこと")
-
-
 def p_appendix(s):
     for sh in list(s.shapes):
         if sh.shape_id == 981:
@@ -265,12 +244,11 @@ def apply(prs):
     p14(sl[14])
     p_honshitsu(sl[25], src11)
     p27(sl[27])
-    p_next(sl[30], src11)
     p_appendix(sl[37])
     p11(sl[11])                                        # リードを写したあとで S11 を直す
 
 
-CHANGED = sorted({2, 8, 11, 14, 27} | set(TITLES) | {12, 25, 30, 37})
+CHANGED = sorted({2, 8, 11, 14, 27} | set(TITLES) | {12, 25, 37})
 
 
 # ---------------------------------------------------------------- 差し込み
