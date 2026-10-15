@@ -25,6 +25,7 @@ from build_norst_1016_banner import (  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 ILLUST = ROOT / "_images" / "norst_202611_1_movember_illust_v1.webp"
+BUBBLE = "「今さら、人に打ち明けられない…」"
 
 
 def build(out):
@@ -37,9 +38,9 @@ def build(out):
     c.paste(logo, ((W * S - logo.width) // 2, 22 * S), logo)
     counsel_badge(d, 905, 128, 88)
 
-    # 吹き出し：11月は、男性の健康を考える月。
-    f_v = font(32)
-    v = "11月は、男性の健康を考える月。"
+    # 吹き出し＝読む人の心の声（2026-10-15 殿村さん「11月は、男性の健康を考える月 は無し」→「今さら、人に打ち明けられない…」）
+    f_v = font(34)
+    v = BUBBLE
     vw = tw(f_v, v) + 44
     rrect(d, (40, 104, 40 + vw, 160), 28, fill=WHITE)
     d.polygon([(70 * S, 158 * S), (98 * S, 158 * S), (66 * S, 180 * S)], fill=WHITE)
@@ -127,21 +128,27 @@ def build(out):
 
 
 def paste_logo(out):
-    """生成した男性入りの版に公式ロゴを貼る。右側の写真（髪・窓）にかからないよう、左の文字の列の上に置く。"""
-    img = Image.open(ILLUST).convert("RGB").resize((W, H), Image.LANCZOS).convert("RGBA")
-    logo = white_logo(270)
-    lx, ly = 40, 22  # タグ3つの左端にそろえる
+    """生成した男性入りの版に、吹き出しの文字の差し替えと公式ロゴの貼り込みをする。
+    吹き出し（1040基準で x 28〜565・y 163〜224 の白い角丸）の中の文字を白で消して、心の声を載せ直す。
+    ロゴは右側の写真（髪・窓）にかからないよう、左の文字の列の上に置く。"""
+    img = Image.open(ILLUST).convert("RGB").resize((W * S, H * S), Image.LANCZOS).convert("RGBA")
+    d = ImageDraw.Draw(img)
+    d.rectangle((36 * S, 175 * S, 558 * S, 213 * S), fill=WHITE)
+    f_v = font(32)
+    text_c(d, BUBBLE, f_v, (28 + 565) / 2, 194 - th(f_v, BUBBLE) / 2, GREEN_DARK)
+    logo = white_logo(270 * S)
+    lx, ly = 40 * S, 22 * S  # タグ3つの左端にそろえる
     glow = Image.new("RGBA", logo.size, GREEN_DARK + (0,))
-    glow.putalpha(logo.getchannel("A").filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.GaussianBlur(6)))
+    glow.putalpha(logo.getchannel("A").filter(ImageFilter.MaxFilter(7)).filter(ImageFilter.GaussianBlur(6 * S)))
     img.alpha_composite(glow, (lx, ly))
     img.alpha_composite(logo, (lx, ly))
-    img.convert("RGB").save(out, quality=95)
+    img.convert("RGB").resize((W, H), Image.LANCZOS).save(out, quality=95)
     return out
 
 
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if "--illust" in sys.argv:
-        print(paste_logo(args[0] if args else "_images/norst_202611_1_movember_illust_v1_logo_1040.jpg"))
+        print(paste_logo(args[0] if args else "_images/norst_202611_1_movember_illust_v2_logo_1040.jpg"))
     else:
-        print(build(args[0] if args else "_images/norst_202611_1_movember_v1_1040.jpg"))
+        print(build(args[0] if args else "_images/norst_202611_1_movember_v2_1040.jpg"))
