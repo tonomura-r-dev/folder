@@ -109,7 +109,7 @@ def clone(dst, src_shape):
     for ext in list(el.iter(qn("a:extLst"))):
         if ext.getparent().tag == qn("p:cNvPr"):
             ext.getparent().remove(ext)
-    nid = max(sh.shape_id for sh in dst.shapes) + 1
+    nid = max((sh.shape_id for sh in dst.shapes), default=1) + 1
     el.find(".//" + qn("p:cNvPr")).set("id", str(nid))
     dst.shapes._spTree.append(el)
     return by_id(dst, nid)
