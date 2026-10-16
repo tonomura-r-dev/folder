@@ -1241,7 +1241,9 @@
       "Bash(V=/tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/v10pc2 && mkdir -p $V && cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/028ddb0f-202610____________LINE______________v10.pptx\" $V/pc2.pptx && cd /home/user/folder && python3 - <<'EOF' *)",
       "Bash(V=/tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/v10pc3 && mkdir -p $V && cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/5a378373-202610____________LINE______________v10.pptx\" $V/pc3.pptx && cd /home/user/folder && python3 - <<'EOF' *)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/23356704-202610____________LINE______________v10.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/v10pc4/pc4.pptx)",
-      "Bash(python3 /mnt/skills/public/pptx/scripts/office/validate.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/v10pc4/pc4.pptx)"
+      "Bash(python3 /mnt/skills/public/pptx/scripts/office/validate.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/v10pc4/pc4.pptx)",
+      "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/19adb70b-202610____________________________________v2.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/pc_v2.pptx)",
+      "Bash(python3 _build/qa_render.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/pc_v2.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/before)"
     ]
   }
 }
