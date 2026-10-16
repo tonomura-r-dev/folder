@@ -7,7 +7,7 @@
   中身は v1（`_build/build_sunao_v1.py`・殿村さん確定の構成）と同じ。見た目をFMTに合わせた：
    ・ヘッダー＝タイトルだけ（リード帯なし）。その下に紺のラベル＋太字のメッセージ（FMTの「施策展開図」と同じ形）
    ・ページは殿村さんの要旨の項目だけ（章の扉・配信の回数のページは入れない。2026-10-16）
-   ・運用スケジュール＝FMTのページをそのまま（注記の文末だけ言い切りに）
+   ・運用スケジュール＝FMTのページ（「約1か月」は書かない。見出しはあらうちv10と同じ「初期設計が整い次第、順次進行」）
    ・成果報酬プラン＝FMTの「成果報酬型プラン」の式（成果件数×成果報酬単価＋固定費用）を使い、成果の地点・単価は差し込み枠
    ・表紙・裏表紙＝FMTのもの（表紙に「御中」とサブタイトル2行を入れ、「- 2026最新版 -」は外す）
   SIM（概算お見積り）と成果報酬の条件は、まだ決まっていないので破線の差し込み枠のまま。
@@ -122,7 +122,7 @@ def p_cover(s, ar_cover):
 
 # ---------------------------------------------------------------- 要旨
 def p_summary(prs, head):
-    s = new_page(prs, head, "サマリー", "提案の要旨", "広告で集めた方をLINEにため、次のイベント参加・入会（LTV）を最大化する")
+    s = new_page(prs, head, "サマリー", "提案の要旨", "広告で集めた方をLINEにため、\n次のイベント参加数・入会数を伸ばし、LTVを最大化する")
     add_box(s, X0, 1.65, 4.0, 0.35, [runs(("構築する仕組み", dict(size=13, bold=True, color=NAVY)))], ins=(0, 0, 0, 0),
             name="小見出し")
     flow(s, [("広告", False), ("イベント\n＋LINEにたまる", False), ("ナーチャリング", False), ("次のイベント\n・入会", True)],
@@ -150,8 +150,8 @@ def p_kadai(prs, head):
         add_box(s, cx - 1.8, 3.25, 3.6, 1.5, [runs((h1, dict(size=15, bold=True, color=RED))),
                                               runs((body, dict(size=14, color=TEXT)))],
                 line=RED, align="ctr", anchor="ctr", line_spacing=130, ins=(0.1, 0.06, 0.1, 0.06), name=f"切れる{k}")
-    add_box(s, X0, 5.3, W, 0.85, [runs(("次のイベントでは、", dict(size=16, bold=True, color=NAVY)),
-                                       ("また広告で集め直している", dict(size=16, bold=True, color=RED)))],
+    add_box(s, X0, 5.3, W, 0.85, [runs(("イベントのたびに、", dict(size=16, bold=True, color=NAVY)),
+                                       ("広告で一から集める形になっている", dict(size=16, bold=True, color=RED)))],
             fill=LGRAY, align="ctr", anchor="ctr", name="示唆")
 
 
@@ -281,6 +281,11 @@ def p_ryokin(prs, head):
 # ---------------------------------------------------------------- 4 運用スケジュール（FMTのページ）
 def p_schedule(prs, src):
     s = copy_slide(prs, src)
+    # 初期構築の期間（約1か月）は書かない（2026-10-15・10-16 殿村さん。あらうちv10と同じ書き方）
+    set_paras(by_id(s, 19), ["サイト・LINEへの実装は、初期設計が整い次第、順次進行"])
+    for sid in (21, 22):                                      # 「約1か月」の札と点線の矢印
+        e = by_id(s, sid)._element
+        e.getparent().remove(e)
     set_paras(by_id(s, 20), ["※貴社の作業・確認にかかる時間により、前後する可能性あり"])      # 文末は言い切り
     return s
 
