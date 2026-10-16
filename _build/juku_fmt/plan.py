@@ -14,8 +14,20 @@
         松 MAX＝開発含むプラン（Hachidoriなどと連携）※最適運用プランで提示
         竹 MID＝初期＋4-5投稿（週1）＋10ステップ配信
         梅 MIN＝サンクスLINE誘導のみ＋初期＋Fee（手数料）
-  → 区切り「具体プラン提示」（37枚目）のあとに4枚：最大の課題／ご予算の確認／松竹梅（初訪）／松竹梅（クロージング・非表示）。
-    旧「ご提供プラン（運用構成）」（月額20万円〜（3投稿））は松竹梅に置き換えて外す。金額は未確定なので「◯」。
+  → 区切り「具体プラン提示」のあとに4枚：最大の課題／ご予算の確認／3つのプラン（初訪）／3つのプラン（クロージング・非表示）。
+    旧「ご提供プラン（運用構成）」（月額20万円〜（3投稿））は3つのプランに置き換えて外す。
+  2026-10-16 殿村さん（2回目）：
+    「〇〇円～の記載で良い。費用感は汎用を参考に」／「手数料は書かない」／「松竹梅も書かない。費用の差を出したいだけ→竹を選んでほしいだけ」
+    「広告の実態は消していい」
+  → 資料の表記は「プラン①・②・③」。金額は汎用の費用感から「〇万円〜」：
+      汎用＝業界汎用資料の運用プラン（月額20万円〜（3投稿）／5投稿＝30万円／9投稿＝50万円／初期費用10万円〜）
+           ＋提案FMT ver2_3（サンクスLINE誘導 初期10万円・月額3万円〜／ID連携 20万円〜）
+      初訪       ①＝月額30万円〜（5投稿の額）／②＝月額20万円〜（運用プランの最小）／③＝月額3万円〜（サンクスLINE誘導）。初期はどれも10万円〜
+      クロージング ①＝初期30万円〜（初期10万円＋開発（ID連携）20万円〜）・月額50万円〜（9投稿の額）／②＝初訪の①／③＝初訪の③
+    「広告の実態」（6枚目）を外し、そこを指していた参照（P6）を直す：
+      11枚目の1行目のデータ＝「サイトに来た保護者の多くは、名前を残さず帰っている」（ページ参照なし）・説明「P6〜P10」→「P8〜P10」相当
+      19枚目の「（P6）」を外す／出典ページの「P6｜広告の実績（取得中）」の行を外して下の行を詰める
+    残りのページ参照（P◯）は新しい番号に付け替える。
 
   1) 組み立て：48枚のzipに、全体設計想定（14枚目）のXMLを型にした4枚を足し、旧ご提供プランを外して並べ替える
   2) 中身：python-pptx で4枚を組み、直したスライドのXMLだけを1)のzipに差し込む（python-pptxで保存し直さない）
@@ -38,13 +50,17 @@ from _build.juku_fmt.build import CT_SLIDE, RT_SLIDE, rels_of, repack
 
 N_BASE = 48
 TEMPLATE = 14            # 全体設計想定（見出し・説明・区切り線・8フェーズの帯がある）
+AD_PAGE = 6              # 「LINE公式アカウントを検討する背景｜広告の実態」（中身は全部データ待ち）
 OLD_PLAN = 37            # 旧「ご提供プラン（運用構成）」
+DROP = [AD_PAGE, OLD_PLAN]
 AFTER = 36               # 区切り「資料アジェンダ：具体プラン提示」
 N_NEW = 4
 HIDDEN = [4]             # 新しい4枚のうち、クロージング用は非表示
-ORDER = list(range(1, AFTER + 1)) + [("N", k) for k in range(1, N_NEW + 1)] + \
-        [n for n in range(AFTER + 1, N_BASE + 1) if n != OLD_PLAN]
+ORDER = [n for n in range(1, AFTER + 1) if n not in DROP] + [("N", k) for k in range(1, N_NEW + 1)] + \
+        [n for n in range(AFTER + 1, N_BASE + 1) if n not in DROP]
 NEW_POS = {key: i for i, key in enumerate(ORDER, 1)}
+REF_SLIDES = [11, 19, 22, 25, 26, 29, 30, 47]     # 本文に「P◯」がある（48枚の番号）
+SOURCES = 47                                      # 出典ページ
 KEEP_IDS = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12}   # 見出し・説明・区切り線・上の8フェーズの帯
 
 PHASES = ["①接触", "②離脱", "③育成", "④リード獲得", "⑤リード有効化", "⑥再育成", "⑦入会（契約）", "⑧紹介"]
@@ -102,18 +118,20 @@ def assemble(base, out):
         prels = prels.replace("</Relationships>", f'<Relationship Id="{rid}" Type="{RT_SLIDE}" Target="slides/{dst.split("/")[-1]}"/></Relationships>')
         rid_of[("N", k)] = rid
 
-    # 旧ご提供プランを外す（ほかから参照されていないこと）
-    old = order[OLD_PLAN - 1]
-    for r in etree.fromstring(z.read(rels_of(old))):
-        assert r.get("Type").endswith("/slideLayout")
-    for n in names:
-        if n.endswith(".rels") and n not in (rels_of(old), "ppt/_rels/presentation.xml.rels"):
-            assert old.split("/")[-1] not in z.read(n).decode("utf-8"), n
-    gone = {old, rels_of(old)}
-    m, _ = rid_for(old)
-    prels = prels.replace(m.group(0), "")
-    ct, k = re.subn(r'<Override [^>]*PartName="/%s"[^>]*/>' % re.escape(old), "", ct)
-    assert k == 1
+    # 広告の実態・旧ご提供プランを外す（ほかから参照されていないこと）
+    gone = set()
+    for no in DROP:
+        old = order[no - 1]
+        for r in etree.fromstring(z.read(rels_of(old))):
+            assert r.get("Type").endswith("/slideLayout")
+        for n in names:
+            if n.endswith(".rels") and n not in (rels_of(old), "ppt/_rels/presentation.xml.rels"):
+                assert old.split("/")[-1] not in z.read(n).decode("utf-8"), n
+        gone |= {old, rels_of(old)}
+        m, _ = rid_for(old)
+        prels = prels.replace(m.group(0), "")
+        ct, k = re.subn(r'<Override [^>]*PartName="/%s"[^>]*/>' % re.escape(old), "", ct)
+        assert k == 1
 
     # p:sldIdLst を新しい並びに
     m = re.search(r"<p:sldIdLst>(.*?)</p:sldIdLst>", pres, re.S)
@@ -137,6 +155,7 @@ def assemble(base, out):
     app = re.sub(r"(<vt:lpstr>スライド タイトル</vt:lpstr></vt:variant><vt:variant><vt:i4>)\d+(</vt:i4>)", rf"\g<1>{n_new}\2", app)
     mv = re.search(r'<vt:vector size="(\d+)" baseType="lpstr">', app)
     app = app.replace(mv.group(0), f'<vt:vector size="{int(mv.group(1)) + n_new - N_BASE}" baseType="lpstr">')
+    assert n_new > N_BASE
     i = app.rfind(ppt_t) + len(ppt_t)
     app = app[:i] + ppt_t * (n_new - N_BASE) + app[i:]
 
@@ -282,77 +301,106 @@ def page_budget(s):
                 line_spacing=120)
         corner(add_box(s, x + 0.25, y0 + 2.35, w - 0.5, 0.8, [[(fill_in, {})]], size=18, bold=True, color=NAVY,
                        fill="FFFFFF", line=NAVY, dash="dash", align="ctr", shape="round"), 10000)
-    add_box(s, X0, 5.65, 9.89, 0.5, [[("この2つをもとに、次のページの松・竹・梅から、貴塾に合うプランをご提案します。", {})]],
+    add_box(s, X0, 5.65, 9.89, 0.5, [[("この2つをもとに、次のページの3つのプランから、貴塾に合う形をご提案します。", {})]],
             size=14, bold=True, color="FFFFFF", fill=NAVY, align="ctr", shape="round")
 
 
 PLAN_LEAD = ["ご予算と最大の課題に合わせて、3つのプランからお選びいただけます。",
              "6か月〜・税抜。金額は貴塾の教室数・配信の規模に合わせて確定します。"]
-HEAD_STYLE = [(NAVY, "FFFFFF"), (MID, "FFFFFF"), (TINT, NAVY)]       # 松・竹・梅
+HEAD_STYLE = [(NAVY, "FFFFFF"), (MID, "FFFFFF"), (TINT, NAVY)]       # プラン①・②・③
 
 
 def plan_columns(s, plans):
-    """plans = [(名前, 目安の言葉, ひとこと, [項目], 費用)]×3"""
+    """plans = [(ひとこと, [項目], (初期費用, 月額))]×3。見出しは「プラン①〜③」（松竹梅は資料に出さない）"""
     y0 = 1.75
-    for x, (fill, txt), (name, tag, tagline, items, fee) in zip(COLS, HEAD_STYLE, plans):
-        runs = [(name, {"size": 26})] + ([("　" + tag, {"size": 12})] if tag else [])
-        corner(add_box(s, x, y0, COL_W, 0.95, [runs, [(tagline, {"size": 11.5, "bold": False})]], size=26, bold=True,
+    for k, (x, (fill, txt), (tagline, items, fee)) in enumerate(zip(COLS, HEAD_STYLE, plans)):
+        runs = [("プラン" + "①②③"[k], {"size": 22})]
+        corner(add_box(s, x, y0, COL_W, 0.95, [runs, [(tagline, {"size": 11.5, "bold": False})]], size=22, bold=True,
                        color=txt, fill=fill, align="ctr", shape="round", ins=(0.06, 0.02, 0.06, 0.04), line_spacing=100),
                10000)
-        card(s, x, y0 + 1.05, COL_W, 2.75)
-        hang(add_box(s, x + 0.18, y0 + 1.25, COL_W - 0.32, 2.45,
+        card(s, x, y0 + 1.05, COL_W, 2.6)
+        hang(add_box(s, x + 0.18, y0 + 1.25, COL_W - 0.32, 2.3,
                      [[("・" + t, {"size": 11, "color": "7F7F7F"} if t.startswith("例：") else {})] for t in items],
                      size=13, color=TEXT, anchor="t", ins=(0, 0, 0, 0), after=6, line_spacing=115))
-        corner(add_box(s, x, y0 + 3.9, COL_W, 0.6, [[(fee, {})]], size=12.5, bold=True, color=NAVY, fill=BG, line=LINE,
-                       align="ctr", shape="round", ins=(0.04, 0.02, 0.04, 0.02)), 12000)
+        init, month = fee
+        corner(add_box(s, x, y0 + 3.75, COL_W, 0.85,
+                       [[("月額 " + month, {"size": 17})], [("初期費用 " + init, {"size": 11.5, "bold": False})]],
+                       size=17, bold=True, color=NAVY, fill=BG, line=LINE, align="ctr", shape="round",
+                       ins=(0.04, 0.02, 0.04, 0.02), line_spacing=105), 12000)
 
 
 def page_plan_first(s):
-    """松竹梅（初訪）"""
-    set_title([x for x in s.shapes if x.shape_id == 2][0], "ご提供プラン｜松・竹・梅")
+    """3つのプラン（初訪）。②を選んでもらうための費用の差"""
+    set_title([x for x in s.shapes if x.shape_id == 2][0], "ご提供プラン")
     set_lead(s, PLAN_LEAD)
     set_header(s)
     plan_columns(s, [
-        ("松", "", "構築から配信の運用まで",
+        ("構築から配信の運用まで",
          ["初期構築", "企画投稿 月4〜5本（週1回）", "ステップ配信 10通", "API連携なども含めて、ここまで対応できます"],
-         "初期費用 ◯万円／月額 ◯万円"),
-        ("竹", "", "構築＋新しい友だちを増やす",
+         ("10万円〜", "30万円〜")),
+        ("構築＋新しい友だちを増やす",
          ["初期構築", "企画投稿 月1〜2本", "新しい友だちを増やすツール・機能の導入", "例：離脱防止ポップアップ"],
-         "初期費用 ◯万円／月額 ◯万円"),
-        ("梅", "", "ツールの導入を支援",
-         ["ツールの導入支援", "例：サンクスLINE誘導のみ（申し込み完了画面からLINEへ）", "初期構築", "月額は手数料のみ"],
-         "初期費用 ◯万円／月額 手数料 ◯万円"),
+         ("10万円〜", "20万円〜")),
+        ("ツールの導入を支援",
+         ["ツールの導入支援", "例：サンクスLINE誘導のみ（申し込み完了画面からLINEへ）", "初期構築"],
+         ("10万円〜", "3万円〜")),
     ])
 
 
 def page_plan_closing(s):
-    """松竹梅（クロージング）＝非表示。松を開発込みの最適運用プランに上げ、初訪の松を竹に"""
-    set_title([x for x in s.shapes if x.shape_id == 2][0], "ご提供プラン｜松・竹・梅")
+    """3つのプラン（クロージング）＝非表示。①を開発込みの最適運用プランに上げ、初訪の①を②に"""
+    set_title([x for x in s.shapes if x.shape_id == 2][0], "ご提供プラン")
     set_lead(s, PLAN_LEAD)
     set_header(s)
     plan_columns(s, [
-        ("松", "MAX", "最適運用プラン（開発を含む）",
+        ("最適運用プラン（開発を含む）",
          ["開発を含むプラン", "Hachidoriなどのツールと連携", "貴塾に合わせた最適な運用"],
-         "初期費用 ◯万円／月額 ◯万円"),
-        ("竹", "MID", "構築から配信の運用まで",
+         ("30万円〜", "50万円〜")),
+        ("構築から配信の運用まで",
          ["初期構築", "企画投稿 月4〜5本（週1回）", "ステップ配信 10通"],
-         "初期費用 ◯万円／月額 ◯万円"),
-        ("梅", "MIN", "サンクスLINE誘導のみ",
-         ["サンクスLINE誘導のみ", "例：申し込み完了画面からLINEへ", "初期構築", "月額は手数料のみ"],
-         "初期費用 ◯万円／月額 手数料 ◯万円"),
+         ("10万円〜", "30万円〜")),
+        ("サンクスLINE誘導のみ",
+         ["サンクスLINE誘導のみ", "例：申し込み完了画面からLINEへ", "初期構築"],
+         ("10万円〜", "3万円〜")),
     ])
+
+
+def drop_ad_refs(at):
+    """「広告の実態」（P6）を指していた所を直す（48枚の番号のまま）"""
+    s = at[11]
+    assert replace_in_paragraphs(s, "P6〜P10のデータ", "P8〜P10のデータ") == 1
+    assert replace_in_paragraphs(s, "広告で取れているのは指名検索だけ（P6）", "サイトに来た保護者の多くは、名前を残さず帰っている") == 1
+    assert replace_in_paragraphs(at[19], "名前を残さず帰る（P6）", "名前を残さず帰る") == 1
+    # 出典ページ：「P6｜広告の実績（取得中）」の行を外し、下の行を詰める
+    s = at[SOURCES]
+    by_id = {sh.shape_id: sh for sh in s.shapes}
+    assert by_id[17].text_frame.text == "P6" and by_id[18].text_frame.text.startswith("広告の実績")
+    top6, step = by_id[17].top, by_id[19].top - by_id[17].top
+    for sid in (17, 18):
+        el = by_id[sid]._element
+        el.getparent().remove(el)
+    for sh in s.shapes:
+        if sh.top > top6 and sh.top < by_id[31].top and sh.shape_id not in (12,):
+            sh.top = sh.top - step
+
+
+def remap_refs(s):
+    """本文中の「P◯」（48枚の番号）を新しい番号に"""
+    for t in s._element.iter(qn("a:t")):
+        if t.text and re.search(r"P\d+", t.text):
+            t.text = re.sub(r"P(\d+)", lambda m: f"P{NEW_POS[int(m.group(1))]}", t.text)
 
 
 def edit(prs):
     sl = prs.slides
     at = {key: sl[i - 1] for key, i in NEW_POS.items()}
+    drop_ad_refs(at)
+    for no in REF_SLIDES:
+        remap_refs(at[no])
     for k, fn in zip(range(1, N_NEW + 1), (page_issue, page_budget, page_plan_first, page_plan_closing)):
         s = at[("N", k)]
         clear_body(s)
         fn(s)
-    # 出典ページの「P46」（企画のご参考）を新しい番号に
-    src = at[N_BASE - 1]
-    assert replace_in_paragraphs(src, "P46", f"P{NEW_POS[46]}") == 1
     return sum(fix_fonts(at[("N", k)]) for k in range(1, N_NEW + 1))
 
 
