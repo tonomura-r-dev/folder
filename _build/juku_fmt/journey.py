@@ -28,11 +28,11 @@ N = 50
 S_FLOW, S_STEP, S_SRC = 8, 24, 49
 
 # 色は8枚目の凡例の色のまま（文字色, 塗り）
-CAT = {
-    "A": ("志望校・偏差値", "2B5797", "D6E2F3"),
-    "B": ("検定・勉強法", "7440A8", "E8DAF5"),
-    "C": ("塾選び・費用・時期", "C0561A", "FBE0CF"),
-    "D": ("塾名・料金・口コミ", "00796B", "CCE7E4"),
+CAT = {   # 前後検索の画像（_build/make_juku_zengo.py）と同じ4色。黄・オレンジは使わない（殿村さん 2026-10-16）
+    "A": ("志望校・偏差値", "3467B2", "D6E2F3"),
+    "B": ("検定・勉強法", "8E4EC6", "E8DAF5"),
+    "C": ("塾選び・費用・時期", "C2185B", "F8D7E3"),
+    "D": ("塾名・料金・口コミ", "00897B", "CCE7E4"),
 }
 # 図から読んだ検索（時系列）。すべて図に出ている語のまま
 BOX = {
@@ -77,11 +77,20 @@ def flow(s):
         r = list(sh.text_frame._txBody.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}t"))
         assert len(r) == 1
         r[0].text = CAT[cat][0]
+        for c in sh._element.spPr.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}srgbClr"):
+            c.set("val", CAT[cat][2])
+        for c in sh.text_frame._txBody.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}srgbClr"):
+            c.set("val", CAT[cat][1])
         assert (sh.text_frame._txBody.find("{http://schemas.openxmlformats.org/drawingml/2006/main}bodyPr") is not None)
         bp = sh.text_frame._txBody.find("{http://schemas.openxmlformats.org/drawingml/2006/main}bodyPr")
         bp.set("lIns", "36000")
         bp.set("rIns", "36000")
         sh.left, sh.width = int((0.47 + k * 1.51) * 914400), int(1.45 * 914400)
+    head = shape_by_id(s, 40)
+    assert head.text_frame.text == "迷っているときに調べること"
+    for c in head._element.spPr.iter("{http://schemas.openxmlformats.org/drawingml/2006/main}srgbClr"):
+        if c.get("val") == "FFF2CC":
+            c.set("val", "E4E9F2")
     note = shape_by_id(s, NOTE)
     assert replace_in_paragraphs(s, "色分けは仮。データが届いたらクエリに合わせて決める",
                                  "※検索は首都圏が中心（塾の名前は首都圏の大手）") == 1
