@@ -8,6 +8,7 @@
   ③ 前後検索「注文住宅」：言葉を4つに色分けした画像（_build/make_tanaka_zengo_color.py）＋時期ごとの分析
   ④ 解決策：追う範囲の違いを帯で見せ、「これで可能になること」を3つ
   ⑤ 費用：3つのプラン（「松竹梅」の文字は出さない。2026-10-16 殿村さん）
+  ⑥ SEOの言い方を「SEO」にそろえる（提案の流れ・現状と打ち手）
   殿村さんが消した注記・直した文言は戻さない。ほかのページは触らない。
 """
 import copy
@@ -197,6 +198,9 @@ def main(base, out):
     assert by_id(hiyo, 2).text_frame.text.startswith("費用")
     assert replace_text(nagare, "資料請求の時点から", "資料請求以前から") == 1
     assert replace_text(ou, "資料請求の時点から", "資料請求以前から") >= 1
+    # ⑥ SEOは「地域SEO」「地域特化のSEO」ではなく、ただの「SEO」にそろえる（2026-10-16 殿村さん）
+    assert replace_text(nagare, "広告と地域SEOで", "広告とSEOで") == 1
+    assert replace_text(sl[2], "地域特化のSEO", "SEO") == 2
     kyogo = p_kyogo(prs, kadai)
     taiou = p_taiou(prs, kadai)
     p_zengo(zengo)
