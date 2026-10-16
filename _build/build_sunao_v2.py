@@ -130,7 +130,7 @@ def p_summary(prs, head):
     cw, gap = (W - 0.3 * 2) / 3, 0.3
     for k, (h, body) in enumerate([("現状と課題", "申し込まずに離れた方・入会していない方を、次のイベントまで追う場所が無い"),
                                    ("施策", "ポップアップツールとサンクスLINE誘導で友だちにし、興味あり・予約・参加の段階ごとに配信する"),
-                                   ("目標と費用", "追える人数を増やし・減らさず、入会へ。\n平常期 月5〜10万円／イベント期 月30万円程度")]):
+                                   ("目標と費用", "追える人数を増やし・減らさず、入会へ。\n費用は、3つのプランから選択可能")]):
         x = X0 + k * (cw + gap)
         heading(s, x, 3.8, cw, h)
         add_box(s, x, 4.25, cw, 2.2, [runs((t, dict(size=15, color=TEXT))) for t in body.split("\n")], fill=LGRAY,
@@ -191,7 +191,7 @@ def p_chuui(prs, head):
             [label_cell("ブロック"), cell("配信が多い・合わない内容だと、ブロックされる"),
              cell("段階に合わせて、配信の中身と回数を変える", bold=True, color=NAVY)],
             [label_cell("配信費"), cell("配信の数に応じて、LINEの費用がかかる"),
-             cell("イベントの無い時期は月2回に抑える", bold=True, color=NAVY)],
+             cell("イベントの無い時期は、配信の回数を絞る", bold=True, color=NAVY)],
             [label_cell("時間"), cell("友だちがたまるまで、時間がかかる"),
              cell("次のイベントから入口を置き、イベントごとに積み上げる", bold=True, color=NAVY)]]
     add_table(s, X0, 1.75, [2.0, 3.6, W - 5.6], [0.5, 1.3, 1.3, 1.3], rows, name="気をつける点")
@@ -263,19 +263,25 @@ def p_mitsumori(prs, head):
 
 # ---------------------------------------------------------------- 4 料金
 def p_ryokin(prs, head):
-    s = new_page(prs, head, "料金", "DYMプラン", "平常期 月5〜10万円、イベント期 月30万円程度")
-    rows = [[head_cell("区分"), head_cell("月額"), head_cell("内容")],
-            [label_cell("平常期\n（イベントの無い月）", 13), cell("5〜10万円", 18, True, NAVY, align="ctr"),
-             cell("月2回の配信（ツール費を含む）")],
-            [label_cell("イベント期\n（イベントの前後）", 13), cell("30万円程度", 18, True, NAVY, align="ctr"),
-             cell("月4〜5回の配信（告知・リマインド・イベント直後のフォロー）")],
-            [label_cell("年間の目安", 13), cell("約160〜200万円", 18, True, NAVY, align="ctr"),
-             cell("イベント期4か月＋平常期8か月")]]
-    add_table(s, X0, 1.75, [2.3, 2.6, W - 4.9], [0.5, 1.1, 1.1, 1.1], rows, name="料金")
-    for k, t in enumerate(["※広告費は含まない",
-                           "※イベントを年4回、イベント期を各1か月として計算",
+    """3つのプラン（左から安い順）。ツール費は込みにせず、下に別で書く（2026-10-16 殿村さん）。「松竹梅」の文字は使わない"""
+    s = new_page(prs, head, "料金", "DYMプラン", "ご予算と運用の体制に合わせて、3つのプランから選択可能")
+    big = dict(size=17, bold=True, color=NAVY, align="ctr")
+    rows = [[head_cell(""), head_cell("プラン①\n初期設計のみ"), head_cell("プラン②\nイベントに合わせた運用"),
+             head_cell("プラン③\n通年の運用・改善")],
+            [label_cell("内容", 13), cell("入口と配信の仕組みを構築\n配信は貴社で運用", 12.5),
+             cell("弊社で配信\n平常期 月2回\nイベント期 月4〜5回", 12.5),
+             cell("弊社で配信＋レポート・定例会\n平常期 月3回\nイベント期 月5回", 12.5)],
+            [label_cell("初期費用", 13), cell("10万円〜", **big), cell("10万円〜", **big), cell("10万円〜", **big)],
+            [label_cell("平常期\n（月額）", 13), cell("0円", **big), cell("5〜10万円", **big), cell("20万円〜", **big)],
+            [label_cell("イベント期\n（月額）", 13), cell("0円", **big), cell("30万円程度", **big), cell("30万円〜", **big)]]
+    cw = (W - 1.6) / 3
+    add_table(s, X0, 1.75, [1.6, cw, cw, cw], [0.65, 0.95, 0.6, 0.65, 0.65], rows, name="料金")
+    rows = [[label_cell("ツール費\n（別途）", 13), cell("ポップアップツール\n初期1.5万円／月額3万円", 13, align="ctr"),
+             cell("サンクスLINE誘導\n初期15万円／月額3万円〜", 13, align="ctr")]]
+    add_table(s, X0, 5.4, [1.6, (W - 1.6) / 2, (W - 1.6) / 2], [0.7], rows, name="ツール費")
+    for k, t in enumerate(["※広告費・LINE公式アカウントの利用料は含まない。いずれも6か月〜の契約",
                            "※施策内容・配信本数・連携範囲等により、費用は個別にお見積り"]):
-        note(s, t, y=5.75 + k * 0.28)
+        note(s, t, y=6.22 + k * 0.26, h=0.26)
 
 
 # ---------------------------------------------------------------- 4 運用スケジュール（FMTのページ）
