@@ -1190,7 +1190,8 @@
       "Bash(git check-ignore *)",
       "Bash(echo \"ignore-check rc=$?\")",
       "Bash(cp \"/root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/a872f9af-20261001_________________LINE_____________ver2.pptx\" \"20261001_ハウス食品グループ株式会社御中_LINE公式アカウント運用のご提案_ver2.pptx\" && ls -la 20261001_ハウス食品*)",
-      "Bash(cp \"/root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/3c40d6a3-friend_overview_20261010_20261016.csv\" *)"
+      "Bash(cp \"/root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/3c40d6a3-friend_overview_20261010_20261016.csv\" *)",
+      "Bash(cp \"/root/.claude/uploads/52461498-bc21-5aa9-9205-214808f066d8/6fb8d1b5-friend_overview_20261010_20261016_1.csv\" _data/printearth/oam_friends_20261010_20261016.csv && sed -n 1,80p \"_drafts/プリントアース_LINEOA_配信企画案_2026-11.md\")"
     ]
   }
 }
