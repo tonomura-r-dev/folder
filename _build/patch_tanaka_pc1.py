@@ -7,7 +7,8 @@
   ② 競合の強み・競合の取り組みに対して（新・2枚）：LINE公式アカウントの現状の次に入れる
   ③ 前後検索「注文住宅」：言葉を4つに色分けした画像（_build/make_tanaka_zengo_color.py）＋時期ごとの分析
   ④ 解決策：追う範囲の違いを帯で見せ、「これで可能になること」を3つ
-  ⑤ 費用：3つのプラン（「松竹梅」の文字は出さない。2026-10-16 殿村さん）
+  ⑤ 配信・試算・費用：あらうちv10の形（配信／目標と費用対効果／料金プラン／運用内容）に作り直す → _build/patch_tanaka_pc2.py
+    （p_hiyo の表1枚の版は使わなくなった。「松竹梅」の文字は出さない）
   ⑥ SEOの言い方を「SEO」にそろえる（提案の流れ・現状と打ち手）
   殿村さんが消した注記・直した文言は戻さない。ほかのページは触らない。
 """
@@ -26,6 +27,7 @@ from _build.build_tanaka_v2 import heading, flow, X0, W
 from _build.patch_tanaka_v4 import new_page, set_lines, HDR
 from _build.patch_tanaka_v5 import IMG, SOFT, pic, caption
 from _build.arauchi_v10.add_zengo import alpha_fill
+from _build.patch_tanaka_pc2 import rebuild
 
 COMP = IMG.parent / "_data/tanaka"
 
@@ -205,8 +207,7 @@ def main(base, out):
     taiou = p_taiou(prs, kadai)
     p_zengo(zengo)
     p_ou(ou)
-    p_hiyo(hiyo)
-    for s in (kyogo, taiou, zengo, ou, hiyo):
+    for s in (kyogo, taiou, zengo, ou):
         for sh in s.shapes:
             if sh.has_text_frame:
                 meiryo(sh)
@@ -215,6 +216,7 @@ def main(base, out):
     for k, el in enumerate(els):
         lst.remove(el)
         lst.insert(4 + k, el)
+    rebuild(prs, sl[8], sl[10], hiyo)                    # 配信・試算・費用 → あらうちv10の形（_build/patch_tanaka_pc2.py）
     prs.save(out)
     print("saved:", out, len(prs.slides), "枚")
 
