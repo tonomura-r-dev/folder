@@ -5,7 +5,7 @@ patch_tanaka_pc1.main から呼ぶ（単体では使わない）。
   あらうちv10の 15（配信）・17（目標と費用対効果）・18（料金プラン）・19（運用内容）を写し、中身をタナカホームに差し替える。
   - 配信：前後検索「注文住宅」の順番（当日＝会社を比べる／1〜7日＝費用・住宅ローン／7〜15日＝断熱・間取り・ルームツアー）で
           ステップ配信 全5通（SIM ver1.2の5通）＋企画配信 月4回程度
-  - 試算：プラン①（総合運用）の初期・月次と、SIM ver1.2 の6か月後の数字・月ごとの資料請求と来場予約
+  - 試算：プラン①（総合運用）の初期・月次と、SIM ver1.2 の6か月後の数字（月ごとのCVは載せない）
   - 料金プラン：①総合運用 26万円〜／②総合運用＋友だち獲得（LINE広告）46万円〜／③初期導入 6万円〜（初期は3つとも26.5万円〜）
   - 運用内容：3つのプランの対応範囲
   「松竹梅」の文字は使わない（殿村さん）。良い数字は赤い文字にしない（紺に変える）。
@@ -103,18 +103,10 @@ def p_sim(prs, src):
         lines(s, k_id, k)
         lines(s, v_id, v)
         color_runs(by_id(s, v_id), NAVY)                    # 良い数字は赤い文字にしない
-    lines(s, 383, "月ごとの資料請求・来場予約（件）")
-    for sid in range(384, 390):
+    for sid in range(383, 390):                             # 月ごとのCVは載せない（2026-10-16 殿村さん）
         e = by_id(s, sid)._element
         e.getparent().remove(e)
-    rows = [[head_cell("か月目", 8.5)] + [head_cell(str(m), 9.5) for m in range(1, 7)],
-            [label_cell("資料請求", 9)] + [cell(str(v), 11, True, NAVY, align="ctr") for v in doc],
-            [label_cell("来場予約", 9)] + [cell(str(v), 11, True, NAVY, align="ctr") for v in visit]]
-    for r in rows:
-        for c in r:
-            c["ins"] = (0.02, 0.02, 0.02, 0.02)
-    add_table(s, 7.45, 4.06, [0.82] + [0.38] * 6, [0.36, 0.4, 0.4], rows, name="月ごとの資料請求・来場予約")
-    add_box(s, 7.45, 5.35, 3.1, 0.75,
+    add_box(s, 7.45, 3.8, 3.1, 0.75,
             [runs(("※試算の前提：サイトのUU 月13,228／今の友だち417人。LINE公式アカウント利用料は別", dict(size=8, color=GRAY)))],
             anchor="t", line_spacing=115, ins=(0, 0, 0, 0), name="注記")
     return s
