@@ -150,8 +150,8 @@ def p_kadai(prs, head):
         add_box(s, cx - 1.8, 3.25, 3.6, 1.5, [runs((h1, dict(size=15, bold=True, color=RED))),
                                               runs((body, dict(size=14, color=TEXT)))],
                 line=RED, align="ctr", anchor="ctr", line_spacing=130, ins=(0.1, 0.06, 0.1, 0.06), name=f"切れる{k}")
-    add_box(s, X0, 5.3, W, 0.85, [runs(("イベントのたびに、", dict(size=16, bold=True, color=NAVY)),
-                                       ("広告で一から集める形になっている", dict(size=16, bold=True, color=RED)))],
+    add_box(s, X0, 5.3, W, 0.85, [runs(("集めた方を、次のイベントの集客に", dict(size=16, bold=True, color=NAVY)),
+                                       ("活かしきれていない", dict(size=16, bold=True, color=RED)))],
             fill=LGRAY, align="ctr", anchor="ctr", name="示唆")
 
 
