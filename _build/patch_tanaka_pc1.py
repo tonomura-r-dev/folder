@@ -139,10 +139,9 @@ def p_ou(s):
     bw = (W - aw * (n - 1)) / n
     flow(s, [(t, NAVY, "FFFFFF") for t in steps], 1.85, 0.5, arrow_w=aw, size=11)
     col = lambda k: X0 + k * (bw + aw)
-    add_box(s, X0, 2.55, 1.6, 0.48, [runs(("今のLINE", dict(size=10.5, bold=True, color=GRAY)))], align="ctr",
-            anchor="ctr", name="帯の名前 今")
+    # 「今のLINE」は帯の外に置くと何の名前か分からないので、紺の帯と同じく帯の中に書く（2026-10-16 殿村さん）
     add_box(s, col(2), 2.55, col(3) + bw - col(2), 0.48,
-            [runs(("来場予約・来場のご案内", dict(size=11, bold=True, color=GRAY)))], fill=SOFT, line=LINE_C,
+            [runs(("今のLINE：来場予約・来場のご案内", dict(size=10.5, bold=True, color=GRAY)))], fill=SOFT, line=LINE_C,
             align="ctr", anchor="ctr", name="帯 今のLINE")
     add_box(s, X0, 3.13, W, 0.55, [runs(("弊社のご提案：資料請求の前から、契約まで追う", dict(size=12.5, bold=True, color="FFFFFF")))],
             fill=NAVY, align="ctr", anchor="ctr", name="帯 弊社のご提案")
@@ -158,7 +157,7 @@ def p_ou(s):
                                        runs((h1, dict(size=11, bold=True, color=NAVY))),
                                        runs((t, dict(size=10, color=TEXT)))],
                 line=LINE_C, anchor="t", line_spacing=120, ins=(0.12, 0.08, 0.12, 0.06), name=f"可能になること{no}")
-    note(s, "※広告の改善は、別紙の集客改善シミュレーションとあわせてご提案", y=6.45)
+    # 別紙（集客改善シミュレーション）の注記は入れない（殿村さんがPCで外した）
 
 
 # ---------------------------------------------------------------- ⑤ 費用：松竹梅
