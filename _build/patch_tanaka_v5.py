@@ -158,7 +158,20 @@ def p_iriguchi(prs, src):
              cell("施工事例・見学会のページを見ているとき", 10.5), cell("見学会や新しい施工事例のお知らせ", 10.5)],
             [cell("追加", 11, True, NAVY, TINT, "ctr"), cell("サンクスLINE誘導", 11, True, NAVY),
              cell("資料請求・来場予約が完了した直後", 10.5), cell("資料の続き（ルームツアー・費用・土地）、来場前のお知らせ", 10.5)]]
-    add_table(s, X0, 1.85, [0.8, 2.2, 2.55, 4.18], [0.42] + [0.86] * 4, rows, name="友だちの入口")
+    add_table(s, X0, 1.85, [0.8, 2.2, 2.55, 4.18], [0.4, 0.5, 0.55, 0.55, 0.55], rows, name="友だちの入口")
+    # 実績（「来場前のお知らせ」の実績と同じ位置・大きさ。数字はサンクスLINE誘導のご提案 Appendix「導入・活用実績」より）
+    y = 4.55
+    add_box(s, X0, y, 1.9, 1.0, [runs(("弊社の導入実績", dict(size=11, bold=True, color="FFFFFF")))], fill=NAVY,
+            align="ctr", anchor="ctr", name="実績 見出し")
+    add_box(s, X0 + 1.9, y, 4.6, 1.0, [runs(("人材業界", dict(size=11, bold=True, color=NAVY))),
+                                       runs(("サンクスLINE誘導ツールを導入", dict(size=10.5))),
+                                       runs(("友だち増加数（3か月）1,532人 → 2,103人", dict(size=10.5)))],
+            fill=TINT, anchor="ctr", line_spacing=120, ins=(0.15, 0.06, 0.1, 0.06), name="実績 施策")
+    add_box(s, X0 + 6.5, y, W - 6.5, 1.0, [runs(("友だち増加数", dict(size=10.5, bold=True, color=NAVY))),
+                                          runs(("導入前比137.3%", dict(size=20, bold=True, color=NAVY))),
+                                          runs(("前年比127.5%", dict(size=12, bold=True, color=NAVY)))],
+            fill=TINT, align="ctr", anchor="ctr", line_spacing=100, name="実績 数字")
+    note(s, "※導入前の3か月・前年の同じ期間と比べた友だち増加数（他の施策や時期の影響も含む）", y=5.65)
     note(s, "※来場予約の完了ページでは、ウェブ予約特典の事前アンケートに回答いただいた後に、LINEをご案内する（特典の条件を損なわないため）",
          y=5.95, h=0.45)
     return s
@@ -393,6 +406,13 @@ def main(base, appx_src, out):
     ar = Presentation(appx_src)
     asl = list(ar.slides)
     assert asl[23].shapes[0].text_frame.text == "Appendix" if asl[23].shapes[0].has_text_frame else True
+    # 表紙：DYMの標準の形（あらうちv10の表紙＝サブタイトル2行＋タイトル「LINE公式アカウント運用のご提案」）にそろえる（2026-10-16 殿村さん）
+    cover = copy_slide(prs, asl[0])
+    set_lines(by_id(cover, 31), ["タナカホーム株式会社 御中"])
+    set_lines(by_id(cover, 26), ["LINE公式アカウント運用のご提案"])
+    set_lines(by_id(cover, 27), ["集めた見込み客を逃さずナーチャリングをし、", "来場・契約へ変えるLINE仕組みの構築"])
+    for sid in (31, 26, 27):
+        meiryo(by_id(cover, sid))
     appx = []
     for n in APPX:
         ds = copy_slide(prs, asl[n - 1])
