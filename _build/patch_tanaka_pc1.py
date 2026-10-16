@@ -4,7 +4,7 @@
     python -m _build.patch_tanaka_pc1 <PC保存版.pptx> <出力.pptx>
 
   ① 「資料請求の時点から」→「資料請求以前から」（提案の流れの表・解決策のタイトル）
-  ② 競合のLINE（新）：LINE公式アカウントの現状の次に入れる
+  ② 競合の強み・競合の取り組みに対して（新・2枚）：LINE公式アカウントの現状の次に入れる
   ③ 前後検索「注文住宅」：言葉を4つに色分けした画像（_build/make_tanaka_zengo_color.py）＋時期ごとの分析
   ④ 解決策：追う範囲の違いを帯で見せ、「これで可能になること」を3つ
   ⑤ 費用：3つのプラン（「松竹梅」の文字は出さない。2026-10-16 殿村さん）
@@ -46,24 +46,44 @@ def replace_text(s, old, new):
 
 # ---------------------------------------------------------------- ② 競合のLINE（新）
 def p_kyogo(prs, src):
-    s = new_page(prs, src, "競合のLINE：大進建設は、特典で来場後の事前審査まで追っている",
-                 "ポイントは、特典の金額ではなく、検討中の方に役立つ情報で契約まで追えること")
-    rows = [[head_cell(""), head_cell("タナカホーム"), head_cell("大進建設"), head_cell("一条工務店")],
-            [label_cell("友だちの入口", 10.5), cell("サイトのポップアップ", 10), cell("サイトのポップアップ", 10),
-             cell("サイトの公式SNSの一覧", 10)],
-            [label_cell("友だち追加の\n特典", 10.5),
-             cell("来場特典に上乗せ\n最大7,000円分\n（予約来場 5,000円分＋友だち登録 2,000円分）", 9.5),
-             cell("最大4万円分\n（はじめての資料請求と来場予約で1万円分、来場後の事前審査で最大3万円分）", 9.5, True, NAVY),
-             cell("サイトのトップでは\n確認できず", 9.5, color=GRAY)],
-            [label_cell("特典の対象に\nなる段階", 10.5), cell("予約来場", 10),
-             cell("資料請求・来場予約\n→ 来場後の事前審査", 10, True, NAVY), cell("―", 10, color=GRAY, align="ctr")],
-            [label_cell("そのほか", 10.5), cell("実写真のカルーセルで\n見学会をご案内", 9.5),
-             cell("友だち追加のリンクに、ページごとの計測を入れている", 9.5),
-             cell("前後検索「注文住宅」で、当日に多く検索される会社", 9.5)]]
-    add_table(s, X0, 1.85, [1.45, 1.95, 2.25, 1.75], [0.4, 0.55, 1.15, 0.7, 0.85], rows, name="競合のLINE")
+    """競合の強み（2026-10-16 殿村さんが集めた競合情報のうち、公式サイト・LINEのプロフィールで確認できたものだけ）"""
+    s = new_page(prs, src, "競合の強み：一条工務店は性能と実績、大進建設は全館空調と特典",
+                 "青森で比べられる2社は、性能に加えて、実績・特典でも選ぶ理由をつくっている")
+    rows = [[head_cell(""), head_cell("一条工務店"), head_cell("大進建設"), head_cell("タナカホーム")],
+            [label_cell("主な訴求", 10.5), cell("「家は、性能。」", 10.5, True, NAVY),
+             cell("全館空調\n7つの機能と保証", 10.5, True, NAVY),
+             cell("地元を知り尽くした地場の会社\nW断熱・トリプルガラス樹脂窓（標準）", 10, True, NAVY)],
+            [label_cell("実績・拠点", 10.5), cell("青森県戸建 着工棟数 No.1（2024年度）\n県内の建築実績 4,167棟", 9.5),
+             cell("青森を中心に、宮城にも拠点", 9.5), cell("八戸で1973年に創業（50年以上）", 9.5)],
+            [label_cell("LINEの取り組み", 10.5), cell("サイトの公式SNSの一覧から、公式LINEへ", 9.5),
+             cell("LINE登録で最大4万円分\n（はじめての資料請求と来場予約で1万円分、来場後の事前審査で最大3万円分）", 9.5, True, NAVY),
+             cell("来場特典に上乗せで友だち登録\n北国の暮らしのお役立ち情報を発信", 9.5)]]
+    add_table(s, X0, 1.85, [1.35, 2.0, 2.0, 2.05], [0.4, 0.85, 0.75, 1.15], rows, name="競合の強み")
     pic(s, COMP / "大進建設_LINE登録キャンペーン_20261016.png", 8.1, 1.85, 2.18, 2.18, name="大進建設のポップアップ")
     caption(s, 8.0, 4.08, 2.38, "大進建設のサイトのポップアップ")
-    note(s, "※2026年10月16日時点で、各社のサイトを弊社で確認", y=5.8)
+    note(s, "※各社の公式サイト・LINE公式アカウントより（2026年10月16日確認）。一条工務店の着工棟数は住宅産業研究所調べ（2024年度）",
+         y=5.4, h=0.45)
+    return s
+
+
+def p_taiou(prs, src):
+    """競合の取り組みに対して、タナカホームがLINEで行うこと"""
+    s = new_page(prs, src, "競合の取り組みに対して：LINEで、タナカホームを選ぶ理由を届ける",
+                 "性能・診断・特典で比べられる中、地元の会社ならではの情報で、選ばれる理由をつくる")
+    rows = [[head_cell("競合の取り組み"), head_cell(""), head_cell("タナカホームのLINEで行うこと")],
+            [cell(["性能を前面に打ち出す", "一条工務店「家は、性能。」"], 10.5, color=TEXT),
+             cell("▶", 12, True, NAVY, align="ctr"),
+             cell("青森の冬の暮らし（暖房費・雪・断熱）を、地元の施工事例とあわせて届ける", 11, True, NAVY)],
+            [cell(["LINEで診断・間取り作成を受け付ける", "セキスイハイム「カタログ無料診断」「無料間取り作成」"], 10.5),
+             cell("▶", 12, True, NAVY, align="ctr"),
+             cell("予算の簡易診断、平屋か2階建てかの診断で希望を聞き分け、届ける情報を分ける", 11, True, NAVY)],
+            [cell(["特典で来場の先まで追う", "大進建設「LINE登録で最大4万円分」"], 10.5),
+             cell("▶", 12, True, NAVY, align="ctr"),
+             cell("特典の金額ではなく、検討の順番に沿った情報で、契約まで追う", 11, True, NAVY)]]
+    add_table(s, X0, 1.85, [4.2, 0.45, 5.08], [0.4, 0.95, 0.95, 0.95], rows, name="競合の取り組みに対して")
+    band(s, [("ポイントは、比べられている間に、", dict(size=13, bold=True, color=NAVY)),
+             ("タナカホームを選ぶ理由を届けられること", dict(size=13, bold=True, color=RED))], y=5.3, h=0.62)
+    note(s, "※セキスイハイムはLINE公式アカウントのプロフィールより（2026年10月16日確認）", y=6.05)
     return s
 
 
@@ -178,17 +198,19 @@ def main(base, out):
     assert replace_text(nagare, "資料請求の時点から", "資料請求以前から") == 1
     assert replace_text(ou, "資料請求の時点から", "資料請求以前から") >= 1
     kyogo = p_kyogo(prs, kadai)
+    taiou = p_taiou(prs, kadai)
     p_zengo(zengo)
     p_ou(ou)
     p_hiyo(hiyo)
-    for s in (kyogo, zengo, ou, hiyo):
+    for s in (kyogo, taiou, zengo, ou, hiyo):
         for sh in s.shapes:
             if sh.has_text_frame:
                 meiryo(sh)
     lst = prs.slides._sldIdLst
-    el = lst[-1]                                         # 競合のLINE（いま末尾）を「LINE公式アカウントの現状」の次へ
-    lst.remove(el)
-    lst.insert(4, el)
+    els = list(lst)[-2:]                                 # 競合の強み・競合の取り組みに対して（いま末尾）を「LINE公式アカウントの現状」の次へ
+    for k, el in enumerate(els):
+        lst.remove(el)
+        lst.insert(4 + k, el)
     prs.save(out)
     print("saved:", out, len(prs.slides), "枚")
 
