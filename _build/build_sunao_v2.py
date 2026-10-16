@@ -6,7 +6,7 @@
 
   中身は v1（`_build/build_sunao_v1.py`・殿村さん確定の構成）と同じ。見た目をFMTに合わせた：
    ・ヘッダー＝タイトルだけ（リード帯なし）。その下に紺のラベル＋太字のメッセージ（FMTの「施策展開図」と同じ形）
-   ・章の前に「資料アジェンダ」の扉（FMTと同じ）
+   ・ページは殿村さんの要旨の項目だけ（章の扉・配信の回数のページは入れない。2026-10-16）
    ・運用スケジュール＝FMTのページをそのまま（注記の文末だけ言い切りに）
    ・成果報酬プラン＝FMTの「成果報酬型プラン」の式（成果件数×成果報酬単価＋固定費用）を使い、成果の地点・単価は差し込み枠
    ・表紙・裏表紙＝FMTのもの（表紙に「御中」とサブタイトル2行を入れ、「- 2026最新版 -」は外す）
@@ -184,6 +184,19 @@ def p_line(prs, head):
     band(s, "この仕組みが回れば、今後の広告費を抑えられる可能性もある", y=5.8, h=0.8)
 
 
+# ---------------------------------------------------------------- 2 気をつける点と対策
+def p_chuui(prs, head):
+    s = new_page(prs, head, "LINEで気をつける点", "気をつける点と対策", "気をつける点は、運用の設計で抑える")
+    rows = [[head_cell("気をつける点"), head_cell("内容"), head_cell("対策")],
+            [label_cell("ブロック"), cell("配信が多い・合わない内容だと、ブロックされる"),
+             cell("段階に合わせて、配信の中身と回数を変える", bold=True, color=NAVY)],
+            [label_cell("配信費"), cell("配信の数に応じて、LINEの費用がかかる"),
+             cell("イベントの無い時期は月2回に抑える", bold=True, color=NAVY)],
+            [label_cell("時間"), cell("友だちがたまるまで、時間がかかる"),
+             cell("次のイベントから入口を置き、イベントごとに積み上げる", bold=True, color=NAVY)]]
+    add_table(s, X0, 1.75, [2.0, 3.6, W - 5.6], [0.5, 1.3, 1.3, 1.3], rows, name="気をつける点")
+
+
 # ---------------------------------------------------------------- 3 施策：友だちの入口
 def p_iriguchi(prs, head):
     s = new_page(prs, head, "友だちの入口", "新規友だち追加", "ポップアップツールとサンクスLINE誘導で、離れる方と予約した方の両方を友だちにする")
@@ -287,10 +300,10 @@ def p_seika(prs, src):
     return s
 
 
-ORDER = ["summary", ("div", "現状と課題"), "kadai", "honshitsu", ("div", "なぜLINEか"), "line",
-         ("div", "施策：友だちの入口と配信"), "iriguchi", "dankai", "kaisu",
-         ("div", "目標と費用"), "mokuhyo", "mitsumori", "ryokin", "schedule", "seika"]
-PAGES = dict(summary=p_summary, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, iriguchi=p_iriguchi,
+# 殿村さんの要旨の項目だけで作る（2026-10-16「メインとなる部分だけで資料化して」）。章の扉・配信の回数のページは入れない
+ORDER = ["summary", "kadai", "honshitsu", "line", "chuui", "iriguchi", "dankai",
+         "mokuhyo", "mitsumori", "ryokin", "schedule", "seika"]
+PAGES = dict(summary=p_summary, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui, iriguchi=p_iriguchi,
              dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo, mitsumori=p_mitsumori, ryokin=p_ryokin)
 
 
