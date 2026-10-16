@@ -7,14 +7,16 @@
   ② 競合のLINE（新）：LINE公式アカウントの現状の次に入れる
   ③ 前後検索「注文住宅」：言葉を4つに色分けした画像（_build/make_tanaka_zengo_color.py）＋時期ごとの分析
   ④ 解決策：追う範囲の違いを帯で見せ、「これで可能になること」を3つ
-  ⑤ 費用：松竹梅の3プラン
+  ⑤ 費用：3つのプラン（「松竹梅」の文字は出さない。2026-10-16 殿村さん）
   殿村さんが消した注記・直した文言は戻さない。ほかのページは触らない。
 """
 import copy
 import sys
 
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.ns import qn
+from pptx.util import Inches
 
 from _build.arauchi_v4.lib import NAVY, RED, TEXT, add_box, add_table
 from _build.arauchi_v10.build import TINT, LINE_C, MID, by_id, meiryo, runs
@@ -22,6 +24,7 @@ from _build.build_tanaka_v1 import GRAY, head_cell, cell, label_cell, note, band
 from _build.build_tanaka_v2 import heading, flow, X0, W
 from _build.patch_tanaka_v4 import new_page, set_lines, HDR
 from _build.patch_tanaka_v5 import IMG, SOFT, pic, caption
+from _build.arauchi_v10.add_zengo import alpha_fill
 
 COMP = IMG.parent / "_data/tanaka"
 
@@ -70,6 +73,17 @@ def p_zengo(s):
     iw = 6.9
     ih = iw * 1167 / 2000
     pic(s, IMG / "tanaka_zengo_chumon_color.png", X0, 1.75, iw, ih, name="前後検索 注文住宅（色分け）")
+    # LINE追加の時期（検索後0〜1日）：0日＝1027px・1日＝1260px（画像は2000×1167px）
+    px = lambda v: X0 + v / 2000 * iw
+    py = lambda v: 1.75 + v / 1167 * ih
+    gx0, gx1 = px(1027), px(1260)
+    zone = s.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(gx0), Inches(py(15)), Inches(gx1 - gx0), Inches(py(1105) - py(15)))
+    zone.name = "LINE追加の時期"
+    alpha_fill(zone, "06C755", 16000)
+    zone.shadow.inherit = False
+    add_box(s, (gx0 + gx1) / 2 - 0.5, 1.75 + ih + 0.04, 1.0, 0.26,
+            [runs(("LINE追加", dict(size=9.5, bold=True, color="00873C")))],
+            fill="C6EFCE", align="ctr", anchor="ctr", ins=(0, 0, 0, 0), name="LINE追加 札")
     x, w = X0 + iw + 0.2, W - iw - 0.2
     legend = [("3467B2", "住宅会社を比べる"), ("D9661F", "費用・住宅ローンを調べる"),
               ("8E4EC6", "間取り・性能を調べる"), ("00897B", "土地を調べる")]
@@ -128,20 +142,20 @@ def p_ou(s):
 def p_hiyo(s):
     keep_header(s)
     set_lines(by_id(s, HDR[0]), ["費用：運用の範囲に合わせて、3つのプランから選べる"])
-    set_lines(by_id(s, HDR[4]), ["おすすめは、構築から運用・改善まで一貫して行う竹プラン"])
+    set_lines(by_id(s, HDR[4]), ["おすすめは、構築から運用・改善まで一貫して行う「構築＋運用プラン」"])
 
     def plan_head(name, sub, fill):
-        return dict(text=[name, sub], fill=fill, color="FFFFFF", bold=True, size=11, borders=head_cell("")["borders"])
+        return dict(text=[name, sub] if sub else name, fill=fill, color="FFFFFF", bold=True, size=11, borders=head_cell("")["borders"])
 
     mark = lambda v, on=False: cell(v, 11, True, NAVY if on else TEXT, TINT if on else "FFFFFF", "ctr")
-    rows = [[head_cell(""), plan_head("梅", "構築プラン", MID), plan_head("竹（おすすめ）", "構築＋運用プラン", NAVY),
-             plan_head("松", "構築＋運用＋広告プラン", MID)],
+    rows = [[head_cell(""), plan_head("構築プラン", "", MID), plan_head("構築＋運用プラン", "（おすすめ）", NAVY),
+             plan_head("構築＋運用＋広告プラン", "", MID)],
             [label_cell("初期費用", 11), mark("26.5万円〜"), mark("26.5万円〜", True), mark("26.5万円〜")],
             [label_cell("月額費用", 11), cell("6万円〜", 14, True, NAVY, align="ctr"),
              cell("26万円〜", 16, True, NAVY, TINT, "ctr"), cell("46万円〜", 14, True, NAVY, align="ctr")],
             [label_cell("月額の内訳", 10.5), cell("離脱防止 3万円\nサンクスLINE誘導 3万円〜", 9.5, align="ctr"),
-             cell("梅の内容\n＋LINE運用コンサル 20万円〜", 9.5, fill=TINT, align="ctr"),
-             cell("竹の内容\n＋LINE広告（友だち追加）20万円〜", 9.5, align="ctr")],
+             cell("構築プランの内容\n＋LINE運用コンサル 20万円〜", 9.5, fill=TINT, align="ctr"),
+             cell("構築＋運用プランの内容\n＋LINE広告（友だち追加）20万円〜", 9.5, align="ctr")],
             [label_cell("友だちの入口", 10.5), mark("○"), mark("○", True), mark("○")],
             [label_cell("ステップ配信の構築", 10.5), mark("○"), mark("○", True), mark("○")],
             [label_cell("企画配信・\n来場前のお知らせ", 10), cell("貴社で運用", 10, color=GRAY, align="ctr"), mark("○", True), mark("○")],
@@ -150,7 +164,7 @@ def p_hiyo(s):
              cell("―", 11, color=GRAY, fill=TINT, align="ctr"), mark("○")]]
     add_table(s, X0, 1.75, [2.05, 2.56, 2.56, 2.56], [0.55, 0.4, 0.48, 0.55, 0.36, 0.36, 0.48, 0.36, 0.48], rows, name="3つのプラン")
     note(s, "※初期費用＝運用設計・構築 10万円〜＋離脱防止 1.5万円＋サンクスLINE誘導 15万円。LINE公式アカウント利用料は別"
-            "（貴社のご契約のまま）。契約期間は6か月〜。試算のページは竹プランの場合", y=6.25, h=0.42, size=8.5)
+            "（貴社のご契約のまま）。契約期間は6か月〜。試算のページは構築＋運用プランの場合", y=6.25, h=0.42, size=8.5)
     note(s, "※施策内容・配信本数・連携範囲等により、費用は個別にお見積もりいたします。", y=6.7, size=8.5)
 
 
