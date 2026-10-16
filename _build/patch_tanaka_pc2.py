@@ -84,7 +84,7 @@ def p_haishin(prs, src):
 def p_sim(prs, src):
     s = copy_slide(prs, src)
     doc, visit, total = SIM["doc"], SIM["visit"], SIM["total"]
-    lines(s, 339, f"試算：月26万円で、6か月目に資料請求 月{doc[5]}件・来場予約 月{visit[5]}件")
+    lines(s, 339, f"概算お見積り：月26万円で、6か月目に資料請求 月{doc[5]}件・来場予約 月{visit[5]}件")
     lines(s, 381, "プラン①｜総合運用で、友だちの入口を増やし、検討の順番に沿った配信で資料請求・来場予約を増やす")
     lines(s, 343, "¥265,000〜")
     lines(s, 344, "¥260,000〜")
@@ -106,9 +106,7 @@ def p_sim(prs, src):
     for sid in range(383, 390):                             # 月ごとのCVは載せない（2026-10-16 殿村さん）
         e = by_id(s, sid)._element
         e.getparent().remove(e)
-    add_box(s, 7.45, 3.8, 3.1, 0.75,
-            [runs(("※試算の前提：サイトのUU 月13,228／今の友だち417人。LINE公式アカウント利用料は別", dict(size=8, color=GRAY)))],
-            anchor="t", line_spacing=115, ins=(0, 0, 0, 0), name="注記")
+    # 「試算」という言葉は使わない・試算の前提の注記も入れない（2026-10-16 殿村さん「試算が嫌い」。あらうちでも削除済み）
     return s
 
 
@@ -132,7 +130,7 @@ def p_plan(prs, src):
     e.getparent().remove(e)
     for k, txt in enumerate(["※初期費用＝運用設計・構築 100,000円〜＋離脱防止 15,000円＋サンクスLINE誘導 150,000円",
                              "※月額ツール・LINE関連費＝離脱防止 30,000円＋サンクスLINE誘導 30,000円〜。LINE公式アカウント利用料は別（貴社のご契約のまま）",
-                             "※契約期間は6か月〜。試算のページはプラン①の場合",
+                             "※契約期間は6か月〜。概算お見積りのページはプラン①の場合",
                              "※施策内容・配信本数・連携範囲等により、費用は個別にお見積もりいたします。"]):
         add_box(s, 0.42, 5.75 + k * 0.27, 10.0, 0.27, [runs((txt, dict(size=9, color=GRAY)))], anchor="t",
                 ins=(0, 0, 0, 0), name="注記")
