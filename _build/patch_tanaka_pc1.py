@@ -93,7 +93,7 @@ def p_taiou(prs, src):
 # ---------------------------------------------------------------- ③ 前後検索「注文住宅」
 def p_zengo(s):
     keep_header(s)
-    iw = 6.9
+    iw = 6.5                                             # 2026-10-16 文字を大きくしたので右の列を広げた（6.9→6.5）
     ih = iw * 1167 / 2000
     pic(s, IMG / "tanaka_zengo_chumon_color.png", X0, 1.75, iw, ih, name="前後検索 注文住宅（色分け）")
     # LINE追加の時期（検索後0〜1日）：0日＝1027px・1日＝1260px（画像は2000×1167px）
@@ -113,22 +113,22 @@ def p_zengo(s):
     for k, (c, t) in enumerate(legend):
         y = 1.75 + k * 0.27
         add_box(s, x, y + 0.06, 0.15, 0.15, [runs(("", dict(size=8)))], fill=c, ins=(0, 0, 0, 0), name="凡例の色")
-        add_box(s, x + 0.2, y, w - 0.2, 0.27, [runs((t, dict(size=9.5, color=TEXT)))], anchor="ctr",
+        add_box(s, x + 0.2, y, w - 0.2, 0.27, [runs((t, dict(size=11, color=TEXT)))], anchor="ctr",
                 ins=(0, 0, 0, 0), name="凡例")
     items = [("当日", "住宅会社名が中心", "一条工務店・積水ハウス・住友林業など。住宅展示場・土地探しも"),
              ("1〜7日後", "住宅ローンと坪単価が増える", "シミュレーション・審査・控除、坪単価。比べる会社はさらに広がる"),
              ("7〜15日後", "間取り・性能が中心", "断熱等級・吹き抜け・パントリー・ルームツアー。住宅ローンは金利の比較へ")]
     y = 2.9
     for h1, h2, t in items:
-        add_box(s, x, y, w, 0.28, [runs((h1, dict(size=10, bold=True, color="FFFFFF")))], fill=NAVY, align="ctr",
+        add_box(s, x, y, w, 0.3, [runs((h1, dict(size=11.5, bold=True, color="FFFFFF")))], fill=NAVY, align="ctr",
                 anchor="ctr", name=f"分析 {h1}")
-        add_box(s, x, y + 0.28, w, 0.7, [runs((h2, dict(size=10, bold=True, color=NAVY))), runs((t, dict(size=9)))],
-                line=LINE_C, anchor="t", line_spacing=112, ins=(0.08, 0.05, 0.08, 0.04), name=f"分析 {h1} 本文")
-        y += 1.06
-    band(s, [("会社を比べる → 費用 → 間取り・性能 の順に、", dict(size=12.5, bold=True, color=NAVY)),
-             ("約2週間かけて検討が進む", dict(size=12.5, bold=True, color=RED))], y=6.12, h=0.5)
+        add_box(s, x, y + 0.3, w, 0.78, [runs((h2, dict(size=12, bold=True, color=NAVY))), runs((t, dict(size=11)))],
+                line=LINE_C, anchor="t", line_spacing=110, ins=(0.08, 0.04, 0.08, 0.03), name=f"分析 {h1} 本文")
+        y += 1.14
+    band(s, [("会社を比べる → 費用 → 間取り・性能 の順に、", dict(size=14, bold=True, color=NAVY)),
+             ("約2週間かけて検討が進む", dict(size=14, bold=True, color=RED))], y=6.32, h=0.45)
     note(s, "※LINEヤフー社の前後検索データより。「注文住宅」を検索した方が、前後15日間に検索した言葉（縦軸＝検索した人数）。色分けは弊社",
-         y=6.66, h=0.3, size=8.5)
+         y=6.82, h=0.25, size=8.5)
 
 
 # ---------------------------------------------------------------- ④ 解決策：追う範囲
@@ -154,11 +154,11 @@ def p_ou(s):
     cw = (W - gw * 2) / 3
     for k, (no, h1, t) in enumerate(items):
         x = X0 + k * (cw + gw)
-        add_box(s, x, 4.45, cw, 1.45, [runs((no, dict(size=16, bold=True, color=RED))),
+        add_box(s, x, 4.45, cw, 1.85, [runs((no, dict(size=16, bold=True, color=RED))),
                                        runs((h1, dict(size=11, bold=True, color=NAVY))),
                                        runs((t, dict(size=10, color=TEXT)))],
                 line=LINE_C, anchor="t", line_spacing=120, ins=(0.12, 0.08, 0.12, 0.06), name=f"可能になること{no}")
-    note(s, "※広告の改善は、別紙の集客改善シミュレーションとあわせてご提案", y=6.4)
+    note(s, "※広告の改善は、別紙の集客改善シミュレーションとあわせてご提案", y=6.45)
 
 
 # ---------------------------------------------------------------- ⑤ 費用：松竹梅
@@ -203,6 +203,8 @@ def main(base, out):
     # ⑥ SEOは「地域SEO」「地域特化のSEO」ではなく、ただの「SEO」にそろえる（2026-10-16 殿村さん）
     assert replace_text(nagare, "広告と地域SEOで", "広告とSEOで") == 1
     assert replace_text(sl[2], "地域特化のSEO", "SEO") == 2
+    # ⑦ 現状と打ち手の「（別紙：集客改善シミュレーション）」を外す（殿村さんがPC保存版v1で外した分をそろえる）
+    assert replace_text(sl[2], "（別紙：集客改善シミュレーション）", "") == 1
     kyogo = p_kyogo(prs, kadai)
     taiou = p_taiou(prs, kadai)
     p_zengo(zengo)
