@@ -1245,7 +1245,9 @@
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/19adb70b-202610____________________________________v2.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/pc_v2.pptx)",
       "Bash(python3 _build/qa_render.py /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/pc_v2.pptx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_v4/before)",
       "Bash(cp /root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/3d68b46b-_____________LINEOA_____SIM_ver1.0.xlsx /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_sim_pc/pc.xlsx)",
-      "Bash(python3 - /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_sim_pc/pc.xlsx)"
+      "Bash(python3 - /tmp/claude-0/-home-user-folder/dadd2f6b-abde-5965-beb8-93809cb827e0/scratchpad/tanaka_sim_pc/pc.xlsx)",
+      "Bash(cp \"/root/.claude/uploads/dadd2f6b-abde-5965-beb8-93809cb827e0/db19c338-_____________LINEOA_____SIM_ver1.0.xlsx\" \"タナカホーム株式会社御中_LINEOA施策提案【SIM】ver1.0.xlsx\")",
+      "Bash(git commit -q -m 'タナカホーム SIM ver1.0：殿村さんのPC版（組み直し）を正として取り込み *)"
     ]
   }
 }
