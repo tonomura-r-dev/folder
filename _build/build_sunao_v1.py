@@ -10,6 +10,7 @@
 import sys
 
 from pptx import Presentation
+from pptx.oxml.ns import qn
 
 from _build.arauchi_v4.lib import NAVY, RED, TEXT, add_box, add_table, set_paras
 from _build.arauchi_v10.build import MID, TINT, LINE_C, by_id, key_takeaway, meiryo, runs, three_points
@@ -18,6 +19,33 @@ from _build.build_tanaka_v2 import heading, flow
 
 W = 9.73
 X0 = 0.55
+
+
+def all_meiryo(slides):
+    """全ての文字の字体をメイリオに（latin→ea→cs の順。`_build/patch_yaruki_v32_iikiri.py` の末尾と同じやり方）"""
+    after = {qn(x) for x in ("a:sym", "a:hlinkClick", "a:hlinkMouseOver", "a:rtl", "a:extLst")}
+    for s in slides:
+        tree = s.shapes._spTree
+        for r in tree.iter(qn("a:r")):
+            if r.find(qn("a:rPr")) is None:
+                r.insert(0, r.makeelement(qn("a:rPr"), {"lang": "ja-JP"}))
+        for tag in ("a:rPr", "a:endParaRPr", "a:defRPr"):
+            for rpr in tree.iter(qn(tag)):
+                fs = []
+                for ft in ("a:latin", "a:ea", "a:cs"):
+                    e = rpr.find(qn(ft))
+                    if e is None:
+                        e = rpr.makeelement(qn(ft), {})
+                    else:
+                        rpr.remove(e)
+                    e.set("typeface", "メイリオ")
+                    fs.append(e)
+                nxt = next((c for c in rpr if c.tag in after), None)
+                for e in fs:
+                    if nxt is not None:
+                        nxt.addprevious(e)
+                    else:
+                        rpr.append(e)
 
 
 def slot(s, x, y, w, h, text):
@@ -52,18 +80,18 @@ def p_kadai(prs, src):
     s = new_page(prs, src, "現状と課題：イベントの後、離れた方・未入会の方とのつながりが切れる",
                  "イベントで集めた方を、次のイベントまで追う仕組みが無い")
     flow(s, [("広告", NAVY, "FFFFFF"), ("LP", NAVY, "FFFFFF"), ("予約", NAVY, "FFFFFF"),
-             ("イベント参加", NAVY, "FFFFFF"), ("サロン入会", NAVY, "FFFFFF")], 1.95, 0.85, size=13)
+             ("イベント参加", NAVY, "FFFFFF"), ("サロン入会", NAVY, "FFFFFF")], 1.95, 1.0, size=14)
     bw = (W - 0.32 * 4) / 5
-    for k, (head, body) in ((1, ("申し込まずに離れた方", "次のイベントまで、案内する手段が無い")),
-                            (3, ("参加して入会していない方", "入会まで、案内を続ける手段が無い"))):
+    for k, (head, body) in ((1, ("申し込まずに離れた方", "次のイベントまで案内する手段が無い")),
+                            (3, ("参加して入会していない方", "入会まで案内を続ける手段が無い"))):
         cx = X0 + k * (bw + 0.32) + bw / 2
-        add_box(s, cx - 0.2, 2.85, 0.4, 0.32, [runs(("▼", dict(size=13, color=RED)))], align="ctr", anchor="ctr",
+        add_box(s, cx - 0.2, 3.0, 0.4, 0.32, [runs(("▼", dict(size=13, color=RED)))], align="ctr", anchor="ctr",
                 ins=(0, 0, 0, 0), name="矢印下")
-        add_box(s, cx - 1.65, 3.2, 3.3, 1.2, [runs((head, dict(size=13, bold=True, color=RED))),
-                                             runs((body, dict(size=12, color=TEXT)))],
+        add_box(s, cx - 1.8, 3.35, 3.6, 1.45, [runs((head, dict(size=14, bold=True, color=RED))),
+                                              runs((body, dict(size=13, color=TEXT)))],
                 line=RED, align="ctr", anchor="ctr", line_spacing=125, ins=(0.1, 0.06, 0.1, 0.06), name=f"切れる{k}")
     band(s, [("次のイベントでは、", dict(size=14, bold=True, color=NAVY)),
-             ("また広告で集め直している", dict(size=14, bold=True, color=RED))], y=4.95, h=0.75)
+             ("また広告で集め直している", dict(size=15, bold=True, color=RED))], y=5.4, h=0.85)
 
 
 # ---------------------------------------------------------------- 1 本質課題
@@ -86,9 +114,8 @@ def p_line(prs, src):
             [label_cell("届く相手", 13), cell("毎回、新しく集める", 13), cell("一度友だちになった方に、何度でも届く", 13, True, NAVY)],
             [label_cell("届き方", 13), cell("広告を見たときだけ", 13), cell("通知で届き、見てもらいやすい", 13, True, NAVY)],
             [label_cell("イベントの後", 13), cell("つながりが切れる", 13), cell("友だちとして、毎月積み上がる", 13, True, NAVY)]]
-    add_table(s, X0, 1.85, [2.0, 3.4, W - 5.4], [0.48, 0.85, 0.85, 0.85], rows, name="広告とLINE")
-    band(s, [("この仕組みが回れば、", dict(size=14, bold=True, color=NAVY)),
-             ("今後の広告費を抑えられる可能性もある", dict(size=14, bold=True, color=RED))], y=5.3, h=0.75)
+    add_table(s, X0, 1.85, [2.0, 3.4, W - 5.4], [0.48, 1.05, 1.05, 1.05], rows, name="広告とLINE")
+    band(s, [("この仕組みが回れば、今後の広告費を抑えられる可能性もある", dict(size=15, bold=True, color=NAVY))], y=5.75, h=0.8)
 
 
 # ---------------------------------------------------------------- 3 施策：友だちの入口
@@ -106,9 +133,8 @@ def p_iriguchi(prs, src):
         x = X0 + k * (cw + gap)
         heading(s, x, 1.85, cw, head)
         rows = [[label_cell(a, 13), cell(b, 13)] for a, b in items]
-        add_table(s, x, 2.3, [1.35, cw - 1.35], [0.8] * 3, rows, name=f"入口{k + 1}")
-    band(s, [("どちらも、次のイベントまで", dict(size=14, bold=True, color=NAVY)),
-             ("追える友だちになる", dict(size=14, bold=True, color=RED))], y=5.05, h=0.75)
+        add_table(s, x, 2.3, [1.35, cw - 1.35], [1.0] * 3, rows, name=f"入口{k + 1}")
+    band(s, [("どちらも、次のイベントまで追える友だちになる", dict(size=15, bold=True, color=NAVY))], y=5.65, h=0.8)
 
 
 # ---------------------------------------------------------------- 3 施策：段階ごとの配信
@@ -116,7 +142,7 @@ def p_dankai(prs, src):
     s = new_page(prs, src, "配信：興味あり・予約・参加の段階ごとに、案内を変える",
                  "段階に合わせた配信で、次のイベント参加と入会へつなげる")
     flow(s, [("興味あり", NAVY, "FFFFFF"), ("予約", NAVY, "FFFFFF"), ("参加", NAVY, "FFFFFF"),
-             ("サロン入会", RED, "FFFFFF")], 1.85, 0.6, size=13)
+             ("サロン入会", NAVY, "FFFFFF")], 1.85, 0.6, size=13)
     rows = [[head_cell("段階", 13), head_cell("対象", 13), head_cell("届ける内容", 13), head_cell("ねらい", 13)],
             [label_cell("興味あり", 13), cell("予約していない方\n（ポップアップツールから）", 12),
              cell("セミナーの見どころ動画・参加特典", 13), cell("予約へ", 13, True, NAVY, align="ctr")],
@@ -124,8 +150,8 @@ def p_dankai(prs, src):
              cell("前日のリマインド・当日の案内", 13), cell("当日の参加へ", 13, True, NAVY, align="ctr")],
             [label_cell("参加", 13), cell("イベントに参加した方", 12),
              cell("イベント直後に、サロン入会の案内", 13), cell("入会へ", 13, True, NAVY, align="ctr")]]
-    add_table(s, X0, 2.75, [1.5, 2.75, 3.68, 1.8], [0.48, 0.85, 0.85, 0.85], rows, name="段階ごとの配信")
-    note(s, "※配信の内容は、イベントの内容に合わせて設計", y=6.0)
+    add_table(s, X0, 2.75, [1.5, 2.75, 3.68, 1.8], [0.48, 1.0, 1.0, 1.0], rows, name="段階ごとの配信")
+    note(s, "※配信の内容は、イベントの内容に合わせて設計", y=6.4)
 
 
 # ---------------------------------------------------------------- 3 施策：配信の回数
@@ -138,28 +164,28 @@ def p_kaisu(prs, src):
             [label_cell("回数", 13), cell("月2回", 14, True, NAVY, align="ctr"), cell("月4〜5回", 14, True, NAVY, align="ctr")],
             [label_cell("内容", 13), cell("定期配信1回＋企画・動画1回", 13), cell("告知・リマインド・イベント直後のフォロー", 13)],
             [label_cell("ねらい", 13), cell("つながりを保ち、追える人数を減らさない", 13), cell("次のイベントの参加・入会へつなげる", 13)]]
-    add_table(s, X0, 2.95, [1.6, (W - 1.6) / 2, (W - 1.6) / 2], [0.48, 0.65, 0.8, 0.8], rows, name="配信の回数")
-    note(s, "※イベントを年4回とした場合", y=6.0)
+    add_table(s, X0, 2.95, [1.6, (W - 1.6) / 2, (W - 1.6) / 2], [0.48, 0.75, 0.95, 0.95], rows, name="配信の回数")
+    note(s, "※イベントを年4回とした場合", y=6.4)
 
 
 # ---------------------------------------------------------------- 4 目標
 def p_mokuhyo(prs, src):
     s = new_page(prs, src, "目標：追える人数を増やし・減らさず、次のイベント参加・入会へ",
                  "時期ごとに、見る指標を分ける")
-    flow(s, [("追える人数", NAVY, "FFFFFF"), ("次のイベントの予約・参加", NAVY, "FFFFFF"), ("サロン入会", RED, "FFFFFF")],
+    flow(s, [("追える人数", NAVY, "FFFFFF"), ("次のイベントの予約・参加", NAVY, "FFFFFF"), ("サロン入会", NAVY, "FFFFFF")],
          1.85, 0.6, size=13)
     rows = [[head_cell("指標", 13), head_cell("見る時期", 13), head_cell("内容", 13)],
             [label_cell("追える人数", 13), cell("平常期", 13, align="ctr"), cell("ブロックされずに届く友だちの数。増やし、減らさない", 13)],
             [label_cell("予約・参加", 13), cell("イベント期", 13, align="ctr"), cell("LINEからの予約と、当日の参加", 13)],
             [label_cell("サロン入会", 13), cell("イベントの後", 13, align="ctr"), cell("参加した方のうち、入会した方", 13)]]
-    add_table(s, X0, 2.75, [2.2, 1.9, W - 4.1], [0.48, 0.8, 0.8, 0.8], rows, name="指標")
+    add_table(s, X0, 2.75, [2.2, 1.9, W - 4.1], [0.48, 1.05, 1.05, 1.05], rows, name="指標")
 
 
 # ---------------------------------------------------------------- 4 概算お見積り
 def p_mitsumori(prs, src):
     s = new_page(prs, src, "概算お見積り：友だち数・予約・入会の見込み",
                  "平常期とイベント期の、友だち数と予約・入会の見込み")
-    slot(s, X0, 1.85, W, 4.5, "概算お見積り（SIM）の表")
+    slot(s, X0, 1.85, W, 4.75, "概算お見積り（SIM）の表")
 
 
 # ---------------------------------------------------------------- 4 料金
@@ -173,11 +199,11 @@ def p_ryokin(prs, src):
              cell("月4〜5回の配信（告知・リマインド・イベント直後のフォロー）", 13)],
             [label_cell("年間の目安", 12.5), cell("約160〜200万円", 16, True, NAVY, align="ctr"),
              cell("イベント期4か月＋平常期8か月", 13)]]
-    add_table(s, X0, 1.85, [2.3, 2.6, W - 4.9], [0.48, 0.85, 0.85, 0.85], rows, name="料金")
+    add_table(s, X0, 1.85, [2.3, 2.6, W - 4.9], [0.48, 1.0, 1.0, 1.0], rows, name="料金")
     for k, t in enumerate(["※広告費は含まない",
                            "※イベントを年4回、イベント期を各1か月として計算",
                            "※施策内容・配信本数・連携範囲等により、費用は個別にお見積り"]):
-        note(s, t, y=5.35 + k * 0.28, h=0.28)
+        note(s, t, y=5.65 + k * 0.28, h=0.28)
 
 
 # ---------------------------------------------------------------- 4 スケジュール
@@ -185,13 +211,13 @@ def p_schedule(prs, src):
     s = new_page(prs, src, "スケジュール：初期構築に約1か月、構築後に運用を開始",
                  "お申込みから約1か月で、友だちの入口と配信の準備を整える")
     flow(s, [("お申込み", None, NAVY), ("初期構築（約1か月）", NAVY, "FFFFFF"), ("運用開始", NAVY, "FFFFFF")],
-         1.85, 0.75, size=13)
+         1.85, 0.9, size=14)
     bw = (W - 0.32 * 2) / 3
     for k, items in enumerate([["ご契約", "運用方針のすり合わせ"],
                                ["アカウントの設定", "ポップアップツールの設置", "サンクスLINE誘導の設置", "段階ごとの配信の設計"],
                                ["平常期・イベント期の配信", "配信の結果を確認し、改善"]]):
-        add_box(s, X0 + k * (bw + 0.32), 2.75, bw, 1.9, [runs(("・" + t, dict(size=13, color=TEXT))) for t in items],
-                line=LINE_C, anchor="t", line_spacing=130, ins=(0.12, 0.1, 0.1, 0.08), name=f"内容{k + 1}")
+        add_box(s, X0 + k * (bw + 0.32), 2.95, bw, 3.4, [runs(("・" + t, dict(size=14, color=TEXT))) for t in items],
+                line=LINE_C, anchor="t", line_spacing=150, ins=(0.12, 0.1, 0.1, 0.08), name=f"内容{k + 1}")
 
 
 # ---------------------------------------------------------------- 4 成果報酬プラン
@@ -200,11 +226,11 @@ def p_seika(prs, src):
                  "固定費のプランに加えて、成果に応じて費用が決まるプランも選択可能")
     cw, gap = (W - 0.3) / 2, 0.3
     heading(s, X0, 1.85, cw, "固定費のプラン")
-    add_box(s, X0, 2.3, cw, 2.6, [runs(("平常期　月5〜10万円", dict(size=16, bold=True, color=NAVY))),
-                                  runs(("イベント期　月30万円程度", dict(size=16, bold=True, color=NAVY)))],
+    add_box(s, X0, 2.3, cw, 4.0, [runs(("平常期　月5〜10万円", dict(size=18, bold=True, color=NAVY))),
+                                  runs(("イベント期　月30万円程度", dict(size=18, bold=True, color=NAVY)))],
             line=NAVY, align="ctr", anchor="ctr", line_spacing=160, name="固定費")
     heading(s, X0 + cw + gap, 1.85, cw, "成果報酬プラン")
-    slot(s, X0 + cw + gap, 2.3, cw, 2.6, "成果の地点・単価")
+    slot(s, X0 + cw + gap, 2.3, cw, 4.0, "成果の地点・単価")
 
 
 ORDER = [p_summary, p_kadai, p_honshitsu, p_line, p_iriguchi, p_dankai, p_kaisu, p_mokuhyo, p_mitsumori,
@@ -234,6 +260,7 @@ def main(base, out):
             prs.part.drop_rel(e.rId)
     for s in keep:
         lst.append(by_part[s.part])
+    all_meiryo(keep)
     prs.save(out)
     print("saved:", out, len(prs.slides), "枚")
 
