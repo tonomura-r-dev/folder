@@ -35,6 +35,7 @@ B = {k: (0.75, LINE_C) for k in "lrtb"}
 
 # FMTのページ番号（1始まり）
 F_COVER, F_DIVIDER, F_HEAD, F_SEIKA, F_SCHEDULE, F_BACK = 1, 5, 17, 37, 46, 62
+F_POPUP, F_THANKS = 27, 31            # Appendix：ツール費用（ポップアップツール・サンクスLINE誘導）
 
 
 # ---------------------------------------------------------------- 部品
@@ -309,9 +310,27 @@ def p_seika(prs, src):
     return s
 
 
+# ---------------------------------------------------------------- Appendix：ツール費用（FMTのページ）
+def p_tool_popup(prs, src):
+    return copy_slide(prs, src)                                # 初期1.5万円・月額3万円（FMTのまま）
+
+
+def p_tool_thanks(prs, src):
+    """サンクスLINE誘導は 初期15万円・月額3万円〜（2026-10-01 殿村さん）。社内向けの価格改定の注記は外し、実績の数字は紺に"""
+    s = copy_slide(prs, src)
+    set_paras(by_id(s, 26), ["初期：15万円"])
+    e = by_id(s, 10)._element                                 # 「※暫定措置として…2026年7月～の価格改定の予定」
+    e.getparent().remove(e)
+    for clr in by_id(s, 50)._element.iter(qn("a:srgbClr")):  # 良い数字は赤い文字にしない
+        if clr.get("val") == "FF0000":
+            clr.set("val", NAVY)
+    return s
+
+
 # 殿村さんの要旨の項目だけで作る（2026-10-16「メインとなる部分だけで資料化して」）。章の扉・配信の回数のページは入れない
 ORDER = ["summary", "kadai", "honshitsu", "line", "chuui", "iriguchi", "dankai",
-         "mokuhyo", "mitsumori", "ryokin", "schedule", "seika"]
+         "mokuhyo", "mitsumori", "ryokin", "schedule", "seika",
+         ("div", "Appendix"), "tool_popup", "tool_thanks"]          # ツール費用はAppendixに（2026-10-17 殿村さん）
 PAGES = dict(summary=p_summary, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui, iriguchi=p_iriguchi,
              dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo, mitsumori=p_mitsumori, ryokin=p_ryokin)
 
@@ -327,6 +346,10 @@ def main(fmt, arauchi, out):
     assert by_id(seika_src, 9).text_frame.text == "成果報酬型プラン"
     assert by_id(sch_src, 18).text_frame.text == "運用スケジュール"
     assert "貴社の明るい未来" in by_id(back, 18).text_frame.text
+    popup_src, thanks_src = sl[F_POPUP - 1], sl[F_THANKS - 1]
+    assert by_id(popup_src, 22).text_frame.text == "新規友だちの追加（ポップアップ / 離脱防止）"
+    assert by_id(popup_src, 15).text_frame.text == "初期：1.5万円"
+    assert by_id(thanks_src, 22).text_frame.text == "新規友だちの追加（サンクスLINE誘導）"
     ar_cover = Presentation(arauchi).slides[0]
     new = []
     for item in ORDER:
@@ -336,6 +359,10 @@ def main(fmt, arauchi, out):
             new.append(p_schedule(prs, sch_src))
         elif item == "seika":
             new.append(p_seika(prs, seika_src))
+        elif item == "tool_popup":
+            new.append(p_tool_popup(prs, popup_src))
+        elif item == "tool_thanks":
+            new.append(p_tool_thanks(prs, thanks_src))
         else:
             PAGES[item](prs, head)
             new.append(prs.slides[-1])
