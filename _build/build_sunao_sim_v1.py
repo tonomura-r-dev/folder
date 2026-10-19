@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""株式会社すなおコンサルティング LINEOA施策SIM ver1.0。新FMT ver3.00・1シート（XML直接編集でチェックボックスを保持）。
+"""株式会社すなおコンサルティング LINEOA施策SIM ver1.1。新FMT ver3.00・1シート（XML直接編集でチェックボックスを保持）。
 
 与件（2026-10-15〜19 殿村さん）：保険営業の方向けオンラインサロン「ハッピーライフ」。Meta広告 → UTAGEのLP → 無料セミナー（年4回ほど）。
   広告は1回約500万円のショット（ADの予算なのでSIMには入れない）。LINE公式アカウントの有無は未確認（0人スタートで作る）。
@@ -9,7 +9,8 @@
   ・ブロック率は殿村さんの表の数字（28.0%→31.0%）
 友だちの入口：ポップアップツール（離脱防止）＋サンクスLINE誘導（資料の「友だちの入口」と同じ。LPのLINEボタン・CPFは入れない）。
   イベント月のLP UU 仮に46,000・セミナー予約 仮に1,400件 → FMTの式でポップアップ約191人＋サンクスLINE約210人＝約400人。
-CV：①セミナー予約（LINE経由・イベント月だけ）／②サロン入会（LINE経由。サロンはいつでも申し込めるので平常期も）。
+CV：①セミナー予約（イベント月だけ）／②サロン入会（サロンはいつでも申し込めるので平常期も）。
+  CVの名前に「LINE経由」は書かない（2026-10-19 殿村さん）。
   合計CV・CVR・CPAは①＋②（タナカホームver1.1と同じ考え方）。
 費用：資料の料金「プラン② イベントに合わせた運用」（初期10万円〜／平常期 月5〜10万円→10万で計算／イベント期 月30万円程度）
   ＋ポップアップツール（初期1.5万・月3万）＋サンクスLINE誘導（初期15万・月3万〜）。
@@ -25,15 +26,15 @@ from sim_xml import build_workbook, set_b, set_f, set_n, set_s  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "_templates" / "DYM_LINEOA_SIM_FMT_ver3.00.xlsx"
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "株式会社すなおコンサルティング御中_LINEOA施策提案【SIM】ver1.0.xlsx"
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "株式会社すなおコンサルティング御中_LINEOA施策提案【SIM】ver1.1.xlsx"
 
 LP_UU, RESERVE = 46000, 1400                       # イベント月のLP UU・セミナー予約（仮に）
 EVENT = [True, False, False, True, False, False]   # 3か月おきのイベント月
 BLOCK = [0.28, 0.29, 0.295, 0.30, 0.305, 0.31]     # 殿村さんの表
 POSTS = [4 if e else 2 for e in EVENT]             # 企画配信：イベント期 月4回／平常期 月2回
 STEPS = 5                                          # ステップ配信（その月の新しい友だち）
-CV_SEMINAR = [5, 0, 0, 7, 0, 0]                    # ①セミナー予約（LINE経由）
-CV_JOIN = [1, 1, 1, 1, 1, 1]                       # ②サロン入会（LINE経由）
+CV_SEMINAR = [5, 0, 0, 7, 0, 0]                    # ①セミナー予約
+CV_JOIN = [1, 1, 1, 1, 1, 1]                       # ②サロン入会
 CONSULT_INIT = 100000
 CONSULT_M = [300000 if e else 100000 for e in EVENT]
 EXIT_INIT, EXIT_M = 15000, 30000                   # ポップアップツール（離脱防止）
@@ -45,8 +46,8 @@ COLS = "EFGHIJ"
 def fill_sim(root):
     set_s(root, "A4", "株式会社すなおコンサルティング御中_LINEOA施策提案【SIM】（ポップアップツール＋サンクスLINE誘導）")
     set_n(root, "B2", 46314)                 # 作成日 2026-10-19
-    set_s(root, "C8", "セミナー予約（LINE経由）")
-    set_s(root, "C9", "サロン入会（LINE経由）")
+    set_s(root, "C8", "セミナー予約")
+    set_s(root, "C9", "サロン入会")
     for ref in ("C10", "C11", "G11"):
         set_s(root, ref, "-")
     for ref in ("D8", "D9", "D10", "D11", "H11", "K8"):
@@ -120,8 +121,8 @@ def fill_sim(root):
     set_s(root, "B69", "LINE運用コンサル（プラン②）")
     # 根拠メモ（N列）
     notes = {
-        "N8": "CV①セミナー予約（LINE経由）。CPAは①＋②の合計で計算",
-        "N9": "CV②サロン入会（LINE経由）。サロンはサイトからいつでも申し込めるので、平常期も入会がある",
+        "N8": "CV①セミナー予約。CPAは①＋②の合計で計算",
+        "N9": "CV②サロン入会。サロンはサイトからいつでも申し込めるので、平常期も入会がある",
         "N10": f"イベント月（3か月おき・1/4か月目）に広告からLP UU 仮に{LP_UU:,}・セミナー予約 仮に{RESERVE:,}件"
                "（友だち 月400人の目安から逆算）。広告費はADの予算なので入れていない",
         "N14": "LP UU：広告が出るイベント月だけ。平常期は0（セミナーの受付も止まっている）",
@@ -152,8 +153,8 @@ def fill_cmp(root, sim_name):
         set_f(root, f"{col}15", f"+'{sim_name}'!$H$10")
         set_f(root, f"{col}16", f"SUM({col}17:{col}20)")
     set_s(root, "A16", "CV数（+LINEOA施策）")
-    set_s(root, "A17", "CV①_セミナー予約（LINE経由）")
-    set_s(root, "A18", "CV②_サロン入会（LINE経由）")
+    set_s(root, "A17", "CV①_セミナー予約")
+    set_s(root, "A18", "CV②_サロン入会")
     set_s(root, "A19", "-")
     set_s(root, "A20", "-")
     set_f(root, "C25", f"+'{sim_name}'!E68+C29*C30")
