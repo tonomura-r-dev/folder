@@ -32,8 +32,8 @@ ILLUST = ROOT / "_images" / "norst_202611_3_holiday_illust_v1.webp"
 BUBBLE = "「休日に行ってみるか」"
 
 
-def lower_half(c, d):
-    """札4つ・当日の流れ・ボタンの上の一言・予約ボタン・注記（11月1本目と同じ）。"""
+def lower_half(c, d, note="＼電話なしで、このままWEB予約できます／"):
+    """札4つ・当日の流れ・ボタンの上の一言・予約ボタン・注記（11月1本目と同じ）。note＝ボタンの上の一言。"""
     cards = [
         (icon_person, ["男性スタッフ", "のみ"], [None, ORANGE]),
         (icon_pin, ["全国に", "36院"], [None, ORANGE]),
@@ -75,7 +75,7 @@ def lower_half(c, d):
             d.polygon([(x * S, (ay - 10) * S), ((x + 14) * S, ay * S), (x * S, (ay + 10) * S)], fill=ORANGE)
             x += 30
 
-    text_c(d, "＼電話なしで、このままWEB予約できます／", font(34), W / 2, 778, GREEN_DARK, 1)
+    text_c(d, note, font(34), W / 2, 778, GREEN_DARK, 1)
     cta(c, d, 832, 966)
     text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 996, GRAY)
 
