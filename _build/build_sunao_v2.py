@@ -94,15 +94,17 @@ def slot(s, x, y, w, h, text):
             align="ctr", anchor="ctr", name=f"差し込み {text}")
 
 
-LABEL_W = 1.97      # 左上の紺のラベルは全ページ同じ大きさ（2026-10-19 殿村さん「大きさも統一してほしい」）
+# 左上の紺のラベルは全ページ同じ大きさ。いちばん長いラベル（LINE公式アカウント・気をつける点と対策）も余裕を持って入る幅
+# （2026-10-19 殿村さん「大きさも統一して」→「今の大きさにそろえるのではなく、全部入りやすいように」）
+LABEL_W = 2.3
 
 
 def fix_label(lb, ms=None):
     """ラベルを決まった位置・大きさに。メッセージがあれば、その右に同じ位置からそろえて置く"""
     move(lb, x=0, y=0.85, w=LABEL_W, h=0.55)
     bp = lb._element.find(".//" + qn("a:bodyPr"))
-    bp.set("lIns", str(Inches(0.05)))                    # 長いラベル（気をつける点と対策）も折り返さないように
-    bp.set("rIns", str(Inches(0.05)))
+    for k in ("lIns", "rIns"):                           # 内側の余白はFMTのまま（前に詰めた分を戻す）
+        bp.attrib.pop(k, None)
     if ms is not None:
         move(ms, x=LABEL_W + 0.2, w=10.6 - LABEL_W - 0.2)
 
