@@ -15,6 +15,9 @@
   - 13枚目（現状分析）：明光義塾はLINEの中で体験予約を受けている（10/19確認）。
     「診断→体験予約をLINEでつないでいる塾は確認できなかった／まだ空いている」→「確認した4社では明光義塾だけ」。
   - 出典ページに「P14〜P16」の行を足す。本文のページ参照（P◯）は新しい番号に。
+  - 施策の設計図③④の右下のページ番号が手で書いた「27」「28」のままだった → ページ番号のフィールドに置き換えた。
+  - 独立レビューで直した：公式事例（2023年）の施策は過去形に、診断のあとに予約が来たとは言い切らない（「合わせて案内」）、
+    資料請求120%はスタンプ施策と配信の絞り込みの時期の数字（どちらの成果かは言い切らない）。
   - ステップ配信は追加から日をおいて届くので、まだ見えない（殿村さん「ステップ配信が見えへん」）→ 届いたら足す。
   ほかのページは1バイトも変えない（直したスライドのXMLと、足した3枚・画像だけを差し込む）。
 """
@@ -56,7 +59,7 @@ CASE_URL = "https://www.lycbiz.com/jp/case-study/line-official-account/meikonet/
 FRIENDS = ("30.8万人", "2026年9月の実測")          # page.line.me（2026-09-25 308,344人。13枚目と同じ）
 SCREEN_SHOTS = [
     ("1　あいさつ＋相性チェック", "01_あいさつ_相性チェック.jpg", ["友だち追加の直後に", "30秒の相性チェック（全5問）"]),
-    ("2　LINEの中で体験予約", "02_無料体験の予約_LINE内.jpg", ["「このままLINEで予約」（60秒）", "トークの中で入力（全7問）"]),
+    ("2　LINEの中で体験予約", "02_無料体験の予約_LINE内.jpg", ["「このままLINEで無料体験の予約」", "60秒・トークの中で入力（全7問）"]),
     ("3　リッチメニュー", "03_リッチメニュー.jpg", ["一番大きい枠に", "授業料シミュレーション"]),
 ]
 SHOT_ASPECT = 277 / 600
@@ -173,18 +176,18 @@ def page_case(s):
     for i, (lab, big, sub) in enumerate([
             ("友だち数", FRIENDS[0], FRIENDS[1]),
             ("スタンプ施策の約5か月", "約20万人増", "うち約15万人は友だちからの広がり"),
-            ("資料請求（2023年6〜7月）", "前年比 約120%", "施策を行った時期")]):
+            ("資料請求（2023年6〜7月）", "前年比 約120%", "スタンプ施策の後半2か月")]):
         round_box(s, X0 + i * (kw + gap), 1.65, kw, 1.3,
                   [[(lab, {"size": 11, "bold": True, "color": NAVY})],
                    [(big, {"size": 26, "bold": True, "color": NAVY})],
                    [(sub, {"size": 9.5, "color": GREY})]], adj=6000, fill=PALE, line=BORDER, align="ctr",
                   line_spacing=100)
     add_box(s, X0, 3.1, W, 0.78,
-            [[("「学習塾は他塾と念入りに比較検討されるお客さまが多く、Webサイトを訪れてすぐに資料請求や体験授業の"
-               "申し込みなどにつながるケースはそこまで多くありません」", {})],
+            [[("「学習塾は他塾と念入りに比較検討されるお客さまが多く、\nWebサイトを訪れてすぐに資料請求や体験授業の"
+               "申し込みなどのCV（コンバージョン）につながるケースはそこまで多くありません」", {})],
              [("― 明光ネットワークジャパン ご担当者（公式事例より）", {"size": 9, "color": GREY})]],
             size=10.5, color=INK, fill="FFFFFF", line=BORDER, ins=(0.14, 0.05, 0.14, 0.05), line_spacing=105)
-    add_box(s, X0, 3.98, W, 0.3, [[("公式事例の施策の流れ", {})]], size=12, bold=True, color=NAVY, ins=(0, 0, 0, 0))
+    add_box(s, X0, 3.98, W, 0.3, [[("公式事例（2023年）の施策の流れ", {})]], size=12, bold=True, color=NAVY, ins=(0, 0, 0, 0))
     flow = [("サイトで", ["初回訪問時・離脱時の", "ポップアップから", "友だち追加"]),
             ("追加のあと", ["チャットと配信で", "良さ・他塾との違いを", "じっくり伝える"]),
             ("スタンプで", ["タップで答えるアンケートに", "答えるとスタンプを配布", "→ 友だちから広がる"]),
@@ -196,8 +199,9 @@ def page_case(s):
                 align="ctr", anchor="ctr", ins=(0.04, 0.04, 0.04, 0.04), line_spacing=110)
         chip(s, x, 4.3, cw, 0.32, f"{i + 1}　{head}", size=10.5)
     add_box(s, X0, 5.8, W, 0.5,
-            [[("※ スタンプで来た方には、後日クイズ形式の配信で回答を促し、配信した方の55%が反応。友だちが増えても、ブロック率は施策前とほぼ変わらず。", {})],
-             [("※ 明光義塾は、チャットの接客にチャットコマース「ジールス」（株式会社Zeals）を使用。", {})]],
+            [[("※ スタンプの広がりで友だちになり、アンケートに答えていない方には、後日クイズ形式の配信で回答を促し、55%が反応。", {})],
+             [("※ 友だちが増えても、ブロック率は施策前とほぼ同じ。友だち集めにはLINE広告（友だち追加）も使用。"
+               "チャットの接客は「ジールス」（株式会社Zeals）。", {})]],
             size=9, color=GREY, ins=(0, 0, 0, 0), line_spacing=100)
     set_one(s, 104, "大手でも、やっていることは「友だちになってもらい、比べている間をLINEで支える」こと。")
     set_one(s, 67, "出典｜LINEヤフー for Business 導入事例 明光義塾（2024年4月5日）。友だち数：page.line.me（2026-09-25実測）")
@@ -209,7 +213,7 @@ def page_screens(s):
     keep_only(s, {2, 3, 4, 67})
     set_one(s, 2, "明光義塾の実際の画面")
     set_lead(s, ["友だち追加の直後に、30秒の相性チェックと「このままLINEで無料体験の予約」を案内しています。",
-                 "リッチメニューの一番大きい枠は「授業料シミュレーション」。費用の不安に先回りしています。"])
+                 "リッチメニューの一番大きい枠は「授業料シミュレーション」です。"])
     colw = 3.0
     gap = (W - 3 * colw) / 2
     ih = 4.1
@@ -228,23 +232,23 @@ def page_pattern(s):
     """19枚目：明光義塾の型を分解すると、3つの仕組み"""
     keep_only(s, {2, 3, 4, 67, 104})
     set_one(s, 2, "明光義塾の型を分解すると、3つの仕組み")
-    set_lead(s, ["やっていることは3つ。どれも「すぐには申し込まれない」前提でつくられています。",
+    set_lead(s, ["公式事例（2023年）と実際の画面（2026年10月）から読み取れる仕組みは3つです。",
                  f"この型を、このあとの入口（P{NEW_POS[GATE]}）・診断（P{NEW_POS[DIAG]}）・"
                  f"配信の出し分け（P{NEW_POS[SEG]}）に取り入れます。"])
     kw, gap = 3.15, (W - 3 * 3.15) / 2
     cols = [
         ("① サイトから、LINEの友だちに",
-         ["サイトの初回訪問時・離脱時に、ポップアップで友だち追加を案内する。",
-          "スタンプの無料配布で、友だちから友だちへ広げる。"],
+         ["サイトの初回訪問時・離脱時に、ポップアップで友だち追加を案内。",
+          "2023年は、スタンプの無料配布で、友だちから友だちへ広げた。"],
          ["約5か月で友だち約20万人増", "うち約15万人は友だちからの広がり"]),
-        ("② 追加の直後に、診断から予約まで",
+        ("② 追加の直後に、診断と予約の案内",
          ["友だち追加の直後に、30秒の相性チェック（ボタンで答える5問）。",
-          "そのまま「LINEで無料体験の予約」へ。予約はトークの中で入力できる。"],
+          "あわせて「このままLINEで無料体験の予約」も案内。予約はトークの中で入力できる。"],
          ["相性チェック 全5問", "体験予約 60秒・全7問"]),
         ("③ 答えをもとに、配信の相手を絞る",
-         ["アンケートで、保護者か生徒か、塾に通っているかを聞く。",
-          "「まだ塾に通っていない」お子さま・保護者に絞って配信する。"],
-         ["資料請求 前年比 約120%", "（2023年6〜7月）"]),
+         ["2023年は、アンケートで保護者か生徒か、塾に通っているかを聞いた。",
+          "「まだ塾に通っていない」お子さま・保護者に絞って配信した。"],
+         ["答えていない方にクイズ形式の配信", "→ 配信した方の55%が反応"]),
     ]
     for i, (head, body, ex) in enumerate(cols):
         x = X0 + i * (kw + gap)
@@ -255,7 +259,7 @@ def page_pattern(s):
                   [[("実際の例", {"size": 10.5, "bold": True, "color": NAVY})]] + [[(t, {})] for t in ex],
                   adj=5000, size=11.5, color=INK, fill="FFFFFF", line=BORDER, anchor="t", ins=(0.1, 0.08, 0.08, 0.04),
                   line_spacing=105)
-    set_one(s, 104, "友だちになってもらい、答えてもらい、合う方に届ける。この順番が成果につながっている。")
+    set_one(s, 104, "友だちになってもらい、答えてもらい、合う方に届ける。この時期に資料請求は前年比 約120%（公式事例）。")
     set_one(s, 67, f"※ 出典：LINEヤフー for Business 導入事例（2024年4月5日）・明光義塾 LINE公式アカウント（2026-10-19 弊社確認）。"
                    f"実際の画面はP{NEW_POS[('N', 2)]}。")
     return s
@@ -287,8 +291,9 @@ def fix_landscape(s):
     set_runs(cell, ["あり", "（体験予約はLINEの中で）"])
     for c in cell.text_frame.paragraphs[0].runs[0]._r.iter(qn("a:srgbClr")):
         c.set("val", GREEN)
-    set_runs(shape_by_id(s, 102), ["明光義塾はLINEで成果を出している（公式事例・P14）", None, None, None])
-    set_runs(shape_by_id(s, 103), [None, "・保護者向けに「診断 → 体験予約」をLINEの中で",
+    set_runs(shape_by_id(s, 102), ["明光義塾はLINEで成果を出している（公式事例・P14）", None, None,
+                                   "・資料請求が前年比120％ほど（2023年6〜7月）"])
+    set_runs(shape_by_id(s, 103), ["差がつくところ", "・保護者向けに「診断 → 体験予約」をLINEの中で",
                                    "　つないでいるのは、確認した4社では明光義塾だけ", None])
     set_one(s, 104, "保護者向けに、診断から体験予約までをLINEでつないでいる塾は、まだ少ない。")
 
@@ -298,14 +303,14 @@ def add_refs(at):
     p14, p15 = NEW_POS[("N", 1)], NEW_POS[("N", 2)]
     s = at[GATE]
     assert replace_in_paragraphs(s, "Sitelead等（別途費用）",
-                                 f"Sitelead等（別途費用）。明光義塾も、サイトの初回訪問時・離脱時のポップアップで友だちを集めている（P{p14}）") == 1
+                                 f"Sitelead等（別途費用）。明光義塾も、サイトの初回訪問時・離脱時のポップアップで友だちを集めていた（公式事例・P{p14}）") == 1
     s = at[DIAG]
     sh = shape_by_id(s, 68)
     assert sh.text_frame.paragraphs[1].text == "CV② 体験予約"
     sh.text_frame.paragraphs[1].runs[0].text = "CV② 体験予約（LINEの中で受付）"
     note = shape_by_id(s, 31)
     assert note.text_frame.text == "※競合の診断（トライの性格別学習法診断など）はP13の調査結果を参照"
-    set_runs(note, [f"※明光義塾は、相性チェック（5問）のあと、LINEの中で体験予約まで受け付けている（P{p15}）。"
+    set_runs(note, [f"※明光義塾は、相性チェック（5問）と合わせて、LINEの中での体験予約も案内している（P{p15}）。"
                     "競合の診断（トライの性格別学習法診断など）はP13を参照"])
     s = at[MENU]
     assert replace_in_paragraphs(s, "日程変更など）を出し分ける",
@@ -316,7 +321,7 @@ def add_refs(at):
     el.find(qn("p:nvSpPr")).find(qn("p:cNvPr")).set("id", str(max(x.shape_id for x in s.shapes) + 1))
     s.shapes._spTree.append(el)
     new = s.shapes[-1]
-    set_runs(new, [f"※明光義塾は、アンケートの回答をもとに「まだ塾に通っていない」お子さま・保護者に絞って配信している（P{p14}）"])
+    set_runs(new, [f"※明光義塾は、アンケートの回答をもとに「まだ塾に通っていない」お子さま・保護者に絞って配信していた（公式事例・P{p14}）"])
 
 
 def add_source_row(s):
@@ -324,7 +329,7 @@ def add_source_row(s):
     by_id = {sh.shape_id: sh for sh in s.shapes}
     assert by_id[25].text_frame.text == "P13" and by_id[27].text_frame.text == f"P{NEW_POS[21]}・P{NEW_POS[31]}"
     row_y, step = by_id[27].top, by_id[27].top - by_id[25].top
-    pages = f"P{NEW_POS[('N', 1)]}・P{NEW_POS[('N', 2)]}・P{NEW_POS[('N', 3)]}"
+    pages = f"P{NEW_POS[('N', 1)]}〜P{NEW_POS[('N', 2)]}・P{NEW_POS[('N', 3)]}"
     for src_id, text in ((27, pages),
                          (28, "LINEヤフー for Business 導入事例 明光義塾（2024年4月5日）／明光義塾 LINE公式アカウント（2026-10-19 弊社確認）")):
         el = copy.deepcopy(by_id[src_id]._element)
@@ -342,7 +347,23 @@ def add_source_row(s):
         old.getparent().remove(old)
     assert by_id[29].top + by_id[29].height < by_id[31].top
     assert replace_in_paragraphs(s, "競合の実名掲載（P13）",
-                                 f"競合の実名掲載（P13・{pages}）") == 1
+                                 f"競合の実名掲載（P13〜P{NEW_POS[('N', 2)]}・P{NEW_POS[('N', 3)]}・P{NEW_POS[GATE]}・"
+                                 f"P{NEW_POS[DIAG]}〜P{NEW_POS[SEG]}）") == 1
+
+
+def fix_typed_numbers(at):
+    """施策の設計図③④（元の33・34枚目）：右下のページ番号が手で書いた「27」「28」のまま（このレイアウトには番号が無い）
+    → 文字をページ番号のフィールドに置き換える（並びが変わっても自動で正しい番号になる）"""
+    for k, (no, typed) in enumerate(((33, "27"), (34, "28"))):
+        s = at[no]
+        hit = [sh for sh in s.shapes if sh.has_text_frame and sh.text_frame.text.strip() == typed and sh.top > 7.0 * 914400]
+        assert len(hit) == 1, no
+        r = hit[0].text_frame.paragraphs[0].runs[0]._r
+        fld = etree.Element(qn("a:fld"), id="{8C1D2E3F-4A5B-4C6D-9E7F-%012d}" % (k + 1), type="slidenum")
+        fld.append(copy.deepcopy(r.find(qn("a:rPr"))))
+        etree.SubElement(fld, qn("a:t")).text = str(NEW_POS[no])
+        r.addprevious(fld)
+        r.getparent().remove(r)
 
 
 def edit(prs):
@@ -350,6 +371,7 @@ def edit(prs):
     at = {key: sl[i - 1] for key, i in NEW_POS.items()}
     for n in range(1, N_BASE + 1):
         remap_refs(at[n])
+    fix_typed_numbers(at)
     fix_landscape(at[TPL])
     add_refs(at)
     add_source_row(at[SOURCES])
