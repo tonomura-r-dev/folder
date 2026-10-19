@@ -477,8 +477,11 @@ def p_tool_thanks(prs, src):
 # 殿村さんの要旨の項目だけで作る（2026-10-16「メインとなる部分だけで資料化して」）。章の扉・配信の回数のページは入れない
 # 2026-10-19：市場環境（保険営業の方の環境）と他社のLINE運用を追加。「申込み→当日参加」の離脱は確認不足のため書かない
 ORDER = ["summary", "kankyo", "kadai", "honshitsu", "line", "chuui", "kyogo", "iriguchi", "dankai",
-         "mokuhyo", "mitsumori", "ryokin", "schedule", "seika",
-         ("div", "Appendix"), "tool_popup", "tool_thanks"]          # ツール費用はAppendixに（2026-10-17 殿村さん）
+         "mokuhyo", "mitsumori", "ryokin", "schedule", "seika"]
+# Appendix＝タナカホームのAppendix（裏表紙の後ろ・扉＋12枚）を正として横展開し、その後ろにツール費用の2枚を足す
+# （2026-10-19 殿村さん「ツール費用は、タナカホームのAppendixに追加でという認識」「Appendixは今後タナカホームのものを正に」）
+TANAKA = "202610_タナカホーム株式会社御中_LINE公式アカウント運用のご提案_v2.pptx"
+TANAKA_APPX = range(19, 32)                                           # 19＝扉「Appendix／参考資料」〜31＝都度発注プラン
 PAGES = dict(summary=p_summary, kankyo=p_kankyo, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui,
              kyogo=p_kyogo, iriguchi=p_iriguchi, dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo,
              ryokin=p_ryokin)
@@ -501,6 +504,11 @@ def main(fmt, arauchi, out, sim_path=None):
     assert by_id(popup_src, 22).text_frame.text == "新規友だちの追加（ポップアップ / 離脱防止）"
     assert by_id(popup_src, 15).text_frame.text == "初期：1.5万円"
     assert by_id(thanks_src, 22).text_frame.text == "新規友だちの追加（サンクスLINE誘導）"
+    tk = list(Presentation(TANAKA).slides)
+    appx_src = [tk[i - 1] for i in TANAKA_APPX]
+    assert appx_src[0].shapes[0].text_frame.text.startswith("Appendix") or any(
+        sh.has_text_frame and sh.text_frame.text == "Appendix" for sh in appx_src[0].shapes)
+    assert any(sh.has_text_frame and "都度発注プラン" in sh.text_frame.text for sh in appx_src[-1].shapes)
     ar = Presentation(arauchi)
     ar_cover, ar_sim = ar.slides[0], ar.slides[16]
     assert by_id(ar_sim, 339).text_frame.text.startswith("目標と費用対効果")
@@ -512,10 +520,6 @@ def main(fmt, arauchi, out, sim_path=None):
             new.append(p_schedule(prs, sch_src))
         elif item == "seika":
             new.append(p_seika(prs, seika_src))
-        elif item == "tool_popup":
-            new.append(p_tool_popup(prs, popup_src))
-        elif item == "tool_thanks":
-            new.append(p_tool_thanks(prs, thanks_src))
         elif item == "mitsumori":
             p_mitsumori(prs, head, sim, ar_sim)
             new.append(prs.slides[-1])
@@ -523,7 +527,8 @@ def main(fmt, arauchi, out, sim_path=None):
             PAGES[item](prs, head)
             new.append(prs.slides[-1])
     p_cover(cover, ar_cover)
-    keep = [cover] + new + [back]
+    appx = [copy_slide(prs, s) for s in appx_src] + [p_tool_popup(prs, popup_src), p_tool_thanks(prs, thanks_src)]
+    keep = [cover] + new + [back] + appx
     lst = prs.slides._sldIdLst
     by_part = {prs.part.related_part(e.rId): e for e in lst}
     for e in list(lst):
