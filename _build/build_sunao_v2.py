@@ -113,6 +113,18 @@ def new_page(prs, head, title, label, message):
     return s
 
 
+def center_body(s, top=1.5, bottom=7.05):
+    """見出し（タイトル・ラベル・メッセージ＝最初の3つ）より下の中身を、まとめて上下の中央に寄せる
+    （2026-10-19 殿村さん「下の方が空いてるから、もう少し中央に寄せるように下にずらして」）"""
+    body = list(s.shapes)[3:]
+    y0 = min(sh.top for sh in body)
+    y1 = max(sh.top + sh.height for sh in body)
+    dy = int((Inches(top) + Inches(bottom) - y0 - y1) / 2)
+    if dy > 0:
+        for sh in body:
+            sh.top = sh.top + dy
+
+
 def divider(prs, src, text):
     s = copy_slide(prs, src)
     set_paras(by_id(s, 2), [text])
@@ -482,6 +494,7 @@ ORDER = ["summary", "kankyo", "kadai", "honshitsu", "line", "chuui", "kyogo", "i
 # （2026-10-19 殿村さん「ツール費用は、タナカホームのAppendixに追加でという認識」「Appendixは今後タナカホームのものを正に」）
 TANAKA = "202610_タナカホーム株式会社御中_LINE公式アカウント運用のご提案_v2.pptx"
 TANAKA_APPX = range(19, 32)                                           # 19＝扉「Appendix／参考資料」〜31＝都度発注プラン
+CENTER = {"summary", "kadai", "honshitsu", "line", "chuui", "iriguchi", "dankai", "mokuhyo", "ryokin"}  # 中身を上下中央に
 PAGES = dict(summary=p_summary, kankyo=p_kankyo, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui,
              kyogo=p_kyogo, iriguchi=p_iriguchi, dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo,
              ryokin=p_ryokin)
@@ -525,6 +538,8 @@ def main(fmt, arauchi, out, sim_path=None):
             new.append(prs.slides[-1])
         else:
             PAGES[item](prs, head)
+            if item in CENTER:
+                center_body(prs.slides[-1])
             new.append(prs.slides[-1])
     p_cover(cover, ar_cover)
     appx = [copy_slide(prs, s) for s in appx_src] + [p_tool_popup(prs, popup_src), p_tool_thanks(prs, thanks_src)]
