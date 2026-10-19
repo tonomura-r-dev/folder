@@ -458,6 +458,7 @@ def edit(prs):
     page_talk_img(at[TALK_IMG])
     page_real(at[REAL])
     recolor(sl)
+    remove_bands(sl)
     return sum(fix_fonts(s) for s in sl)   # 字体は全部メイリオ（元の資料のメイリオ指定なしの文字も）
 
 
@@ -534,6 +535,37 @@ def recolor(sl):
                 if c.get("val") == "accent6":
                     left.append((sh.shape_id, "accent6"))
         assert not left, (n, left)
+
+
+# ---------------------------------------------------------------- 下の要旨の帯（左の細い線＋背景の四角）を外す
+BAND_PAGES = [9, 10, 16, 18, 19, 22, 27, 28]     # 帯があるページ（新しい番号）
+
+
+def remove_bands(sl):
+    """殿村さん「各スライドの下の要旨を書いてるっぽいところのこれは金輪際消してほしい」。
+    左の細い線と背景の四角を外し、要旨の文字だけ残す（本文の左端にそろえる）"""
+    e = 914400
+    found = []
+    for n, s in enumerate(sl, 1):
+        shp = list(s.shapes)
+        for bar in shp:
+            if bar.width is None or bar.height is None:
+                continue
+            if not (bar.width < 0.1 * e and 0.3 * e < bar.height < 0.9 * e) or (bar.has_text_frame and bar.text_frame.text.strip()):
+                continue
+            box = [m for m in shp if m is not bar and m.width and abs(m.top - bar.top) < 0.03 * e
+                   and abs(m.left - (bar.left + bar.width)) < 0.05 * e]
+            if not box:
+                continue
+            assert len(box) == 1 and not (box[0].has_text_frame and box[0].text_frame.text.strip()), n
+            txt = [m for m in shp if m.has_text_frame and m.text_frame.text.strip() and bar.top - 0.05 * e <= m.top < bar.top + bar.height
+                   and m.left >= bar.left and m.left < box[0].left + box[0].width]
+            assert len(txt) == 1, (n, [m.shape_id for m in txt])
+            for sh in (bar, box[0]):
+                sh._element.getparent().remove(sh._element)
+            place(txt[0], x=X0, w=W)
+            found.append(n)
+    assert found == BAND_PAGES, found
 
 
 # ---------------------------------------------------------------- 3) 差し込み＋使わなくなった画像を外す
