@@ -4,7 +4,7 @@
 
     python -m _build.build_sunao_v2 <LINEOA_BUFFF_3.pptx（FMT）> <あらうちv10.pptx（表紙の「御中」だけ借りる）> <出力.pptx> [SIM.xlsx]
 
-  SIM（xlsx）を4つ目に渡すと、「概算お見積り」のページにSIMの数字（月ごと）を入れる（2026-10-19 殿村さん
+  SIM（xlsx）を4つ目に渡すと、「概算お見積り」のページ（あらうち・タナカホームと同じ形）にSIMの数字を入れる（2026-10-19 殿村さん
   「資料にSIMの数値感を反映させるように」）。殿村さんがCVを直したSIMを渡し直せば、そのまま反映される。
 
   中身は v1（`_build/build_sunao_v1.py`・殿村さん確定の構成）と同じ。見た目をFMTに合わせた：
@@ -15,6 +15,7 @@
    ・表紙・裏表紙＝FMTのもの（表紙に「御中」とサブタイトル2行を入れ、「- 2026最新版 -」は外す）
   成果報酬の条件は、まだ決まっていないので破線の差し込み枠のまま。
 """
+import copy
 import sys
 
 from pptx import Presentation
@@ -25,6 +26,7 @@ from pptx.util import Inches, Pt
 from _build.arauchi_v4.lib import TEXT, add_box, add_table, move, set_paras
 from _build.arauchi_v10.build import by_id, clone, runs
 from _build.build_sunao_v1 import all_meiryo
+from _build.patch_tanaka_v4 import set_lines
 from _build.patch_tanaka_v5 import copy_slide
 
 NAVY = "002060"      # FMTのラベル・見出しの紺
@@ -355,39 +357,56 @@ def load_sim(path):
         shutil.rmtree(work)
 
 
-def p_mitsumori(prs, head, sim):
-    """SIMの数字を月ごと・そのまま出す（合計・平均・幅にまとめない。小数は出さない。CPAは出さない）"""
+def p_mitsumori(prs, head, sim, src):
+    """これまでの提案資料（あらうちv10・タナカホーム）と同じ「概算お見積り」の形：初期・月次の金額と実施内容＋6か月後の数字。
+    本文はあらうちv10の「目標と費用対効果」のページの図形をそのまま写し、文字だけすなおに差し替える（2026-10-19 殿村さん
+    「タナカホームとかこれまでの提案資料の形で」）。月ごとのCVの小さい表は載せない（タナカホームと同じ）"""
     if sim is None:
         s = new_page(prs, head, "概算お見積り", "見込み", "平常期・イベント期の友だち数と、予約・入会の見込み")
         slot(s, X0, 1.75, W, 4.9, "概算お見積り（SIM）の表")
         return
     n = lambda v: int(v + 0.5)                                        # noqa: E731（四捨五入で整数に）
-    yen = lambda v: f"{n(v):,}"                                       # noqa: E731
-    active = [n(v) for v in sim["active"]]
-    s = new_page(prs, head, "概算お見積り：6か月の見込み", "プラン②",
-                 f"イベントのたびに友だちが増え、6か月目に追える人数は{active[-1]:,}人")
-    big = dict(size=13, bold=True, color=NAVY, align="ctr")
-    num = dict(size=13, align="ctr")
-    head_row = [head_cell("", 12), head_cell("初期", 12)] + [head_cell(f"{k + 1}か月目\n{p}", 12)
-                                                             for k, p in enumerate(sim["phase"])]
-    tools = [a + b for a, b in zip(sim["popup"], sim["thanks"])]
-    account = [a + b for a, b in zip(sim["account"], sim["usage"])]
-    rows = [head_row,
-            [label_cell("友だちの増加（人）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["add"]],
-            [label_cell("追える人数（人）", 12), cell("-", **num)] + [cell(f"{v:,}", **big) for v in active],
-            [label_cell(f"{sim['name1']}（件）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["cv1"]],
-            [label_cell(f"{sim['name2']}（件）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["cv2"]]]
-    cost = dict(size=12, bold=True, color=NAVY, fill=LGRAY, align="ctr")
-    for label, vals in (("LINE運用コンサル（円）", sim["consult"]), ("ツール（円）", tools),
-                        ("LINE利用料（円）", account)):
-        rows.append([cell(label, **cost)] + [cell(yen(v), **num) for v in vals])
-    rows.append([cell("合計（円）", **cost)] + [cell(yen(v), **big) for v in sim["total"]])
-    cw = (W - 2.3 - 1.0) / 6
-    add_table(s, X0, 1.7, [2.3, 1.0] + [cw] * 6, [0.62] + [0.43] * 8, rows, name="概算お見積り")
-    for k, t in enumerate(["※プラン②（平常期は月10万円で算出）。イベントは3か月おき（1・4か月目）と仮に置いて算出。広告費は含まない",
-                           "※追える人数＝ブロックされずに届く友だちの数。友だちの入口はポップアップツール・サンクスLINE誘導",
-                           "※ツール＝ポップアップツール・サンクスLINE誘導。LINE利用料＝LINE公式アカウントの開設・月額の利用料"]):
-        note(s, t, y=5.95 + k * 0.2, h=0.2)
+    active6 = n(sim["active"][-1])
+    ev = [k for k, p in enumerate(sim["phase"]) if p == "イベント期"]
+    nv = [k for k, p in enumerate(sim["phase"]) if p != "イベント期"]
+    s = new_page(prs, head, f"概算お見積り：6か月目に追える人数{active6:,}人", "プラン②",
+                 "イベントに合わせた運用で、セミナー予約・サロン入会へつなげる")
+    skip = {337, 338, 339, 340, 381} | set(range(383, 390))          # あらうちの見出し・リード／月ごとの小さい表
+    tree = s.shapes._spTree
+    for el in src.shapes._spTree:
+        if el.tag.endswith("}nvGrpSpPr") or el.tag.endswith("}grpSpPr"):
+            continue
+        cnv = el.find(".//" + qn("p:cNvPr"))
+        if cnv is not None and int(cnv.get("id")) in skip:
+            continue
+        tree.append(copy.deepcopy(el))
+
+    def put(sid, text):
+        set_lines(by_id(s, sid), text.split("\n"))
+
+    total = sim["total"]
+    put(343, f"¥{n(total[0]):,}〜")
+    put(344, f"イベント期 ¥{n(total[1 + ev[0]]):,}〜\n平常期 ¥{n(total[1 + nv[0]]):,}〜")
+    for (a, b), (k, v) in zip(((365, 366), (367, 368), (369, 370), (371, 372), (373, 374)),
+                              (("ポップアップ\nツール", "導入"), ("サンクス\nLINE誘導", "導入"), ("ステップ配信", "5通を構築"),
+                               ("配信の設計", "段階ごとに設計"), ("LINE公式\nアカウント", "開設"))):
+        put(a, k)
+        put(b, v)
+    for (a, b), (k, v) in zip(((349, 350), (351, 352), (353, 354), (355, 356), (357, 358), (359, 360)),
+                              (("イベント期の\n企画配信", "月4〜5回"), ("平常期の\n企画配信", "月2回"),
+                               ("前日・当日の\nお知らせ", "日程ごとに配信"), ("申込み\nフォームの案内", "イベント直後"),
+                               ("ステップ配信", "5通の改善"), ("友だちの入口", "運用"))):
+        put(a, k)
+        put(b, v)
+    for (a, b), (k, v) in zip(((361, 375), (362, 376), (364, 378)),
+                              (("追える人数", f"{active6:,}人"),
+                               (sim["name1"], f"{sum(n(x) for x in sim['cv1']):,}件/6か月"),
+                               (sim["name2"], f"{sum(n(x) for x in sim['cv2']):,}件/6か月"))):
+        put(a, k)
+        put(b, v)
+        for clr in by_id(s, b)._element.iter(qn("a:srgbClr")):       # 良い数字は赤い文字にしない
+            clr.set("val", NAVY)
+    return s
 
 
 # ---------------------------------------------------------------- 4 料金
@@ -482,7 +501,9 @@ def main(fmt, arauchi, out, sim_path=None):
     assert by_id(popup_src, 22).text_frame.text == "新規友だちの追加（ポップアップ / 離脱防止）"
     assert by_id(popup_src, 15).text_frame.text == "初期：1.5万円"
     assert by_id(thanks_src, 22).text_frame.text == "新規友だちの追加（サンクスLINE誘導）"
-    ar_cover = Presentation(arauchi).slides[0]
+    ar = Presentation(arauchi)
+    ar_cover, ar_sim = ar.slides[0], ar.slides[16]
+    assert by_id(ar_sim, 339).text_frame.text.startswith("目標と費用対効果")
     new = []
     for item in ORDER:
         if isinstance(item, tuple):
@@ -496,7 +517,7 @@ def main(fmt, arauchi, out, sim_path=None):
         elif item == "tool_thanks":
             new.append(p_tool_thanks(prs, thanks_src))
         elif item == "mitsumori":
-            p_mitsumori(prs, head, sim)
+            p_mitsumori(prs, head, sim, ar_sim)
             new.append(prs.slides[-1])
         else:
             PAGES[item](prs, head)
