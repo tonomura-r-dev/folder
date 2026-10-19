@@ -46,14 +46,27 @@ NAVY, INK, GREY = "1F2A5C", "1C2233", "646C82"
 PALE, BORDER, ACCENT = "EFF1F7", "C6CADD", "BF4E0E"
 X0, W = 0.42, 9.99
 
-# 実際の画面（11枚目）：見出し・画像・説明2行
+# 実際の画面（11枚目）：見出し・画像・説明2行・ぼかす所（スクショに写っている殿村さんの名前）
 SCREEN_SHOTS = [
-    ("1　あいさつ（7/28）", "01_あいさつ_0728.jpg", ["友だち追加の直後に", "無料体験と期限のバナー"]),
-    ("2　配信（7/28）", "02_会員の声の動画_0728.jpg", ["会員の声の動画", "＋期限と予約ボタン"]),
-    ("3　配信（9/26）", "06_締切前の告知_0926.jpg", ["締切前の告知", "ブランドの動画＋カルーセル"]),
-    ("4　リッチメニュー（10月）", "08_リッチメニュー_10月.jpg", ["その月の特典を常に表示", "＋無料スタンプの配布"]),
+    ("1　あいさつ（7/28）", "01_あいさつ_0728.jpg", ["友だち追加の直後に", "無料体験と期限のバナー"], (39, 97, 150, 112)),
+    ("2　配信（7/28）", "02_会員の声の動画_0728.jpg", ["会員の声の動画", "＋期限と予約ボタン"], None),
+    ("3　配信（9/26）", "06_締切前の告知_0926.jpg", ["締切前の告知", "動画＋カルーセル"], (39, 102, 136, 117)),
+    ("4　リッチメニュー（10月）", "08_リッチメニュー_10月.jpg", ["その月の特典を表示", "＋無料スタンプの配布"], None),
 ]
 SHOT_ASPECT = 277 / 600
+
+
+def shot_bytes(path, blur):
+    """スクショを読み、名前の写っている所をぼかす（元の画像ファイルは変えない）"""
+    if blur is None:
+        return path.read_bytes()
+    from io import BytesIO
+    from PIL import Image, ImageFilter
+    im = Image.open(path).convert("RGB")
+    im.paste(im.crop(blur).filter(ImageFilter.GaussianBlur(4)), blur)
+    buf = BytesIO()
+    im.save(buf, "JPEG", quality=92)
+    return buf.getvalue()
 
 
 def title_of(z, name):
@@ -107,10 +120,10 @@ def assemble(base, out):
     # 11枚目：スクショ4枚の画像を足す（パーツ名は英数字だけ）
     s11 = order[SCREENS - 1]
     rels = etree.fromstring(z.read(rels_of(s11)))
-    for j, (_, fn, _) in enumerate(SCREEN_SHOTS, 1):
+    for j, (_, fn, _, blur) in enumerate(SCREEN_SHOTS, 1):
         media = f"ppt/media/curves_{j}.jpeg"
         assert media not in names
-        add[media] = (SHOTS / fn).read_bytes()
+        add[media] = shot_bytes(SHOTS / fn, blur)
         etree.SubElement(rels, "{http://schemas.openxmlformats.org/package/2006/relationships}Relationship",
                          Id=f"rId{100 + j}", Type=RT_IMAGE, Target=f"../media/curves_{j}.jpeg")
     replace[rels_of(s11)] = etree.tostring(rels, xml_declaration=True, encoding="UTF-8", standalone=True)
@@ -195,7 +208,7 @@ def page_case(s):
             ins=(0, 0, 0, 0))
     flow = [("7/28｜あいさつ", ["5回無料体験の案内", "期限（7/31まで）と", "先着30名をバナーで"]),
             ("7/28｜配信", ["会員の声の動画", "「半年で-6キロ」", "＋期限と予約ボタン"]),
-            ("7月下旬｜配信", ["締切前の告知", "ブランドの動画", "＋カルーセル"]),
+            ("7月下旬｜配信", ["締切前の告知", "動画", "＋カルーセル"]),
             ("8/27｜配信", ["会員の声の動画", "＋9月の特典", "1か月無料", "（9/30まで）"]),
             ("9/26｜配信", ["締切前の告知", "PEANUTSとのコラボ", "＋カルーセル"]),
             ("10月｜リッチメニュー", ["10回無料体験", "（10/31まで）", "＋無料スタンプ配布"])]
@@ -207,7 +220,7 @@ def page_case(s):
         add_box(s, x, 3.55, cw, 0.32, [[(head, {})]], size=9.5, bold=True, color="FFFFFF", fill=NAVY, align="ctr",
                 ins=(0.02, 0, 0.02, 0))
     add_box(s, X0, 5.5, W, 0.28,
-            [[("※ 特典は月ごとに替わる（7月＝5回無料／9月＝1か月無料／10月＝10回無料）。毎回、期限と「見学だけでもOK」をセットにしている。", {})]],
+            [[("※ 特典は月ごとに替わる（7月＝5回無料／9月＝1か月無料／10月＝10回無料）。配信では毎回、期限と「見学だけでもOK」をセットにしている。", {})]],
             size=9.5, color=GREY, ins=(0, 0, 0, 0))
     set_one(s, 7, "大規模でも、やっていることは「期限つきの無料体験」を毎月案内し続けるシンプルな型。")
     set_one(s, 8, "※ 友だち数：page.line.me（LINEヤフー社公式ページ）2026/8/17実測・過去値は同ページの保存版（2024/8）。"
@@ -220,12 +233,12 @@ def page_screens(s):
     keep_only(s, {2, 3, 22})
     set_one(s, 2, "カーブスの実際の画面")
     set_lead(s, ["あいさつで期限つきの無料体験を案内し、その後の配信で動画や締切前の告知を重ねています。",
-                 "リッチメニューにも、その月の特典を常に表示しています。"])
+                 "リッチメニューにも、その月の特典を表示しています。"])
     colw = 2.3
     gap = (W - 4 * colw) / 3
     ih = 4.1
     iw = ih * SHOT_ASPECT
-    for j, (head, _, cap) in enumerate(SCREEN_SHOTS):
+    for j, (head, _, cap, _) in enumerate(SCREEN_SHOTS):
         x = X0 + j * (colw + gap)
         chip(s, x, 1.55, colw, 0.32, head, size=11)
         add_pic(s, f"rId{101 + j}", f"カーブス_{head[3:]}", x + (colw - iw) / 2, 1.96, iw, ih)
@@ -250,12 +263,12 @@ def page_pattern(s):
           ["あいさつは、文章とバナー画像だけ（動画は使っていない）。"]],
          ["7/28 あいさつ", "5回無料体験・7/31まで・各店先着30名"]),
         ("② 配信で、動画を使うこともある",
-         [["会員の声（「半年で-6キロ」など）やブランドの動画で、「自分にもできそう」と感じてもらう。"],
-          [("※全員に送っているか、対象を絞って送っているかは、外からは分からない。", {"size": 10, "color": GREY})]],
-         ["7/28・8/27：会員の声の動画", "7月下旬・9/26：ブランドの動画"]),
+         [["会員の声（「半年で-6キロ」など）の動画で、「自分にもできそう」と感じてもらう。"],
+          [("※全員に送っているか、対象を絞って送っているかは、弊社の確認範囲では判別できない。", {"size": 10, "color": GREY})]],
+         ["7/28・8/27：会員の声の動画", "7月下旬・9/26：締切前の告知にも動画"]),
         ("③ 特典を毎月替えて、締切前に告知",
          [["その月の特典に「期限・見学だけでもOK」をセットにして、締切の数日前に告知する。"],
-          ["文面は同じ型を毎月使い回している。"],
+          ["文面は、毎月同じ型を使っている。"],
           ["リッチメニューにも、その月の特典を表示。"]],
          ["7月＝5回無料／9月＝1か月無料", "10月＝10回無料（10/31まで）"]),
     ]
@@ -291,6 +304,9 @@ def page_step(s):
     set_cell(row[2], "あいさつ＋無料体験（期限つき）のバナー＋30秒 体づくりタイプ診断")
     set_cell(row[3], "体験予約／診断回答")
     set_cell(row[4], "【〇月〇日まで】無料体験のご案内")
+    d6 = t.rows[4].cells
+    assert d6[0].text == "Day6" and d6[1].text == "1回目のオファー"
+    set_cell(d6[1], "2回目のオファー")      # Day0（あいさつ）が1回目になった
     d8 = t.rows[5].cells
     assert d8[0].text == "Day8" and d8[2].text == "同年代・同目的の会員の声／続いている人の共通点"
     set_cell(d8[2], "同年代・同目的の会員の声（動画など）／続いている人の共通点")
@@ -343,6 +359,8 @@ def page_talk_img(s):
     assert replace_in_paragraphs(s, "予約ではなく診断を求める", "無料体験と期限は、バナーで見せる") == 1
     assert replace_in_paragraphs(s, "検討初期の人に予約を求めると落ちます", "今すぐの人は、そのまま体験予約へ") == 1
     assert replace_in_paragraphs(s, "求めるのは4問の回答だけ。", "迷っている人には、4問の診断を用意します。") == 1
+    # スマホの画像は直す前（診断だけの画面）のままなので、注記で補う（画像はClaudeが作らない）
+    assert replace_in_paragraphs(s, "※ 画面はイメージです。", "※ 画面はイメージです（診断の部分。無料体験のバナーは前ページ）。") == 1
 
 
 def page_real(s):
