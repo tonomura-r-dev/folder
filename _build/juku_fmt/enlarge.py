@@ -9,7 +9,8 @@
     （1つでも大きくできない箱があれば、そのまとまりは全部そのまま）。
   - 収まるかの計算（メイリオ）：全角＝1文字分、半角＝DejaVu Sansで測った幅（メイリオの英数字に近い）、行の高さ＝1.5倍×行間の指定。左右・上下の余白を引いた箱の中で、
     折り返しの行数×行の高さ＋段落の前後の空き が、箱の高さ以内か。折り返しなしの箱は、1行が箱の幅に収まるか。
-    さらに、大きくして折り返しが増える（1行の帯が2行になる等）箱は大きくしない。
+    さらに、大きくして折り返しが増える（1行の帯が2行になる等）箱は大きくしない。大きくした後は幅7%・高さ8%の余裕を残す。
+  - 矢羽・吹き出しなど四角（角丸）でない形の文字と、上に別の図形が重なっている箱は大きくしない。
   ほかは1バイトも変えない（直したスライドのXMLだけ差し込む）。
 """
 import math
@@ -61,7 +62,7 @@ def runs_of(p):
     return out
 
 
-def para_height(p, width_pt, scale, wrap=True):
+def para_height(p, width_pt, scale, wrap=True, factor=1.0):
     """段落の高さ（pt）。折り返しなしなら (1行の幅, 高さ)"""
     runs = runs_of(p)
     ppr = p.find(qn("a:pPr"))
@@ -91,7 +92,7 @@ def para_height(p, width_pt, scale, wrap=True):
     if ppr is not None and ppr.get("marL"):
         indent = int(ppr.get("marL")) / EMU_PT
     lines, cur, widest = 1, 0.0, 0.0
-    avail = max(width_pt - indent, 1.0) * 0.97
+    avail = max(width_pt - indent, 1.0) * factor
     prev = None
     for text, sz, bold in runs:
         s = (sz or max(sizes)) * scale
@@ -116,7 +117,7 @@ def para_height(p, width_pt, scale, wrap=True):
     return widest + indent, lines * line_h + extra, lines
 
 
-def layout(txbody, w_emu, h_emu, scale, lins=91440, rins=91440, tins=45720, bins=45720):
+def layout(txbody, w_emu, h_emu, scale, factor=1.0, hmargin=1.0, lins=91440, rins=91440, tins=45720, bins=45720):
     """(箱に収まるか, 段落ごとの行数)"""
     bp = txbody.find(qn("a:bodyPr"))
     wrap = True
@@ -132,13 +133,13 @@ def layout(txbody, w_emu, h_emu, scale, lins=91440, rins=91440, tins=45720, bins
     height = (h_emu - tins - bins) / EMU_PT
     total, widest, counts = 0.0, 0.0, []
     for p in txbody.findall(qn("a:p")):
-        wd, ht, n = para_height(p, width, scale, wrap)
+        wd, ht, n = para_height(p, width, scale, wrap, factor)
         widest = max(widest, wd)
         total += ht
         counts.append(n)
-    if not wrap and widest > width * 0.97:
+    if not wrap and widest > width * factor:
         return False, counts
-    return total <= height + 0.5, counts
+    return total <= height * hmargin + 0.5, counts
 
 
 def scaled_sizes(txbody):
@@ -156,8 +157,9 @@ def best_k(txbody, w, h, **ins):
     if not ok:
         return None                                          # 今の時点で収まっていない箱は触らない
     for k in STEPS:
-        ok, counts = layout(txbody, w, h, k, **ins)
-        if ok and all(c <= b for c, b in zip(counts, base)):     # 折り返しが増える（1行が2行になる）なら大きくしない
+        # 大きくした後は、幅に7%・高さに8%の余裕を残して、今と同じ行数に収まること（1文字だけ次の行に落ちるのを防ぐ）
+        ok, counts = layout(txbody, w, h, k, factor=0.93, hmargin=0.92, **ins)
+        if ok and all(c <= b for c, b in zip(counts, base)):
             return k
     return None
 
@@ -181,40 +183,89 @@ def sig(txbody):
     return tuple(sorted({r.get("sz") for r in scaled_sizes(txbody)}))
 
 
+def text_area(sh):
+    """文字が入る範囲（EMU）。四角・テキストボックスはそのまま、角丸は角の分だけ内側。ほかの形（矢羽・吹き出し等）は None"""
+    sp_pr = sh._element.find(qn("p:spPr"))
+    geom = sp_pr.find(qn("a:prstGeom")) if sp_pr is not None else None
+    if geom is None:
+        return (sh.width, sh.height) if sp_pr is not None and sp_pr.find(qn("a:custGeom")) is None else None
+    prst = geom.get("prst")
+    if prst == "rect":
+        return sh.width, sh.height
+    if prst == "roundRect":
+        adj = 16667
+        for gd in geom.iter(qn("a:gd")):
+            if gd.get("name") == "adj":
+                adj = int(gd.get("fmla").split()[-1])
+        inset = int(0.29289 * adj / 100000 * min(sh.width, sh.height))
+        return sh.width - 2 * inset, sh.height - 2 * inset
+    return None
+
+
+def box(sh):
+    return sh.left, sh.top, sh.left + sh.width, sh.top + sh.height
+
+
+def covered(i, shapes):
+    """i番目の図形に、上に重なる図形があるか（線・矢印の線は除く）"""
+    x0, y0, x1, y1 = box(shapes[i])
+    area = max((x1 - x0) * (y1 - y0), 1)
+    for o in shapes[i + 1:]:
+        if o.width is None or o.height is None or o._element.tag == qn("p:cxnSp"):
+            continue
+        a0, b0, a1, b1 = box(o)
+        ix, iy = min(x1, a1) - max(x0, a0), min(y1, b1) - max(y0, b0)
+        if ix > 0 and iy > 0 and ix * iy > 0.01 * area:
+            return True
+    return False
+
+
+def collect(shapes, groups):
+    shapes = [sh for sh in shapes]
+    for i, sh in enumerate(shapes):
+        if sh.shape_type == 6:                               # グループ：中の図形どうしで見る
+            collect(sh.shapes, groups)
+            continue
+        if sh.rotation or sh.width is None or sh.height is None or covered(i, shapes):
+            continue
+        if sh.has_text_frame:
+            area = text_area(sh)
+            if area is None:
+                continue
+            tb = sh.text_frame._txBody
+            key = ("sp", round(sh.width / 45720), round(sh.height / 45720), sig(tb))
+            groups.setdefault(key, []).append((tb, best_k(tb, *area)))
+        elif getattr(sh, "has_table", False) and sh.has_table:
+            tbl = sh.table
+            for ri, row in enumerate(tbl.rows):
+                for ci, cell in enumerate(row.cells):
+                    tc = cell._tc
+                    if tc.get("hMerge") or tc.get("vMerge"):
+                        continue
+                    w = sum(tbl.columns[c].width for c in range(ci, ci + int(tc.get("gridSpan", 1))))
+                    h = sum(tbl.rows[r].height for r in range(ri, ri + int(tc.get("rowSpan", 1))))
+                    pr = tc.find(qn("a:tcPr"))
+                    ins = {}
+                    if pr is not None:
+                        for a, k in (("marL", "lins"), ("marR", "rins"), ("marT", "tins"), ("marB", "bins")):
+                            if pr.get(a):
+                                ins[k] = int(pr.get(a))
+                    tb = tc.find(qn("a:txBody"))
+                    if not "".join(x.text or "" for x in tb.iter(qn("a:t"))).strip():
+                        continue
+                    groups.setdefault(("tbl", id(tbl._tbl)), []).append((tb, best_k(tb, w, h, **ins)))
+
+
 def enlarge(prs):
-    """同じ形の箱（同じ大きさ・同じ文字の大きさ）や同じ表のセルは、同じ倍率にそろえる（一番小さい倍率に合わせる）"""
+    """同じ形の箱（同じ大きさ・同じ文字の大きさ）や同じ表のセルは、同じ倍率にそろえる（一番小さい倍率に合わせる）。
+    矢羽・吹き出しなど四角でない形の文字と、上に別の図形が重なっている箱は大きくしない"""
     stats = {}
     n_slides = len(prs.slides)
     for n, s in enumerate(prs.slides, 1):
         if n in (1, n_slides) or s._element.get("show") == "0":
             continue
         groups = {}
-        for sh in walk(s.shapes):
-            if sh.rotation:
-                continue
-            if sh.has_text_frame and sh.width and sh.height:
-                tb = sh.text_frame._txBody
-                key = ("sp", round(sh.width / 45720), round(sh.height / 45720), sig(tb))
-                groups.setdefault(key, []).append((tb, best_k(tb, sh.width, sh.height)))
-            elif getattr(sh, "has_table", False) and sh.has_table:
-                tbl = sh.table
-                for ri, row in enumerate(tbl.rows):
-                    for ci, cell in enumerate(row.cells):
-                        tc = cell._tc
-                        if tc.get("hMerge") or tc.get("vMerge"):
-                            continue
-                        w = sum(tbl.columns[c].width for c in range(ci, ci + int(tc.get("gridSpan", 1))))
-                        h = sum(tbl.rows[r].height for r in range(ri, ri + int(tc.get("rowSpan", 1))))
-                        pr = tc.find(qn("a:tcPr"))
-                        ins = {}
-                        if pr is not None:
-                            for a, k in (("marL", "lins"), ("marR", "rins"), ("marT", "tins"), ("marB", "bins")):
-                                if pr.get(a):
-                                    ins[k] = int(pr.get(a))
-                        tb = tc.find(qn("a:txBody"))
-                        if not "".join(x.text or "" for x in tb.iter(qn("a:t"))).strip():
-                            continue
-                        groups.setdefault(("tbl", id(tbl._tbl)), []).append((tb, best_k(tb, w, h, **ins)))
+        collect(s.shapes, groups)
         done = 0
         for key, items in groups.items():
             ks = [k for _, k in items]
