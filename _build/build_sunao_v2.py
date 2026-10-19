@@ -2,7 +2,10 @@
 """株式会社すなおコンサルティング LINE公式アカウント運用のご提案（骨組み）を、DYM共通資料 LINEOA_BUFFF_3 のFMTで作り直す
 （2026-10-16 殿村さん「これをFMTとして、修正してもらえたら」）。
 
-    python -m _build.build_sunao_v2 <LINEOA_BUFFF_3.pptx（FMT）> <あらうちv10.pptx（表紙の「御中」だけ借りる）> <出力.pptx>
+    python -m _build.build_sunao_v2 <LINEOA_BUFFF_3.pptx（FMT）> <あらうちv10.pptx（表紙の「御中」だけ借りる）> <出力.pptx> [SIM.xlsx]
+
+  SIM（xlsx）を4つ目に渡すと、「概算お見積り」のページにSIMの数字（月ごと）を入れる（2026-10-19 殿村さん
+  「資料にSIMの数値感を反映させるように」）。殿村さんがCVを直したSIMを渡し直せば、そのまま反映される。
 
   中身は v1（`_build/build_sunao_v1.py`・殿村さん確定の構成）と同じ。見た目をFMTに合わせた：
    ・ヘッダー＝タイトルだけ（リード帯なし）。その下に紺のラベル＋太字のメッセージ（FMTの「施策展開図」と同じ形）
@@ -10,7 +13,7 @@
    ・運用スケジュール＝FMTのページ（「約1か月」は書かない。見出しはあらうちv10と同じ「初期設計が整い次第、順次進行」）
    ・成果報酬プラン＝FMTの「成果報酬型プラン」の式（成果件数×成果報酬単価＋固定費用）を使い、成果の地点・単価は差し込み枠
    ・表紙・裏表紙＝FMTのもの（表紙に「御中」とサブタイトル2行を入れ、「- 2026最新版 -」は外す）
-  SIM（概算お見積り）と成果報酬の条件は、まだ決まっていないので破線の差し込み枠のまま。
+  成果報酬の条件は、まだ決まっていないので破線の差し込み枠のまま。
 """
 import sys
 
@@ -325,9 +328,66 @@ def p_mokuhyo(prs, head):
 
 
 # ---------------------------------------------------------------- 4 概算お見積り
-def p_mitsumori(prs, head):
-    s = new_page(prs, head, "概算お見積り", "見込み", "平常期・イベント期の友だち数と、予約・入会の見込み")
-    slot(s, X0, 1.75, W, 4.9, "概算お見積り（SIM）の表")
+def load_sim(path):
+    """SIM（FMT ver3.00）の数字を読む。SIMは計算結果を持たない（開いたときにExcelが計算する）ので、
+    LibreOfficeで計算し直したコピーから読む（コピーは読むだけ。納品物には使わない）"""
+    import shutil
+    import subprocess
+    import tempfile
+    from pathlib import Path
+
+    import openpyxl
+    work = Path(tempfile.mkdtemp())
+    try:
+        src = work / "sim.xlsx"
+        shutil.copy(path, src)
+        subprocess.run(["soffice", "--headless", "--convert-to", "xlsx", "--outdir", str(work / "calc"), str(src)],
+                       check=True, capture_output=True, timeout=180)
+        ws = openpyxl.load_workbook(work / "calc" / "sim.xlsx", data_only=True).worksheets[0]
+
+        def row(r, cols="EFGHIJ"):
+            return [ws[f"{c}{r}"].value or 0 for c in cols]
+        return dict(phase=row(12), add=row(26), active=row(29), cv1=row(36), cv2=row(37), name1=ws["C8"].value,
+                    name2=ws["C9"].value, consult=row(69, "DEFGHIJ"), popup=row(66, "DEFGHIJ"),
+                    thanks=row(67, "DEFGHIJ"), account=row(68, "DEFGHIJ"), usage=row(54, "DEFGHIJ"),
+                    total=row(73, "DEFGHIJ"))
+    finally:
+        shutil.rmtree(work)
+
+
+def p_mitsumori(prs, head, sim):
+    """SIMの数字を月ごと・そのまま出す（合計・平均・幅にまとめない。小数は出さない。CPAは出さない）"""
+    if sim is None:
+        s = new_page(prs, head, "概算お見積り", "見込み", "平常期・イベント期の友だち数と、予約・入会の見込み")
+        slot(s, X0, 1.75, W, 4.9, "概算お見積り（SIM）の表")
+        return
+    n = lambda v: int(v + 0.5)                                        # noqa: E731（四捨五入で整数に）
+    yen = lambda v: f"{n(v):,}"                                       # noqa: E731
+    active = [n(v) for v in sim["active"]]
+    s = new_page(prs, head, "概算お見積り：6か月の見込み", "プラン②",
+                 f"イベントのたびに友だちが増え、6か月目に追える人数は{active[-1]:,}人")
+    big = dict(size=13, bold=True, color=NAVY, align="ctr")
+    num = dict(size=13, align="ctr")
+    head_row = [head_cell("", 12), head_cell("初期", 12)] + [head_cell(f"{k + 1}か月目\n{p}", 12)
+                                                             for k, p in enumerate(sim["phase"])]
+    tools = [a + b for a, b in zip(sim["popup"], sim["thanks"])]
+    account = [a + b for a, b in zip(sim["account"], sim["usage"])]
+    rows = [head_row,
+            [label_cell("友だちの増加（人）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["add"]],
+            [label_cell("追える人数（人）", 12), cell("-", **num)] + [cell(f"{v:,}", **big) for v in active],
+            [label_cell(f"{sim['name1']}（件）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["cv1"]],
+            [label_cell(f"{sim['name2']}（件）", 12), cell("-", **num)] + [cell(f"{n(v):,}", **num) for v in sim["cv2"]]]
+    cost = dict(size=12, bold=True, color=NAVY, fill=LGRAY, align="ctr")
+    for label, vals in (("LINE運用コンサル（円）", sim["consult"]), ("ツール（円）", tools),
+                        ("LINE利用料（円）", account)):
+        rows.append([cell(label, **cost)] + [cell(yen(v), **num) for v in vals])
+    rows.append([cell("合計（円）", **cost)] + [cell(yen(v), **big) for v in sim["total"]])
+    cw = (W - 2.3 - 1.0) / 6
+    add_table(s, X0, 1.7, [2.3, 1.0] + [cw] * 6, [0.62] + [0.43] * 8, rows, name="概算お見積り")
+    for k, t in enumerate(["※プラン②（平常期は月10万円で算出）。イベントは3か月おき（1・4か月目）と仮に置いて算出。広告費は含まない",
+                           "※追える人数＝ブロックされずに届く友だちの数。友だちの入口はポップアップツール・サンクスLINE誘導",
+                           "※ツール＝ポップアップツール・サンクスLINE誘導。LINE利用料＝LINE公式アカウントの開設・月額の利用料"]):
+        note(s, t, y=5.95 + k * 0.2, h=0.2)
 
 
 # ---------------------------------------------------------------- 4 料金
@@ -402,10 +462,12 @@ ORDER = ["summary", "kankyo", "kadai", "honshitsu", "line", "chuui", "kyogo", "i
          ("div", "Appendix"), "tool_popup", "tool_thanks"]          # ツール費用はAppendixに（2026-10-17 殿村さん）
 PAGES = dict(summary=p_summary, kankyo=p_kankyo, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui,
              kyogo=p_kyogo, iriguchi=p_iriguchi, dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo,
-             mitsumori=p_mitsumori, ryokin=p_ryokin)
+             ryokin=p_ryokin)
 
 
-def main(fmt, arauchi, out):
+def main(fmt, arauchi, out, sim_path=None):
+    """sim_path＝SIM（xlsx）。渡すと「概算お見積り」のページにSIMの数字を入れる（殿村さんがCVを直したSIMを渡せば、そのまま反映）"""
+    sim = load_sim(sim_path) if sim_path else None
     prs = Presentation(fmt)
     sl = list(prs.slides)
     cover, div_src, head, seika_src, sch_src, back = (sl[i - 1] for i in (F_COVER, F_DIVIDER, F_HEAD, F_SEIKA,
@@ -433,6 +495,9 @@ def main(fmt, arauchi, out):
             new.append(p_tool_popup(prs, popup_src))
         elif item == "tool_thanks":
             new.append(p_tool_thanks(prs, thanks_src))
+        elif item == "mitsumori":
+            p_mitsumori(prs, head, sim)
+            new.append(prs.slides[-1])
         else:
             PAGES[item](prs, head)
             new.append(prs.slides[-1])
@@ -454,4 +519,4 @@ def main(fmt, arauchi, out):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])
