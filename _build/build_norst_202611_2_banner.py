@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parent.parent
 ILLUST = ROOT / "_images" / "norst_202611_2_holiday_illust_v1.webp"
 BUBBLE = "「また、何もせずに終わりそう…」"
 NOTE = "＼予約だけ先に。電話なしでWEB予約できます／"
+PANEL = 452  # 深緑の面の下端（v3・2026-10-19 殿村さん「中央にある緑の線もっと上に上げろよ」。1本目・3本目は516）
 
 
 def lower_half_big(c, d):
@@ -39,26 +40,26 @@ def lower_half_big(c, d):
         (icon_chart, "JISSEKI", None),
         (icon_calendar_check, ["その日に決めなくても", "大丈夫"], ["small", ORANGE]),
     ]
-    cw, gap, top, bot = 238, 8, 522, 706
+    cw, gap, top, bot = 238, 8, 466, 690
     x0 = (W - (cw * 4 + gap * 3)) / 2
-    f_c, f_cb, f_cs = font(30), font(38), font(22)
+    f_c, f_cb, f_cs = font(32), font(42), font(22)
     for i, (icon, lines, colors) in enumerate(cards):
         x1 = x0 + i * (cw + gap)
         rrect(d, (x1, top, x1 + cw, bot), 14, fill=WHITE, outline=TEAL, width=3)
-        icx, icy = x1 + cw / 2, top + 50
-        ellipse(d, (icx - 40, icy - 40, icx + 40, icy + 40), fill=GREEN)
+        icx, icy = x1 + cw / 2, top + 56
+        ellipse(d, (icx - 44, icy - 44, icx + 44, icy + 44), fill=GREEN)
         icon(d, icx, icy)
         if lines == "JISSEKI":
-            segs_c(d, [("37", 40, ORANGE), ("年目", 27, INK)], icx, top + 138)
-            segs_c(d, [("診療実績", 23, INK), ("40", 38, ORANGE), ("万件", 23, INK)], icx, top + 176)
+            segs_c(d, [("37", 46, ORANGE), ("年目", 30, INK)], icx, top + 152)
+            segs_c(d, [("診療実績", 25, INK), ("40", 42, ORANGE), ("万件", 25, INK)], icx, top + 196)
             continue
-        y = top + 100
+        y = top + 112
         for s_, col in zip(lines, colors):
             f = f_cs if col == "small" else (f_cb if col else f_c)
-            text_c(d, s_, f, icx, y + (6 if col == "small" else 0), INK if col in (None, "small") else col)
-            y += th(f_c, s_) + 8
+            text_c(d, s_, f, icx, y + (8 if col == "small" else 0), INK if col in (None, "small") else col)
+            y += th(f_c, s_) + 12
 
-    fy1, fy2 = 716, 772
+    fy1, fy2 = 702, 758
     rrect(d, (40, fy1, 1000, fy2), 30, fill=WHITE, outline=GREEN, width=2)
     f_l = f_s = font(25)
     rrect(d, (48, fy1 + 7, 200, fy2 - 7), 24, fill=GREEN)
@@ -74,7 +75,7 @@ def lower_half_big(c, d):
             d.polygon([(x * S, (ay - 10) * S), ((x + 14) * S, ay * S), (x * S, (ay + 10) * S)], fill=ORANGE)
             x += 30
 
-    text_c(d, NOTE, font(34), W / 2, 784, GREEN_DARK, 1)
+    text_c(d, NOTE, font(34), W / 2, 774, GREEN_DARK, 1)
     cta(c, d, 832, 966)
     text_c(d, "※当院は自由診療です。　※診療実績は2026年9月時点", font(22), W / 2, 996, GRAY)
 
@@ -84,7 +85,7 @@ def build(out):
     d = ImageDraw.Draw(c)
 
     # 深緑の面・ロゴ（中央）・カウンセリング無料の円（右上）
-    d.rectangle((0, 0, W * S, PANEL_BOTTOM * S), fill=GREEN)
+    d.rectangle((0, 0, W * S, PANEL * S), fill=GREEN)
     logo = white_logo(290 * S)
     c.paste(logo, ((W * S - logo.width) // 2, 22 * S), logo)
     counsel_badge(d, 905, 128, 88)
@@ -116,7 +117,7 @@ def build(out):
         text_c(d, s, f_2, W / 2, y, col, 2, stroke=8 if col == ORANGE else 1.5, stroke_fill=WHITE)
     assert tw(f_2, s2, 2) <= W - 60, tw(f_2, s2, 2)
     shadow_bottom = y3 + th(f_2, s3) + 14
-    assert shadow_bottom <= PANEL_BOTTOM - 20, shadow_bottom
+    assert shadow_bottom <= PANEL - 20, shadow_bottom
 
     lower_half_big(c, d)
     c.resize((W, H), Image.LANCZOS).save(out, quality=95)
