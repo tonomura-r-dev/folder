@@ -15,8 +15,9 @@
 import sys
 
 from pptx import Presentation
+from pptx.dml.color import RGBColor
 from pptx.oxml.ns import qn
-from pptx.util import Inches
+from pptx.util import Inches, Pt
 
 from _build.arauchi_v4.lib import TEXT, add_box, add_table, move, set_paras
 from _build.arauchi_v10.build import by_id, clone, runs
@@ -32,6 +33,7 @@ LINE_C = "BFBFBF"
 W = 9.73
 X0 = 0.55
 B = {k: (0.75, LINE_C) for k in "lrtb"}
+IMG = "_images/"
 
 # FMTのページ番号（1始まり）
 F_COVER, F_DIVIDER, F_HEAD, F_SEIKA, F_SCHEDULE, F_BACK = 1, 5, 17, 37, 46, 62
@@ -138,6 +140,42 @@ def p_summary(prs, head):
                 anchor="ctr", line_spacing=140, ins=(0.15, 0.1, 0.12, 0.1), name=f"補足{k + 1}")
 
 
+# ---------------------------------------------------------------- 0 市場環境（2026-10-19 殿村さん「業界の課題を示すのに役に立つ数値感」）
+def p_kankyo(prs, head):
+    s = new_page(prs, head, "保険営業の方の環境", "市場環境", "保険の加入は今も営業職員が中心。一方で、お客様と会う回数は減っている")
+    lw = 4.75
+    heading(s, X0, 1.75, lw, "生命保険の営業職員数（各年度末・名）")
+    vals = [(2020, 248601), (2021, 242947), (2022, 247081), (2023, 240903), (2024, 241507)]
+    base, hmax, sw, bw = 4.95, 2.05, lw / 5, 0.62                     # 棒は0から（横ばいがそのまま見える）
+    for k, (yr, v) in enumerate(vals):
+        x = X0 + k * sw
+        h = hmax * v / 250000
+        add_box(s, x + (sw - bw) / 2, base - h, bw, h, [[("", {})]], fill=NAVY if k == 4 else "8E9BC4",
+                name=f"棒 {yr}")
+        add_box(s, x, base - h - 0.32, sw, 0.3, [runs((f"{v:,}", dict(size=12, bold=True, color=NAVY)))],
+                align="ctr", anchor="b", ins=(0, 0, 0, 0), name=f"値 {yr}")
+        add_box(s, x, base + 0.05, sw, 0.3, [runs((f"{yr}年度", dict(size=12, color=TEXT)))], align="ctr",
+                anchor="t", ins=(0, 0, 0, 0), name=f"年度 {yr}")
+    add_box(s, X0, base, lw, 0.01, [[("", {})]], fill=GRAY, name="基線")
+    add_box(s, X0, 5.4, lw, 0.4, [runs(("約24万人で横ばい", dict(size=15, bold=True, color=NAVY)))], align="ctr",
+            anchor="ctr", ins=(0, 0, 0, 0), name="棒の示唆")
+    rx, rw = X0 + lw + 0.25, W - lw - 0.25
+    for y, h, num, lines in ((1.75, 1.75, "56.7%", ["生命保険の加入経路のうち", "「生命保険会社の営業職員」", "（2024年調査）"]),
+                             (3.75, 2.05, "55.5%", ["コロナ前と比べ、お客様との", "接触回数が「減少した」営業職員", "（2023年調査）"])):
+        heading(s, rx, y, rw, "保険の加入経路" if num == "56.7%" else "お客様との接触回数")
+        add_box(s, rx, y + 0.5, 1.75, h - 0.5, [runs((num, dict(size=32, bold=True, color=NAVY)))], align="ctr",
+                anchor="ctr", ins=(0, 0, 0, 0), name=f"数字 {num}")
+        add_box(s, rx + 1.75, y + 0.5, rw - 1.75, h - 0.5,
+                [runs((lines[0], dict(size=13, color=TEXT))), runs((lines[1], dict(size=13, bold=True, color=NAVY))),
+                 runs((lines[2], dict(size=12, color=GRAY)))], anchor="ctr", line_spacing=125,
+                ins=(0.05, 0, 0, 0), name=f"説明 {num}")
+    band(s, "会える回数が減る中で、成果を出す営業のやり方が求められている", y=5.95, h=0.5, size=15)
+    for k, t in enumerate(["※営業職員数：生命保険協会「2025年版 生命保険の動向」（加盟会社の年度末登録営業職員数）",
+                           "※加入経路：生命保険文化センター「2024（令和6）年度 生命保険に関する全国実態調査」（直近の加入が2019年以降の世帯）",
+                           "※接触回数：矢野経済研究所「生命保険の営業職員アンケート調査」（2023年4〜6月、生命保険の営業職員400名）"]):
+        note(s, t, y=6.52 + k * 0.15, h=0.15)
+
+
 # ---------------------------------------------------------------- 1 現状と課題
 def p_kadai(prs, head):
     s = new_page(prs, head, "現状と課題", "現状", "イベントの後、離れた方・未入会の方とのつながりが切れる")
@@ -198,6 +236,35 @@ def p_chuui(prs, head):
     add_table(s, X0, 1.75, [2.0, 3.6, W - 5.6], [0.5, 1.3, 1.3, 1.3], rows, name="気をつける点")
 
 
+# ---------------------------------------------------------------- 2 他社のLINE運用（2026-10-19 殿村さん「企業の強みより、他社がやっているLINEの運用方法」）
+def p_kyogo(prs, head):
+    """野沢塾＝殿村さんが友だち追加したあいさつの画面（名前とパスワードだけ灰色で伏せた。元は `_data/sunao/競合LINE_20261019/`）。
+    R&C保険営業ラボは招待制で友だち追加できないので、プレスリリースの記載だけ"""
+    s = new_page(prs, head, "他社のLINE運用", "他社の運用", "保険営業の方向けの他社も、LINEで特典を渡し、友だちに学びを届けている")
+    sw = 1.62
+    add_box(s, X0, 1.72, sw, 0.34, [runs(("野沢塾のあいさつ", dict(size=12, bold=True, color=NAVY)))], align="ctr",
+            anchor="b", ins=(0, 0, 0, 0.02), name="見出し 画面")
+    pic = s.shapes.add_picture(IMG + "sunao_line_nozawa_aisatsu.png", Inches(X0), Inches(2.1), Inches(sw),
+                               Inches(sw * 600 / 277))
+    pic.line.color.rgb = RGBColor(0xBF, 0xBF, 0xBF)
+    pic.line.width = Pt(0.75)
+    tx = X0 + sw + 0.3
+    cw = (X0 + W - tx - 1.25) / 2
+    rows = [[head_cell("", 13), head_cell("野沢塾", 13), head_cell("R&C保険営業ラボ", 13)],
+            [label_cell("サービス", 13), cell("保険営業の方向けの講座\nオンラインサロン（月2回）", 12),
+             cell("保険営業の方向けの無料の学習サービス\n（2026年9月開始）", 12)],
+            [label_cell("入口", 13), cell("サイトの「公式LINE登録」ボタン", 12), cell("社員の紹介URLから\n友だち追加（招待制）", 12)],
+            [label_cell("特典", 13), cell("「営業力向上トークスクリプト3本」\nの動画", 12, True, NAVY),
+             cell("LINEそのものが、無料の学習サービス", 12, True, NAVY)],
+            [label_cell("追加後の\n配信", 13), cell("あいさつで、特典のURLとパスワードを届ける。「最新情報を定期的に配信」と案内", 12),
+             cell("登録時に5問のアンケート。答えに合わせて、資料・動画・セミナーのアーカイブ・トークスクリプトを段階的に配信", 12)]]
+    add_table(s, tx, 1.72, [1.25, cw, cw], [0.45, 0.8, 0.7, 0.7, 1.2], rows, name="他社のLINE運用")
+    band(s, "すなおコンサルティング様は、イベントの予約・参加に合わせた案内で、入会へつなげる", y=5.85, h=0.55, size=15)
+    for k, t in enumerate(["※野沢塾：LINE公式アカウント（2026年10月19日確認）・公式サイト（2026年10月18日確認）より。画面の名前とパスワードは伏せている",
+                           "※R&C保険営業ラボ：R&C株式会社のプレスリリースより。招待制のため、画面は未掲載"]):
+        note(s, t, y=6.5 + k * 0.16, h=0.16)
+
+
 # ---------------------------------------------------------------- 3 施策：友だちの入口
 def p_iriguchi(prs, head):
     s = new_page(prs, head, "友だちの入口", "新規友だち追加", "ポップアップツールとサンクスLINE誘導で、離れる方と予約した方の両方を友だちにする")
@@ -224,10 +291,11 @@ def p_dankai(prs, head):
             [label_cell("興味あり"), cell("予約していない方\n（ポップアップツールから）", 13),
              cell("セミナーの見どころ動画・参加特典"), cell("予約へ", bold=True, color=NAVY, align="ctr")],
             [label_cell("予約"), cell("予約した方\n（サンクスLINE誘導から）", 13),
-             cell("前日のリマインド・当日の案内"), cell("当日の参加へ", bold=True, color=NAVY, align="ctr")],
+             cell("日程ごとに、前日・当日のお知らせ"), cell("当日の参加へ", bold=True, color=NAVY, align="ctr")],
             [label_cell("参加"), cell("イベントに参加した方", 13),
-             cell("イベント直後に、サロン入会の案内"), cell("入会へ", bold=True, color=NAVY, align="ctr")]]
-    add_table(s, X0, 2.65, [1.5, 2.75, 3.68, 1.8], [0.5, 1.05, 1.05, 1.05], rows, name="段階ごとの配信")
+             cell("イベント直後に、\nサロンの申込みフォームを直接案内\n（申込みはいつでも可能）"),
+             cell("入会へ", bold=True, color=NAVY, align="ctr")]]
+    add_table(s, X0, 2.65, [1.5, 2.75, 3.98, 1.5], [0.5, 1.05, 1.05, 1.05], rows, name="段階ごとの配信")
     note(s, "※配信の内容は、イベントの内容に合わせて設計", y=6.45)
 
 
@@ -328,11 +396,13 @@ def p_tool_thanks(prs, src):
 
 
 # 殿村さんの要旨の項目だけで作る（2026-10-16「メインとなる部分だけで資料化して」）。章の扉・配信の回数のページは入れない
-ORDER = ["summary", "kadai", "honshitsu", "line", "chuui", "iriguchi", "dankai",
+# 2026-10-19：市場環境（保険営業の方の環境）と他社のLINE運用を追加。「申込み→当日参加」の離脱は確認不足のため書かない
+ORDER = ["summary", "kankyo", "kadai", "honshitsu", "line", "chuui", "kyogo", "iriguchi", "dankai",
          "mokuhyo", "mitsumori", "ryokin", "schedule", "seika",
          ("div", "Appendix"), "tool_popup", "tool_thanks"]          # ツール費用はAppendixに（2026-10-17 殿村さん）
-PAGES = dict(summary=p_summary, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui, iriguchi=p_iriguchi,
-             dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo, mitsumori=p_mitsumori, ryokin=p_ryokin)
+PAGES = dict(summary=p_summary, kankyo=p_kankyo, kadai=p_kadai, honshitsu=p_honshitsu, line=p_line, chuui=p_chuui,
+             kyogo=p_kyogo, iriguchi=p_iriguchi, dankai=p_dankai, kaisu=p_kaisu, mokuhyo=p_mokuhyo,
+             mitsumori=p_mitsumori, ryokin=p_ryokin)
 
 
 def main(fmt, arauchi, out):
