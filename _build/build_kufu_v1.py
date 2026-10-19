@@ -14,7 +14,7 @@
     前後検索「注文住宅」（タナカホームv2の実データのページ。汎用資料の前後検索は推計なので使わない）
     全体設計想定／施策展開図（注文住宅の汎用資料）
     DYMのコンサル支援内容・費用（サンクスLINE業界別 ver3.7）
-    裏表紙 → Appendix（タナカホームの Appendix＝正。CLAUDE.md 2026-10-19）
+    裏表紙（Appendix は付けない＝本編11枚だけ。2026-10-19 殿村さん）
   汎用資料のステップ配信案・予算診断・シーズナリティは、根拠に推計の前後検索データを使っているので入れていない。
 """
 import sys
@@ -180,7 +180,7 @@ def main(out):
     main_pages += [copy_slide(prs, th[0]), copy_slide(prs, th[1]), copy_slide(prs, ta[2])]
     main_pages.append(p_raijo(prs, th[3]))
     main_pages += [copy_slide(prs, tk[7]), zentai, tenkai, copy_slide(prs, th[5]), back]
-    appx = [copy_slide(prs, tk[i - 1]) for i in range(19, 32)]   # タナカホームの Appendix（扉〜都度発注プラン）
+    appx = []          # Appendix は付けない（2026-10-19 殿村さん「Appendix省いていい。本編11枚だけでよい」）
     p_cover(cover, ar_cover)
 
     keep = main_pages + appx
