@@ -134,15 +134,15 @@ def p_summary(prs, head):
     add_box(s, X0, 1.65, 4.0, 0.35, [runs(("構築する仕組み", dict(size=13, bold=True, color=NAVY)))], ins=(0, 0, 0, 0),
             name="小見出し")
     flow(s, [("広告", False), ("イベント\n＋LINEにたまる", False), ("ナーチャリング", False), ("次のイベント\n・入会", True)],
-         2.05, 1.3, size=16)
+         2.0, 0.85, size=15)
     cw, gap = (W - 0.3 * 2) / 3, 0.3
     for k, (h, body) in enumerate([("現状と課題", "申し込まずに離れた方・入会していない方を、次のイベントまで追う場所が無い"),
                                    ("施策", "ポップアップツールとサンクスLINE誘導で友だちにし、興味あり・予約・参加の段階ごとに配信する"),
                                    ("目標と費用", "追える人数を増やし・減らさず、入会へ。\n費用は、3つのプランから選択可能")]):
         x = X0 + k * (cw + gap)
-        heading(s, x, 3.8, cw, h)
-        add_box(s, x, 4.25, cw, 2.2, [runs((t, dict(size=15, color=TEXT))) for t in body.split("\n")], fill=LGRAY,
-                anchor="ctr", line_spacing=140, ins=(0.15, 0.1, 0.12, 0.1), name=f"補足{k + 1}")
+        heading(s, x, 3.15, cw, h)
+        add_box(s, x, 3.6, cw, 1.25, [runs((t, dict(size=14, color=TEXT))) for t in body.split("\n")], fill=LGRAY,
+                anchor="ctr", line_spacing=125, ins=(0.1, 0.05, 0.1, 0.05), name=f"補足{k + 1}")
 
 
 # ---------------------------------------------------------------- 0 市場環境（2026-10-19 殿村さん「業界の課題を示すのに役に立つ数値感」）
@@ -185,16 +185,16 @@ def p_kankyo(prs, head):
 def p_kadai(prs, head):
     s = new_page(prs, head, "現状と課題", "現状", "イベントの後、離れた方・未入会の方とのつながりが切れる")
     bw = flow(s, [("広告", False), ("LP", False), ("予約", False), ("イベント参加", False), ("サロン入会", True)],
-              1.85, 1.0, size=15)
+              1.85, 0.75, size=15)
     for k, (h1, body) in ((1, ("申し込まずに離れた方", "次のイベントまで案内する手段が無い")),
                           (3, ("参加して入会していない方", "入会まで案内を続ける手段が無い"))):
         cx = X0 + k * (bw + 0.34) + bw / 2
-        add_box(s, cx - 0.2, 2.9, 0.4, 0.32, [runs(("▼", dict(size=13, color=RED)))], align="ctr", anchor="ctr",
+        add_box(s, cx - 0.2, 2.65, 0.4, 0.3, [runs(("▼", dict(size=13, color=RED)))], align="ctr", anchor="ctr",
                 ins=(0, 0, 0, 0), name="矢印下")
-        add_box(s, cx - 1.8, 3.25, 3.6, 1.5, [runs((h1, dict(size=15, bold=True, color=RED))),
+        add_box(s, cx - 1.85, 2.98, 3.7, 0.95, [runs((h1, dict(size=15, bold=True, color=RED))),
                                               runs((body, dict(size=14, color=TEXT)))],
-                line=RED, align="ctr", anchor="ctr", line_spacing=130, ins=(0.1, 0.06, 0.1, 0.06), name=f"切れる{k}")
-    add_box(s, X0, 5.3, W, 0.85, [runs(("集めた方を、次のイベントの集客に", dict(size=16, bold=True, color=NAVY)),
+                line=RED, align="ctr", anchor="ctr", line_spacing=120, ins=(0.08, 0.04, 0.08, 0.04), name=f"切れる{k}")
+    add_box(s, X0, 4.25, W, 0.6, [runs(("集めた方を、次のイベントの集客に", dict(size=16, bold=True, color=NAVY)),
                                        ("活かしきれていない", dict(size=16, bold=True, color=RED)))],
             fill=LGRAY, align="ctr", anchor="ctr", name="示唆")
 
@@ -209,11 +209,11 @@ def p_honshitsu(prs, head):
     for k, (h, kadai, uchite) in enumerate(items):
         x = X0 + k * (cw + gap)
         heading(s, x, 1.75, cw, h)
-        add_box(s, x, 2.2, cw, 1.95, [runs((kadai, dict(size=15, color=TEXT)))], fill=LGRAY, align="ctr", anchor="ctr",
-                line_spacing=140, ins=(0.15, 0.1, 0.15, 0.1), name=f"課題{k + 1}")
-        add_box(s, x + cw / 2 - 0.25, 4.2, 0.5, 0.45, [runs(("▼", dict(size=16, color=NAVY)))], align="ctr",
+        add_box(s, x, 2.2, cw, 0.95, [runs((kadai, dict(size=15, color=TEXT)))], fill=LGRAY, align="ctr", anchor="ctr",
+                line_spacing=120, ins=(0.1, 0.04, 0.1, 0.04), name=f"課題{k + 1}")
+        add_box(s, x + cw / 2 - 0.25, 3.2, 0.5, 0.4, [runs(("▼", dict(size=16, color=NAVY)))], align="ctr",
                 anchor="ctr", ins=(0, 0, 0, 0), name="矢印下")
-        add_box(s, x, 4.7, cw, 1.9, [runs((t, dict(size=16, bold=True, color=NAVY))) for t in uchite.split("\n")],
+        add_box(s, x, 3.65, cw, 0.95, [runs((t, dict(size=16, bold=True, color=NAVY))) for t in uchite.split("\n")],
                 fill=LBLUE, align="ctr", anchor="ctr", line_spacing=130, name=f"打ち手{k + 1}")
 
 
@@ -224,8 +224,8 @@ def p_line(prs, head):
             [label_cell("届く相手"), cell("毎回、新しく集める"), cell("一度友だちになった方に、何度でも届く", bold=True, color=NAVY)],
             [label_cell("届き方"), cell("広告を見たときだけ"), cell("通知で届き、見てもらいやすい", bold=True, color=NAVY)],
             [label_cell("イベントの後"), cell("つながりが切れる"), cell("友だちとして、毎月積み上がる", bold=True, color=NAVY)]]
-    add_table(s, X0, 1.75, [2.0, 3.4, W - 5.4], [0.5, 1.1, 1.1, 1.1], rows, name="広告とLINE")
-    band(s, "この仕組みが回れば、今後の広告費を抑えられる可能性もある", y=5.8, h=0.8)
+    add_table(s, X0, 1.75, [2.0, 3.4, W - 5.4], [0.45, 0.6, 0.6, 0.6], rows, name="広告とLINE")
+    band(s, "この仕組みが回れば、今後の広告費を抑えられる可能性もある", y=4.25, h=0.6)
 
 
 # ---------------------------------------------------------------- 2 気をつける点と対策
@@ -238,7 +238,7 @@ def p_chuui(prs, head):
              cell("イベントの無い時期は、配信の回数を絞る", bold=True, color=NAVY)],
             [label_cell("時間"), cell("友だちがたまるまで、時間がかかる"),
              cell("次のイベントから入口を置き、イベントごとに積み上げる", bold=True, color=NAVY)]]
-    add_table(s, X0, 1.75, [2.0, 3.6, W - 5.6], [0.5, 1.3, 1.3, 1.3], rows, name="気をつける点")
+    add_table(s, X0, 1.75, [2.0, 3.6, W - 5.6], [0.45, 0.75, 0.75, 0.75], rows, name="気をつける点")
 
 
 # ---------------------------------------------------------------- 2 他社のLINE運用（2026-10-19 殿村さん「企業の強みより、他社がやっているLINEの運用方法」）
@@ -283,9 +283,9 @@ def p_iriguchi(prs, head):
     for k, (h, items) in enumerate(cols):
         x = X0 + k * (cw + gap)
         heading(s, x, 1.75, cw, h)
-        add_table(s, x, 2.25, [1.4, cw - 1.4], [1.05] * 3, [[label_cell(a), cell(b)] for a, b in items],
+        add_table(s, x, 2.2, [1.4, cw - 1.4], [0.62] * 3, [[label_cell(a), cell(b)] for a, b in items],
                   name=f"入口{k + 1}")
-    band(s, "どちらも、次のイベントまで追える友だちになる", y=5.75, h=0.8)
+    band(s, "どちらも、次のイベントまで追える友だちになる", y=4.3, h=0.6)
 
 
 # ---------------------------------------------------------------- 3 施策：段階ごとの配信
@@ -300,8 +300,8 @@ def p_dankai(prs, head):
             [label_cell("参加"), cell("イベントに参加した方", 13),
              cell("イベント直後に、\nサロンの申込みフォームを直接案内\n（申込みはいつでも可能）"),
              cell("入会へ", bold=True, color=NAVY, align="ctr")]]
-    add_table(s, X0, 2.65, [1.5, 2.75, 3.98, 1.5], [0.5, 1.05, 1.05, 1.05], rows, name="段階ごとの配信")
-    note(s, "※配信の内容は、イベントの内容に合わせて設計", y=6.45)
+    add_table(s, X0, 2.65, [1.5, 2.75, 3.98, 1.5], [0.45, 0.62, 0.62, 0.85], rows, name="段階ごとの配信")
+    note(s, "※配信の内容は、イベントの内容に合わせて設計", y=5.3)
 
 
 # ---------------------------------------------------------------- 3 施策：配信の回数
@@ -326,7 +326,7 @@ def p_mokuhyo(prs, head):
             [label_cell("追える人数"), cell("平常期", align="ctr"), cell("ブロックされずに届く友だちの数。増やし、減らさない")],
             [label_cell("予約・参加"), cell("イベント期", align="ctr"), cell("LINEからの予約と、当日の参加")],
             [label_cell("サロン入会"), cell("イベントの後", align="ctr"), cell("参加した方のうち、入会した方")]]
-    add_table(s, X0, 2.65, [2.2, 1.9, W - 4.1], [0.5, 1.1, 1.1, 1.1], rows, name="指標")
+    add_table(s, X0, 2.65, [2.2, 1.9, W - 4.1], [0.45, 0.6, 0.6, 0.6], rows, name="指標")
 
 
 # ---------------------------------------------------------------- 4 概算お見積り
@@ -424,10 +424,10 @@ def p_ryokin(prs, head):
             [label_cell("平常期\n（月額）", 13), cell("0円", **big), cell("5〜10万円", **big), cell("20万円〜", **big)],
             [label_cell("イベント期\n（月額）", 13), cell("0円", **big), cell("30万円程度", **big), cell("30万円〜", **big)]]
     cw = (W - 1.6) / 3
-    add_table(s, X0, 1.75, [1.6, cw, cw, cw], [0.7, 1.15, 0.85, 0.85, 0.85], rows, name="料金")
+    add_table(s, X0, 1.75, [1.6, cw, cw, cw], [0.65, 0.9, 0.6, 0.6, 0.6], rows, name="料金")
     for k, t in enumerate(["※広告費・ツール費・LINE公式アカウントの利用料は含まない。いずれも6か月〜の契約",
                            "※施策内容・配信本数・連携範囲等により、費用は個別にお見積り"]):
-        note(s, t, y=6.3 + k * 0.26, h=0.26)
+        note(s, t, y=5.2 + k * 0.24, h=0.24)
 
 
 # ---------------------------------------------------------------- 4 運用スケジュール（FMTのページ）
