@@ -14,6 +14,10 @@
   - 24・28・29枚目＝あいさつに無料体験と期限のバナーを入れる形に（診断は迷っている人向けに残す）
   - 9枚目＝「配信実態は8/31の実機調査で別途確認」→ カーブスの配信はP10・P11
   「4枚目（当てはめると）はいらない」「動画は、あいさつの段階では未配信」「動画を流すこともある、くらいに」（殿村さん）
+  - 30枚目のスマホの画像（手で持っている画面イメージ）を消す（殿村さん「消しといて」）。29枚目の「実物の画面イメージは次ページ」も外す
+  - オレンジ・黄色を使わない（殿村さんが選んだページだけ：RECOLOR）。置き換える色は「紺色か黒色か白色で」（殿村さん）
+    強調・帯の線・8フェーズの①〜④＝紺、薄いオレンジ・薄い黄色＝紺を薄くした色、
+    画像の中（16枚目のグラフ・24枚目の前後検索）＝灰色・黒（フィットネスの線は黒に近い灰色）
 """
 import random
 import re
@@ -43,7 +47,9 @@ NEW_POS = {key: i for i, key in enumerate(ORDER, 1)}
 RT_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
 
 NAVY, INK, GREY = "1F2A5C", "1C2233", "646C82"
-PALE, BORDER, ACCENT = "EFF1F7", "C6CADD", "BF4E0E"
+PALE, BORDER = "EFF1F7", "C6CADD"
+PALE_NAVY = "E4E9F2"                     # 紺を薄くした色（帯の背景など）
+ACCENT = NAVY                            # 強調（オレンジは使わない。紺・黒・白だけ）
 X0, W = 0.42, 9.99
 
 # 実際の画面（11枚目）：見出し・画像・説明2行・ぼかす所（スクショに写っている殿村さんの名前）
@@ -54,6 +60,17 @@ SCREEN_SHOTS = [
     ("4　リッチメニュー（10月）", "08_リッチメニュー_10月.jpg", ["その月の特典を表示", "＋無料スタンプの配布"], None),
 ]
 SHOT_ASPECT = 277 / 600
+
+# オレンジ・黄色を置き換えるページ（新しい番号）。None＝ページ全部、集合＝その図形だけ（殿村さん 2026-10-19）
+#   「S5,9,10,16,18,19,20,23,24,25,27,28(下のみ),29,33,34(右上のやつのみ),38」。20は前後検索（補足・非表示）で
+#   オレンジ・黄色が無いので、見せた画像の並び（19・22・23・24）から22（カーブスの型）と読んだ
+RECOLOR = {5: None, 9: None, 10: None, 16: None, 18: None, 19: None, 22: None, 23: None, 24: None, 25: None,
+           27: None, 28: {28, 29}, 29: None, 33: None, 34: {12}, 38: None}
+BRAIN_OLD = 23                             # ステップ配信のブレスト（元の番号）。前後検索の画像に黄色い印がある
+LEGEND_ID = 507                            # その凡例「口コミ・相場」
+# 画像の中のオレンジ・黄色 → 灰色（元の番号, 色相の下限, 上限, 濃い色を黒に寄せるか）
+IMAGE_RECOLOR = [(BRAIN_OLD, 25, 55, False),       # ブレストの前後検索の画像：黄色い印 → 薄い灰色（凡例も同じ色）
+                 (16, 10, 45, True)]                # シーズナリティのグラフ：フィットネスの線 → 黒に近い灰色、1月の帯 → 薄い灰色
 
 
 def shot_bytes(path, blur):
@@ -67,6 +84,47 @@ def shot_bytes(path, blur):
     buf = BytesIO()
     im.save(buf, "JPEG", quality=92)
     return buf.getvalue()
+
+
+def gray_level(r, g, b, dark):
+    """色の明るさ（輝度）の灰色。dark＝濃い色（線・文字）は黒に寄せる"""
+    y = 0.299 * r + 0.587 * g + 0.114 * b
+    mx, mn = max(r, g, b), min(r, g, b)
+    if dark and mx and (mx - mn) / mx > 0.4:
+        y *= 0.55
+    return int(round(y))
+
+
+def to_gray(png, lo, hi, dark):
+    """画像の中の、色相 lo〜hi°（オレンジ・黄色）の色だけを灰色に。ほかの色はそのまま"""
+    from io import BytesIO
+    import numpy as np
+    from PIL import Image
+    im = Image.open(BytesIO(png))
+    mode = im.mode
+    rgb = np.asarray(im.convert("RGB")).astype(float)
+    hsv = np.asarray(im.convert("RGB").convert("HSV")).astype(int)
+    h, sat = hsv[..., 0], hsv[..., 1]
+    m = (h >= lo * 255 // 360) & (h <= hi * 255 // 360) & (sat >= 8)
+    y = 0.299 * rgb[..., 0] + 0.587 * rgb[..., 1] + 0.114 * rgb[..., 2]
+    if dark:
+        mx, mn = rgb.max(2), rgb.min(2)
+        y = np.where((mx > 0) & ((mx - mn) / np.maximum(mx, 1) > 0.4), y * 0.55, y)
+    out_a = rgb.copy()
+    for k in range(3):
+        out_a[..., k][m] = y[m]
+    out = Image.fromarray(np.clip(out_a.round(), 0, 255).astype("uint8"), "RGB")
+    if mode == "RGBA":
+        out.putalpha(im.getchannel("A"))
+    buf = BytesIO()
+    out.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def gray_of(hex_):
+    """黄色の色を、to_gray と同じ規則で灰色にした色（凡例を画像の印とそろえる）"""
+    v = gray_level(*(int(hex_[k:k + 2], 16) for k in (0, 2, 4)), False)
+    return "%02X%02X%02X" % (v, v, v)
 
 
 def title_of(z, name):
@@ -116,6 +174,17 @@ def assemble(base, out):
     rid = f"rId{next_rid}"
     prels = prels.replace("</Relationships>", f'<Relationship Id="{rid}" Type="{RT_SLIDE}" Target="slides/{dst.split("/")[-1]}"/></Relationships>')
     rid_of[("N", 1)] = rid
+
+    # 画像の中のオレンジ・黄色（その画像を使っているのは、そのページだけ）
+    for old, lo, hi, dark in IMAGE_RECOLOR:
+        part = order[old - 1]
+        img = [r for r in etree.fromstring(z.read(rels_of(part))) if r.get("Type") == RT_IMAGE]
+        assert len(img) == 1
+        media = "ppt/media/" + img[0].get("Target").split("/")[-1]
+        for n in names:
+            if n.endswith(".rels") and n != rels_of(part):
+                assert media.split("/")[-1] not in z.read(n).decode("utf-8"), n
+        replace[media] = to_gray(z.read(media), lo, hi, dark)
 
     # 11枚目：スクショ4枚の画像を足す（パーツ名は英数字だけ）
     s11 = order[SCREENS - 1]
@@ -343,6 +412,9 @@ def page_talk(s):
               align="ctr", ins=(0.02, 0, 0.02, 0))
     for sid in (6, 7, 8):                 # 下の3つの枠は、バナーの下へ
         place(shape_by_id(s, sid), y=5.64)
+    nxt = shape_by_id(s, 21)              # 次ページのスマホの画像は消したので、案内も外す
+    assert nxt.text_frame.text == "▶ 実物の画面イメージは次ページ"
+    nxt._element.getparent().remove(nxt._element)
     tip = shape_by_id(s, 7)               # 下の3つの枠の真ん中（右の見出しにも「4問すべて選択式」があるので枠を指定）
     assert tip.text_frame.text == "4問すべて選択式\n自由入力はゼロ", tip.text_frame.text
     for p, new in zip(tip.text_frame._txBody.findall(qn("a:p")), ["無料体験と期限は", "バナーで見せる"]):
@@ -359,8 +431,14 @@ def page_talk_img(s):
     assert replace_in_paragraphs(s, "予約ではなく診断を求める", "無料体験と期限は、バナーで見せる") == 1
     assert replace_in_paragraphs(s, "検討初期の人に予約を求めると落ちます", "今すぐの人は、そのまま体験予約へ") == 1
     assert replace_in_paragraphs(s, "求めるのは4問の回答だけ。", "迷っている人には、4問の診断を用意します。") == 1
-    # スマホの画像は直す前（診断だけの画面）のままなので、注記で補う（画像はClaudeが作らない）
-    assert replace_in_paragraphs(s, "※ 画面はイメージです。", "※ 画面はイメージです（診断の部分。無料体験のバナーは前ページ）。") == 1
+    # スマホの画像（手で持っている画面イメージ）は消す（殿村さん）。文章を左に寄せて広げる
+    pic = shape_by_id(s, 21)
+    assert pic.shape_type == 13
+    pic._element.getparent().remove(pic._element)
+    set_one(s, 2, "あいさつメッセージ｜友だち追加の直後に届く1通目")
+    for sid in (22, 23, 24, 19):
+        place(shape_by_id(s, sid), x=0.77, w=9.3)
+    assert replace_in_paragraphs(s, "※ 画面はイメージです。", "※ ") == 1
 
 
 def page_real(s):
@@ -379,7 +457,83 @@ def edit(prs):
     page_talk(at[TALK])
     page_talk_img(at[TALK_IMG])
     page_real(at[REAL])
+    recolor(sl)
     return sum(fix_fonts(s) for s in sl)   # 字体は全部メイリオ（元の資料のメイリオ指定なしの文字も）
+
+
+# ---------------------------------------------------------------- オレンジ・黄色を置き換える
+A_NS = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+
+
+def _set(c, val):
+    c.set("val", val)
+
+
+def text_white(sh):
+    for r in sh._element.iter(qn("a:rPr"), qn("a:endParaRPr")):
+        for f in r.findall(qn("a:solidFill")):
+            r.remove(f)
+        f = etree.Element(qn("a:solidFill"))
+        etree.SubElement(f, qn("a:srgbClr"), val="FFFFFF")
+        r.insert(0, f)
+
+
+def recolor_shape(sh, n):
+    el = sh._element
+    cxn = el.tag == qn("p:cxnSp")
+    white = False
+    for c in list(el.iter(qn("a:srgbClr"))):
+        v = c.get("val").upper()
+        alpha = c.find(qn("a:alpha")) is not None
+        if v == "BF4E0E":
+            _set(c, NAVY)
+        elif v == "FDEFE2":
+            _set(c, PALE_NAVY)
+        elif v == "FFC000":
+            if sh.shape_id == LEGEND_ID and n == NEW_POS[BRAIN_OLD]:
+                _set(c, gray_of("F9EAC9"))                                # 画像の印（F9EAC9）と同じ灰色
+                for a_ in c.findall(qn("a:alpha")):
+                    c.remove(a_)
+            elif alpha:
+                _set(c, NAVY)                                             # 薄い黄色の帯 → 薄い紺（透けたまま）
+            elif cxn:
+                _set(c, NAVY)                                             # 8フェーズの点線
+            elif n == 34:
+                _set(c, NAVY)                                             # 「成果報酬：可」
+            else:
+                _set(c, NAVY)                                             # 8フェーズの①〜④の箱
+                white = True
+    for c in list(el.iter(qn("a:schemeClr"))):
+        if c.get("val") == "accent6":                                     # 8フェーズの上の帯（薄いオレンジ）→ 薄い紺
+            new = etree.Element(qn("a:srgbClr"), val=NAVY)
+            etree.SubElement(new, qn("a:alpha"), val="12000")
+            c.addprevious(new)
+            c.getparent().remove(c)
+    if white:
+        text_white(sh)
+
+
+def recolor(sl):
+    import colorsys
+    assert "成果報酬" in shape_by_id(sl[33], 12).text_frame.text
+    for n, ids in RECOLOR.items():
+        s = sl[n - 1]
+        for sh in s.shapes:
+            if ids is None or sh.shape_id in ids:
+                recolor_shape(sh, n)
+        left = []
+        for sh in s.shapes:                                               # 残っていないか（指定外の図形は除く）
+            if ids is not None and sh.shape_id not in ids:
+                continue
+            for c in sh._element.iter(qn("a:srgbClr")):
+                r, g, b = (int(c.get("val")[k:k + 2], 16) / 255 for k in (0, 2, 4))
+                h, l, sat = colorsys.rgb_to_hls(r, g, b)
+                if sat > 0.35 and 15 / 360 <= h <= 65 / 360 and 0.25 < l < 0.97:
+                    left.append((sh.shape_id, c.get("val")))
+            for c in sh._element.iter(qn("a:schemeClr")):
+                if c.get("val") == "accent6":
+                    left.append((sh.shape_id, "accent6"))
+        assert not left, (n, left)
 
 
 # ---------------------------------------------------------------- 3) 差し込み＋使わなくなった画像を外す
@@ -389,15 +543,16 @@ def prune(path):
     data = {n: z.read(n) for n in names}
     infos = {i.filename: i for i in z.infolist()}
     order = slide_order(z)
-    s11 = order[NEW_POS[SCREENS] - 1]
-    xml = data[s11].decode("utf-8")
-    rel = etree.fromstring(data[rels_of(s11)])
     dropped = []
-    for r in list(rel):
-        if r.get("Type") == RT_IMAGE and f'"{r.get("Id")}"' not in xml:
-            dropped.append(r.get("Target"))
-            rel.remove(r)
-    data[rels_of(s11)] = etree.tostring(rel, xml_declaration=True, encoding="UTF-8", standalone=True)
+    for key in (SCREENS, TALK_IMG):        # 画像を外したページ
+        part = order[NEW_POS[key] - 1]
+        xml = data[part].decode("utf-8")
+        rel = etree.fromstring(data[rels_of(part)])
+        for r in list(rel):
+            if r.get("Type") == RT_IMAGE and f'"{r.get("Id")}"' not in xml:
+                dropped.append(r.get("Target"))
+                rel.remove(r)
+        data[rels_of(part)] = etree.tostring(rel, xml_declaration=True, encoding="UTF-8", standalone=True)
     targets = set()
     for n in names:
         if n.endswith(".rels"):
