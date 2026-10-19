@@ -113,13 +113,15 @@ def new_page(prs, head, title, label, message):
     return s
 
 
-def center_body(s, top=1.5, bottom=7.05):
-    """見出し（タイトル・ラベル・メッセージ＝最初の3つ）より下の中身を、まとめて上下の中央に寄せる
-    （2026-10-19 殿村さん「下の方が空いてるから、もう少し中央に寄せるように下にずらして」）"""
+def center_body(s, top=1.5, bottom=7.05, ratio=0.33):
+    """見出し（タイトル・ラベル・メッセージ＝最初の3つ）より下の中身を、まとめて中央寄りに下げる。
+    空きの上側を ratio（1/3）、下側を残りにする＝目線は上のまま、中央に寄せた位置
+    （2026-10-19 殿村さん「中央に寄せるように下に」→「下げすぎ。目線は上にありながらも、中央に寄せてる感じで」）"""
     body = list(s.shapes)[3:]
     y0 = min(sh.top for sh in body)
     y1 = max(sh.top + sh.height for sh in body)
-    dy = int((Inches(top) + Inches(bottom) - y0 - y1) / 2)
+    free = Inches(bottom) - Inches(top) - (y1 - y0)
+    dy = int(Inches(top) - y0 + free * ratio)
     if dy > 0:
         for sh in body:
             sh.top = sh.top + dy
