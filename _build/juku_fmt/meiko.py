@@ -177,17 +177,17 @@ def page_case(s):
             ("友だち数", FRIENDS[0], FRIENDS[1]),
             ("スタンプ施策の約5か月", "約20万人増", "うち約15万人は友だちからの広がり"),
             ("資料請求（2023年6〜7月）", "前年比 約120%", "スタンプ施策の後半2か月")]):
-        round_box(s, X0 + i * (kw + gap), 1.65, kw, 1.3,
-                  [[(lab, {"size": 11, "bold": True, "color": NAVY})],
-                   [(big, {"size": 26, "bold": True, "color": NAVY})],
-                   [(sub, {"size": 9.5, "color": GREY})]], adj=6000, fill=PALE, line=BORDER, align="ctr",
+        round_box(s, X0 + i * (kw + gap), 1.65, kw, 1.05,
+                  [[(lab, {"size": 10, "bold": True, "color": NAVY})],
+                   [(big, {"size": 20, "bold": True, "color": NAVY})],
+                   [(sub, {"size": 8.5, "color": GREY})]], adj=6000, fill=PALE, line=BORDER, align="ctr",
                   line_spacing=100)
-    add_box(s, X0, 3.1, W, 0.78,
+    add_box(s, X0, 2.85, W, 0.7,
             [[("「学習塾は他塾と念入りに比較検討されるお客さまが多く、\nWebサイトを訪れてすぐに資料請求や体験授業の"
                "申し込みなどのCV（コンバージョン）につながるケースはそこまで多くありません」", {})],
              [("― 明光ネットワークジャパン ご担当者（公式事例より）", {"size": 9, "color": GREY})]],
-            size=10.5, color=INK, fill="FFFFFF", line=BORDER, ins=(0.14, 0.05, 0.14, 0.05), line_spacing=105)
-    add_box(s, X0, 3.98, W, 0.3, [[("公式事例（2023年）の施策の流れ", {})]], size=12, bold=True, color=NAVY, ins=(0, 0, 0, 0))
+            size=10, color=INK, fill="FFFFFF", line=BORDER, ins=(0.14, 0.05, 0.14, 0.05), line_spacing=105)
+    add_box(s, X0, 3.7, W, 0.3, [[("公式事例（2023年）の施策の流れ", {})]], size=11, bold=True, color=NAVY, ins=(0, 0, 0, 0))
     flow = [("サイトで", ["初回訪問時・離脱時の", "ポップアップから", "友だち追加"]),
             ("追加のあと", ["チャットと配信で", "良さ・他塾との違いを", "じっくり伝える"]),
             ("スタンプで", ["タップで答えるアンケートに", "答えるとスタンプを配布", "→ 友だちから広がる"]),
@@ -195,14 +195,14 @@ def page_case(s):
     cw = (W - 3 * 0.12) / 4
     for i, (head, lines) in enumerate(flow):
         x = X0 + i * (cw + 0.12)
-        add_box(s, x, 4.62, cw, 1.1, [[(t, {})] for t in lines], size=10.5, color=INK, fill="FFFFFF", line=BORDER,
-                align="ctr", anchor="ctr", ins=(0.04, 0.04, 0.04, 0.04), line_spacing=110)
-        chip(s, x, 4.3, cw, 0.32, f"{i + 1}　{head}", size=10.5)
-    add_box(s, X0, 5.8, W, 0.5,
+        add_box(s, x, 4.32, cw, 0.9, [[(t, {})] for t in lines], size=10, color=INK, fill="FFFFFF", line=BORDER,
+                align="ctr", anchor="ctr", ins=(0.04, 0.04, 0.04, 0.04), line_spacing=105)
+        chip(s, x, 4.04, cw, 0.28, f"{i + 1}　{head}", size=10)
+    add_box(s, X0, 5.35, W, 0.5,
             [[("※ スタンプの広がりで友だちになり、アンケートに答えていない方には、後日クイズ形式の配信で回答を促し、55%が反応。", {})],
              [("※ 友だちが増えても、ブロック率は施策前とほぼ同じ。友だち集めにはLINE広告（友だち追加）も使用。"
                "チャットの接客は「ジールス」（株式会社Zeals）。", {})]],
-            size=9, color=GREY, ins=(0, 0, 0, 0), line_spacing=100)
+            size=8.5, color=GREY, ins=(0, 0, 0, 0), line_spacing=100)
     set_one(s, 104, "大手でも、やっていることは「友だちになってもらい、比べている間をLINEで支える」こと。")
     set_one(s, 67, "出典｜LINEヤフー for Business 導入事例 明光義塾（2024年4月5日）。友だち数：page.line.me（2026-09-25実測）")
     return s
@@ -220,9 +220,9 @@ def page_screens(s):
     iw = ih * SHOT_ASPECT
     for j, (head, _, cap) in enumerate(SCREEN_SHOTS):
         x = X0 + j * (colw + gap)
-        chip(s, x, 1.62, colw, 0.34, head, size=11.5)
-        add_pic(s, f"rId{101 + j}", f"明光義塾_{head[2:]}", x + (colw - iw) / 2, 2.06, iw, ih)
-        add_box(s, x, 6.22, colw, 0.5, [[(t, {})] for t in cap], size=10.5, color=INK, align="ctr", anchor="t",
+        chip(s, x, 1.62, colw, 0.3, head, size=10.5)
+        add_pic(s, f"rId{101 + j}", f"明光義塾_{head[2:]}", x + (colw - iw) / 2, 2.02, iw, ih)
+        add_box(s, x, 6.2, colw, 0.5, [[(t, {})] for t in cap], size=10, color=INK, align="ctr", anchor="t",
                 ins=(0, 0, 0, 0), line_spacing=105)
     set_one(s, 67, "画面：明光義塾 LINE公式アカウント（2026-10-19 弊社で友だち追加して確認）")
     return s
@@ -252,12 +252,12 @@ def page_pattern(s):
     ]
     for i, (head, body, ex) in enumerate(cols):
         x = X0 + i * (kw + gap)
-        chip(s, x, 1.65, kw, 0.42, head, size=12)
-        round_box(s, x, 2.17, kw, 2.15, [[(t, {})] for t in body], adj=5000, size=12.5, color=INK, fill=PALE,
-                  line=BORDER, anchor="t", ins=(0.12, 0.12, 0.1, 0.06), after=8, line_spacing=110)
-        round_box(s, x, 4.45, kw, 1.35,
-                  [[("実際の例", {"size": 10.5, "bold": True, "color": NAVY})]] + [[(t, {})] for t in ex],
-                  adj=5000, size=11.5, color=INK, fill="FFFFFF", line=BORDER, anchor="t", ins=(0.1, 0.08, 0.08, 0.04),
+        chip(s, x, 1.65, kw, 0.34, head, size=11)
+        round_box(s, x, 2.09, kw, 1.75, [[(t, {})] for t in body], adj=5000, size=11, color=INK, fill=PALE,
+                  line=BORDER, anchor="t", ins=(0.12, 0.1, 0.1, 0.06), after=6, line_spacing=110)
+        round_box(s, x, 3.96, kw, 1.0,
+                  [[("実際の例", {"size": 10, "bold": True, "color": NAVY})]] + [[(t, {})] for t in ex],
+                  adj=5000, size=10.5, color=INK, fill="FFFFFF", line=BORDER, anchor="t", ins=(0.1, 0.08, 0.08, 0.04),
                   line_spacing=105)
     set_one(s, 104, "友だちになってもらい、答えてもらい、合う方に届ける。この時期に資料請求は前年比 約120%（公式事例）。")
     set_one(s, 67, f"※ 出典：LINEヤフー for Business 導入事例（2024年4月5日）・明光義塾 LINE公式アカウント（2026-10-19 弊社確認）。"

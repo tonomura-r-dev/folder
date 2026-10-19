@@ -150,9 +150,9 @@ def page_step(s):
         size = fig_bytes(*FIG_CROP[j - 1])[1]
         iw = FIG_H * size[0] / size[1]
         assert iw <= cw
-        chip(s, x, 1.62, cw, 0.34, head, size=11.5)
+        chip(s, x, 1.62, cw, 0.3, head, size=10.5)
         add_pic(s, f"rId{100 + j}", f"明光義塾_ステップ配信_{j}", x + (cw - iw) / 2, 2.04, iw, FIG_H)
-        add_box(s, x, 2.04 + FIG_H + 0.1, cw, 1.3, [[(t, {})] for t in lines], size=10.5, color=INK, fill=PALE,
+        add_box(s, x, 2.04 + FIG_H + 0.1, cw, 1.1, [[(t, {})] for t in lines], size=10, color=INK, fill=PALE,
                 line=BORDER, anchor="ctr", ins=(0.12, 0.06, 0.1, 0.06), line_spacing=110)
     set_one(s, 104, "答えやすい形で聞き、迷い具合に合わせて次の一歩を選べるようにしている。")
     set_one(s, 67, "画面：LINEヤフー for Business 導入事例 明光義塾（2024年4月5日）掲載の図版（2023年の施策時のもの）。"
