@@ -94,6 +94,19 @@ def slot(s, x, y, w, h, text):
             align="ctr", anchor="ctr", name=f"差し込み {text}")
 
 
+LABEL_W = 1.97      # 左上の紺のラベルは全ページ同じ大きさ（2026-10-19 殿村さん「大きさも統一してほしい」）
+
+
+def fix_label(lb, ms=None):
+    """ラベルを決まった位置・大きさに。メッセージがあれば、その右に同じ位置からそろえて置く"""
+    move(lb, x=0, y=0.85, w=LABEL_W, h=0.55)
+    bp = lb._element.find(".//" + qn("a:bodyPr"))
+    bp.set("lIns", str(Inches(0.05)))                    # 長いラベル（気をつける点と対策）も折り返さないように
+    bp.set("rIns", str(Inches(0.05)))
+    if ms is not None:
+        move(ms, x=LABEL_W + 0.2, w=10.6 - LABEL_W - 0.2)
+
+
 def new_page(prs, head, title, label, message):
     """FMTの本文ページ：タイトル＋紺のラベル＋太字のメッセージ（「施策展開図」の形）"""
     s = prs.slides.add_slide(head.slide_layout)
@@ -103,12 +116,11 @@ def new_page(prs, head, title, label, message):
     set_paras(t, [title])
     lb = clone(s, by_id(head, 9))
     set_paras(lb, [label])
-    lw = max(1.97, 0.45 + 0.2 * len(label))
-    move(lb, x=0, y=0.85, w=lw, h=0.55)
     ms = clone(s, by_id(head, 3))
     set_paras(ms, message.split("\n"))
-    two = "\n" in message or len(message) * 0.235 > 10.55 - lw
-    move(ms, x=lw + 0.2, y=0.81 if two else 0.94, w=10.6 - lw - 0.2, h=0.64 if two else 0.37)
+    two = "\n" in message or len(message) * 0.235 > 10.55 - LABEL_W
+    move(ms, y=0.81 if two else 0.94, h=0.64 if two else 0.37)
+    fix_label(lb, ms)
     return s
 
 
@@ -468,6 +480,7 @@ def p_seika(prs, src):
         e.getparent().remove(e)
     move(by_id(s, 24), y=1.95)
     move(by_id(s, 23), y=2.3)
+    fix_label(by_id(s, 9), by_id(s, 5))                       # 「成果報酬型プラン」のラベルもほかのページと同じ大きさに
     add_box(s, 0.6, 4.1, 9.69, 0.35, [runs(("すなおコンサルティング様の場合", dict(size=13, bold=True, color=NAVY)))],
             ins=(0, 0, 0, 0), name="小見出し")
     fill_seika(s)
