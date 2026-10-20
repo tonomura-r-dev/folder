@@ -45,6 +45,7 @@ GRAY = "7F7F7F"
 TEXT = "333333"
 RED = {"FF0000", "C00000", "C8102E"}
 EMPTY = None
+OPEN = "セミナー開催月"
 REPEAT = "リピート予約"     # SIMの38行（CV③）。2回目以降のイベントのセミナー予約
 
 
@@ -240,6 +241,11 @@ def yen(v):
 
 def pct(v, d=1):
     return f"{v * 100:.{d}f}%"
+
+
+def month_head(sim, k):
+    """月の見出し。セミナー開催月（SIMの12行がイベント期）には「セミナー開催月」を添える（2026-10-20 殿村さん）"""
+    return [f"{k}か月目"] + ([OPEN] if sim[12][k] == "イベント期" else [])
 
 
 # ---------------------------------------------------------------- 現状ステータスの整理
@@ -470,7 +476,8 @@ def p_hiyou_detail(s, sim, lead_src):
         return [dict(text=label, **lab), dict(text=init, **val)] + [dict(text=v, **val) for v in vals]
 
     m = range(1, 7)
-    rows = [[dict(text="項目", **head), dict(text="初期", **head)] + [dict(text=f"{k}か月目", **head) for k in m],
+    rows = [[dict(text="項目", **head), dict(text="初期", **head)]
+            + [dict(text=month_head(sim, k), **head) for k in m],
             row("時期", "--", [sim[12][k] for k in m]),
             row("LP UU", "--", [f"{n(sim[14][k]):,}" for k in m]),
             row("友だちの増加", "--", [f"{n(sim[26][k]):,}人" for k in m]),
@@ -482,8 +489,13 @@ def p_hiyou_detail(s, sim, lead_src):
             row(sim["name2"], "--", [f"{n(sim[37][k])}件" for k in m]),
             row(REPEAT, "--", [f"{n(sim[38][k])}件" for k in m]),
             row("費用（税抜）", f"{n(sim[73][0]):,}円", [f"{n(sim[73][k]):,}円" for k in m])]
-    add_table(s, 0.5, 2.2, [1.55, 1.1] + [1.18] * 6, [0.34] * len(rows), rows, name="月ごとの見込み")
-    add_box(s, 0.5, 2.2 + 0.34 * len(rows) + 0.1, 9.9, 0.45,
+    heights = [0.5] + [0.34] * (len(rows) - 1)
+    gf = add_table(s, 0.5, 2.2, [1.55, 1.1] + [1.18] * 6, heights, rows, name="月ごとの見込み")
+    for p in gf.findall(".//" + qn("a:tr"))[0].iter(qn("a:p")):          # 「セミナー開催月」は小さく
+        if "".join(x.text or "" for x in p.iter(qn("a:t"))) == OPEN:
+            for r in p.iter(qn("a:rPr")):
+                r.set("sz", "900")
+    add_box(s, 0.5, 2.2 + sum(heights) + 0.1, 9.9, 0.45,
             [runs(("※LP UUは、広告のクリック数から置いた想定数値（イベント期＝1回のイベント／平常期＝少量の広告）。"
                    "友だちの増加＝ポップアップツール＋サンクスLINE誘導。追える人数＝ブロックされずに届く友だちの数", dict(size=9, color=GRAY)))],
             anchor="t", ins=(0, 0, 0, 0), name="注記")
@@ -602,6 +614,9 @@ def p_seika_sim(s, sim):
                 set_cell(tbl.cell(r, 3 + k), f"{n(row[k]):,}")
     set_cell(tbl.cell(10, 1), "ポップアップツール")
     set_cell(tbl.cell(5, 1), "ポップアップツール")
+    for k in m:                                                          # 月の見出しに「セミナー開催月」
+        set_cell(tbl.cell(0, 3 + k), "\n".join(month_head(sim, k)))
+    tbl.rows[0].height = Inches(0.3)
     set_cell(tbl.cell(23, 1), sim["name1"])
     set_cell(tbl.cell(24, 1), sim["name2"])
     set_cell(tbl.cell(25, 1), REPEAT)
@@ -640,6 +655,18 @@ def p_seika_cost(s, sim):
         set_cell(t.cell(8, c), yen(d["total"][k]))
     set_cell(t.cell(2, 3), yen(d["init"]))
     set_cell(t.cell(8, 3), yen(d["init"]))
+    for k in range(1, 7):                                                # 月の見出し（FMTは空欄）＋「セミナー開催月」
+        set_cell(t.cell(0, 3 + k), "\n".join(month_head(sim, k)), like=t.cell(0, 3))
+    # CVRの行は資料に出さない（件数と費用だけ見せる。2026-10-20 殿村さん「CVRは外してほしい」）
+    gf = find(s, 2)
+    tr = t._tbl.findall(qn("a:tr"))[5]
+    assert "CVR" in "".join(tr.itertext())
+    gf.height = gf.height - int(tr.get("h"))
+    t._tbl.remove(tr)
+    for i, row in enumerate(t._tbl.findall(qn("a:tr"))):                # 行のIDを振り直す（PowerPointで表が崩れないように）
+        rid = row.find(".//{http://schemas.microsoft.com/office/drawing/2014/main}rowId")
+        if rid is not None:
+            rid.set("val", str(10000 + i))
 
 
 def p_service(s):
