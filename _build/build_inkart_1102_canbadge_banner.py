@@ -8,8 +8,11 @@
 - v2（引数なし）：写真から缶バッジを1個ずつ切り出し、白地に影を付けて2段に並べ直す（生成物の並びと同じ見た目）。
   下で切れている「EARTH TREKKING CLUB」の1個は使わない（8個）。
 
+- --swap：生成物v2（殿村さんのプロンプト）の訴求3つの帯を缶バッジの上に移した版（2026-10-20 「訴求軸の文字が下のほうにある」）。
+  プロンプトで並びを変えようとしたv3は札が動かず、絵も硬くなった（殿村さん「君のプロンプトの方が雑魚い」）ので、v2の画像で帯を入れ替える。
+
 使い方:
-  python3 _build/build_inkart_1102_canbadge_banner.py [--card] [出力]
+  python3 _build/build_inkart_1102_canbadge_banner.py [--card | --swap] [出力]
 """
 import sys
 from pathlib import Path
@@ -21,6 +24,8 @@ ROOT = Path(__file__).resolve().parent.parent
 GEN = ROOT / "_images" / "inkart_1102_canbadge_banner_generated_v1.webp"
 PHOTO = ROOT / "_data" / "printearth" / "site_badge_types_large_20261020.png"
 OUT = ROOT / "_images" / "inkart_1102_canbadge_banner_site_v2_1040.jpg"
+GEN2 = ROOT / "_images" / "inkart_1102_canbadge_banner_generated_v2.webp"
+OUT_SWAP = ROOT / "_images" / "inkart_1102_canbadge_banner_v2_swap_1040.jpg"
 OUT_CARD = ROOT / "_images" / "inkart_1102_canbadge_banner_site_1040.jpg"
 
 # 生成物（1254基準）の実測：副の文字の下端 366／札3つの上端 959。缶バッジはその間（381〜約955）
@@ -138,9 +143,32 @@ def build_card(out=OUT_CARD):
     return out
 
 
+def build_swap(out=OUT_SWAP):
+    """v2の生成物（殿村さんのプロンプト・2026-10-20「訴求軸の文字が下のほうにある」）で、
+    訴求3つの帯（1254基準 y998〜1096）と缶バッジの部分（y345〜997）を上下に入れ替える。
+    文字の部分（帯・主役・副・ボタン）は触らない。どちらも白地なので継ぎ目は出ない。入れ替え後に収めるため両方を0.95倍にする。"""
+    base = Image.open(GEN2).convert("RGB")
+    W, H = base.size
+    badges = base.crop((0, 345, W, 998))
+    labels = base.crop((0, 998, W, 1097))
+    ImageDraw.Draw(base).rectangle((0, 340, W, 1100), fill=(255, 255, 255))
+    k = 0.95
+    labels = labels.resize((int(W * k), int(labels.height * k)), Image.LANCZOS)
+    badges = badges.resize((int(W * k), int(badges.height * k)), Image.LANCZOS)
+    gap = (1100 - 340 - labels.height - badges.height) // 3
+    y = 340 + gap
+    base.paste(labels, ((W - labels.width) // 2, y))
+    y += labels.height + gap
+    base.paste(badges, ((W - badges.width) // 2, y))
+    base.resize((1040, 1040), Image.LANCZOS).save(out, quality=95)
+    return out
+
+
 if __name__ == "__main__":
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     if "--card" in sys.argv:
         print(build_card(Path(args[0]) if args else OUT_CARD))
+    elif "--swap" in sys.argv:
+        print(build_swap(Path(args[0]) if args else OUT_SWAP))
     else:
         print(build(Path(args[0]) if args else OUT))
