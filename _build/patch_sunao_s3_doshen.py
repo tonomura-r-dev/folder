@@ -25,11 +25,11 @@ from _build.build_sunao_v4 import NAVY, TEXT
 
 ROW_Y, ROW_H = 2.20, 0.26
 PHASE_ROW = {"①": 0, "②": 1, "③": 2, "④": 3, "⑤": 0, "⑥": 1, "⑦": 2, "⑧": 3}
-STRONG = ["広告で、1回のイベントで81件のセミナー予約を集めている",
-          "セミナーの参加後に、サロンの入会を案内できる",
-          "対象は保険営業の方（営業力向上のセミナー・サロン）"]
-LINE_HELP = ["イベントは年4回。間の時期は、集めた方との接点が切れやすい",
-             "セミナーは無料・オンライン。金額を考えるのはサロン入会のときで、参加後に迷いやすい"]
+STRONG = ["広告で、1回81件のセミナー予約を集めている",
+          "セミナー参加後に、サロンの入会を案内できる",
+          "対象は保険営業の方（営業力向上のサロン）"]
+LINE_HELP = ["イベントは年4回。間の時期は接点が切れやすい",
+             "セミナーは無料。参加後、入会の金額で迷いやすい"]
 CONCLUSION = "集めた方と、次のイベント・入会まで接点を持ち続け、強みを入会数につなげる。"
 
 
@@ -98,17 +98,23 @@ def p_service(s):
     for x, head, items in ((xs[0], "貴社の強み", STRONG), (xs[1], "LINEで補えるところ", LINE_HELP)):
         add_box(s, x, y0 + 0.12, col_w, 0.3, [runs((head, dict(size=13, bold=True, color=NAVY)))],
                 anchor="ctr", ins=(0, 0, 0, 0), name=head)
-        add_box(s, x, y0 + 0.45, col_w, 1.05, [runs(("・" + t, dict(size=12, color=TEXT))) for t in items],
-                anchor="t", ins=(0, 0, 0, 0), line_spacing=110, name=head + " 内容")
+        body = add_box(s, x, y0 + 0.45, col_w, 1.05, [runs(("・" + t, dict(size=12, color=TEXT))) for t in items],
+                       anchor="t", ins=(0, 0, 0, 0), line_spacing=110, name=head + " 内容")
+        for para in body.text_frame.paragraphs:                     # 折り返しても「・」の後ろにそろえる
+            ppr = para._p.get_or_add_pPr()
+            ppr.set("marL", str(Inches(0.17)))
+            ppr.set("indent", str(-Inches(0.17)))
     div = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x0 + 0.15 + col_w + 0.1), Inches(y0 + 0.15),
-                                 Inches(x0 + 0.15 + col_w + 0.1), Inches(y0 + 1.45))
+                                 Inches(x0 + 0.15 + col_w + 0.1), Inches(y0 + 1.25))
     div.line.color.rgb = RGBColor.from_string("BFBFBF")
     div.line.width = Pt(0.75)
-    sep = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x0 + 0.2), Inches(y0 + 1.55),
-                                 Inches(x0 + w0 - 0.2), Inches(y0 + 1.55))
+    h0 = 1.85                                                        # 中身に合わせて灰色の帯を詰める
+    box.height = Inches(h0)
+    sep = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x0 + 0.2), Inches(y0 + 1.35),
+                                 Inches(x0 + w0 - 0.2), Inches(y0 + 1.35))
     sep.line.color.rgb = RGBColor.from_string("BFBFBF")
     sep.line.width = Pt(0.75)
-    add_box(s, x0 + 0.2, y0 + 1.6, w0 - 0.4, h0 - 1.65, [runs((CONCLUSION, dict(size=13, bold=True, color=NAVY)))],
+    add_box(s, x0 + 0.2, y0 + 1.38, w0 - 0.4, h0 - 1.43, [runs((CONCLUSION, dict(size=13, bold=True, color=NAVY)))],
             anchor="ctr", align="ctr", ins=(0, 0, 0, 0), name="結論")
 
 
