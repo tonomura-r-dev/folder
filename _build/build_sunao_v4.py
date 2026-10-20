@@ -45,6 +45,9 @@ GRAY = "7F7F7F"
 TEXT = "333333"
 RED = {"FF0000", "C00000", "C8102E"}
 EMPTY = None
+LP_IMG = ROOT / "_images" / "sunao_lp_firstview.png"
+TREND_IMG = ROOT / "_images" / "sunao_trend_hoken_eigyo_5y.png"
+FORM_IMG = ROOT / "_images" / "sunao_lp_form.png"
 OPEN = "セミナー開催月"
 REPEAT = "リピート予約"     # SIMの38行（CV③）。2回目以降のイベントのセミナー予約
 
@@ -186,6 +189,15 @@ def slot(s, x, y, w, h, text):
             align="ctr", anchor="ctr", name=f"差し込み {text}")
 
 
+def place_pic(s, path, x, y, w, h):
+    """画像を枠（インチ）の中に、縦横比を保って収め、中央に置く"""
+    from PIL import Image
+    iw, ih = Image.open(path).size
+    k = min(w / iw, h / ih)
+    pw, ph = iw * k, ih * k
+    return s.shapes.add_picture(str(path), Inches(x + (w - pw) / 2), Inches(y + (h - ph) / 2), Inches(pw), Inches(ph))
+
+
 def geo(sh):
     return [Emu(v).inches for v in (sh.left, sh.top, sh.width, sh.height)]
 
@@ -312,13 +324,24 @@ def p_genjo(s):
                         [("申し込まずに離れた方を、次のイベントまで案内する手段が無い。", "r")]])
     put(s, 53, "参加して入会していない方へ、", "入会まで案内を続ける手段が無い状況。")
     drop(s, 63)                                              # 「※現状広告用アカウントとして存在」（不動産の案件の注記）
-    swap_for_slot(s, 10, "LPの画面")
+    for sid in (171, 173, 175, 179, 181, 183, 185, 187, 189):  # LINEのステータス：アカウントは新しく作るので全部「なし」（殿村さん）
+        put(s, sid, "なし")
+    if LP_IMG.exists():                                      # LPの画面（殿村さんのスマホのスクリーンショット。上下の帯は切った）
+        box = geo(find(s, 10))
+        drop(s, 10)
+        place_pic(s, LP_IMG, *box)
+    else:
+        swap_for_slot(s, 10, "LPの画面")
 
 
 def p_season(s):
     box = geo(find(s, 7))                                    # 不動産のGoogleトレンドの画像
     drop(s, 7, 6, 10, 12, 15)                                # 画像と、繁忙期の囲み・「やや繁忙期」
-    slot(s, *box, "Googleトレンドの画像（保険営業の方の検索の季節変動）")
+    if TREND_IMG.exists():                                   # Googleトレンド「保険営業」（2026-10-20 取得。_data/trends/sunao_hoken_eigyo_5year.csv）
+        place_pic(s, TREND_IMG, *box)
+        put(s, 5, "「保険営業」の検索は1年中ほぼ同じ水準。イベントの無い月も、平常期の配信でつながりを保つ。")
+    else:
+        slot(s, *box, "Googleトレンドの画像（保険営業の方の検索の季節変動）")
 
 
 def p_zengo(s, pic_id):
@@ -580,7 +603,11 @@ def p_thanks(s, second=False):
         put(s, 1047, "申込み内容の登録", "↓", "LINEに遷移", "↓", "入会後のご案内が開始")
         a, b = geo(find(s, 1028)), geo(find(s, 1031))
         drop(s, 1028, 1031)
-        slot(s, a[0], a[1], b[0] + b[2] - a[0], max(a[1] + a[3], b[1] + b[3]) - a[1], "LPの予約フォーム")
+        box = (a[0], a[1], b[0] + b[2] - a[0], max(a[1] + a[3], b[1] + b[3]) - a[1])
+        if FORM_IMG.exists():                                # LPの予約フォーム（入力も送信もせずに撮った画面。「受付終了」の行は切った）
+            place_pic(s, FORM_IMG, *box)
+        else:
+            slot(s, *box, "LPの予約フォーム")
         x, _, w, _ = geo(find(s, 1025))
         _, y, _, h = geo(find(s, 1049))
         drop(s, 1049)
