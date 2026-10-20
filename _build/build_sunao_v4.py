@@ -610,7 +610,7 @@ def seika_rows(sim):
     """成果報酬プランの費用：固定費＝ツール費＋アカウント費（コンサル費は成果報酬に置き換わる）＋成果件数×成果単価"""
     m = range(1, 7)
     fixed = [sum((sim[r][k] or 0) for r in (65, 66, 67, 68, 70, 71, 72)) for k in m]
-    reward = [n(sim[36][k]) * sim["tanka1"] + n(sim[37][k]) * sim["tanka2"] for k in m]
+    reward = [n(sim[36][k]) * sim["tanka1"] for k in m]     # 成果報酬はセミナー予約だけ（サロン入会は計測できない。2026-10-20 佐村さん）
     total = [f + r for f, r in zip(fixed, reward)]
     cvs = [n(sim[36][k]) + n(sim[37][k]) for k in m]
     clicks = [sim[35][k] for k in m]
@@ -623,7 +623,7 @@ def p_seika_cost(s, sim):
     d = seika_rows(sim)
     set_cell(find(s, 12).table.cell(0, 0), yen(d["init"]))
     lo, hi = min(d["total"]), max(d["total"])
-    set_cell(find(s, 14).table.cell(0, 0), f"{yen(lo)} – {n(hi):,}\n※予約 {n(sim['tanka1']):,}円・入会 {n(sim['tanka2']):,}円で設定")
+    set_cell(find(s, 14).table.cell(0, 0), f"{yen(lo)} – {n(hi):,}\n※セミナー予約 {n(sim['tanka1']):,}円／件で設定")
     t = find(s, 2).table
     for k in range(6):
         c = 4 + k
