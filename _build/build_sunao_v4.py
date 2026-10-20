@@ -47,7 +47,6 @@ RED = {"FF0000", "C00000", "C8102E"}
 EMPTY = None
 LP_IMG = ROOT / "_images" / "sunao_lp_firstview.png"
 TREND_IMG = ROOT / "_images" / "sunao_trend_hoken_eigyo_5y.png"
-FORM_IMG = ROOT / "_images" / "sunao_lp_form.png"
 OPEN = "セミナー開催月"
 REPEAT = "リピート予約"     # SIMの38行（CV③）。2回目以降のイベントのセミナー予約
 
@@ -604,10 +603,7 @@ def p_thanks(s, second=False):
         a, b = geo(find(s, 1028)), geo(find(s, 1031))
         drop(s, 1028, 1031)
         box = (a[0], a[1], b[0] + b[2] - a[0], max(a[1] + a[3], b[1] + b[3]) - a[1])
-        if FORM_IMG.exists():                                # LPの予約フォーム（入力も送信もせずに撮った画面。「受付終了」の行は切った）
-            place_pic(s, FORM_IMG, *box)
-        else:
-            slot(s, *box, "LPの予約フォーム")
+        slot(s, *box, "LPの予約フォーム")                      # フォームの画面は貼らない（「CVを付けたのか」と思われる。2026-10-20 殿村さん）
         x, _, w, _ = geo(find(s, 1025))
         _, y, _, h = geo(find(s, 1049))
         drop(s, 1049)
