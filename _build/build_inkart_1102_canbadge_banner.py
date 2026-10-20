@@ -11,8 +11,10 @@
 - --swap：生成物v2（殿村さんのプロンプト）の訴求3つの帯を缶バッジの上に移した版（2026-10-20 「訴求軸の文字が下のほうにある」）。
   プロンプトで並びを変えようとしたv3は札が動かず、絵も硬くなった（殿村さん「君のプロンプトの方が雑魚い」）ので、v2の画像で帯を入れ替える。
 
+- --gray：--swap に加えて、缶バッジの後ろの白を薄い灰色（#ECECEC）にして境界を出す（2026-10-20 殿村さん「ええやないか／背景少し色変えたい」）。
+
 使い方:
-  python3 _build/build_inkart_1102_canbadge_banner.py [--card | --swap] [出力]
+  python3 _build/build_inkart_1102_canbadge_banner.py [--card | --swap | --gray] [出力]
 """
 import sys
 from pathlib import Path
@@ -26,6 +28,8 @@ PHOTO = ROOT / "_data" / "printearth" / "site_badge_types_large_20261020.png"
 OUT = ROOT / "_images" / "inkart_1102_canbadge_banner_site_v2_1040.jpg"
 GEN2 = ROOT / "_images" / "inkart_1102_canbadge_banner_generated_v2.webp"
 OUT_SWAP = ROOT / "_images" / "inkart_1102_canbadge_banner_v2_swap_1040.jpg"
+OUT_GRAY = ROOT / "_images" / "inkart_1102_canbadge_banner_v2_swap_gray_1040.jpg"
+GRAY = 0xEC  # 缶バッジの後ろの薄い灰色（2026-10-20 殿村さん「うすい灰色とかで背景を色付け」）
 OUT_CARD = ROOT / "_images" / "inkart_1102_canbadge_banner_site_1040.jpg"
 
 # 生成物（1254基準）の実測：副の文字の下端 366／札3つの上端 959。缶バッジはその間（381〜約955）
@@ -143,7 +147,26 @@ def build_card(out=OUT_CARD):
     return out
 
 
-def build_swap(out=OUT_SWAP):
+def tint_background(base, y0, y1, gray=GRAY):
+    """y0〜y1の帯の中で、縁から白くつながっている所（＝背景）だけを薄い灰色にする。
+    缶バッジの中の白（ユニフォーム・ハートの地）は縁とつながっていないので残る。影の外側のにじみは、マスクをぼかして段差を消す。"""
+    a = np.array(base.convert("RGB"))
+    band = a[y0:y1].copy()
+    h, w = band.shape[:2]
+    near_white = (band.min(axis=2) >= 243).astype(np.uint8)
+    # 縁から白い所へ流し込む（背景の連結成分）
+    n, lab = cv2.connectedComponents(near_white, connectivity=4)
+    edge_labels = set(lab[0, :]) | set(lab[-1, :]) | set(lab[:, 0]) | set(lab[:, -1])
+    edge_labels.discard(0)
+    m = np.isin(lab, list(edge_labels)).astype(np.float32)
+    m = cv2.GaussianBlur(m, (0, 0), 1.5)
+    k = gray / 255.0
+    f = 1.0 - m[..., None] * (1.0 - k)
+    a[y0:y1] = np.clip(band.astype(np.float32) * f, 0, 255).astype(np.uint8)
+    return Image.fromarray(a)
+
+
+def build_swap(out=OUT_SWAP, gray=False):
     """v2の生成物（殿村さんのプロンプト・2026-10-20「訴求軸の文字が下のほうにある」）で、
     訴求3つの帯（1254基準 y998〜1096）と缶バッジの部分（y345〜997）を上下に入れ替える。
     文字の部分（帯・主役・副・ボタン）は触らない。どちらも白地なので継ぎ目は出ない。入れ替え後に収めるため両方を0.95倍にする。"""
@@ -160,6 +183,9 @@ def build_swap(out=OUT_SWAP):
     base.paste(labels, ((W - labels.width) // 2, y))
     y += labels.height + gap
     base.paste(badges, ((W - badges.width) // 2, y))
+    if gray:
+        # 札の下から、ボタンの上までを薄い灰色の帯にする（缶バッジの後ろだけ）
+        base = tint_background(base, y - gap // 2, 1100)
     base.resize((1040, 1040), Image.LANCZOS).save(out, quality=95)
     return out
 
@@ -170,5 +196,7 @@ if __name__ == "__main__":
         print(build_card(Path(args[0]) if args else OUT_CARD))
     elif "--swap" in sys.argv:
         print(build_swap(Path(args[0]) if args else OUT_SWAP))
+    elif "--gray" in sys.argv:
+        print(build_swap(Path(args[0]) if args else OUT_GRAY, gray=True))
     else:
         print(build(Path(args[0]) if args else OUT))
