@@ -29,7 +29,7 @@ OUT = ROOT / "_images" / "inkart_1102_canbadge_banner_site_v2_1040.jpg"
 GEN2 = ROOT / "_images" / "inkart_1102_canbadge_banner_generated_v2.webp"
 OUT_SWAP = ROOT / "_images" / "inkart_1102_canbadge_banner_v2_swap_1040.jpg"
 OUT_GRAY = ROOT / "_images" / "inkart_1102_canbadge_banner_v2_swap_gray_1040.jpg"
-GRAY = 0xEC  # 缶バッジの後ろの薄い灰色（2026-10-20 殿村さん「うすい灰色とかで背景を色付け」）
+GRAY = 0xE4  # 缶バッジの後ろの薄い灰色（2026-10-20 殿村さん「うすい灰色とかで背景を色付け」→ #ECECEC → 「一段だけ濃くして」→ #E4E4E4）
 OUT_CARD = ROOT / "_images" / "inkart_1102_canbadge_banner_site_1040.jpg"
 
 # 生成物（1254基準）の実測：副の文字の下端 366／札3つの上端 959。缶バッジはその間（381〜約955）
