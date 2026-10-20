@@ -33,6 +33,7 @@ from _build.arauchi_v4.lib import add_box, add_table, move
 from _build.arauchi_v10.build import clone, runs
 from _build.build_sunao_v1 import all_meiryo
 from _build.patch_tanaka_v5 import copy_slide
+from _build.sim_recalc import recalc_copy
 
 ROOT = Path(__file__).resolve().parent.parent
 FMT = ROOT / "_templates" / "DYM_LINEOA_提案FMT_202607（最新の枠組み）.pptx"
@@ -44,6 +45,7 @@ GRAY = "7F7F7F"
 TEXT = "333333"
 RED = {"FF0000", "C00000", "C8102E"}
 EMPTY = None
+REPEAT = "リピート予約"     # SIMの38行（CV③）。2回目以降のイベントのセミナー予約
 
 
 # ---------------------------------------------------------------- 部品
@@ -217,14 +219,12 @@ def load_sim(path):
     """SIMをLibreOfficeで計算し直したコピーから読む（コピーは読むだけ）。row(r) → [D, E..J]"""
     work = Path(tempfile.mkdtemp())
     try:
-        shutil.copy(path, work / "sim.xlsx")
-        subprocess.run(["soffice", "--headless", "--convert-to", "xlsx", "--outdir", str(work / "c"),
-                        str(work / "sim.xlsx")], check=True, capture_output=True, timeout=180)
-        ws = openpyxl.load_workbook(work / "c" / "sim.xlsx", data_only=True).worksheets[0]
+        ws = openpyxl.load_workbook(recalc_copy(path, work), data_only=True).worksheets[0]   # キャッシュ値を消して全部計算し直す
         rows = {r: [ws[f"{c}{r}"].value for c in "DEFGHIJ"] for r in list(range(12, 42)) + list(range(44, 52))
                 + list(range(65, 74))}
         rows["name1"], rows["name2"] = ws["C8"].value, ws["C9"].value
         rows["tanka1"], rows["tanka2"] = ws["D8"].value or 0, ws["D9"].value or 0
+        rows["tanka3"] = ws["D10"].value or 0                               # 38行＝リピート予約（2026-10-20）
         return rows
     finally:
         shutil.rmtree(work)
@@ -450,7 +450,8 @@ def p_hiyou(s, sim):
         put(s, b, v)
     after = (("友だち数", f"{n(sim[28][-1]):,}人"), ("ブロック率", pct(sim[27][-1], 0)),
              ("追える人数", f"{n(sim[29][-1]):,}人"),
-             (sim["name1"], f"{sum(n(x) for x in sim[36][1:])}件（6か月）"),
+             (sim["name1"], f"{sum(n(x) for x in sim[36][1:]) + sum(n(x) for x in sim[38][1:])}件"
+                            f"（6か月・うちリピート{sum(n(x) for x in sim[38][1:])}件）"),
              (sim["name2"], f"{sum(n(x) for x in sim[37][1:])}件（6か月）"))
     for (a, b), (k, v) in zip(((80, 9), (82, 12), (84, 14), (86, 18), (22, 26)), after):
         put(s, a, k)
@@ -479,9 +480,10 @@ def p_hiyou_detail(s, sim, lead_src):
             row("クリック数", "--", [f"{n(sim[35][k]):,}" for k in m]),
             row(sim["name1"], "--", [f"{n(sim[36][k])}件" for k in m]),
             row(sim["name2"], "--", [f"{n(sim[37][k])}件" for k in m]),
+            row(REPEAT, "--", [f"{n(sim[38][k])}件" for k in m]),
             row("費用（税抜）", f"{n(sim[73][0]):,}円", [f"{n(sim[73][k]):,}円" for k in m])]
-    add_table(s, 0.5, 2.2, [1.55, 1.1] + [1.18] * 6, [0.36] * len(rows), rows, name="月ごとの見込み")
-    add_box(s, 0.5, 2.2 + 0.36 * len(rows) + 0.1, 9.9, 0.45,
+    add_table(s, 0.5, 2.2, [1.55, 1.1] + [1.18] * 6, [0.34] * len(rows), rows, name="月ごとの見込み")
+    add_box(s, 0.5, 2.2 + 0.34 * len(rows) + 0.1, 9.9, 0.45,
             [runs(("※LP UUは、広告のクリック数から置いた想定数値（イベント期＝1回のイベント／平常期＝少量の広告）。"
                    "友だちの増加＝ポップアップツール＋サンクスLINE誘導。追える人数＝ブロックされずに届く友だちの数", dict(size=9, color=GRAY)))],
             anchor="t", ins=(0, 0, 0, 0), name="注記")
@@ -602,7 +604,7 @@ def p_seika_sim(s, sim):
     set_cell(tbl.cell(5, 1), "ポップアップツール")
     set_cell(tbl.cell(23, 1), sim["name1"])
     set_cell(tbl.cell(24, 1), sim["name2"])
-    set_cell(tbl.cell(25, 1), "-")
+    set_cell(tbl.cell(25, 1), REPEAT)
     set_cell(tbl.cell(26, 1), "-")
 
 
@@ -610,9 +612,9 @@ def seika_rows(sim):
     """成果報酬プランの費用：固定費＝ツール費＋アカウント費（コンサル費は成果報酬に置き換わる）＋成果件数×成果単価"""
     m = range(1, 7)
     fixed = [sum((sim[r][k] or 0) for r in (65, 66, 67, 68, 70, 71, 72)) for k in m]
-    reward = [n(sim[36][k]) * sim["tanka1"] for k in m]     # 成果報酬はセミナー予約だけ（サロン入会は計測できない。2026-10-20 佐村さん）
+    reward = [n(sim[36][k]) * sim["tanka1"] + n(sim[38][k]) * sim["tanka3"] for k in m]   # 成果報酬はセミナー予約（新規・リピート）だけ。サロン入会は計測できない（2026-10-20 佐村さん）
     total = [f + r for f, r in zip(fixed, reward)]
-    cvs = [n(sim[36][k]) + n(sim[37][k]) for k in m]
+    cvs = [sum(n(sim[r][k]) for r in (36, 37, 38, 39)) for k in m]
     clicks = [sim[35][k] for k in m]
     return dict(init=sim[73][0], fixed=fixed, reward=reward, total=total, cvs=cvs, clicks=clicks,
                 getu=[sim[46][k] for k in m], cvr=[sim[41][k] for k in m])
@@ -622,8 +624,9 @@ def p_seika_cost(s, sim):
     write(find(s, 5), ["固定費用を最低限に抑えた成果報酬プラン。", "友だち追加はポップアップ・サンクスLINE誘導で実施。"])
     d = seika_rows(sim)
     set_cell(find(s, 12).table.cell(0, 0), yen(d["init"]))
-    lo, hi = min(d["total"]), max(d["total"])
-    set_cell(find(s, 14).table.cell(0, 0), f"{yen(lo)} – {n(hi):,}\n※セミナー予約 {n(sim['tanka1']):,}円／件で設定")
+    fixed = sorted(set(d["fixed"]))
+    head = f"{yen(fixed[0])}＋成果報酬" if len(fixed) == 1 else f"{yen(fixed[0])}〜＋成果報酬"   # 幅（〜）で月の総額をまとめない
+    set_cell(find(s, 14).table.cell(0, 0), f"{head}\n※セミナー予約（新規・リピート） {n(sim['tanka1']):,}円／件")
     t = find(s, 2).table
     for k in range(6):
         c = 4 + k

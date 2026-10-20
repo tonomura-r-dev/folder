@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """すなお ver4 → ver4.1（2026-10-20 殿村さん）。ver4（色直し済み）に当てる。
 
-    python -m _build.patch_sunao_v41 <ver4.pptx> [出力.pptx]
+    python -m _build.patch_sunao_v41 <ver4.pptx（色直し済み）> [出力.pptx]
 
   ・想定動線（8フェーズの表）：殿村さん「見づらい」
     2つに分かれていた表（見出しが2回出る）を1つに、文字を8〜9pt→12pt、本文は左寄せ・上下中央、
@@ -9,9 +9,9 @@
   ・想定の費用対効果（詳細）のトラック分岐（3枚）：殿村さん「枠が無駄が多い」
     左右の箱の高さを中身に合わせて詰める。上の帯が空なので、見出しの位置はほぼそのまま。
     薄くする重ね（片側を薄くする四角）も同じだけ動かす。
-  ・成果報酬はセミナー予約だけ（佐村さん「成果報酬の方でカウントに入れないで」）。サロン入会は計測できないので
-    成果報酬の地点から外す（資料内のCVとしては残す）。成果報酬型プランの「今回の成果単価の費用感」からサロン入会の行を外し、
-    弊社想定シミュレーションの「※予約・入会で設定」を「※セミナー予約で設定」に。
+  ・成果報酬はセミナー予約（新規・リピート）だけ（佐村さん「成果報酬の方でカウントに入れないで」）。サロン入会は計測できないので
+    成果報酬の地点から外す（資料内のCVとしては残す）。成果報酬型プランの「今回の成果単価の費用感」のサロン入会の行を、
+    リピート予約（12,000円／件）の行に置き換える。
   ほかのページは触らない（出力を省くと上書き）。
 """
 import copy
@@ -160,23 +160,16 @@ def set_text(sh, old, new):
 
 
 def p_seika(prs):
-    """成果報酬はセミナー予約だけ"""
+    """成果報酬はセミナー予約（新規・リピート）だけ。「今回の成果単価の費用感」のサロン入会の行を、リピート予約の行に置き換える
+    （弊社想定シミュレーションの注記・金額は build_sunao_v4 が SIM ver1.3 から入れる）"""
     plan = next(s for s in prs.slides if any(sh.has_text_frame and sh.text_frame.text.strip() == "成果報酬型プラン"
                                               for sh in s.shapes))
-    gf = next(sh for sh in plan.shapes if sh.has_table and sh.table.cell(0, 0).text == "成果の地点")
-    tbl = gf._element.find(".//" + qn("a:tbl"))
-    for tr in tbl.findall(qn("a:tr")):
-        if "".join(tr.itertext()).startswith("サロン入会"):
-            gf.height = gf.height - int(tr.get("h"))
-            tbl.remove(tr)
-    fix_ids(tbl)
-    sim = next(s for s in prs.slides if any(sh.has_table and "※予約" in sh.table.cell(0, 0).text
-                                             for sh in s.shapes if sh.has_table))
-    cell = next(sh for sh in sim.shapes if sh.has_table and "※予約" in sh.table.cell(0, 0).text).table.cell(0, 0)
-    import re
-    t = cell.text
-    m = re.search(r"※予約 ([\d,]+)円・入会 [\d,]+円で設定", t)
-    assert set_text(cell, m.group(0), f"※セミナー予約 {m.group(1)}円／件で設定"), t
+    tbl = next(sh for sh in plan.shapes if sh.has_table and sh.table.cell(0, 0).text == "成果の地点").table
+    for r in range(len(tbl.rows)):
+        if tbl.cell(r, 0).text.startswith("サロン入会"):
+            for c, (old, new) in enumerate((("サロン入会", "リピート予約"), ("25,000円", "12,000円"),
+                                            ("LINEのリンクからのサロン入会", "LINEのリンクからの2回目以降の予約"))):
+                assert set_text(tbl.cell(r, c), old, new), tbl.cell(r, c).text
 
 
 def main(src, out):
