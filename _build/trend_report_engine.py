@@ -172,6 +172,7 @@ def edit_cover_custom(cover, full_text):
     sh = find_shape(cover, lambda t: "LINEOAトレンドレポート" in t)
     p = sh.text_frame.paragraphs[0]
     p.runs[0].text = full_text
+    p.runs[0].font.size = Pt(32)  # 2026-10-21 殿村さん指定
     for r in list(p.runs[1:]):
         r._r.getparent().remove(r._r)
 
