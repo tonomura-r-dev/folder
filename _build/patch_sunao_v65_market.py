@@ -125,8 +125,9 @@ def fill(s, page):
     top = gf.top + total + Inches(0.18)
     n = lines(page["insight"], 9.83, 12, pad_in=0.3)
     h = Pt(13 * 1.3 + n * 12 * 1.3 + 14)
-    for sh in (line, box):
-        sh.top, sh.height = top, h
+    box.top, box.height = top, h
+    box.left, box.width = gf.left, sum(Inches(w) for w in COLS)   # 線を外した分、表と左右をそろえる
+    line._element.getparent().remove(line._element)       # 示唆の左の紺の線は外す（殿村さん）
     note = by_id(s, 53)
     set_shape(note, [page["note"]])
     assert top + h <= Inches(NOTE_TOP), (page["title"], (top + h) / 914400)
