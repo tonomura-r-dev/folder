@@ -345,6 +345,13 @@ EDITS = {
     ],
 }
 
+FEE = [
+    (37, "Rectangle 48", "5万円", "3万円〜"),
+    (37, "Rectangle 49", "10万円", "15万円"),
+    (44, "Rounded Rectangle 23", "0円", "3万円"),
+    (44, "Rounded Rectangle 23", "10万円〜", "15万円"),
+]
+
 # 段落の置き換えのあと、表示しているスライドの文字すべてに当てる（書式はそのまま）
 GLOBAL = [
     (re.compile("貴社"), "貴塾"),
@@ -401,6 +408,17 @@ def main(src, out):
                 new = pat.sub(rep, new)
             if new != t.text:
                 t.text, g = new, g + 1
+    # 2026-10-21 殿村さん指示：サンクスLINE誘導の費用＝初期15万円・月額3万円〜（完了画面からの誘導・プラン③）
+    for no, name, old, new in FEE:
+        sh = next(s for s in slides[no - 1].shapes if s.name == name)
+        ts = [t for t in sh._element.iter(qn("a:t")) if t.text and old in t.text]
+        if len(ts) != 1:
+            missing.append((no, name, old))
+        for t in ts:
+            t.text = t.text.replace(old, new)
+    # 2026-10-21 殿村さん指示：導入スケジュールの各段階の期間（2週間・3〜4週間・1〜2週間・継続）は外す
+    for sh in [s for s in slides[45].shapes if s.name in ("TextBox 5", "TextBox 9", "TextBox 13", "TextBox 17")]:
+        sh._element.getparent().remove(sh._element)
     for m in missing:
         print("MISSING", m)
     assert not missing
