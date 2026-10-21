@@ -179,7 +179,7 @@ def edit_cover_custom(cover, full_text):
 def edit_agenda(agenda, topics):
     """topics: [{"bracket", "headline", "title"}] の順で P.3, P.4, ... を振る。
     ページ番号は表紙1・目次1・本編なので3から開始。
-    同じbracketが連続する場合は1つのトピックとみなし、"P.5-6"のように
+    同じ group キーを持つトピックが連続する場合は1つのトピックとみなし、"P.5-6"のように
     ページ範囲でまとめて1行にする（2026-09-24、殿村さんの指示で
     「もう少し大きい分割」に変更。1トピックが複数枚に分割されている
     ③プロモーションスタンプ・⑥LINEオープンキャンペーンが対象）。
@@ -194,7 +194,8 @@ def edit_agenda(agenda, topics):
     n = len(topics)
     while i < n:
         j = i
-        while j + 1 < n and topics[j + 1]["bracket"] == topics[i]["bracket"]:
+        while (j + 1 < n and topics[i].get("group")
+               and topics[j + 1].get("group") == topics[i]["group"]):
             j += 1
         span = j - i + 1
         if span == 1:
@@ -501,7 +502,8 @@ def render_impact(slide, x, y, w, h, data):
         y_after = ty + th
 
     y3 = y_after + Inches(0.2)
-    _merit_card(slide, x, y3, w, Inches(0.85), data["merit_headline"], data["merit_desc"])
+    _merit_card(slide, x, y3, w, Inches(data.get("merit_h", 0.85)),
+                data["merit_headline"], data["merit_desc"])
 
 
 def render_flow(slide, x, y, w, h, data):

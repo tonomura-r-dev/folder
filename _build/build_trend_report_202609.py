@@ -75,6 +75,7 @@ TOPICS = [
     # render_impact）で組む。詳細は .claude/skills/trend-report/SKILL.md 参照。
     dict(
         bracket="LINEプロモーションスタンプ",
+        group="stamp",
         headline="アップデート内容",
         industry="友だち獲得を強化したい全業種",
         category="オプション\n商材",
@@ -96,6 +97,7 @@ TOPICS = [
     ),
     dict(
         bracket="LINEプロモーションスタンプ",
+        group="stamp",
         headline="インパクト",
         industry="友だち獲得を強化したい全業種",
         category="オプション\n商材",
@@ -141,6 +143,7 @@ TOPICS = [
     ),
     dict(
         bracket="LINEオープンキャンペーン",
+        group="open_campaign",
         headline="特典内容",
         industry="友だち獲得を強化したい全業種",
         category="オプション\n商材",
@@ -165,6 +168,7 @@ TOPICS = [
     ),
     dict(
         bracket="LINEオープンキャンペーン",
+        group="open_campaign",
         headline="実施スケジュール",
         industry="友だち獲得を強化したい全業種",
         category="オプション\n商材",
@@ -186,6 +190,7 @@ TOPICS = [
     ),
     dict(
         bracket="LINEオープンキャンペーン",
+        group="open_campaign",
         headline="注意点・ご利用条件",
         industry="友だち獲得を強化したい全業種",
         category="オプション\n商材",
