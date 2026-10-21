@@ -55,7 +55,6 @@ def fill_estimate(s):
         # 初期の実施内容
         365: "離脱防止", 366: "導入",
         367: "サンクス\nLINE誘導", 368: "導入",
-        369: "サイトの\nLINEボタン", 370: "リンク・画像の用意",
         371: "ステップ配信", 372: "4通を構築",
         373: "勤務前の案内", 374: "型をつくる",
         # 月次の実施内容
@@ -72,6 +71,15 @@ def fill_estimate(s):
     }
     for sid, t in texts.items():
         set_text(by_id(s, sid).text_frame, t)
+    # 3行目（タナカホームのLINEボタンの行）は外して、下の2行を1行ずつ上げる
+    # サイトのLINEボタンは先方のサイトなので、DYMの実施内容に書かない（殿村さん 2026-10-21）
+    tops = {sid: by_id(s, sid).top for sid in (369, 371)}
+    for sid in (369, 370):
+        sh = by_id(s, sid)
+        sh._element.getparent().remove(sh._element)
+    for sids, top in (((371, 372), tops[369]), ((373, 374), tops[371])):
+        for sid in sids:
+            by_id(s, sid).top = top
 
 
 def fill_table(tbl, rows):
@@ -106,12 +114,12 @@ def fill_scope(s):
     tbl = shape.table
     trs = tbl._tbl.findall(qn("a:tr"))
     assert "LINE広告" in "".join(t.text or "" for t in trs[-1].iter(qn("a:t")))
-    shape.height -= int(trs[-1].get("h"))
-    tbl._tbl.remove(trs[-1])                                  # LINE広告の行は今回の提案に無い
+    for tr in (trs[-1], trs[2]):                              # LINE広告の行は今回の提案に無い
+        shape.height -= int(tr.get("h"))                      # 3行目（サイトのLINEボタン）は先方のサイトなので書かない（殿村さん 2026-10-21）
+        tbl._tbl.remove(tr)
     fill_table(tbl, [
         PLAN_HEAD,
         ["離脱防止・\nサンクスLINE誘導", "導入・運用", "導入・運用", "導入・運用"],
-        ["サイトのLINEボタン", "リンク・画像の用意\n（設置は貴社）", "リンク・画像の用意\n（設置は貴社）", "リンク・画像の用意\n（設置は貴社）"],
         ["ステップ配信", "14日間・4通\n（構築のみ）", "14日間・4通\n（構築・改善）", "14日間・4通\n（構築・改善）"],
         ["企画配信\n（次回イベントの募集）", "なし（貴社で運用）", "月4回\n（設計・作成）", "月4回\n（設計・作成・画像制作）"],
         ["勤務前の案内", "型の作成のみ", "型の作成・改善\n（送信は貴社）", "型の作成・改善\n（送信は貴社）"],
