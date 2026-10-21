@@ -19,8 +19,10 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 from pptx import Presentation
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_CONNECTOR
 from pptx.oxml.ns import qn
-from pptx.util import Inches
+from pptx.util import Inches, Pt
 
 from _build.patch_yokohama_shimizu_deck_plans import set_text
 
@@ -197,6 +199,12 @@ def page6(s, tmpl_head, tmpl_cap):
         right = clone(s, tmpl_cap, "タナカホーム", tanaka, rx, y, rw, row_h)
         right.text_frame._txBody.find(qn("a:bodyPr")).set("anchor", "ctr")
         run_props(right, color=NAVY, bold=True)
+        if not last:                                          # 項目ごとの区切りのうすい線（殿村さん「ここが該当するよっていうことで」）
+            ly = Inches(y + row_h + gap / 2)
+            ln = s.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(lx), ly, Inches(rx + rw), ly)
+            ln.name = "項目の区切り"
+            ln.line.color.rgb = RGBColor(0xD9, 0xD9, 0xD9)
+            ln.line.width = Pt(0.75)
         y += row_h + gap
     set_text(by_id(s, 12).text_frame,
              "※各社のLINE公式アカウントより（大進建設 2026年10月21日、一条工務店 2026年10月19日確認）。"
