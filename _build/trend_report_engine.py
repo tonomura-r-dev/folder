@@ -263,7 +263,9 @@ def find_body_area(slide):
             break
     left, top = old_table_shape.left, old_table_shape.top
     old_table_shape._element.getparent().remove(old_table_shape._element)
-    width, height = Inches(10.2), Inches(3.75)
+    # 左右の余白をそろえる（2026-10-21 殿村さん指摘：10.2in固定だと右端に貼りつく）
+    slide_w = slide.part.package.presentation_part.presentation.slide_width
+    width, height = slide_w - 2 * left, Inches(3.75)
     return left, top, width, height
 
 
@@ -353,7 +355,8 @@ def _merit_card(slide, x, y, w, h, headline, desc):
     p0.alignment = PP_ALIGN.LEFT
     r0 = p0.add_run()
     r0.text = headline
-    r0.font.size = Pt(17)
+    small = h < Inches(1.0)
+    r0.font.size = Pt(18 if small else 19)  # 2026-10-21 殿村さん指摘で大きく
     r0.font.bold = True
     r0.font.color.rgb = NAVY
     r0.font.name = "メイリオ"
@@ -363,7 +366,7 @@ def _merit_card(slide, x, y, w, h, headline, desc):
     p1.line_spacing = 1.15
     r1 = p1.add_run()
     r1.text = desc
-    r1.font.size = Pt(11)
+    r1.font.size = Pt(11 if small else 13)
     r1.font.color.rgb = BODY_GRAY
     r1.font.name = "メイリオ"
 
