@@ -4,7 +4,7 @@
     python -m _build.patch_sunao_v65_market <ver6.4.pptx> <ver6.5.pptx>
 
   6枚目（ニーズ調査 業界STUDY）を複製して2枚にし、表（項目／ファクト／意味すること）を4行に、示唆・注記を差し替える。
-  形は元のページのまま（タイトル・リード・表・示唆・注記）。表の文字は13pt → 12pt（4行に収めるため）。
+  形は元のページのまま（タイトル・リード・表・示唆・注記）。示唆の左の紺の線は外す（ターゲットのページも。殿村さん 2026-10-21）。表の文字は13pt → 12pt（4行に収めるため）。
   数字の出典と確認の記録は `_drafts/すなおコンサルティング_商材・市場調査（2026-10-17）.md`。ほかのページは変えない（59枚 → 60枚）。
 """
 import copy
@@ -147,6 +147,12 @@ def main(src, out):
     ids[5].addnext(new)
     fill(s6, PAGES[0])
     fill(s7, PAGES[1])
+    tgt = slides[6]                                          # ターゲットのページの示唆も、左の紺の線を外す（殿村さん「金輪際外して」）
+    line, box = by_id(tgt, 51), by_id(tgt, 52)
+    assert line.name == "示唆 線" and box.text_frame.text.startswith("示唆")
+    right = box.left + box.width
+    box.left, box.width = line.left, right - line.left
+    line._element.getparent().remove(line._element)
     assert len(prs.slides) == 60
     prs.save(out)
     print("saved:", out)
