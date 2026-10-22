@@ -131,9 +131,17 @@ def rows_mode():
     # 上段右（商品一覧／ご注文）はマス全体をオレンジに（枠の外の緑もオレンジで塗る）
     a = np.array(out).astype(int)
     cell = a[0:CH, 2 * CW:W]
-    orange = cell[60, 8]                       # 枠の縁のオレンジを実測
+    om = (abs(cell - np.array([240, 145, 45])).sum(-1) < 90)   # 枠の縁のオレンジを実測（中央値）
+    orange = np.median(cell[om], axis=0).astype(int)
     gm = (abs(cell - np.array(green)).sum(-1) < 70)
     cell[gm] = orange
+    # 白い枠の外側（上端・右端に残る暗い縁や角）は全部オレンジで塗りつぶす
+    wm = cell.min(-1) > 235
+    ys, xs = np.where(wm)
+    x0, y0, x1, y1 = xs.min(), ys.min(), xs.max(), ys.max()
+    outside = np.ones(cell.shape[:2], bool)
+    outside[y0:y1 + 1, x0:x1 + 1] = False
+    cell[outside] = orange
     a[0:CH, 2 * CW:W] = cell
     out = Image.fromarray(a.astype("uint8"))
     out.save(OUT)
