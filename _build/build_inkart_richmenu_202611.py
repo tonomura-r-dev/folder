@@ -120,7 +120,7 @@ def rows_mode():
     green = tuple(int(v) for v in np.array(im)[5, 5])
     sx = W / w
     top = im.crop((0, 14, w, 565)).resize((W, CH), Image.LANCZOS)      # 縦550→405（横0.786に対し0.736＝6%の縮み）
-    need = int(round(CH / sx))
+    need = int(round(CH / (sx * 1.06)))      # 下段は縦に6%だけ伸ばして枠を大きく見せる（殿村さん「狭くて窮屈」）
     bot_src = im.crop((0, 565, w, h))
     pad = Image.new("RGB", (w, need), green)
     pad.paste(bot_src, (0, (need - bot_src.size[1]) // 2))
