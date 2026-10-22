@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """インクアート 11月リッチメニュー（11/1〜）の登録用画像を組む。
 
-材料
-- 生成画像 v4（_images/inkart_richmenu_202611_generated_v4.webp・1526×1030）：上段左（年賀状）と上段中（缶バッジ）の2枠だけ使う
-- 10月の実物（_data/printearth/richmenu_202610_actual.jpg・2000×1349・DYMデザイナー版）：上段右（商品一覧／ご注文）と下段3枠をそのまま使う
+生成画像 v4（_images/inkart_richmenu_202611_generated_v4.webp・1526×1030）は上段が高さの約52%で、
+LINEの6分割テンプレ（上下ちょうど半分）とずれる。6枚の付箋形の枠を切り出し、1200×810の格子に置き直す。
+（2026-10-22 殿村さん「生成した画像の方がええな」＝6枠とも生成物を使う。10月の実物と混ぜる版は --mix）
 
-生成画像は上段が高く、LINEの6分割テンプレ（上下ちょうど半分）とずれるので、枠を切り出して格子に置き直す。
-出力は 1200×810（LINEの許容サイズ）。
-
-使い方: python3 _build/build_inkart_richmenu_202611.py
+使い方: python3 _build/build_inkart_richmenu_202611.py [--mix]
 出力:   _images/inkart_richmenu_202611_1200x810.png（登録用）
         _images/inkart_richmenu_202611_1200x810_gridcheck.png（格子を重ねた確認用）
 """
+import sys
 from PIL import Image, ImageDraw
 import numpy as np
 
@@ -23,62 +21,87 @@ OUT_GRID = "_images/inkart_richmenu_202611_1200x810_gridcheck.png"
 W, H = 1200, 810
 CW, CH = W // 3, H // 2            # 400 × 405
 
-# 生成画像v4の枠の位置（緑の溝から実測）
-GEN_COLS = [(19, 529), (531, 1018)]
-GEN_ROW = (20, 559)
-GEN_GREEN = np.array([2, 145, 95])
+# 置き先の枠の大きさ（列ごとに幅を変えて、縦横の縮みの差を数%に収める）
+TOP_W = [360, 350, 360]
+TOP_H = 393
+BOT_W = [360, 350, 360]
+BOT_H = 310
+TOP_Y = 6
+BOT_Y = 440
 
 
-def bbox_nongreen(a, green, tol=60):
+def card_boxes(a, green, tol=60):
+    """生成画像を上下2段×左右3列に分け、各マスの中の枠（緑でない部分）の箱を返す。"""
+    h, w = a.shape[:2]
     m = (abs(a - green).sum(-1) >= tol)
-    ys, xs = np.where(m)
-    return xs.min(), ys.min(), xs.max(), ys.max()
+    rowg = (~m).mean(1)
+    # 上下の境目＝画像の中ほどで緑の割合がいちばん高い行
+    mid = int(np.argmax(rowg[int(h * 0.4):int(h * 0.7)])) + int(h * 0.4)
+    boxes = []
+    for (y0, y1) in [(0, mid), (mid, h)]:
+        row = []
+        colg = (~m[y0:y1]).mean(0)
+        # 列の境目＝左右の3分の1付近で緑の割合がいちばん高い列
+        c1 = int(np.argmax(colg[int(w * 0.25):int(w * 0.42)])) + int(w * 0.25)
+        c2 = int(np.argmax(colg[int(w * 0.58):int(w * 0.75)])) + int(w * 0.58)
+        for (x0, x1) in [(0, c1), (c1, c2), (c2, w)]:
+            sub = m[y0:y1, x0:x1]
+            ys, xs = np.where(sub)
+            row.append((x0 + xs.min(), y0 + ys.min(), x0 + xs.max(), y0 + ys.max()))
+        boxes.append(row)
+    return boxes
 
 
-def main():
-    act = Image.open(ACTUAL).convert("RGB").resize((W, H), Image.LANCZOS)
-    aa = np.array(act).astype(int)
-    act_green = tuple(int(v) for v in aa[H - 5, W - 5])
-    out = act.copy()
+def recolor_margin(crop, src_green, dst_green):
+    """枠の外周と左上の切り落としに残る生成画像の緑を、下地の緑に揃える。"""
+    m = (abs(crop - src_green).sum(-1) < 45)
+    keep = np.zeros(m.shape, bool)
+    keep[:20, :] = True
+    keep[-20:, :] = True
+    keep[:, :20] = True
+    keep[:, -20:] = True
+    keep[:120, :120] = True
+    m &= keep
+    crop[m] = dst_green
+    return crop
 
-    # 実物の上段右の枠の大きさ・位置を測り、生成の2枠をそれに合わせる
-    cell = aa[0:CH, 2 * CW:3 * CW]
-    wm = cell.min(-1) > 235                      # 白い付箋形の枠
-    ys, xs = np.where(wm)
-    x0, y0, x1, y1 = xs.min(), ys.min(), xs.max(), ys.max()
-    card_w, card_h = int(x1 - x0 + 1), int(y1 - y0 + 1)   # 実測 343×343
-    top_margin = int(y0)
-    print("actual white card", card_w, card_h, "left margin", x0, "top margin", top_margin)
-    # 生成の中央の枠は元が縦長なので、横を少し狭くして縦横の縮みの差を6%台に抑える
-    widths = [card_w, card_w - 13]
 
-    # 上段左の2マス（生成の枠を置く場所）を実物の緑で塗りつぶしてから置く
-    d0 = ImageDraw.Draw(out)
-    d0.rectangle([0, 0, 2 * CW - 1, CH - 1], fill=act_green)
-
+def main(mix=False):
     gen = Image.open(GEN).convert("RGB")
     ga = np.array(gen).astype(int)
-    for ci, (sx0, sx1) in enumerate(GEN_COLS):
-        sy0, sy1 = GEN_ROW
-        crop = ga[sy0:sy1 + 1, sx0:sx1 + 1].copy()
-        # 枠の外側（生成画像の緑）を実物の緑に塗り替える（緑の色味が少し違うため）
-        m = (abs(crop - GEN_GREEN).sum(-1) < 45)
-        # 枠の中の緑の文字を巻き込まないよう、外周20pxと左上の切り落とし（120px四方）だけ対象にする
-        keep = np.zeros(m.shape, bool)
-        keep[:20, :] = True
-        keep[-20:, :] = True
-        keep[:, :20] = True
-        keep[:, -20:] = True
-        keep[:120, :120] = True
-        m &= keep
-        crop[m] = act_green
+    gen_green = ga[5, 5]
+    boxes = card_boxes(ga, gen_green)
+    for r in boxes:
+        print("boxes", [(int(b[0]), int(b[1]), int(b[2]), int(b[3])) for b in r])
+
+    if mix:
+        base = Image.open(ACTUAL).convert("RGB").resize((W, H), Image.LANCZOS)
+        bg = tuple(int(v) for v in np.array(base)[H - 5, W - 5])
+        out = base.copy()
+        ImageDraw.Draw(out).rectangle([0, 0, 2 * CW - 1, CH - 1], fill=bg)
+        use = [(0, 0), (0, 1)]
+        tw_list, th, ty = [343, 330], 343, 31
+    else:
+        bg = tuple(int(v) for v in gen_green)
+        out = Image.new("RGB", (W, H), bg)
+        use = [(r, c) for r in range(2) for c in range(3)]
+
+    for (r, c) in use:
+        x0, y0, x1, y1 = boxes[r][c]
+        crop = ga[y0:y1 + 1, x0:x1 + 1].copy()
+        crop = recolor_margin(crop, gen_green, bg)
         card = Image.fromarray(crop.astype("uint8"))
         sw, sh = card.size
-        tw, th = widths[ci], card_h
-        print(f"gen card {ci}: {sw}x{sh} -> {tw}x{th}  squash {(tw/sw)/(th/sh):.3f}")
-        card = card.resize((tw, th), Image.LANCZOS)
-        x = ci * CW + (CW - tw) // 2
-        out.paste(card, (x, top_margin))
+        if mix:
+            tw, th_, ty = tw_list[c], th, ty
+        else:
+            tw = (TOP_W if r == 0 else BOT_W)[c]
+            th_ = TOP_H if r == 0 else BOT_H
+            ty = TOP_Y if r == 0 else BOT_Y
+        print(f"card r{r}c{c}: {sw}x{sh} -> {tw}x{th_}  squash {(tw/sw)/(th_/sh):.3f}")
+        card = card.resize((tw, th_), Image.LANCZOS)
+        out.paste(card, (c * CW + (CW - tw) // 2, ty))
+
     out.save(OUT)
     g = out.copy()
     d = ImageDraw.Draw(g)
@@ -86,8 +109,8 @@ def main():
         d.line([(i * CW, 0), (i * CW, H)], fill=(255, 0, 0), width=3)
     d.line([(0, CH), (W, CH)], fill=(255, 0, 0), width=3)
     g.save(OUT_GRID)
-    print(OUT, out.size, "green", act_green)
+    print(OUT, out.size, "bg", bg)
 
 
 if __name__ == "__main__":
-    main()
+    main(mix="--mix" in sys.argv)
