@@ -10,7 +10,7 @@ import sys
 
 from pptx import Presentation
 from pptx.oxml.ns import qn
-from pptx.util import Pt
+from pptx.util import Inches, Pt
 
 LEADS = {  # ページ: (今の文, 新しい文)
     53: ("新規／既存／ファン化／効率化のうち、何を、どの程度重視するか",
@@ -23,6 +23,7 @@ LEADS = {  # ページ: (今の文, 新しい文)
          "年間の募集スケジュールや配信の確認体制など、運用の進め方に関わる点を伺う"),
 }
 SIZE = Pt(16)
+TOP = Inches(1.05)          # 2026-10-22 殿村さん「もう少し上に寄せて」（元は1.40インチ）
 
 
 def main(src, out):
@@ -41,6 +42,7 @@ def main(src, out):
         end = p._p.find(qn("a:endParaRPr"))
         if end is not None:
             end.set("sz", "1600")
+        hits[0].top = TOP
     prs.save(out)
     print("saved:", out)
 
