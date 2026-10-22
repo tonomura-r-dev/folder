@@ -6,6 +6,7 @@ LINEの6分割テンプレ（上下ちょうど半分）とずれる。6枚の�
 （2026-10-22 殿村さん「生成した画像の方がええな」＝6枠とも生成物を使う。10月の実物と混ぜる版は --mix）
 
 使い方: python3 _build/build_inkart_richmenu_202611.py [--mix]
+※2026-10-22 最終＝枠を切り出さず、上段と下段を帯ごと縮める方式（下の rows_mode）。切り出し方式は縁に線が出て「汚い」と言われた。
 出力:   _images/inkart_richmenu_202611_1200x810.png（登録用）
         _images/inkart_richmenu_202611_1200x810_gridcheck.png（格子を重ねた確認用）
 """
@@ -112,5 +113,27 @@ def main(mix=False):
     print(OUT, out.size, "bg", bg)
 
 
+def rows_mode():
+    """枠を切り出さず、上段・下段の帯ごと縮める（縁がきれいに残る）。登録用はこちら。"""
+    im = Image.open(GEN).convert("RGB")
+    w, h = im.size
+    green = tuple(int(v) for v in np.array(im)[5, 5])
+    sx = W / w
+    top = im.crop((0, 14, w, 565)).resize((W, CH), Image.LANCZOS)      # 縦550→405（横0.786に対し0.736＝6%の縮み）
+    need = int(round(CH / sx))
+    bot_src = im.crop((0, 565, w, h))
+    pad = Image.new("RGB", (w, need), green)
+    pad.paste(bot_src, (0, (need - bot_src.size[1]) // 2))
+    bot = pad.resize((W, CH), Image.LANCZOS)                            # 縦横同じ倍率
+    out = Image.new("RGB", (W, H), green)
+    out.paste(top, (0, 0))
+    out.paste(bot, (0, CH))
+    out.save(OUT)
+    print(OUT, out.size)
+
+
 if __name__ == "__main__":
-    main(mix="--mix" in sys.argv)
+    if "--cut" in sys.argv or "--mix" in sys.argv:
+        main(mix="--mix" in sys.argv)
+    else:
+        rows_mode()
