@@ -52,7 +52,7 @@ def redraw_cart(im):
     d.rectangle([in_l, top, x1, y1], fill=border)
     d.rectangle([in_l, top, in_r, in_b], fill=(255, 255, 255))
     # カート
-    cx = (in_l + in_r) // 2
+    cx = (in_l + in_r) // 2 + 38      # 取っ手が左に出るぶん右に寄せて、全体の中心を枠の中心に合わせる
     lw = 22
     bx0, bx1 = cx - 110, cx + 120     # かごの上辺
     by0, by1 = top + 60, top + 170    # かごの上下
