@@ -50,7 +50,8 @@ def set_text(sh, text):
         r._r.getparent().remove(r._r)
 
 
-def build(s, idx, title, lead):
+def build(s, idx, title, lead, risk_row=True):
+    """risk_row=False で「離脱課題」を外し、「LINEの役割」を「心理」のすぐ下に上げる（ver7.2〜）"""
     gf = next(sh for sh in s.shapes if sh.has_table)
     t = gf.table
     assert t.cell(0, 0).text == "フェーズ" and len(t.rows) == 9
@@ -81,7 +82,7 @@ def build(s, idx, title, lead):
             shape(s, MSO_SHAPE.ISOSCELES_TRIANGLE, (x + cw + gap / 2 - 0.08) * IN, (y0 + hh / 2 - 0.1) * IN,
                   0.16 * IN, 0.2 * IN, fill=NAVY).rotation = 90
         y = y0 + hh + 0.12
-        for j, (lab, val) in enumerate((("心理", mind), ("離脱課題", risk))):
+        for j, (lab, val) in enumerate((("心理", mind), ("離脱課題", risk))[:2 if risk_row else 1]):
             rich(s, x * IN, y * IN, cw * IN, 0.24 * IN, [[(lab, 10, False, SUB)]], anchor=MSO_ANCHOR.BOTTOM)
             rich(s, x * IN, (y + 0.24) * IN, cw * IN, 0.5 * IN, [[(v, 13, False, INK)] for v in SPLIT.get(val, [val])],
                  anchor=MSO_ANCHOR.TOP)

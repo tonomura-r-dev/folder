@@ -58,7 +58,7 @@ def phase_names(s):
         runs[0].find(qn("a:t")).text = name
 
 
-def main(src, out):
+def main(src, out, risk_row=True):
     prs = Presentation(src)
     slides = list(prs.slides)
     assert len(slides) == 60
@@ -75,7 +75,7 @@ def main(src, out):
     lst.remove(new)
     ids[16].addnext(new)
     for s, (idx, title, lead) in zip((first, second), PAGES):
-        assert build(s, idx, title, lead) <= 7.0
+        assert build(s, idx, title, lead, risk_row) <= 7.0
 
     left = [i + 1 for i, s in enumerate(prs.slides) if any("平常" in ptext(p) for p in paras(s))]
     assert not left, left
