@@ -125,11 +125,14 @@ def rows_mode():
     act_green = tuple(int(v) for v in np.array(act)[H - 5, W - 5])
     bot = act.crop((0, CH, W, H))
     # 生成物は左の枠が広すぎ（マスからはみ出す）、真ん中の枠が細い。上段左2つを源画像から切り直して同じ幅に置く（殿村さん 10/22）
-    tw = 376
-    for ci, (sx0, sx1) in enumerate([(19, 533), (541, 1019), (1031, 1510)]):   # 3枠とも同じ幅・同じ高さ・同じ位置に
-        card = im.crop((sx0, 14, sx1 + 1, 565)).resize((tw, CH), Image.LANCZOS)
+    # 左右の余白は下段（10月の実物）の枠と同じ28px、上の余白は31px（殿村さん 10/22「ログイン会員登録のラインに合わせて」）
+    margin_x, margin_y = 28, 31
+    tw = CW - 2 * margin_x            # 344
+    th = 361                          # 年賀状の枠を幅344にしたときの縦（縦横同じ倍率）
+    for ci, (sx0, sx1) in enumerate([(19, 533), (541, 1019), (1031, 1510)]):
+        card = im.crop((sx0, 19, sx1 + 1, 560)).resize((tw, th), Image.LANCZOS)
         ImageDraw.Draw(top).rectangle([ci * CW, 0, (ci + 1) * CW - 1, CH - 1], fill=green)
-        top.paste(card, (ci * CW + (CW - tw) // 2, 0))
+        top.paste(card, (ci * CW + margin_x, margin_y))
     # 上段の緑（生成）を実物の緑に揃える
     ta = np.array(top).astype(int)
     ta[(abs(ta - np.array(green)).sum(-1) < 45)] = act_green
