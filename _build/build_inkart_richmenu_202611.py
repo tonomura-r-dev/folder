@@ -138,20 +138,23 @@ def rows_mode():
     out = Image.new("RGB", (W, H), green)
     out.paste(top, (0, 0))
     out.paste(bot, (0, CH))
-    # 上段右（商品一覧／ご注文）はマス全体をオレンジに（枠の外の緑もオレンジで塗る）
+    # 上段右（商品一覧／ご注文）：枠（オレンジの縁＋白）はそのまま、枠の中に残る緑・暗い縁だけオレンジに。
+    # 枠の外は緑のまま（殿村さん 10/22「缶バッジとの間の緑をもう少し広く」）
     a = np.array(out).astype(int)
     cell = a[0:CH, 2 * CW:W]
-    om = (abs(cell - np.array([240, 145, 45])).sum(-1) < 90)   # 枠の縁のオレンジを実測（中央値）
+    om = (abs(cell - np.array([240, 145, 45])).sum(-1) < 90)
     orange = np.median(cell[om], axis=0).astype(int)
-    gm = (abs(cell - np.array(green)).sum(-1) < 70)
-    cell[gm] = orange
-    # 白い枠の外側（上端・右端に残る暗い縁や角）は全部オレンジで塗りつぶす
-    wm = cell.min(-1) > 235
-    ys, xs = np.where(wm)
+    nong = (abs(cell - np.array(green)).sum(-1) >= 60)
+    ys, xs = np.where(nong)
     x0, y0, x1, y1 = xs.min(), ys.min(), xs.max(), ys.max()
-    outside = np.ones(cell.shape[:2], bool)
-    outside[y0:y1 + 1, x0:x1 + 1] = False
-    cell[outside] = orange
+    inside = np.zeros(cell.shape[:2], bool)
+    inside[y0:y1 + 1, x0:x1 + 1] = True
+    wm = cell.min(-1) > 235
+    wys, wxs = np.where(wm)
+    white_box = np.zeros(cell.shape[:2], bool)
+    white_box[wys.min():wys.max() + 1, wxs.min():wxs.max() + 1] = True
+    fix = inside & ~white_box                      # 枠の縁の帯（白い部分の外側）
+    cell[fix] = orange
     a[0:CH, 2 * CW:W] = cell
     out = Image.fromarray(a.astype("uint8"))
     out.save(OUT)
