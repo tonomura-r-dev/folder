@@ -128,6 +128,14 @@ def rows_mode():
     out = Image.new("RGB", (W, H), green)
     out.paste(top, (0, 0))
     out.paste(bot, (0, CH))
+    # 上段右（商品一覧／ご注文）はマス全体をオレンジに（枠の外の緑もオレンジで塗る）
+    a = np.array(out).astype(int)
+    cell = a[0:CH, 2 * CW:W]
+    orange = cell[60, 8]                       # 枠の縁のオレンジを実測
+    gm = (abs(cell - np.array(green)).sum(-1) < 70)
+    cell[gm] = orange
+    a[0:CH, 2 * CW:W] = cell
+    out = Image.fromarray(a.astype("uint8"))
     out.save(OUT)
     print(OUT, out.size)
 
