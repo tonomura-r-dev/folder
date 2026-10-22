@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""インクアート 11月リッチメニュー（11/1〜）の登録用画像を、生成画像から組み直す。
+"""インクアート 11月リッチメニュー（11/1〜）の登録用画像を組む。
 
-生成画像（_images/inkart_richmenu_202611_generated_v1.webp・1527×1030）は上段が高さの約56%で、
-LINEの6分割テンプレ（上下ちょうど半分）とずれる。6枚の付箋形の枠を切り出し、
-1200×810（LINEの許容サイズ）の格子に置き直す。商品一覧の枠のカートは普通のカートに描き直す。
+材料
+- 生成画像 v4（_images/inkart_richmenu_202611_generated_v4.webp・1526×1030）：上段左（年賀状）と上段中（缶バッジ）の2枠だけ使う
+- 10月の実物（_data/printearth/richmenu_202610_actual.jpg・2000×1349・DYMデザイナー版）：上段右（商品一覧／ご注文）と下段3枠をそのまま使う
+
+生成画像は上段が高く、LINEの6分割テンプレ（上下ちょうど半分）とずれるので、枠を切り出して格子に置き直す。
+出力は 1200×810（LINEの許容サイズ）。
 
 使い方: python3 _build/build_inkart_richmenu_202611.py
 出力:   _images/inkart_richmenu_202611_1200x810.png（登録用）
@@ -12,91 +15,78 @@ LINEの6分割テンプレ（上下ちょうど半分）とずれる。6枚の�
 from PIL import Image, ImageDraw
 import numpy as np
 
-SRC = "_images/inkart_richmenu_202611_generated_v1.webp"
+GEN = "_images/inkart_richmenu_202611_generated_v4.webp"
+ACTUAL = "_data/printearth/richmenu_202610_actual.jpg"
 OUT = "_images/inkart_richmenu_202611_1200x810.png"
 OUT_GRID = "_images/inkart_richmenu_202611_1200x810_gridcheck.png"
 
 W, H = 1200, 810
-CELL_W, CELL_H = W // 3, H // 2          # 400 × 405
-GREEN = (2, 145, 95)                     # 生成画像の下地の緑（実測）
-ORANGE = (240, 145, 45)                  # #F0912D
+CW, CH = W // 3, H // 2            # 400 × 405
 
-# 生成画像の枠の位置（緑の溝から実測）
-COLS = [(21, 519), (534, 1003), (1016, 1509)]
-ROWS = [(26, 575), (597, 994)]
-
-# 置き先の枠の大きさ（列ごとに幅を変えて、縦横の縮み・伸びを5%以内に収める）
-TOP_W = [360, 350, 360]
-TOP_H = 393
-BOT_W = [360, 350, 360]
-BOT_H = 310
-TOP_Y = 6
-BOT_Y = 440
+# 生成画像v4の枠の位置（緑の溝から実測）
+GEN_COLS = [(19, 529), (531, 1018)]
+GEN_ROW = (20, 559)
+GEN_GREEN = np.array([2, 145, 95])
 
 
-def redraw_cart(im):
-    """上段右（商品一覧／ご注文）のカートと印刷物を消して、普通のカートを描く。"""
-    x0, x1 = COLS[2]
-    y0, y1 = ROWS[0]
-    a = np.array(im).astype(int)
-    card = a[y0:y1 + 1, x0:x1 + 1]
-    white = card.min(-1) > 235
-    ys, xs = np.where(white)
-    in_l = x0 + xs.min()                          # 白い内側の左端
-    in_r = x1 - 22                                # 右端は枠（橙の縁 約22px）の内側まで
-    in_b = y1 - 22                                # 下端も同じ
-    border = tuple(int(v) for v in a[y0 + 300, x1 - 8])   # 橙の縁の色（右側で実測）
-    d = ImageDraw.Draw(im)
-    # 文字の下（y0+268〜）を白で塗り、はみ出していた印刷物の名残は縁ごと塗り直す
-    top = y0 + 268
-    d.rectangle([in_l, top, x1, y1], fill=border)
-    d.rectangle([in_l, top, in_r, in_b], fill=(255, 255, 255))
-    # カート
-    cx = (in_l + in_r) // 2 + 38      # 取っ手が左に出るぶん右に寄せて、全体の中心を枠の中心に合わせる
-    lw = 22
-    bx0, bx1 = cx - 110, cx + 120     # かごの上辺
-    by0, by1 = top + 60, top + 170    # かごの上下
-    # 取っ手
-    d.line([(bx0 - 70, by0 - 30), (bx0 - 25, by0 - 30), (bx0, by0)], fill=ORANGE, width=lw, joint="curve")
-    # かご（台形）
-    pts = [(bx0, by0), (bx1, by0), (bx1 - 30, by1), (bx0 + 22, by1), (bx0, by0)]
-    d.line(pts, fill=ORANGE, width=lw, joint="curve")
-    # かごの横線2本
-    for yy in (by0 + 37, by0 + 74):
-        t = (yy - by0) / (by1 - by0)
-        lx = bx0 + 22 * t
-        rx = bx1 - 30 * t
-        d.line([(lx, yy), (rx, yy)], fill=ORANGE, width=lw - 6)
-    # 車輪
-    r = 20
-    for wx in (bx0 + 55, bx1 - 60):
-        d.ellipse([wx - r, by1 + 32 - r, wx + r, by1 + 32 + r], fill=ORANGE)
-    return im
+def bbox_nongreen(a, green, tol=60):
+    m = (abs(a - green).sum(-1) >= tol)
+    ys, xs = np.where(m)
+    return xs.min(), ys.min(), xs.max(), ys.max()
 
 
 def main():
-    im = Image.open(SRC).convert("RGB")
-    im = redraw_cart(im)
-    out = Image.new("RGB", (W, H), GREEN)
-    for ci, (sx0, sx1) in enumerate(COLS):
-        # 上段
-        sy0, sy1 = ROWS[0]
-        card = im.crop((sx0, sy0, sx1 + 1, sy1 + 1)).resize((TOP_W[ci], TOP_H), Image.LANCZOS)
-        x = ci * CELL_W + (CELL_W - TOP_W[ci]) // 2
-        out.paste(card, (x, TOP_Y))
-        # 下段
-        sy0, sy1 = ROWS[1]
-        card = im.crop((sx0, sy0, sx1 + 1, sy1 + 1)).resize((BOT_W[ci], BOT_H), Image.LANCZOS)
-        out.paste(card, (x, BOT_Y))
+    act = Image.open(ACTUAL).convert("RGB").resize((W, H), Image.LANCZOS)
+    aa = np.array(act).astype(int)
+    act_green = tuple(int(v) for v in aa[H - 5, W - 5])
+    out = act.copy()
+
+    # 実物の上段右の枠の大きさ・位置を測り、生成の2枠をそれに合わせる
+    cell = aa[0:CH, 2 * CW:3 * CW]
+    wm = cell.min(-1) > 235                      # 白い付箋形の枠
+    ys, xs = np.where(wm)
+    x0, y0, x1, y1 = xs.min(), ys.min(), xs.max(), ys.max()
+    card_w, card_h = int(x1 - x0 + 1), int(y1 - y0 + 1)   # 実測 343×343
+    top_margin = int(y0)
+    print("actual white card", card_w, card_h, "left margin", x0, "top margin", top_margin)
+    # 生成の中央の枠は元が縦長なので、横を少し狭くして縦横の縮みの差を6%台に抑える
+    widths = [card_w, card_w - 13]
+
+    # 上段左の2マス（生成の枠を置く場所）を実物の緑で塗りつぶしてから置く
+    d0 = ImageDraw.Draw(out)
+    d0.rectangle([0, 0, 2 * CW - 1, CH - 1], fill=act_green)
+
+    gen = Image.open(GEN).convert("RGB")
+    ga = np.array(gen).astype(int)
+    for ci, (sx0, sx1) in enumerate(GEN_COLS):
+        sy0, sy1 = GEN_ROW
+        crop = ga[sy0:sy1 + 1, sx0:sx1 + 1].copy()
+        # 枠の外側（生成画像の緑）を実物の緑に塗り替える（緑の色味が少し違うため）
+        m = (abs(crop - GEN_GREEN).sum(-1) < 45)
+        # 枠の中の緑の文字を巻き込まないよう、外周20pxと左上の切り落とし（120px四方）だけ対象にする
+        keep = np.zeros(m.shape, bool)
+        keep[:20, :] = True
+        keep[-20:, :] = True
+        keep[:, :20] = True
+        keep[:, -20:] = True
+        keep[:120, :120] = True
+        m &= keep
+        crop[m] = act_green
+        card = Image.fromarray(crop.astype("uint8"))
+        sw, sh = card.size
+        tw, th = widths[ci], card_h
+        print(f"gen card {ci}: {sw}x{sh} -> {tw}x{th}  squash {(tw/sw)/(th/sh):.3f}")
+        card = card.resize((tw, th), Image.LANCZOS)
+        x = ci * CW + (CW - tw) // 2
+        out.paste(card, (x, top_margin))
     out.save(OUT)
-    # 格子の確認用
     g = out.copy()
     d = ImageDraw.Draw(g)
     for i in (1, 2):
-        d.line([(i * CELL_W, 0), (i * CELL_W, H)], fill=(255, 0, 0), width=3)
-    d.line([(0, CELL_H), (W, CELL_H)], fill=(255, 0, 0), width=3)
+        d.line([(i * CW, 0), (i * CW, H)], fill=(255, 0, 0), width=3)
+    d.line([(0, CH), (W, CH)], fill=(255, 0, 0), width=3)
     g.save(OUT_GRID)
-    print(OUT, out.size)
+    print(OUT, out.size, "green", act_green)
 
 
 if __name__ == "__main__":
