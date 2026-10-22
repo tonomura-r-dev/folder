@@ -120,11 +120,15 @@ def rows_mode():
     green = tuple(int(v) for v in np.array(im)[5, 5])
     sx = W / w
     top = im.crop((0, 14, w, 565)).resize((W, CH), Image.LANCZOS)      # 縦550→405（横0.786に対し0.736＝6%の縮み）
-    need = int(round(CH / (sx * 1.06)))      # 下段は縦に6%だけ伸ばして枠を大きく見せる（殿村さん「狭くて窮屈」）
-    bot_src = im.crop((0, 565, w, h))
-    pad = Image.new("RGB", (w, need), green)
-    pad.paste(bot_src, (0, (need - bot_src.size[1]) // 2))
-    bot = pad.resize((W, CH), Image.LANCZOS)                            # 縦横同じ倍率
+    # 下段は10月の実物の下段をそのまま使う（殿村さん「狭くて窮屈」「これ（実物）をまねて」）
+    act = Image.open(ACTUAL).convert("RGB").resize((W, H), Image.LANCZOS)
+    act_green = tuple(int(v) for v in np.array(act)[H - 5, W - 5])
+    bot = act.crop((0, CH, W, H))
+    # 上段の緑（生成）を実物の緑に揃える
+    ta = np.array(top).astype(int)
+    ta[(abs(ta - np.array(green)).sum(-1) < 45)] = act_green
+    top = Image.fromarray(ta.astype("uint8"))
+    green = act_green
     out = Image.new("RGB", (W, H), green)
     out.paste(top, (0, 0))
     out.paste(bot, (0, CH))
