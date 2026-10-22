@@ -1,7 +1,7 @@
 # 📦 案件インデックス（おもちゃ箱の目次）
 
 **セッションを始めたら、Claudeはまずこれを読む。** 「あの案件どうなってた？」はここで解決する。
-最終更新：2026-09-02
+最終更新：2026-10-23
 
 > **✅ 2026-09-01、散らばっていた成果物を全てこのブランチに集約した。**
 > 以前は完成品が各作業ブランチに散在していたが、現在は**このブランチに全部入っている**。
@@ -56,6 +56,7 @@
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md` |
 | **リッチメニュー運用** | `_drafts/リッチメニュー_予約公開の運用手順.md` |
 | **資料ビルド** | `_build/build_*.py`（案件ごとのデッキ生成）／`qa_render.py`（検品）／`make_images.py`（図版生成） |
+| **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、ChatGPTがGitHubコネクタで読む。雛形3本は `_templates/`。**このリポジトリ（folder）にはコネクタを繋がない** |
 
 ## スキル（`.claude/skills/`）
 
@@ -64,7 +65,7 @@
 | `lineoa-industry` | 業界名だけで提案資料を生成（A=原稿15枚／B=PPTX39枚／C=事例集） |
 | `lineoa-sim` / `lineoa-sim-edit` | **成果シミュレーション（SIM）の作成・編集。カフェSIMもこれで作る** |
 | `kizon-anken` | 既存案件の対応 |
-| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）との手動リレー手順 |
+| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）とのリレー手順。**2026-10-23更新：ChatGPT宛は `ai-relay` リポジトリ経由。帰り（結果）は読み取り専用コネクタのため手動のまま** |
 
 ## 学習教材（`_learn/`）
 
