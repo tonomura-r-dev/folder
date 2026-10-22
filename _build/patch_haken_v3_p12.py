@@ -87,10 +87,10 @@ def main(src, out):
         rich(s, x3 * IN, y * IN, w3 * IN, rh * IN, [[(t, 11, False, INK)] for t in can.split("/")])   # 意味の切れ目で改行
         rich(s, x4 * IN, y * IN, w4 * IN, rh * IN, [[(use, 11.5, True, NAVY)]])
     bottom = hy + hh + rh * len(ROWS)
-    rich(s, x0 * IN, (bottom + 0.08) * IN, w * IN, 0.6 * IN, POINTS, anchor=MSO_ANCHOR.MIDDLE)
-    for nm in ("Rectangle 40", "TextBox 41"):          # 結論の帯：本文の直下へ
+    # 表の下の2行のまとめ（POINTS）は、リードと「LINEの使い方」の列の繰り返しなので外した（2026-10-22 殿村さん）
+    for nm in ("Rectangle 40", "TextBox 41"):          # 結論の帯：表の直下へ
         sh = shapes[nm]
-        sh.top = int((bottom + 0.78 + (0.04 if nm == "TextBox 41" else 0)) * 914400)
+        sh.top = int((bottom + 0.2 + (0.04 if nm == "TextBox 41" else 0)) * 914400)
     assert shapes["Rectangle 40"].top / 914400 + 0.41 < 6.8
     prs.save(out)
     print("saved:", out, round(bottom, 2))
