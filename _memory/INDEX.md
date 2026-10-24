@@ -111,7 +111,15 @@
 | `lineoa-industry` | 業界名だけで提案資料を生成（A=原稿15枚／B=PPTX39枚／C=事例集） |
 | `lineoa-sim` / `lineoa-sim-edit` | **成果シミュレーション（SIM）の作成・編集。カフェSIMもこれで作る** |
 | `kizon-anken` | 既存案件の対応 |
-| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）との手動リレー手順 |
+| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）とのリレー手順。**ChatGPT は 2026-10-24 から GitHub 経由（`_relay/`）** |
+
+## ChatGPT リレー（`_relay/`・2026-10-24新設）
+
+| 場所 | 中身 |
+|---|---|
+| `_relay/README.md` | 手順・殿村さんが ChatGPT に送るコピペ文 |
+| `_relay/to_chatgpt/` | Claude が置く依頼（調査・画像）。テンプレ2本あり |
+| `_relay/from_chatgpt/` | ChatGPT（Codex）が返す調査結果 |
 
 ## 学習教材（`_learn/`）
 
