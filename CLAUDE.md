@@ -160,3 +160,7 @@
     GitHub経由（帰りコピペ）はスマホ時だけ。`results/` はGitHubに上げない。
   - **2026-10-24 開通テスト合格**（LINE料金改定の調査・約8分・出典は全てlycbiz公式で照合済み）。
     画像生成はまだ未テスト。
+  - **どのセッションからでも使えるようにした**（サイドバーの「LINAOA」セクションには
+    `Downloads` 直下で動くセッションもあり、リポジトリ内のスキルが届かないため）。
+    スキルを `~/.claude/skills/multi-ai-relay/` にも置き（**更新は2か所同時**）、
+    `~/.claude/settings.json` の `permissions.additionalDirectories` に `Downloads\ai-relay` を追加。
