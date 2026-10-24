@@ -56,7 +56,7 @@
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md` |
 | **リッチメニュー運用** | `_drafts/リッチメニュー_予約公開の運用手順.md` |
 | **資料ビルド** | `_build/build_*.py`（案件ごとのデッキ生成）／`qa_render.py`（検品）／`make_images.py`（図版生成） |
-| **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、PCではデスクトップ版ChatGPT（プロジェクト「ai-relay」の1チャット）が `results/` に結果を保存＝コピペ不要。スマホ時はGitHubコネクタで読む（帰りコピペ）。雛形3本は `_templates/`。**このリポジトリ（folder）やDownloads直下はGPTに繋がない** |
+| **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、PCではデスクトップ版ChatGPTの**Codex（ai-relayを開いた1スレッド）**が `results/` に結果を保存＝コピペ不要（2026-10-24開通テスト合格・画像は未テスト）。スマホ時はGitHubコネクタで読む（帰りコピペ）。雛形3本は `_templates/`。**このリポジトリ（folder）やDownloads直下はGPTに繋がない** |
 
 ## スキル（`.claude/skills/`）
 
