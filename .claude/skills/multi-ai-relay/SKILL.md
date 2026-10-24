@@ -73,7 +73,7 @@ APIキーは使わない（デスクトップ版ChatGPTに同梱のコマンド�
 ## 3. 手順
 
 - ローカル：`C:\Users\tonomura-r\Downloads\ai-relay`（Codex側のルールは同フォルダの `README.md`）
-- リモート：`https://github.com/tonomura-r-dev/ai-relay`（private・スマホ用。`results/` と `_archive/` の中身は上がらない）
+- リモート：`https://github.com/tonomura-r-dev/ai-relay`（private・スマホ用。`results/` と `_archive/results/` の中身は上がらない）
 
 ### Claudeがやること
 
@@ -107,7 +107,11 @@ APIキーは使わない（デスクトップ版ChatGPTに同梱のコマンド�
 
 ### 片付け（必ずやる）
 
-- 結果を読んで報告し終えたら、**その依頼と結果を `_archive/` に移す**（依頼は `git mv`、結果はそのまま移動）→ commit → push
+- 結果を読んで報告し終えたら、**依頼は `_archive/requests/`、結果は `_archive/results/` に移す** → commit → push
+  - 依頼は `git mv requests/<名前> _archive/requests/<名前>`（GitHubに記録として残る）
+  - 結果は普通に移動（`_archive/results/` はGitHubに上がらない）
+  - **依頼と結果は同じファイル名なので、同じフォルダに入れると上書きされる**（2026-10-24に一度やった）
+  - `git` で日本語ファイル名を一覧するときは `git -c core.quotepath=false ls-files` を使う（既定だと文字コードで出てきて扱えない）
 - 画像を資料に使う場合は、移す前に「案件_用途.png」の日本語名で Downloads 直下にコピーする（即リネームのルール）
 - `requests/` に済んだ依頼が溜まると、予備のアプリ経由で「次の依頼やって」としたときに古い依頼を拾う事故が起きる
 
@@ -161,4 +165,4 @@ APIキーは使わない（デスクトップ版ChatGPTに同梱のコマンド�
 - **別々に始めた案件同士でも文脈を共有したい**→ 自動共有はできない。案件が一区切りついたら必ず次の2つをやる：
   1. `_drafts/<案件名>_要件定義（引き継ぎ用）.md` に、前提・進捗・GPTから得た情報の要点・未完タスクをまとめる
   2. `CLAUDE.md` の「記憶メモ」に1〜3行で追記し、上記ファイルへのリンクを貼る
-- `ai-relay/_archive/` に済んだ依頼と結果が残るので、何をGPTに聞いたかの記録になる（ローカルのみ）
+- `ai-relay/_archive/requests/`（GitHubにも残る）と `_archive/results/`（ローカルのみ）が、何をGPTに聞いて何が返ったかの記録になる
