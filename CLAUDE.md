@@ -164,3 +164,7 @@
     `Downloads` 直下で動くセッションもあり、リポジトリ内のスキルが届かないため）。
     スキルを `~/.claude/skills/multi-ai-relay/` にも置き（**更新は2か所同時**）、
     `~/.claude/settings.json` の `permissions.additionalDirectories` に `Downloads\ai-relay` を追加。
+  - **さらに手作業ゼロにした：Claudeが `codex` コマンドで直接動かす。** デスクトップ版に同梱の
+    `%LOCALAPPDATA%\OpenAI\Codex\bin\<ハッシュ>\codex.exe` を `exec -C ai-relay -s workspace-write` で
+    裏実行（APIキー不要・ChatGPTログインで動く）。画像テスト合格（3要素＋オレンジ矢印・文字なし・16:9・約6分）。
+    **コマンド版での調査（Web検索）は未テスト。** 手順はスキル §3。
