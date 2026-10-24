@@ -167,4 +167,5 @@
   - **さらに手作業ゼロにした：Claudeが `codex` コマンドで直接動かす。** デスクトップ版に同梱の
     `%LOCALAPPDATA%\OpenAI\Codex\bin\<ハッシュ>\codex.exe` を `exec -C ai-relay -s workspace-write` で
     裏実行（APIキー不要・ChatGPTログインで動く）。画像テスト合格（3要素＋オレンジ矢印・文字なし・16:9・約6分）。
-    **コマンド版での調査（Web検索）は未テスト。** 手順はスキル §3。
+    **調査も合格**（`-c 'web_search="live"'` でWeb検索可・短い調査で約2分・結果は公式ページで照合済み）。
+    手順はスキル §3。

@@ -97,15 +97,16 @@ Claudeの仕事は ①次に投げるプロンプトを完成形で作る ②戻
 5. **Claudeが `codex` コマンドで実行する**（下記）。終わったら `results/` を読んで評価し、殿村さんに報告する
    （コマンドが使えないときだけ「Codexアプリで『次の依頼やって』と送ってください」と1行返す）
 
-### Codexをコマンドで動かす（基本・2026-10-24 画像で動作確認済み）
+### Codexをコマンドで動かす（基本・2026-10-24 画像・調査とも動作確認済み）
 
 - 本体：`$LOCALAPPDATA/OpenAI/Codex/bin/<ハッシュ>/codex.exe`（アプリ更新でハッシュが変わるので、毎回 `bin/*/codex.exe` を探して一番新しいものを使う）
 - 指示文は**UTF-8のファイルに書いて標準入力で渡す**（日本語を引数で渡すと文字化けの恐れ）。中身は：
   「README.md を読んでルールに従う／`requests/<ファイル名>` を1本だけ実行／書き込みは `results/` だけ／最後に保存したファイル名だけ返す」
   （ファイル名は明示する。「次の依頼やって」だと未処理が複数あるとき何が走るか読みにくい）
-- 実行例（Bash・**必ず裏で実行**。画像1枚で約6分、調査1本で約8分）：
+- 実行例（Bash・**必ず裏で実行**。画像1枚で約6分、短い調査で約2分）：
   ```
-  "$C" exec -C "C:/Users/tonomura-r/Downloads/ai-relay" -s workspace-write --color never \
+  C=$(ls -t "$LOCALAPPDATA"/OpenAI/Codex/bin/*/codex.exe | head -1)
+  "$C" exec -C "C:/Users/tonomura-r/Downloads/ai-relay" -s workspace-write -c 'web_search="live"' --color never \
     -o "<scratchpad>/codex_last.txt" - < "<scratchpad>/codex_prompt.txt" > "<scratchpad>/codex_log.txt" 2>&1
   ```
 - **`-s workspace-write` で書き込みを ai-relay の中だけに絞る。`--dangerously-bypass-approvals-and-sandbox` は絶対に使わない**
@@ -113,7 +114,10 @@ Claudeの仕事は ①次に投げるプロンプトを完成形で作る ②戻
 - 分かっている癖：
   - サンドボックス内でPowerShellが起動できない（アクセス拒否）。Codexは自前のJS実行で迂回して完了する。エラー行が出ても結果を見て判断する
   - 画像は生成後にCodex自身が配色を直すことがある（テストでは屋根のオレンジを青に直した）
-  - **調査（Web検索）はコマンド版では未テスト。** 検索できずに終わったら、その依頼だけCodexアプリ経由に回す
+  - **調査は `-c 'web_search="live"'` を付ければWeb検索が使える**（ログに `web search:` 行が出る）。
+    テストでは一覧の「更新日」と「初回公開日」を見分けて期間外の記事を外し、外した理由も注記していた。
+    主要な事実はClaudeが公式ページで照合してから使う
+  - 起動時に `mcp.consensus.app` の認証エラーが1行出るが、無関係なので無視してよい
 
 ### 殿村さんがChatGPTに送る文
 
