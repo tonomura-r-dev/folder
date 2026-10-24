@@ -56,7 +56,7 @@
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md` |
 | **リッチメニュー運用** | `_drafts/リッチメニュー_予約公開の運用手順.md` |
 | **資料ビルド** | `_build/build_*.py`（案件ごとのデッキ生成）／`qa_render.py`（検品）／`make_images.py`（図版生成） |
-| **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、ChatGPTがGitHubコネクタで読む。雛形3本は `_templates/`。**このリポジトリ（folder）にはコネクタを繋がない** |
+| **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、PCではデスクトップ版ChatGPT（プロジェクト「ai-relay」の1チャット）が `results/` に結果を保存＝コピペ不要。スマホ時はGitHubコネクタで読む（帰りコピペ）。雛形3本は `_templates/`。**このリポジトリ（folder）やDownloads直下はGPTに繋がない** |
 
 ## スキル（`.claude/skills/`）
 
@@ -65,7 +65,7 @@
 | `lineoa-industry` | 業界名だけで提案資料を生成（A=原稿15枚／B=PPTX39枚／C=事例集） |
 | `lineoa-sim` / `lineoa-sim-edit` | **成果シミュレーション（SIM）の作成・編集。カフェSIMもこれで作る** |
 | `kizon-anken` | 既存案件の対応 |
-| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）とのリレー手順。**2026-10-23更新：ChatGPT宛は `ai-relay` リポジトリ経由。帰り（結果）は読み取り専用コネクタのため手動のまま** |
+| `multi-ai-relay` | Gemini（検索・分析）／ChatGPT（画像生成・専門的見解）とのリレー手順。**2026-10-24更新：ChatGPT宛は `ai-relay` フォルダ経由。PCは結果も `results/` に戻る（コピペ不要）、スマホ時だけ帰りコピペ** |
 
 ## 学習教材（`_learn/`）
 
