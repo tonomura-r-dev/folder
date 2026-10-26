@@ -2,6 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { issuesAt, useEditor } from '../ctx.ts';
+import type { Provenance } from '../../../engine/src/index.ts';
+import { ProvBadge, ProvNote } from '../ai/ProvBadge.tsx';
 import { replace, type Section } from '../route.ts';
 
 type Props<T extends { id: string }> = {
@@ -42,7 +44,7 @@ export function SplitList<T extends { id: string }>({ section, pathBase, title, 
             <div key={it.id} className={`list-item${it === current ? ' on' : ''}`} onClick={() => open(it.id)}>
               <div className="t">
                 {err && <span style={{ color: 'var(--err)' }}>✖ </span>}
-                {r.t}
+                {r.t} <ProvBadge prov={(it as { prov?: Provenance }).prov} />
               </div>
               {r.s && <div className="s">{r.s}</div>}
             </div>
@@ -50,7 +52,12 @@ export function SplitList<T extends { id: string }>({ section, pathBase, title, 
         })}
         {items.length === 0 && <div className="list-item muted">{empty ?? 'まだありません'}</div>}
       </div>
-      <div className="detail">{current ? detail(current, index, `${pathBase}/${index}`) : <div className="empty">{empty ?? '左の「追加」から作ってください'}</div>}</div>
+      <div className="detail">{current ? (
+          <>
+            <ProvNote prov={(current as { prov?: Provenance }).prov} path={`${pathBase}/${index}`} />
+            {detail(current, index, `${pathBase}/${index}`)}
+          </>
+        ) : <div className="empty">{empty ?? '左の「追加」から作ってください'}</div>}</div>
     </div>
   );
 }

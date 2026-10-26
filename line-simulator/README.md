@@ -8,7 +8,7 @@ LINE公式アカウントの施策を、実装前に組み立てて「ユーザ�
 `start.bat` をダブルクリック。ブラウザで編集ツールが開く（初回は準備に数分かかる）。
 黒い画面は開いたままにしておき、終わるときは保存してから閉じる。
 
-## いまできること（Phase 4 まで）
+## いまできること（Phase 6 まで）
 
 | 画面 | できること |
 |---|---|
@@ -70,6 +70,21 @@ HTMLには通信を禁止する設定が入っていて、外部のファイル�
 
 開いたときの状態は「案件設定 → デモの始まり方」で選ぶ（1人を手で操作〈標準〉／台本のあるペルソナ全員）。
 
+## 既存アカウントのスクショからシナリオ案を作る（Phase 6）
+
+詳しくは `docs/AI_WORKFLOW.md`。編集ツールにAIは入れていない。解析は Claude Code が行う。
+
+1. 編集ツールで案件を作り、スクショを `projects/<案件>/screenshots/` に置く（リポジトリには入らない）
+2. Claude Code に「`<案件>` のスクショからシナリオ案を作って」と頼む（スキル `line-sim-screens`）。
+   提案が `projects/<案件>/patches/` に保存され、`npm run patch:check -- <案件> <ファイル名>` で検査される
+3. 編集ツール → 「AI提案（スクショから）」→ 提案ファイルを選ぶ → 採る提案にチェック →「選んだ提案を下書きに取り込む」→ 保存
+4. 「承認待ち」の一覧で、1件ずつ「開いて直す」「承認」「却下」（まとめて「すべて承認」も可）。
+   **承認待ち（AI推定）が1件でも残っていると、営業用HTMLは書き出せない**
+5. 「▶ デモ」で動きを確かめてから書き出す
+
+一覧・フロー図・詳細の色バッジで「確認済み（スクショに写っていた）／AI推定（承認待ち）／承認済み」が分かる。
+実例は `examples/sample-beauty/`（架空の美容サロン）。
+
 ## 確認コマンド
 
 ```bash
@@ -93,4 +108,6 @@ npm run sim -- sample-staff --until-day 30
 | `packages/editor/` | 編集ツール（React＋React Flow） |
 | `projects/<案件>/project.json` | 案件（シナリオ設定） |
 | `tools/` | 保存API・CLI・営業用HTMLの書き出し（`export-lib.ts`・`bundle.ts`）・検査 |
-| `tests/` | テスト。`acceptance.test.ts` が Phase 2a の検収条件、`store.test.ts` が保存まわり |
+| `packages/ai/` | AI提案の確認（形の検査・取り込み前の下見・却下）。AIの呼び出しは入っていない |
+| `tests/` | テスト。`acceptance.test.ts` が Phase 2a の検収条件、`store.test.ts` が保存まわり、`integration.test.ts` が Phase 1〜6 の通し |
+| `docs/ACCEPTANCE.md` | 完成条件ごとの確認結果と完成判定 |

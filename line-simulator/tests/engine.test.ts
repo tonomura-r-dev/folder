@@ -172,3 +172,23 @@ describe('エンジンの汎用性検査', () => {
     expect(problems.join('\n')).toMatch(/外の import[\s\S]*日本語[\s\S]*Date/);
   });
 });
+
+describe('自動応答と重複防止（Phase 6 で見つけた不具合の修正）', () => {
+  it('少し前に配信した文面でも、ユーザーが頼んだ自動応答は届く。配信の側は重複防止が効く', () => {
+    const p = baseProject({
+      settings: { dedupeWindowMinutes: DAY },
+      autoReplies: [{ id: 'ar1', priority: 1, match: { mode: 'exact', keywords: ['クーポン'] }, cases: [], fallbackMessageId: 'm1' }],
+      flows: [
+        chain('f', [
+          node({ id: 'a', type: 'message', messageId: 'm1' }),
+          node({ id: 'w', type: 'wait', wait: { kind: 'duration', minutes: 120 } }),
+          node({ id: 'b', type: 'message', messageId: 'm1' }),
+        ]),
+      ],
+    });
+    const w = reduce(p, friendAt(p, 0, [{ at: 60, userId: 'u1', type: 'sendText', text: 'クーポン' }]), { until: DAY });
+    // 0分：配信 → 60分：頼まれた返信は届く → 180分：同じ文面の配信は重複防止で止まる
+    expect(w.users['u1']!.deliveries.map((d) => [d.at, d.count])).toEqual([[0, 1], [60, 0]]);
+    expect(w.decisions.find((d) => d.nodeId === 'b' && d.kind === 'deliver')).toMatchObject({ outcome: 'deduped' });
+  });
+});

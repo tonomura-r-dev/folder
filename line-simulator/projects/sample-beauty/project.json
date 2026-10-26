@@ -1,0 +1,1215 @@
+{
+  "schemaVersion": 1,
+  "meta": {
+    "id": "sample-beauty",
+    "name": "サンプルビューティー（仮）",
+    "slug": "sample-beauty",
+    "createdAt": "2026-10-26T16:00:31.080Z",
+    "updatedAt": "2026-10-26T16:07:35.049Z"
+  },
+  "brand": {
+    "companyName": "ヘアサロンサンプル（仮）",
+    "accountName": "ヘアサロン〔店名〕",
+    "colors": {
+      "primary": "#5A3E28",
+      "accent": "#06C755",
+      "chatBg": "#8AA6CF"
+    },
+    "prov": {
+      "state": "observed",
+      "source": "screenshot:01_greeting_richmenu.jpg（トーク上部のアカウント名・メニューとトーク背景の色。固有名詞は伏せ字）"
+    }
+  },
+  "settings": {
+    "dedupeWindowMinutes": 1440,
+    "defaultRichMenuId": "rm_main",
+    "prov": {
+      "state": "approved",
+      "rationale": "01の時点でリッチメニューが出ているので、友だち追加したときに最初に出すメニューにした。重複配信を防ぐ期間は標準の24時間"
+    }
+  },
+  "assets": [],
+  "tags": [
+    {
+      "id": "tag_menu_cut",
+      "label": "希望メニュー：カット",
+      "group": "希望メニュー",
+      "prov": {
+        "state": "approved",
+        "rationale": "1問目「ご希望のメニューは？」の回答で配信を出し分けられるよう、回答ごとにタグを付ける提案。実際にタグ付けしているかはスクショからは分からない"
+      }
+    },
+    {
+      "id": "tag_menu_color",
+      "label": "希望メニュー：カラー",
+      "group": "希望メニュー",
+      "prov": {
+        "state": "approved",
+        "rationale": "1問目の回答「カラー」用。04の配信が「カラーのリタッチ」を勧めているので、カラーの人を見分ける必要がある"
+      }
+    },
+    {
+      "id": "tag_menu_perm",
+      "label": "希望メニュー：パーマ",
+      "group": "希望メニュー",
+      "prov": {
+        "state": "approved",
+        "rationale": "1問目の回答「パーマ」用"
+      }
+    },
+    {
+      "id": "tag_visit_first",
+      "label": "来店：はじめて",
+      "group": "来店回数",
+      "prov": {
+        "state": "approved",
+        "rationale": "2問目「当店のご利用は？」の回答。挨拶とクーポンが「はじめての方」向けなので、初来店かどうかで配信を分けていると推定"
+      }
+    },
+    {
+      "id": "tag_visit_repeat",
+      "label": "来店：2回目以上",
+      "group": "来店回数",
+      "prov": {
+        "state": "approved",
+        "rationale": "2問目の回答「2回目以上」用。04の「前回のご来店から1か月」はリピーター向けと推定"
+      }
+    },
+    {
+      "id": "tag_booked",
+      "label": "予約済み",
+      "group": "状態",
+      "prov": {
+        "state": "approved",
+        "rationale": "予約した人に初来店向けのクーポン配信を続けないよう、予約で付けるタグを提案"
+      }
+    }
+  ],
+  "cvs": [
+    {
+      "id": "cv_book",
+      "label": "予約",
+      "prov": {
+        "state": "approved",
+        "rationale": "05に予約フォームがあり、メニューの先頭が「ご予約」なので、予約をCVとした"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "route_default",
+      "label": "友だち追加"
+    },
+    {
+      "id": "route_popup",
+      "label": "予約フォームの離脱ポップアップ",
+      "prov": {
+        "state": "approved",
+        "rationale": "05の「LINEで受け取る」から友だち追加された人を、直接の友だち追加と分けて数えるため"
+      }
+    },
+    {
+      "id": "route_thanks",
+      "label": "予約完了ページ",
+      "prov": {
+        "state": "approved",
+        "rationale": "予約完了ページからのLINE誘導（スクショには無い）を想定した経路"
+      }
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_welcome",
+      "bubbles": [
+        {
+          "kind": "text",
+          "text": "友だち追加ありがとうございます！\n〔店名〕です。\n\nはじめての方には、カット20%OFFのクーポンをお送りしています。\nまずは2つの質問にお答えください。"
+        }
+      ],
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:01_greeting_richmenu.jpg（友だち追加直後の挨拶。店名は伏せ字）"
+      }
+    },
+    {
+      "id": "msg_coupon_first",
+      "bubbles": [
+        {
+          "kind": "card",
+          "title": "はじめての方限定クーポン",
+          "body": "カット20%OFF（初回のみ）\nご予約のときに「LINEを見た」とお伝えください。",
+          "buttons": [
+            {
+              "id": "btn_coupon_book",
+              "label": "このクーポンで予約する",
+              "action": {
+                "kind": "openPage",
+                "pageId": "page_booking"
+              }
+            }
+          ]
+        }
+      ],
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:03_autoreply_coupon.jpg（「クーポン」への返信のカード。ボタンの行き先は写っていないため、予約フォームを開くと推定）"
+      }
+    },
+    {
+      "id": "msg_coupon_repeat",
+      "bubbles": [
+        {
+          "kind": "text",
+          "text": "いつもご来店ありがとうございます。\n2回目以降の方への特典は、ご来店のときにスタッフにお尋ねください。"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "03の返信は「はじめての方限定」。2回目以上の人に同じ返信は合わないため、出し分け用の文面の枠だけを提案（文面は仮）"
+      }
+    },
+    {
+      "id": "msg_reminder",
+      "bubbles": [
+        {
+          "kind": "text",
+          "text": "前回のご来店から1か月が経ちました。\nそろそろカラーのリタッチはいかがですか？"
+        },
+        {
+          "kind": "card",
+          "title": "今週の空き状況",
+          "body": "平日の午前は比較的空いています。",
+          "buttons": [
+            {
+              "id": "btn_vacancy",
+              "label": "空き状況を見る",
+              "action": {
+                "kind": "openPage",
+                "pageId": "page_booking"
+              }
+            }
+          ]
+        }
+      ],
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:04_delivery_1month.jpg（「ご来店から1か月」の配信。ボタンの行き先は写っていないため、予約フォームを開くと推定）"
+      }
+    },
+    {
+      "id": "msg_style",
+      "bubbles": [
+        {
+          "kind": "text",
+          "text": "人気のスタイルをまとめました。\n下のメニューの「スタイル写真」からご覧いただけます。\n（文面は仮です）"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "メニューに「スタイル写真」があるため、初来店の人が予約前に見られるよう案内する配信を提案（スクショには無い）"
+      }
+    },
+    {
+      "id": "msg_book_thanks",
+      "bubbles": [
+        {
+          "kind": "text",
+          "text": "ご予約ありがとうございます。\nご来店をお待ちしております。\n（文面は仮です）"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "予約したあとのお礼。スクショには無いので仮の文面"
+      }
+    }
+  ],
+  "richMenus": [
+    {
+      "id": "rm_main",
+      "label": "メインメニュー",
+      "layout": {
+        "cols": 3,
+        "rows": 2
+      },
+      "cells": [
+        {
+          "id": "cell_reserve",
+          "label": "ご予約",
+          "area": {
+            "col": 0,
+            "row": 0
+          },
+          "action": {
+            "kind": "openPage",
+            "pageId": "page_booking"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "押したときの動きは写っていない。予約フォームを開くと推定"
+          }
+        },
+        {
+          "id": "cell_menu",
+          "label": "メニュー・料金",
+          "area": {
+            "col": 1,
+            "row": 0
+          },
+          "action": {
+            "kind": "sendText",
+            "text": "メニュー"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "押したときの動きは写っていない。「メニュー」と送って自動応答で返す形と推定"
+          }
+        },
+        {
+          "id": "cell_coupon",
+          "label": "クーポン",
+          "area": {
+            "col": 2,
+            "row": 0
+          },
+          "action": {
+            "kind": "sendText",
+            "text": "クーポン"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "03で「クーポン」と送ると返信が来ているので、このボタンも「クーポン」を送ると推定"
+          }
+        },
+        {
+          "id": "cell_style",
+          "label": "スタイル写真",
+          "area": {
+            "col": 0,
+            "row": 1
+          },
+          "action": {
+            "kind": "sendText",
+            "text": "スタイル写真"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "押したときの動きは写っていない"
+          }
+        },
+        {
+          "id": "cell_access",
+          "label": "アクセス",
+          "area": {
+            "col": 1,
+            "row": 1
+          },
+          "action": {
+            "kind": "sendText",
+            "text": "アクセス"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "押したときの動きは写っていない"
+          }
+        },
+        {
+          "id": "cell_contact",
+          "label": "お問い合わせ",
+          "area": {
+            "col": 2,
+            "row": 1
+          },
+          "action": {
+            "kind": "sendText",
+            "text": "お問い合わせ"
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "押したときの動きは写っていない"
+          }
+        }
+      ],
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:01_greeting_richmenu.jpg（3列×2行の区画と文字。02〜04でも同じメニュー）"
+      }
+    }
+  ],
+  "autoReplies": [
+    {
+      "id": "ar_coupon",
+      "priority": 10,
+      "match": {
+        "mode": "contains",
+        "keywords": [
+          "クーポン"
+        ]
+      },
+      "cases": [
+        {
+          "when": {
+            "op": "hasTag",
+            "tagId": "tag_visit_repeat"
+          },
+          "messageId": "msg_coupon_repeat",
+          "prov": {
+            "state": "approved",
+            "rationale": "2回目以上の人には、はじめての方限定のクーポンを返さないよう出し分ける提案"
+          }
+        }
+      ],
+      "fallbackMessageId": "msg_coupon_first",
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:03_autoreply_coupon.jpg（「クーポン」と送ると、はじめての方限定クーポンが返る）"
+      }
+    }
+  ],
+  "surveys": [
+    {
+      "id": "sv_profile",
+      "label": "はじめのアンケート",
+      "questions": [
+        {
+          "id": "q_menu",
+          "text": "ご希望のメニューは？",
+          "mode": "single",
+          "choices": [
+            {
+              "id": "c_cut",
+              "label": "カット",
+              "addTags": [
+                "tag_menu_cut"
+              ],
+              "removeTags": [
+                "tag_menu_color",
+                "tag_menu_perm"
+              ],
+              "prov": {
+                "state": "approved",
+                "rationale": "選んだらタグ「希望メニュー：カット」を付ける（タグ付けは推定）"
+              }
+            },
+            {
+              "id": "c_color",
+              "label": "カラー",
+              "addTags": [
+                "tag_menu_color"
+              ],
+              "removeTags": [
+                "tag_menu_cut",
+                "tag_menu_perm"
+              ],
+              "prov": {
+                "state": "approved",
+                "rationale": "選んだらタグ「希望メニュー：カラー」を付ける（タグ付けは推定）"
+              }
+            },
+            {
+              "id": "c_perm",
+              "label": "パーマ",
+              "addTags": [
+                "tag_menu_perm"
+              ],
+              "removeTags": [
+                "tag_menu_cut",
+                "tag_menu_color"
+              ],
+              "prov": {
+                "state": "approved",
+                "rationale": "選んだらタグ「希望メニュー：パーマ」を付ける（タグ付けは推定）"
+              }
+            }
+          ]
+        },
+        {
+          "id": "q_visit",
+          "text": "当店のご利用は？",
+          "mode": "single",
+          "choices": [
+            {
+              "id": "c_first",
+              "label": "はじめて",
+              "addTags": [
+                "tag_visit_first"
+              ],
+              "removeTags": [
+                "tag_visit_repeat"
+              ],
+              "prov": {
+                "state": "approved",
+                "rationale": "選んだらタグ「来店：はじめて」を付ける（タグ付けは推定）"
+              }
+            },
+            {
+              "id": "c_repeat",
+              "label": "2回目以上",
+              "addTags": [
+                "tag_visit_repeat"
+              ],
+              "removeTags": [
+                "tag_visit_first"
+              ],
+              "prov": {
+                "state": "approved",
+                "rationale": "選んだらタグ「来店：2回目以上」を付ける（タグ付けは推定）"
+              }
+            }
+          ]
+        }
+      ],
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:01_greeting_richmenu.jpg（1問目と選択肢）・02_survey_q2.jpg（2問目と選択肢）"
+      }
+    }
+  ],
+  "webPages": [
+    {
+      "id": "page_booking",
+      "kind": "form",
+      "title": "ご予約フォーム",
+      "url": "https://〔店名〕.example/reserve",
+      "blocks": [
+        {
+          "kind": "heading",
+          "text": "ご予約フォーム"
+        }
+      ],
+      "form": {
+        "fields": [
+          {
+            "id": "f_name",
+            "label": "お名前",
+            "type": "text"
+          },
+          {
+            "id": "f_tel",
+            "label": "電話番号",
+            "type": "tel"
+          },
+          {
+            "id": "f_menu",
+            "label": "ご希望のメニュー",
+            "type": "select",
+            "options": [
+              "カット",
+              "カラー",
+              "パーマ"
+            ],
+            "prov": {
+              "state": "approved",
+              "rationale": "項目名は写っているが、ポップアップで入力欄が隠れている。選択肢はアンケートの1問目と同じと推定"
+            }
+          },
+          {
+            "id": "f_date",
+            "label": "ご希望の日時",
+            "type": "text",
+            "prov": {
+              "state": "approved",
+              "rationale": "4つ目の項目はポップアップに隠れて項目名が読めない。予約フォームなので日時と推定"
+            }
+          }
+        ],
+        "onSubmit": {
+          "cvId": "cv_book",
+          "nextPageId": "page_book_thanks"
+        }
+      },
+      "exitPopup": {
+        "title": "予約の前に、LINEでクーポンを受け取りませんか？",
+        "body": "はじめての方はカット20%OFF。空き状況のお知らせも届きます。",
+        "cta": {
+          "label": "LINEで受け取る",
+          "action": {
+            "kind": "addFriend",
+            "routeId": "route_popup"
+          }
+        },
+        "dismissLabel": "閉じる"
+      },
+      "prov": {
+        "state": "observed",
+        "source": "screenshot:05_booking_popup.jpg（予約フォームと、離脱しようとしたときのポップアップ。URLの店名は伏せ字。送信後に予約完了ページへ進むのは推定）"
+      }
+    },
+    {
+      "id": "page_book_thanks",
+      "kind": "thanks",
+      "title": "ご予約完了",
+      "url": "https://〔店名〕.example/reserve/thanks",
+      "blocks": [
+        {
+          "kind": "heading",
+          "text": "ご予約ありがとうございます"
+        },
+        {
+          "kind": "text",
+          "text": "ご予約の確認やご来店前のご案内を、LINEでお送りします。（文面は仮です）"
+        }
+      ],
+      "lineCta": {
+        "label": "LINEで予約の確認を受け取る",
+        "routeId": "route_thanks"
+      },
+      "prov": {
+        "state": "approved",
+        "rationale": "予約完了ページはスクショに無い。予約した人をLINEにつなぐサンクス誘導を提案"
+      }
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow_welcome",
+      "label": "友だち追加 → 挨拶 → アンケート → 来店回数で分岐",
+      "trigger": {
+        "kind": "friendAdd"
+      },
+      "priority": 10,
+      "concurrency": "exclusive",
+      "reentry": "never",
+      "nodes": [
+        {
+          "id": "n_b_entry",
+          "type": "entry",
+          "position": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": "n_b_greet",
+          "type": "message",
+          "label": "挨拶",
+          "messageId": "msg_welcome",
+          "position": {
+            "x": 0,
+            "y": 150
+          },
+          "prov": {
+            "state": "observed",
+            "source": "screenshot:01_greeting_richmenu.jpg"
+          }
+        },
+        {
+          "id": "n_b_survey",
+          "type": "survey",
+          "label": "はじめのアンケート",
+          "surveyId": "sv_profile",
+          "timeoutMinutes": 1440,
+          "position": {
+            "x": 0,
+            "y": 300
+          },
+          "prov": {
+            "state": "observed",
+            "source": "screenshot:01_greeting_richmenu.jpg・02_survey_q2.jpg（挨拶の直後に質問が出ている。回答待ちの上限24時間は推定）"
+          }
+        },
+        {
+          "id": "n_b_visit",
+          "type": "branch",
+          "label": "来店回数",
+          "position": {
+            "x": 0,
+            "y": 450
+          },
+          "cases": [
+            {
+              "id": "repeat",
+              "label": "2回目以上",
+              "when": {
+                "op": "hasTag",
+                "tagId": "tag_visit_repeat"
+              }
+            }
+          ],
+          "prov": {
+            "state": "approved",
+            "rationale": "2問目の回答で、初来店向けとリピーター向けの配信に分けると推定。未回答の人は初来店向けに流す"
+          }
+        },
+        {
+          "id": "n_b_to_repeat",
+          "type": "jump",
+          "flowId": "flow_repeat",
+          "position": {
+            "x": -260,
+            "y": 600
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "2回目以上 → 来店1か月後の配信へ"
+          }
+        },
+        {
+          "id": "n_b_to_first",
+          "type": "jump",
+          "flowId": "flow_first",
+          "position": {
+            "x": 260,
+            "y": 600
+          },
+          "prov": {
+            "state": "approved",
+            "rationale": "はじめて・未回答 → 初来店向けの配信へ"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e_b1",
+          "from": {
+            "nodeId": "n_b_entry",
+            "port": "out"
+          },
+          "to": "n_b_greet"
+        },
+        {
+          "id": "e_b2",
+          "from": {
+            "nodeId": "n_b_greet",
+            "port": "out"
+          },
+          "to": "n_b_survey"
+        },
+        {
+          "id": "e_b3",
+          "from": {
+            "nodeId": "n_b_survey",
+            "port": "done"
+          },
+          "to": "n_b_visit"
+        },
+        {
+          "id": "e_b4",
+          "from": {
+            "nodeId": "n_b_survey",
+            "port": "timeout"
+          },
+          "to": "n_b_visit"
+        },
+        {
+          "id": "e_b5",
+          "from": {
+            "nodeId": "n_b_visit",
+            "port": "case:repeat"
+          },
+          "to": "n_b_to_repeat"
+        },
+        {
+          "id": "e_b6",
+          "from": {
+            "nodeId": "n_b_visit",
+            "port": "else"
+          },
+          "to": "n_b_to_first"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "挨拶とアンケートは写っている（ノードごとに確認済み）。そのあとの分岐とつながりは推定"
+      }
+    },
+    {
+      "id": "flow_first",
+      "label": "初来店向けの配信（予約まで）",
+      "trigger": {
+        "kind": "manual"
+      },
+      "priority": 20,
+      "concurrency": "exclusive",
+      "reentry": "never",
+      "stopWhen": {
+        "op": "cv",
+        "cvId": "cv_book",
+        "done": true
+      },
+      "nodes": [
+        {
+          "id": "n_f_entry",
+          "type": "entry",
+          "position": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": "n_f_wait1",
+          "type": "wait",
+          "wait": {
+            "kind": "dayAt",
+            "day": 1,
+            "time": "12:00"
+          },
+          "position": {
+            "x": 0,
+            "y": 150
+          }
+        },
+        {
+          "id": "n_f_coupon",
+          "type": "message",
+          "label": "クーポンをもう一度",
+          "messageId": "msg_coupon_first",
+          "position": {
+            "x": 0,
+            "y": 300
+          }
+        },
+        {
+          "id": "n_f_wait3",
+          "type": "wait",
+          "wait": {
+            "kind": "dayAt",
+            "day": 3,
+            "time": "19:00"
+          },
+          "position": {
+            "x": 0,
+            "y": 450
+          }
+        },
+        {
+          "id": "n_f_style",
+          "type": "message",
+          "label": "スタイル写真の案内",
+          "messageId": "msg_style",
+          "position": {
+            "x": 0,
+            "y": 600
+          }
+        },
+        {
+          "id": "n_f_end",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 750
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e_f1",
+          "from": {
+            "nodeId": "n_f_entry",
+            "port": "out"
+          },
+          "to": "n_f_wait1"
+        },
+        {
+          "id": "e_f2",
+          "from": {
+            "nodeId": "n_f_wait1",
+            "port": "out"
+          },
+          "to": "n_f_coupon"
+        },
+        {
+          "id": "e_f3",
+          "from": {
+            "nodeId": "n_f_coupon",
+            "port": "out"
+          },
+          "to": "n_f_wait3"
+        },
+        {
+          "id": "e_f4",
+          "from": {
+            "nodeId": "n_f_wait3",
+            "port": "out"
+          },
+          "to": "n_f_style"
+        },
+        {
+          "id": "e_f5",
+          "from": {
+            "nodeId": "n_f_style",
+            "port": "out"
+          },
+          "to": "n_f_end"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "スクショには無いシナリオ。初来店の人に、翌日にクーポンをもう一度・3日目にスタイル写真を案内し、予約したら止める提案（日時は仮）"
+      }
+    },
+    {
+      "id": "flow_repeat",
+      "label": "2回目以上の人への来店1か月後の配信",
+      "trigger": {
+        "kind": "manual"
+      },
+      "priority": 20,
+      "concurrency": "exclusive",
+      "reentry": "never",
+      "stopWhen": {
+        "op": "cv",
+        "cvId": "cv_book",
+        "done": true,
+        "withinMinutes": 10080
+      },
+      "nodes": [
+        {
+          "id": "n_r_entry",
+          "type": "entry",
+          "position": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": "n_r_wait",
+          "type": "wait",
+          "wait": {
+            "kind": "dayAt",
+            "day": 28,
+            "time": "10:00",
+            "from": "flowStart"
+          },
+          "position": {
+            "x": 0,
+            "y": 150
+          }
+        },
+        {
+          "id": "n_r_msg",
+          "type": "message",
+          "label": "リタッチのおすすめ",
+          "messageId": "msg_reminder",
+          "position": {
+            "x": 0,
+            "y": 300
+          },
+          "prov": {
+            "state": "observed",
+            "source": "screenshot:04_delivery_1month.jpg"
+          }
+        },
+        {
+          "id": "n_r_end",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 450
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e_r1",
+          "from": {
+            "nodeId": "n_r_entry",
+            "port": "out"
+          },
+          "to": "n_r_wait"
+        },
+        {
+          "id": "e_r2",
+          "from": {
+            "nodeId": "n_r_wait",
+            "port": "out"
+          },
+          "to": "n_r_msg"
+        },
+        {
+          "id": "e_r3",
+          "from": {
+            "nodeId": "n_r_msg",
+            "port": "out"
+          },
+          "to": "n_r_end"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "04に「ご来店から1か月」とある。来店日はLINEでは分からないため、アンケートに答えた日から4週間後（Day 28）に送る形にした。1週間以内に予約した人には送らない（日数・止める条件は仮）"
+      }
+    },
+    {
+      "id": "flow_after_book",
+      "label": "予約したあと（お礼と1か月後）",
+      "trigger": {
+        "kind": "cv",
+        "cvId": "cv_book"
+      },
+      "priority": 5,
+      "concurrency": "exclusive",
+      "reentry": "afterEnd",
+      "stopWhen": {
+        "op": "friend",
+        "state": "blocked"
+      },
+      "nodes": [
+        {
+          "id": "n_k_entry",
+          "type": "entry",
+          "position": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        {
+          "id": "n_k_tag",
+          "type": "tag",
+          "add": [
+            "tag_booked"
+          ],
+          "position": {
+            "x": 0,
+            "y": 150
+          }
+        },
+        {
+          "id": "n_k_thanks",
+          "type": "message",
+          "label": "予約のお礼",
+          "messageId": "msg_book_thanks",
+          "position": {
+            "x": 0,
+            "y": 300
+          }
+        },
+        {
+          "id": "n_k_wait",
+          "type": "wait",
+          "wait": {
+            "kind": "dayAt",
+            "day": 28,
+            "time": "10:00",
+            "from": "flowStart"
+          },
+          "position": {
+            "x": 0,
+            "y": 450
+          }
+        },
+        {
+          "id": "n_k_reminder",
+          "type": "message",
+          "label": "リタッチのおすすめ",
+          "messageId": "msg_reminder",
+          "position": {
+            "x": 0,
+            "y": 600
+          }
+        },
+        {
+          "id": "n_k_end",
+          "type": "end",
+          "position": {
+            "x": 0,
+            "y": 750
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e_k1",
+          "from": {
+            "nodeId": "n_k_entry",
+            "port": "out"
+          },
+          "to": "n_k_tag"
+        },
+        {
+          "id": "e_k2",
+          "from": {
+            "nodeId": "n_k_tag",
+            "port": "out"
+          },
+          "to": "n_k_thanks"
+        },
+        {
+          "id": "e_k3",
+          "from": {
+            "nodeId": "n_k_thanks",
+            "port": "out"
+          },
+          "to": "n_k_wait"
+        },
+        {
+          "id": "e_k4",
+          "from": {
+            "nodeId": "n_k_wait",
+            "port": "out"
+          },
+          "to": "n_k_reminder"
+        },
+        {
+          "id": "e_k5",
+          "from": {
+            "nodeId": "n_k_reminder",
+            "port": "out"
+          },
+          "to": "n_k_end"
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "予約した人にはお礼を送り、4週間後に04の来店1か月後の配信を送る提案（スクショには無い。日数は仮）"
+      }
+    }
+  ],
+  "personas": [
+    {
+      "id": "p_first_cut",
+      "name": "初来店・カット希望さん",
+      "attrs": {},
+      "script": [
+        {
+          "atMinutes": 600,
+          "event": {
+            "type": "visitPage",
+            "pageId": "page_booking"
+          }
+        },
+        {
+          "atMinutes": 602,
+          "event": {
+            "type": "exitIntent",
+            "pageId": "page_booking"
+          }
+        },
+        {
+          "atMinutes": 603,
+          "event": {
+            "type": "tapPopupCta",
+            "pageId": "page_booking"
+          }
+        },
+        {
+          "atMinutes": 605,
+          "event": {
+            "type": "answer",
+            "surveyId": "sv_profile",
+            "questionId": "q_menu",
+            "choiceIds": [
+              "c_cut"
+            ]
+          }
+        },
+        {
+          "atMinutes": 606,
+          "event": {
+            "type": "answer",
+            "surveyId": "sv_profile",
+            "questionId": "q_visit",
+            "choiceIds": [
+              "c_first"
+            ]
+          }
+        },
+        {
+          "atMinutes": 2220,
+          "event": {
+            "type": "sendText",
+            "text": "クーポン"
+          }
+        },
+        {
+          "atMinutes": 6960,
+          "event": {
+            "type": "tapButton",
+            "buttonId": "btn_coupon_book"
+          }
+        },
+        {
+          "atMinutes": 6965,
+          "event": {
+            "type": "submitForm",
+            "pageId": "page_booking",
+            "values": {
+              "f_name": "初来店 カット",
+              "f_menu": "カット"
+            }
+          }
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "デモ用の架空の人。予約フォームから離脱しかけてLINE登録し、クーポンを見てDay 4に予約する"
+      }
+    },
+    {
+      "id": "p_repeat_color",
+      "name": "2回目以上・カラー希望さん",
+      "attrs": {},
+      "script": [
+        {
+          "atMinutes": 660,
+          "event": {
+            "type": "addFriend",
+            "routeId": "route_default"
+          }
+        },
+        {
+          "atMinutes": 662,
+          "event": {
+            "type": "answer",
+            "surveyId": "sv_profile",
+            "questionId": "q_menu",
+            "choiceIds": [
+              "c_color"
+            ]
+          }
+        },
+        {
+          "atMinutes": 663,
+          "event": {
+            "type": "answer",
+            "surveyId": "sv_profile",
+            "questionId": "q_visit",
+            "choiceIds": [
+              "c_repeat"
+            ]
+          }
+        },
+        {
+          "atMinutes": 4020,
+          "event": {
+            "type": "sendText",
+            "text": "クーポン"
+          }
+        }
+      ],
+      "prov": {
+        "state": "approved",
+        "rationale": "デモ用の架空の人。店頭などで直接友だち追加した常連。「クーポン」と送るとリピーター向けの返信、4週間後にリタッチのおすすめが届く"
+      }
+    }
+  ],
+  "narration": [
+    {
+      "id": "nar_popup",
+      "on": {
+        "kind": "event",
+        "type": "exitIntent"
+      },
+      "eyebrow": "離脱防止",
+      "title": "予約フォームを離れようとしたら、LINEのクーポンで引き止める",
+      "body": "その場で予約しない人も、LINEの友だちとして残します。",
+      "prov": {
+        "state": "approved",
+        "rationale": "デモの説明文（05のポップアップの狙いを説明）"
+      }
+    },
+    {
+      "id": "nar_visit",
+      "on": {
+        "kind": "node",
+        "nodeId": "n_b_visit"
+      },
+      "eyebrow": "分岐",
+      "title": "はじめての人と、2回目以上の人で、届く配信を変える",
+      "body": "はじめての人には予約までの後押し、常連の人には次の来店のきっかけを送ります。",
+      "prov": {
+        "state": "approved",
+        "rationale": "デモの説明文"
+      }
+    }
+  ]
+}

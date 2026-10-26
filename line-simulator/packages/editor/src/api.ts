@@ -41,6 +41,9 @@ export const api = {
   restore: (slug: string, id: string) => call<{ updatedAt: string }>('POST', `${p(slug)}/history/${id}/restore`),
   label: (slug: string, id: string, label: string) => call<{ ok: true }>('POST', `${p(slug)}/history/${id}/label`, { label }),
   uploadAsset: (slug: string, name: string, dataBase64: string) => call<{ path: string }>('POST', `${p(slug)}/assets`, { name, dataBase64 }),
+  patches: (slug: string) => call<{ name: string; savedAt: string; bytes: number }[]>('GET', `${p(slug)}/patches`),
+  patch: (slug: string, name: string) => call<unknown>('GET', `${p(slug)}/patches/${encodeURIComponent(name)}`),
+  savePatch: (slug: string, name: string, patch: unknown) => call<{ name: string }>('POST', `${p(slug)}/patches`, { name, patch }),
   /** 営業用HTMLの書き出し。重大エラーのときも issues を返すので、例外にしない */
   exportHtml: async (slug: string, confirmFictional: boolean): Promise<ExportResponse> => {
     const res = await fetch(`${p(slug)}/export`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmFictional }) });

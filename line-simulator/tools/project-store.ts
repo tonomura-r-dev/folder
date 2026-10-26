@@ -242,6 +242,51 @@ export class ProjectStore {
     return `assets/${file}`;
   }
 
+  // ---------- AIの提案（シナリオ差分） ----------
+  // projects/<案件>/patches/*.json に置く。Claude Code が書き、編集ツールの「AI提案」で読む。
+
+  private patchesDir(slug: string) {
+    return join(this.dir(slug), 'patches');
+  }
+
+  private patchFile(slug: string, name: string) {
+    if (!/^[\w.-]{1,120}\.json$/.test(name)) throw new StoreError(400, 'patch.invalidName', `提案ファイルの名前が不正です: ${name}`);
+    return join(this.patchesDir(slug), name);
+  }
+
+  listPatches(slug: string): { name: string; savedAt: string; bytes: number }[] {
+    const dir = this.patchesDir(slug);
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .filter((f) => /^[\w.-]{1,120}\.json$/.test(f))
+      .map((name) => {
+        const st = statSync(join(dir, name));
+        return { name, savedAt: st.mtime.toISOString(), bytes: st.size };
+      })
+      .sort((a, b) => (a.name < b.name ? 1 : -1));
+  }
+
+  readPatch(slug: string, name: string): unknown {
+    const f = this.patchFile(slug, name);
+    if (!existsSync(f)) throw new StoreError(404, 'patch.notFound', `提案ファイルが見つかりません: ${name}`);
+    try {
+      return JSON.parse(readFileSync(f, 'utf8'));
+    } catch {
+      throw new StoreError(422, 'patch.broken', `提案ファイルがJSONとして読めません: ${name}`);
+    }
+  }
+
+  /** 画面から読み込んだ提案ファイルを保存する。名前は英数字に寄せ、同名は上書きしない */
+  savePatch(slug: string, name: string, data: unknown): string {
+    if (!this.exists(slug)) throw new StoreError(404, 'project.notFound', `案件が見つかりません: ${slug}`);
+    const stem = basename(name, extname(name)).replace(/[^\w.-]+/g, '_').replace(/^[._]+/, '').slice(0, 80) || 'patch';
+    mkdirSync(this.patchesDir(slug), { recursive: true });
+    let file = `${stem}.json`;
+    for (let i = 2; existsSync(join(this.patchesDir(slug), file)); i++) file = `${stem}-${i}.json`;
+    writeAtomic(this.patchFile(slug, file), `${JSON.stringify(data, null, 2)}\n`);
+    return file;
+  }
+
   // ---------- 履歴 ----------
 
   private snapshot(slug: string, text: string): string {

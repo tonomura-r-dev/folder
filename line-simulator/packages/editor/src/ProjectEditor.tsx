@@ -8,6 +8,8 @@ import { api, ApiError, downloadJson, fmtDateTime, type ExportResponse, type His
 import { Ctx, type EditorCtx } from './ctx.ts';
 import { FlowEditor } from './flow/FlowEditor.tsx';
 import { DemoView } from './DemoView.tsx';
+import { AiReview } from './ai/AiReview.tsx';
+import { countProv } from '../../ai/src/review.ts';
 import { AutoReplies } from './parts/AutoReplies.tsx';
 import { LabelsEditor } from './parts/Labels.tsx';
 import { Messages } from './parts/Messages.tsx';
@@ -33,6 +35,7 @@ const NAV: { section: Section; label: string; count?: (p: Project) => number }[]
   { section: 'webPages', label: 'Webページ', count: (p) => p.webPages.length },
   { section: 'personas', label: 'ペルソナ', count: (p) => p.personas.length },
   { section: 'narration', label: '説明文', count: (p) => p.narration.length },
+  { section: 'ai', label: 'AI提案（スクショから）', count: (p) => countProv(p).inferred },
   { section: 'settings', label: '案件設定' },
 ];
 
@@ -260,6 +263,8 @@ function SectionView({ section }: { section: Section }) {
   switch (section) {
     case 'demo':
       return <DemoView />;
+    case 'ai':
+      return <AiReview />;
     case 'flows':
       return <FlowEditor />;
     case 'messages':

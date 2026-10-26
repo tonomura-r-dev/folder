@@ -384,15 +384,18 @@ export function dayAt(base: Minutes, day: number, time: string): Minutes {
 
 // ---------- 配信 ----------
 
-/** 配信の判定順：友だちか → 重複防止 → 優先度。通ったら配信する */
-function gate(ctx: Ctx, user: UserState, flow: Flow | null, node: FlowNode | null, key: string): boolean {
+/**
+ * 配信の判定順：友だちか → 重複防止 → 優先度。通ったら配信する。
+ * reply（自動応答＝ユーザーが送った言葉への返信）は重複防止の対象にしない。頼まれた返事が届かないのは不自然なため。
+ */
+function gate(ctx: Ctx, user: UserState, flow: Flow | null, node: FlowNode | null, key: string, reply = false): boolean {
   const base = { flowId: flow?.id ?? null, nodeId: node?.id ?? null, kind: 'deliver' as const, ref: key };
   if (user.friendState !== 'friend') {
     decide(ctx, user, { ...base, outcome: 'excluded', reason: user.friendState === 'blocked' ? 'blocked' : 'not_friend' });
     return false;
   }
   const dedupe = ctx.project.settings.dedupeWindowMinutes;
-  if (dedupe > 0 && user.deliveries.some((d) => d.messageId === key && ctx.world.now - d.at < dedupe)) {
+  if (!reply && dedupe > 0 && user.deliveries.some((d) => d.messageId === key && ctx.world.now - d.at < dedupe)) {
     decide(ctx, user, { ...base, outcome: 'deduped', reason: 'duplicate' });
     return false;
   }
@@ -419,13 +422,13 @@ function record(ctx: Ctx, user: UserState, flow: Flow | null, node: FlowNode | n
   decide(ctx, user, { flowId: flow?.id ?? null, nodeId: node?.id ?? null, kind: 'deliver', outcome: 'taken', ref: key });
 }
 
-function deliver(ctx: Ctx, user: UserState, flow: Flow | null, node: FlowNode | null, messageId: Id, count?: number): boolean {
+function deliver(ctx: Ctx, user: UserState, flow: Flow | null, node: FlowNode | null, messageId: Id, count?: number, reply = false): boolean {
   const msg = ctx.index.messages.get(messageId);
   if (!msg) {
     ctx.world.warnings.push({ at: ctx.world.now, code: 'runtime.unknownRef', userId: user.id, ref: messageId });
     return false;
   }
-  if (!gate(ctx, user, flow, node, messageId)) return false;
+  if (!gate(ctx, user, flow, node, messageId, reply)) return false;
   record(ctx, user, flow, node, messageId, msg.bubbles, count ?? msg.countAs ?? 1);
   return true;
 }
@@ -641,14 +644,14 @@ function autoReply(ctx: Ctx, user: UserState, text: string) {
       ...(trace.value ? {} : { reason: 'condition_false' as const }),
     });
     if (trace.value) {
-      deliver(ctx, user, null, null, c.messageId, 0);
+      deliver(ctx, user, null, null, c.messageId, 0, true);
       replied = true;
       break;
     }
   }
   if (!replied && rule.fallbackMessageId) {
     decide(ctx, user, { flowId: null, nodeId: null, kind: 'autoReply', outcome: 'taken', ref: `${rule.id}#fallback` });
-    deliver(ctx, user, null, null, rule.fallbackMessageId, 0);
+    deliver(ctx, user, null, null, rule.fallbackMessageId, 0, true);
   }
   const ruleId = rule.id;
   fire(ctx, user, (t) => t.kind === 'keyword' && t.autoReplyId === ruleId);

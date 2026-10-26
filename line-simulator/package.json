@@ -15,7 +15,8 @@
     "typecheck": "tsc --noEmit",
     "check:engine": "node tools/check-engine.ts",
     "check": "npm run typecheck && npm run check:engine && npm run test",
-    "export": "node tools/export.ts"
+    "export": "node tools/export.ts",
+    "patch:check": "node tools/patch-check.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

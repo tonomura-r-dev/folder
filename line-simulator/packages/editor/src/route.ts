@@ -16,6 +16,7 @@ export type Section =
   | 'webPages'
   | 'personas'
   | 'narration'
+  | 'ai'
   | 'settings';
 
 export type Route =

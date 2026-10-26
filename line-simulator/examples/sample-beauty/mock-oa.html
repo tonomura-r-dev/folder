@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=375">
+<title>架空の美容サロンのLINE公式アカウント（スクショ用の見本）</title>
+<!-- Phase 6 の検証用。実在しない美容サロンの「既存アカウント」の画面を、スクリーンショットを撮るためだけに作った見本。
+     店名・電話番号も架空。line-simulator の画面とは別に作り、AIが画像から読み取る練習台にする。 -->
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ddd; font-family: Meiryo, "Yu Gothic UI", sans-serif; }
+  .screen { width: 375px; height: 720px; display: flex; flex-direction: column; background: #8aa6cf; overflow: hidden; position: relative; }
+  .head { background: #fff; padding: 12px 14px; font-weight: 700; font-size: 15px; border-bottom: 1px solid #e5e5e5; }
+  .chat { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+  .pill { align-self: center; background: rgba(0,0,0,.28); color: #fff; font-size: 11px; padding: 3px 10px; border-radius: 99px; }
+  .row { display: flex; gap: 6px; align-items: flex-start; }
+  .ic { width: 34px; height: 34px; border-radius: 50%; background: #b8865b; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex: 0 0 34px; }
+  .b { background: #fff; border-radius: 16px; border-top-left-radius: 4px; padding: 9px 12px; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; max-width: 270px; }
+  .me { align-self: flex-end; background: #8de39b; border-radius: 16px; border-top-right-radius: 4px; padding: 8px 12px; font-size: 13.5px; }
+  .card { background: #fff; border-radius: 14px; width: 250px; overflow: hidden; }
+  .card .t { padding: 10px 12px 2px; font-weight: 700; font-size: 14px; }
+  .card .d { padding: 0 12px 10px; font-size: 12.5px; color: #444; white-space: pre-wrap; }
+  .card .btn { border-top: 1px solid #eee; color: #2a6fd6; font-weight: 700; text-align: center; padding: 10px; font-size: 13px; }
+  .quick { background: #fff; padding: 10px; border-top: 1px solid #e5e5e5; }
+  .quick .q { font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+  .chips span { display: inline-block; border: 1.5px solid #2a6fd6; color: #2a6fd6; border-radius: 99px; padding: 4px 14px; font-weight: 700; font-size: 13px; margin: 0 4px 4px 0; }
+  .menu { display: grid; grid-template-columns: repeat(3, 1fr); background: #d8c8b8; gap: 1px; }
+  .menu div { background: #f6efe8; color: #5a3e28; font-weight: 700; font-size: 12.5px; text-align: center; padding: 22px 4px; }
+  .input { background: #fff; padding: 8px; border-top: 1px solid #e5e5e5; color: #aaa; font-size: 13px; }
+  .web { background: #fff; flex: 1; padding: 20px 18px; }
+  .web h1 { font-size: 19px; color: #5a3e28; margin: 0 0 12px; }
+  .web label { display: block; font-size: 12.5px; font-weight: 700; margin: 12px 0 4px; }
+  .web .f { border: 1px solid #ddd; border-radius: 8px; height: 36px; }
+  .web .go { margin-top: 18px; background: #5a3e28; color: #fff; text-align: center; padding: 13px; border-radius: 12px; font-weight: 700; }
+  .url { background: #f1f3f7; padding: 8px 12px; font-size: 12px; color: #666; }
+  .ov { position: absolute; inset: 0; background: rgba(15,18,30,.55); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .pop { background: #fff; border-radius: 16px; padding: 20px 18px 14px; text-align: center; }
+  .pop .t { font-weight: 700; font-size: 16px; }
+  .pop .d { font-size: 13px; margin: 8px 0 12px; }
+  .pop .line { background: #06c755; color: #fff; border-radius: 12px; padding: 12px; font-weight: 700; }
+  .pop .x { color: #888; font-size: 12.5px; margin-top: 8px; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- 01 友だち追加直後：挨拶・1問目・リッチメニュー -->
+<div class="screen" id="s1">
+  <div class="head">‹ Hair Salon LUMIÈRE 渋谷店</div>
+  <div class="chat">
+    <div class="pill">友だち追加しました</div>
+    <div class="row"><div class="ic">L</div><div class="b">友だち追加ありがとうございます！
+Hair Salon LUMIÈRE 渋谷店です。
+
+はじめての方には、カット20%OFFのクーポンをお送りしています。
+まずは2つの質問にお答えください。</div></div>
+  </div>
+  <div class="quick"><div class="q">ご希望のメニューは？</div><div class="chips"><span>カット</span><span>カラー</span><span>パーマ</span></div></div>
+  <div class="menu"><div>ご予約</div><div>メニュー・料金</div><div>クーポン</div><div>スタイル写真</div><div>アクセス</div><div>お問い合わせ</div></div>
+  <div class="input">メッセージを入力</div>
+</div>
+
+<!-- 02 2問目 -->
+<div class="screen" id="s2">
+  <div class="head">‹ Hair Salon LUMIÈRE 渋谷店</div>
+  <div class="chat">
+    <div class="me">カラー</div>
+  </div>
+  <div class="quick"><div class="q">当店のご利用は？</div><div class="chips"><span>はじめて</span><span>2回目以上</span></div></div>
+  <div class="menu"><div>ご予約</div><div>メニュー・料金</div><div>クーポン</div><div>スタイル写真</div><div>アクセス</div><div>お問い合わせ</div></div>
+  <div class="input">メッセージを入力</div>
+</div>
+
+<!-- 03 自動応答：「クーポン」 -->
+<div class="screen" id="s3">
+  <div class="head">‹ Hair Salon LUMIÈRE 渋谷店</div>
+  <div class="chat">
+    <div class="me">クーポン</div>
+    <div class="row"><div class="ic">L</div><div class="card"><div class="t">はじめての方限定クーポン</div><div class="d">カット20%OFF（初回のみ）
+ご予約のときに「LINEを見た」とお伝えください。</div><div class="btn">このクーポンで予約する</div></div></div>
+  </div>
+  <div class="menu"><div>ご予約</div><div>メニュー・料金</div><div>クーポン</div><div>スタイル写真</div><div>アクセス</div><div>お問い合わせ</div></div>
+  <div class="input">メッセージを入力</div>
+</div>
+
+<!-- 04 配信の例：来店から1か月 -->
+<div class="screen" id="s4">
+  <div class="head">‹ Hair Salon LUMIÈRE 渋谷店</div>
+  <div class="chat">
+    <div class="pill">ご来店から1か月</div>
+    <div class="row"><div class="ic">L</div><div class="b">前回のご来店から1か月が経ちました。
+そろそろカラーのリタッチはいかがですか？</div></div>
+    <div class="row"><div class="ic">L</div><div class="card"><div class="t">今週の空き状況</div><div class="d">平日の午前は比較的空いています。</div><div class="btn">空き状況を見る</div></div></div>
+  </div>
+  <div class="menu"><div>ご予約</div><div>メニュー・料金</div><div>クーポン</div><div>スタイル写真</div><div>アクセス</div><div>お問い合わせ</div></div>
+  <div class="input">メッセージを入力</div>
+</div>
+
+<!-- 05 Webの予約フォームと、離脱しようとしたときのポップアップ -->
+<div class="screen" id="s5">
+  <div class="url">https://lumiere-shibuya.example/reserve</div>
+  <div class="web">
+    <h1>ご予約フォーム</h1>
+    <label>お名前</label><div class="f"></div>
+    <label>電話番号</label><div class="f"></div>
+    <label>ご希望のメニュー</label><div class="f"></div>
+    <label>ご希望の日時</label><div class="f"></div>
+    <div class="go">予約する</div>
+    <p style="font-size:11px;color:#888;margin-top:14px">お電話でのご予約：03-0000-0000</p>
+  </div>
+  <div class="ov"><div class="pop"><div class="t">予約の前に、LINEでクーポンを受け取りませんか？</div><div class="d">はじめての方はカット20%OFF。空き状況のお知らせも届きます。</div><div class="line">LINEで受け取る</div><div class="x">閉じる</div></div></div>
+</div>
+
+</body>
+</html>

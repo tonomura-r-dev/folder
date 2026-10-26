@@ -13,6 +13,9 @@
 //   GET    /api/projects/:slug/files/assets/<name>  画像（assets/ の中だけ）
 //   POST   /api/projects/:slug/assets {name,dataBase64}  画像の取り込み
 //   POST   /api/projects/:slug/export {confirmFictional}  営業用HTMLを Downloads に書き出す
+//   GET    /api/projects/:slug/patches              AIの提案（シナリオ差分）の一覧
+//   GET    /api/projects/:slug/patches/:name        提案の中身
+//   POST   /api/projects/:slug/patches {name,patch} 画面から読み込んだ提案を保存
 
 import { existsSync, mkdirSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -114,6 +117,15 @@ export function createApiHandler(store: ProjectStore) {
         const path = join(dir, uniqueName(result.fileName, (n) => existsSync(join(dir, n))));
         writeAtomic(path, result.html);
         return send(res, 201, { ok: true, path, bytes: result.bytes, issues: result.issues });
+      }
+      if (parts[1] === 'projects' && parts[3] === 'patches') {
+        const slug = parts[2]!;
+        if (parts.length === 4 && method === 'GET') return send(res, 200, store.listPatches(slug));
+        if (parts.length === 4 && method === 'POST') {
+          const b = (await body(req)) as { name?: string; patch?: unknown };
+          return send(res, 201, { name: store.savePatch(slug, b.name ?? 'patch.json', b.patch) });
+        }
+        if (parts.length === 5 && method === 'GET') return send(res, 200, store.readPatch(slug, parts[4]!));
       }
       if (parts[1] === 'projects' && parts[3] === 'history') {
         const slug = parts[2]!;

@@ -7,6 +7,7 @@ import { go, replace } from '../route.ts';
 import { Checks, Field, InlineIssues, ItemTools, move, newId, NumberInput, ReadOnly, Select, Text } from '../ui/form.tsx';
 import { DurationInput, EVENT_OPTIONS, options, TriggerEditor } from '../ui/pickers.tsx';
 import { ExprField } from '../ui/ExprField.tsx';
+import { ProvNote } from '../ai/ProvBadge.tsx';
 import { portLabel, TYPE_LABEL } from './convert.ts';
 
 export function Inspector({ flow }: { flow: Flow }) {
@@ -32,6 +33,7 @@ function FlowSettings({ flow }: { flow: Flow }) {
     <>
       <h2>シナリオの設定</h2>
       <div className="muted small">ノードを選ぶと、そのノードの設定に切り替わります。</div>
+      <ProvNote prov={flow.prov} path={path} />
       <div className="section">
         <div className="fields">
           <Field label="シナリオ名" issues={issuesAt(issues, `${path}/label`)}>
@@ -179,6 +181,7 @@ function NodeInspector({ flow, node }: { flow: Flow; node: FlowNode }) {
         {TYPE_LABEL[node.type]}　<span className="muted small mono">{node.id}</span>
       </h2>
       {own.length > 0 && <InlineIssues issues={own} />}
+      <ProvNote prov={node.prov} path={path} />
       <div className="section">
         <div className="fields">
           <Field label="見出し（任意）" hint="フローチャート上の名前。営業先に見せる画面には出ません">
