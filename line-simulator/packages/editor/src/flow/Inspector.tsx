@@ -5,7 +5,8 @@ import { describeExpr, Labels } from '../../../player/src/describe.ts';
 import { issuesAt, useEditor } from '../ctx.ts';
 import { go, replace } from '../route.ts';
 import { Checks, Field, InlineIssues, ItemTools, move, newId, NumberInput, ReadOnly, Select, Text } from '../ui/form.tsx';
-import { DurationInput, EVENT_OPTIONS, ExprField, options, TriggerEditor } from '../ui/pickers.tsx';
+import { DurationInput, EVENT_OPTIONS, options, TriggerEditor } from '../ui/pickers.tsx';
+import { ExprField } from '../ui/ExprField.tsx';
 import { portLabel, TYPE_LABEL } from './convert.ts';
 
 export function Inspector({ flow }: { flow: Flow }) {

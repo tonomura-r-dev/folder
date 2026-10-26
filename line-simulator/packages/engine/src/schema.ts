@@ -318,6 +318,8 @@ export type UserState = {
   surface: Surface;
   talk: TalkItem[];
   messageCount: number;
+  /** 通ったノードの記録（説明カード・「いま動いているシナリオ」の表示に使う） */
+  trail: { at: Minutes; flowId: Id; nodeId: Id }[];
 };
 
 export type DecisionKind = 'branch' | 'stopWhen' | 'autoReply' | 'trigger' | 'deliver';

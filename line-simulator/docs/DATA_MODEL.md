@@ -370,6 +370,7 @@ type UserState = {
   surface: Surface;                                      // いま画面に出ているもの
   talk: TalkItem[];                                      // トーク画面の吹き出し列
   messageCount: number;                                  // 通数（G-6 採用時）
+  trail: { at: Minutes; flowId: Id; nodeId: Id }[];      // 通ったノード（Phase 4：説明カード・進み具合の表示）
 };
 
 type FlowCursor = { status: 'running' | 'waiting' | 'ended' | 'stopped';
@@ -484,7 +485,7 @@ function validate(project: Project): Issue[];
 | `flow.neverStarted` | 入口が「手動」なのに、どこからも呼ばれていないフロー |
 | `text.unknownVar` | 文面の `{{...}}` が解決できないキー |
 | `line.limit` | LINE側の上限超え（吹き出し6個以上・ボタン5個以上・本文5,000字超・ステップ365日超・メニュー20区画超） |
-| `persona.noneMatch` | どのペルソナも入口に入らないフロー（デモで見せられない）。**Phase 4 で実装**（実行結果が要るため） |
+| `persona.noneMatch` | 台本のあるペルソナを30日流しても、誰も入らないフロー（デモで見せられない）。`personaCoverage()` で実際に流して調べる（Phase 4 で実装。重大エラーがあるときは調べない） |
 | `export.large` | 画像の合計が大きく、書き出しが5MBを超えそう。**Phase 5 で実装** |
 
 ---

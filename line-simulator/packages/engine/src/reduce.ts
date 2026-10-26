@@ -97,6 +97,7 @@ function initUsers(ctx: Ctx, session: Session) {
       surface: { kind: 'talk' },
       talk: [],
       messageCount: 0,
+      trail: [],
     };
     for (const t of persona?.initial?.tags ?? []) user.tags[t] = { at: 0 };
     for (const c of persona?.initial?.cvs ?? []) user.cvs[c] = { at: 0, count: 1 };
@@ -233,6 +234,7 @@ function run(ctx: Ctx, user: UserState, flow: Flow, nodeId: Id) {
     }
     cursor.status = 'running';
     cursor.nodeId = current;
+    user.trail.push({ at: ctx.world.now, flowId: flow.id, nodeId: current });
     if (flow.stopWhen) {
       const trace = evalIn(ctx, user, flow.stopWhen, flow.id);
       if (trace.value) return stop(ctx, user, flow, 'stop_condition', trace);

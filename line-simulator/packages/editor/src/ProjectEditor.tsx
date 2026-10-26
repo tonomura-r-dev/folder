@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../../engine/src/index.ts';
-import { validate } from '../../engine/src/index.ts';
+import { personaCoverage, validate } from '../../engine/src/index.ts';
 import { describeIssue } from '../../player/src/issues.ts';
 import { api, ApiError, downloadJson, fmtDateTime, type HistoryEntry } from './api.ts';
 import { Ctx, type EditorCtx } from './ctx.ts';
@@ -113,7 +113,12 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
     };
   }, [save]);
 
-  const issues = useMemo(() => (doc ? validate(doc.project) : []), [doc?.project]);
+  // 重大エラーが無いときだけ、ペルソナを台本どおり流して「誰も入らないシナリオ」も確かめる
+  const issues = useMemo(() => {
+    if (!doc) return [];
+    const v = validate(doc.project);
+    return v.some((i) => i.level === 'error') ? v : [...v, ...personaCoverage(doc.project)];
+  }, [doc?.project]);
   const errors = issues.filter((i) => i.level === 'error').length;
   const warnings = issues.length - errors;
 

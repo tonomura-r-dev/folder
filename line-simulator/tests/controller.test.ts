@@ -24,7 +24,7 @@ describe('画面の操作と CLI の結果が一致する', () => {
   for (const p of project.personas) {
     it(`${p.name}：配信履歴・タグ・CVが同じ`, () => {
       const demo = play(p.id);
-      const ui = worldOf(project, demo).users[demo.userId]!;
+      const ui = worldOf(project, demo).users[demo.activeUserId]!;
       const ref = cli.users[p.id]!;
       expect(ui.deliveries).toEqual(ref.deliveries);
       expect(Object.keys(ui.tags).sort()).toEqual(Object.keys(ref.tags).sort());
@@ -40,7 +40,7 @@ describe('デモの進行', () => {
     d = dispatch(d, { type: 'visitPage', pageId: 'page_lp' });
     d = dispatch(d, { type: 'exitIntent', pageId: 'page_lp' });
     expect(d.session.events.map((e) => e.at)).toEqual([601, 602]);
-    expect(worldOf(project, d).users[d.userId]!.surface).toEqual({ kind: 'popup', pageId: 'page_lp' });
+    expect(worldOf(project, d).users[d.activeUserId]!.surface).toEqual({ kind: 'popup', pageId: 'page_lp' });
   });
 
   it('友だち追加すると、次に届く予定（Day 1 09:00 のステップ）が見える', () => {
@@ -54,16 +54,16 @@ describe('デモの進行', () => {
     ];
     for (const ev of steps) d = dispatch(d, ev);
     const w = worldOf(project, d);
-    expect(upcoming(w, d.userId)[0]).toMatchObject({ flowId: 'flow_step_tokyo', fireAt: DAY + 9 * 60 });
+    expect(upcoming(w, d.activeUserId)[0]).toMatchObject({ flowId: 'flow_step_tokyo', fireAt: DAY + 9 * 60 });
     // 予定の時刻まで進めると届く
     const later = worldOf(project, advance(d, DAY + 9 * 60));
-    expect(later.users[d.userId]!.deliveries.at(-1)!.messageId).toBe('msg_t_d1');
+    expect(later.users[d.activeUserId]!.deliveries.at(-1)!.messageId).toBe('msg_t_d1');
   });
 
   it('ペルソナが無い案件でも始められる', () => {
     const p = { ...project, personas: [] };
     const d = newDemo(p);
-    expect(worldOf(p, d).users[d.userId]!.name).toBe('あなた');
+    expect(worldOf(p, d).users[d.activeUserId]!.name).toBe('あなた');
   });
 
   it('壊れた条件式（編集途中）でも止まらない', () => {

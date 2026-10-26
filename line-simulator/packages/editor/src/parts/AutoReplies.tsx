@@ -4,7 +4,8 @@ import type { AutoReply } from '../../../engine/src/index.ts';
 import { issuesAt, useEditor } from '../ctx.ts';
 import { replace } from '../route.ts';
 import { Field, InlineIssues, ItemTools, move, newId, NumberInput, ReadOnly, Select, Text } from '../ui/form.tsx';
-import { ExprField, options } from '../ui/pickers.tsx';
+import { options } from '../ui/pickers.tsx';
+import { ExprField } from '../ui/ExprField.tsx';
 import { SplitList } from '../ui/split.tsx';
 
 export function AutoReplies() {

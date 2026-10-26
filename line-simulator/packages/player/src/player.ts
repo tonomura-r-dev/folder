@@ -1,15 +1,37 @@
-// デモ画面（スマホ枠の LINE・Web と、横の裏側パネル）。React を使わず素の DOM で描く。
-// 編集ツールのデモ画面と、Phase 5 の営業用HTMLの両方がこれをそのまま使う。
+// デモ画面の本体：上の操作帯（ユーザー・時間・再生・表示）と、スマホ・裏側・資料用表示の切り替え。
+// React を使わず素の DOM で描く。編集ツールのデモ画面と、Phase 5 の営業用HTMLの両方がこれをそのまま使う。
 //
 // 決まりごと
-//   - 押した結果を画面側で決めない。すべてエンジンへの入力イベントにする（controller.ts の dispatch）
+//   - 押した結果を画面側で決めない。すべてエンジンへの入力イベントにする（controller.ts）
 //   - 表示は毎回「イベント列 → reduce → 状態」から作り直す
-//   - 案件の文字は必ず esc() を通す（< や & を含んでも崩れない）
+//   - 案件の文字は必ず esc() を通す
 
-import type { Asset, Bubble, Id, InputEventBody, Project, RichMenu, TalkItem, UserState, WebPage, WorldState } from '../../engine/src/index.ts';
+import type { Asset, Id, InputEventBody, Project } from '../../engine/src/index.ts';
 import { MINUTES_PER_DAY } from '../../engine/src/index.ts';
-import { advance, dispatch, newDemo, upcoming, worldOf, type Demo } from './controller.ts';
-import { fmtTime, friendText, Labels } from './describe.ts';
+import { backstage } from './backstage.ts';
+import {
+  addUser,
+  allScripted,
+  autoStep,
+  dispatch,
+  futureEvents,
+  newDemo,
+  nextStop,
+  pendingInputs,
+  prevStop,
+  removeUser,
+  resetDemo,
+  seek,
+  selectUser,
+  worldOf,
+  type Demo,
+} from './controller.ts';
+import { fmtTime, Labels } from './describe.ts';
+import { phone } from './phone.ts';
+import { SLIDE_H, SLIDE_W, slide } from './slide.ts';
+import { esc, type Mode, type Tab, type Ui, type View } from './view.ts';
+
+export { esc } from './view.ts';
 
 export type PlayerOptions = {
   project: Project;
@@ -28,256 +50,170 @@ export type PlayerHandle = {
   destroy(): void;
 };
 
-const ESC: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-export const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, (c) => ESC[c]!);
-
-const hhmm = (min: number) => {
-  const m = ((min % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-};
-const dayOf = (min: number) => Math.floor(min / MINUTES_PER_DAY);
-
-const SYSTEM: Record<string, (p: Record<string, string>, L: Labels) => string> = {
-  friendAdded: (p, L) => `友だち追加しました（${L.route(p['routeId'] ?? null)}）`,
-  blocked: () => 'ブロックしました',
-  unblocked: () => 'ブロックを解除しました',
-  surveyShown: () => 'アンケートが届きました',
-  pageOpened: () => 'ページを開きました',
-};
+/** 自動再生で1コマ進める間隔（×1 のとき） */
+const TICK_MS = 1200;
 
 export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHandle {
   let project = opts.project;
   let demo = opts.demo ?? newDemo(project, opts.personaId);
-  let world: WorldState | null = null;
-  let menuOpen = true;
-  let picked: Id[] = []; // 複数選択アンケートで選び中の選択肢
+  let view: View | null = null;
+  const ui: Ui = { menuOpen: true, picked: [], mode: 'full', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '' };
+  let timer: ReturnType<typeof setInterval> | null = null;
+  /** 回答待ちで止まった再生を、答えたら続けるか */
+  let resumeWhenAnswered = false;
   const assetUrl = opts.assetUrl ?? ((a: Asset) => a.path);
 
   root.classList.add('lsp');
 
-  const commit = (next: Demo) => {
+  // ---------- 状態の更新 ----------
+
+  const commit = (next: Demo, keepOpen = false) => {
     demo = next;
+    if (!keepOpen) ui.open.clear();
     opts.onChange?.(demo);
     render();
   };
-  const send = (body: InputEventBody) => commit(dispatch(demo, body));
 
-  // ---------- 部品 ----------
-
-  const L = () => new Labels(project);
-  const asset = (id: Id | undefined) => (id ? project.assets.find((a) => a.id === id) : undefined);
-  const img = (id: Id | undefined, alt = '') => {
-    const a = asset(id);
-    return a ? `<img src="${esc(assetUrl(a))}" alt="${esc(a.alt || alt)}">` : `<div class="lsp-noimg">画像（未登録）</div>`;
+  const send = (body: InputEventBody) => {
+    if (!demo.activeUserId) return;
+    commit(dispatch(demo, body));
+    // 回答待ちで止まっていた再生は、答えて待ちが無くなったら続ける
+    if (resumeWhenAnswered && view && pendingInputs(project, view.world, demo).length === 0) startPlay();
   };
 
-  function bubble(b: Bubble, nodeId?: Id): string {
-    const btns = (list: { id: Id; label: string }[]) =>
-      `<div class="lsp-btns">${list
-        .map((x) => `<button type="button" data-act="tapButton" data-button="${esc(x.id)}"${nodeId ? ` data-node="${esc(nodeId)}"` : ''}>${esc(x.label)}</button>`)
-        .join('')}</div>`;
-    switch (b.kind) {
-      case 'text':
-        return `<div class="lsp-b">${esc(b.text)}</div>`;
-      case 'image':
-        return `<div class="lsp-b img">${img(b.assetId)}</div>`;
-      case 'buttons':
-        return `<div class="lsp-b tmpl"><div class="lsp-tmpl-text">${esc(b.text)}</div>${btns(b.buttons)}</div>`;
-      case 'card':
-        return `<div class="lsp-b card lsp-card">${b.assetId ? img(b.assetId) : ''}<div class="lsp-card-title">${esc(b.title)}</div>${
-          b.body ? `<div class="lsp-card-body">${esc(b.body)}</div>` : ''
-        }${btns(b.buttons)}</div>`;
+  /** 時間を動かす操作。再生中なら止める */
+  const moveTime = (to: number) => {
+    stopTimer();
+    ui.playing = false;
+    ui.status = '';
+    resumeWhenAnswered = false;
+    commit(seek(demo, to));
+  };
+
+  // ---------- 自動再生 ----------
+
+  function stopTimer() {
+    if (timer) clearInterval(timer);
+    timer = null;
+  }
+
+  function startPlay() {
+    stopTimer();
+    ui.playing = true;
+    ui.status = '再生中';
+    resumeWhenAnswered = false;
+    timer = setInterval(tick, TICK_MS / ui.speed);
+    render();
+  }
+
+  function pause(status: string) {
+    stopTimer();
+    ui.playing = false;
+    ui.status = status;
+    render();
+  }
+
+  function tick() {
+    const r = autoStep(project, demo);
+    if (r.stopped === 'pending' && r.pending) {
+      const name = view?.world.users[r.pending.userId]?.name ?? '';
+      demo = selectUser(demo, r.pending.userId);
+      opts.onChange?.(demo);
+      resumeWhenAnswered = true;
+      pause(`${name}の${r.pending.kind === 'survey' ? 'アンケートの回答' : 'ボタン選択'}を待っています。スマホで答えると再生を続けます`);
+      return;
     }
-  }
-
-  function chat(user: UserState): string {
-    const labels = L();
-    const initial = esc([...project.brand.accountName][0] ?? 'L');
-    const out: string[] = [];
-    let lastDay = -1;
-    let prev: TalkItem | undefined;
-    for (const item of user.talk) {
-      const day = dayOf(item.at);
-      if (day !== lastDay) {
-        out.push(`<div class="lsp-sys">Day ${day}</div>`);
-        lastDay = day;
-        prev = undefined;
-      }
-      if (item.side === 'system') {
-        out.push(`<div class="lsp-sys">${esc(SYSTEM[item.code]?.(item.params ?? {}, labels) ?? item.code)}</div>`);
-      } else if (item.side === 'user') {
-        out.push(`<div class="lsp-row me"><span class="lsp-time">${hhmm(item.at)}</span>${bubble(item.bubble).replace('class="lsp-b', 'class="lsp-b me')}</div>`);
-      } else {
-        // 同じ配信の2つ目以降の吹き出しは、アイコンと名前を出さない
-        const cont = prev?.side === 'bot' && prev.at === item.at && prev.messageId === item.messageId;
-        out.push(
-          `<div class="lsp-row bot"><div class="lsp-avatar${cont ? ' ghost' : ''}">${initial}</div><div class="lsp-col">${
-            cont ? '' : `<div class="lsp-name">${esc(project.brand.accountName)}</div>`
-          }${bubble(item.bubble, item.fromNodeId)}</div><span class="lsp-time">${hhmm(item.at)}</span></div>`,
-        );
-      }
-      prev = item;
-    }
-    if (!user.talk.length) out.push('<div class="lsp-sys">まだメッセージはありません</div>');
-    return out.join('');
-  }
-
-  function surveyPanel(user: UserState): string {
-    if (user.surface.kind !== 'survey') return '';
-    const { surveyId, questionId } = user.surface;
-    const q = project.surveys.find((s) => s.id === surveyId)?.questions.find((x) => x.id === questionId);
-    if (!q) return '';
-    const data = `data-survey="${esc(surveyId)}" data-q="${esc(questionId)}"`;
-    const chips = q.choices
-      .map((c) =>
-        q.mode === 'single'
-          ? `<button type="button" data-act="answer" ${data} data-choice="${esc(c.id)}">${esc(c.label)}</button>`
-          : `<button type="button" data-act="pick" data-choice="${esc(c.id)}" class="${picked.includes(c.id) ? 'on' : ''}" aria-pressed="${picked.includes(c.id)}">${esc(c.label)}</button>`,
-      )
-      .join('');
-    const multi = q.mode === 'multiple' ? `<button type="button" class="lsp-send-multi" data-act="answerMulti" ${data}${picked.length ? '' : ' disabled'}>回答する</button>` : '';
-    return `<div class="lsp-quick"><div class="lsp-quick-q">${esc(q.text)}${q.mode === 'multiple' ? '（複数選べます）' : ''}</div><div class="lsp-chips">${chips}</div>${multi}</div>`;
-  }
-
-  function menu(m: RichMenu): string {
-    const bg = asset(m.imageAssetId);
-    const cells = m.cells
-      .map(
-        (c) =>
-          `<button type="button" data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
-            c.area.colSpan ?? 1
-          };grid-row:${c.area.row + 1} / span ${c.area.rowSpan ?? 1}">${esc(c.label)}</button>`,
-      )
-      .join('');
-    const grid = `<div class="lsp-menu-grid${bg ? ' has-img' : ''}" style="grid-template-columns:repeat(${m.layout.cols},1fr);grid-template-rows:repeat(${m.layout.rows},auto)${
-      bg ? `;background-image:url('${esc(assetUrl(bg))}');aspect-ratio:${bg.width}/${bg.height}` : ''
-    }">${cells}</div>`;
-    return `<div class="lsp-menu"><button type="button" class="lsp-menu-bar" data-act="toggleMenu" aria-expanded="${menuOpen}">${esc(m.label)} ${menuOpen ? '▼' : '▲'}</button>${menuOpen ? grid : ''}</div>`;
-  }
-
-  function talk(user: UserState): string {
-    const blocked = user.friendState === 'blocked';
-    const m = user.richMenuId ? project.richMenus.find((r) => r.id === user.richMenuId) : undefined;
-    return `<div class="lsp-talk">
-      <div class="lsp-talkbar"><span class="lsp-back">‹</span>${esc(project.brand.accountName)}</div>
-      ${blocked ? '<div class="lsp-banner">ブロック中です。配信は届きません。<button type="button" data-act="unblock">ブロックを解除</button></div>' : ''}
-      <div class="lsp-chat" aria-live="polite">${chat(user)}</div>
-      ${blocked ? '' : surveyPanel(user)}
-      ${m && !blocked ? menu(m) : ''}
-      <form class="lsp-input" data-form="send"><input name="text" placeholder="メッセージを入力" autocomplete="off" aria-label="メッセージ"${blocked ? ' disabled' : ''}><button type="submit"${blocked ? ' disabled' : ''}>送信</button></form>
-    </div>`;
-  }
-
-  function page(user: UserState, p: WebPage, popup: boolean): string {
-    const id = esc(p.id);
-    const blocks = p.blocks
-      .map((b, i) => {
-        if (b.kind === 'button') return `<button type="button" class="lsp-pbtn" data-act="pageBtn" data-page="${id}" data-i="${i}">${esc(b.label)}</button>`;
-        if (b.kind === 'image') return img(b.assetId);
-        return b.kind === 'heading' ? `<h2>${esc(b.text)}</h2>` : `<p>${esc(b.text)}</p>`;
-      })
-      .join('');
-    const form = p.form
-      ? `<form class="lsp-form" data-form="submit" data-page="${id}">${p.form.fields
-          .map((f) => {
-            const name = esc(f.id);
-            const input =
-              f.type === 'select'
-                ? `<select name="${name}">${(f.options ?? []).map((o) => `<option>${esc(o)}</option>`).join('')}</select>`
-                : `<input name="${name}" type="${f.type === 'text' ? 'text' : f.type}" autocomplete="off">`;
-            return `<label>${esc(f.label)}</label>${input}`;
-          })
-          .join('')}<button type="submit" class="lsp-pbtn">送信する</button></form>`
-      : '';
-    const cta = p.lineCta ? `<button type="button" class="lsp-line-cta" data-act="lineCta" data-page="${id}">${esc(p.lineCta.label)}</button>` : '';
-    const pop =
-      popup && p.exitPopup
-        ? `<div class="lsp-overlay" role="dialog" aria-modal="true" aria-label="${esc(p.exitPopup.title)}"><div class="lsp-popup">${
-            p.exitPopup.assetId ? img(p.exitPopup.assetId) : ''
-          }<div class="lsp-popup-title">${esc(p.exitPopup.title)}</div><div class="lsp-popup-body">${esc(p.exitPopup.body)}</div><button type="button" class="lsp-line-cta" data-act="popupCta" data-page="${id}">${esc(
-            p.exitPopup.cta.label,
-          )}</button><button type="button" class="lsp-popup-dismiss" data-act="dismissPopup" data-page="${id}">${esc(p.exitPopup.dismissLabel)}</button></div></div>`
-        : '';
-    const inLine = user.friendState === 'friend';
-    return `<div class="lsp-browser">
-      <div class="lsp-urlbar"><button type="button" data-act="back" data-page="${id}" title="${inLine ? 'LINEに戻る' : '前のページへ（離脱）'}" aria-label="戻る">‹</button><span class="lsp-url">${esc(p.url ?? p.title)}</span></div>
-      <div class="lsp-page">${blocks}${form}${cta}<div class="lsp-fake">架空のページです</div></div>
-      ${pop}
-    </div>`;
-  }
-
-  function start(): string {
-    const pages = project.webPages.filter((p) => p.kind !== 'thanks');
-    return `<div class="lsp-start">
-      <div class="lsp-start-title">はじめかたを選ぶ</div>
-      <div class="lsp-start-sub">この人が、どこからやって来るかを選んでください。</div>
-      ${pages.length ? '<div class="lsp-start-group">Webサイトから</div>' : ''}
-      ${pages.map((p) => `<button type="button" data-act="visit" data-page="${esc(p.id)}">${esc(p.title)}<small>${esc(p.url ?? '')}</small></button>`).join('')}
-      ${project.routes.length ? '<div class="lsp-start-group">LINEで直接友だち追加</div>' : ''}
-      ${project.routes.map((r) => `<button type="button" class="line" data-act="addFriend" data-route="${esc(r.id)}">友だち追加する<small>経路：${esc(r.label)}</small></button>`).join('')}
-    </div>`;
-  }
-
-  function phone(user: UserState, w: WorldState): string {
-    const s = user.surface;
-    const p = s.kind === 'page' || s.kind === 'popup' ? project.webPages.find((x) => x.id === s.pageId) : undefined;
-    const body = p ? page(user, p, s.kind === 'popup') : user.friendState === 'not_friend' ? start() : talk(user);
-    return `<div class="lsp-phone" aria-label="${esc(user.name)}のスマホ"><div class="lsp-status"><span>${esc(fmtTime(w.now))}</span><span>${esc(user.name)}</span></div><div class="lsp-screen">${body}</div></div>`;
-  }
-
-  function side(user: UserState, w: WorldState): string {
-    const labels = L();
-    const next = upcoming(w, user.id)[0];
-    const personaId = demo.session.users[0]?.personaId ?? '';
-    const personas = project.personas.map((p) => `<option value="${esc(p.id)}"${p.id === personaId ? ' selected' : ''}>${esc(p.name)}</option>`).join('');
-    const tags = Object.keys(user.tags);
-    const cvs = Object.entries(user.cvs);
-    const log = [...user.deliveries]
-      .reverse()
-      .map(
-        (d) =>
-          `<li><span class="t">${esc(fmtTime(d.at))}</span><span>${esc(labels.message(d.messageId))}${d.count === 0 ? '<span class="reply">応答</span>' : ''}<span class="f">${esc(labels.flow(d.flowId))}</span></span></li>`,
-      )
-      .join('');
-    const sent = user.deliveries.reduce((a, d) => a + d.count, 0);
-    return `<div class="lsp-side">
-      <div class="lsp-card-side"><h3>ユーザー</h3><div class="lsp-ctrls">${
-        personas ? `<select data-change="persona" aria-label="ペルソナ">${personas}</select>` : ''
-      }<button type="button" data-act="reset">最初から</button>${
-        user.friendState === 'friend' ? '<button type="button" data-act="block">ブロックする</button>' : ''
-      }</div></div>
-      <div class="lsp-card-side"><h3>時間</h3><div class="lsp-clock">${esc(fmtTime(w.now))}</div>
-        <div class="lsp-next">${next ? `次の予定：<b>${esc(fmtTime(next.fireAt))}</b>　${esc(labels.flow(next.flowId))}` : '次の予定はありません'}</div>
-        <div class="lsp-ctrls"><button type="button" class="primary" data-act="next"${next ? '' : ' disabled'}>次の予定まで進める</button><button type="button" data-act="adv" data-min="60">＋1時間</button><button type="button" data-act="adv" data-min="1440">＋1日</button></div></div>
-      <div class="lsp-card-side"><h3>いまの状態</h3><dl class="lsp-kv">
-        <dt>友だち</dt><dd>${esc(friendText(user.friendState))}</dd>
-        <dt>経路</dt><dd>${esc(labels.route(user.route))}</dd>
-        <dt>CV</dt><dd>${cvs.length ? cvs.map(([id, v]) => `${esc(labels.cv(id))}×${v.count}`).join('、') : '<span class="lsp-none">なし</span>'}</dd>
-        <dt>タグ</dt><dd>${tags.length ? `<span class="lsp-tags">${tags.map((t) => `<span class="lsp-tag">${esc(labels.tag(t))}</span>`).join('')}</span>` : '<span class="lsp-none">なし</span>'}</dd>
-      </dl></div>
-      <div class="lsp-card-side"><h3>配信履歴（${user.deliveries.length}件・通数 ${sent}）</h3>${log ? `<ul class="lsp-log">${log}</ul>` : '<div class="lsp-none">まだ配信はありません</div>'}</div>
-    </div>`;
+    commit(r.demo);
+    if (r.stopped === 'end') pause('最後まで再生しました');
   }
 
   // ---------- 描画 ----------
 
+  function bar(v: View): string {
+    const active = demo.activeUserId;
+    const pending = new Set(pendingInputs(project, v.world, demo).map((p) => p.userId));
+    const chips = demo.session.users
+      .map((u) => {
+        const s = v.world.users[u.id];
+        return `<button type="button" class="lsp-chip${u.id === active ? ' on' : ''}" data-act="selectUser" data-user="${esc(u.id)}">${esc(s?.name ?? u.id)}${
+          demo.scripted.includes(u.id) ? '<small>台本</small>' : ''
+        }${pending.has(u.id) ? '<small class="wait">回答待ち</small>' : ''}</button>`;
+      })
+      .join('');
+    const manual = project.personas.map((p) => `<option value="m:${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    const scripted = project.personas
+      .filter((p) => (p.script ?? []).length)
+      .map((p) => `<option value="s:${esc(p.id)}">${esc(p.name)}</option>`)
+      .join('');
+    const day = Math.floor(v.world.now / MINUTES_PER_DAY);
+    const time = fmtTime(v.world.now).split(' ')[2] ?? '00:00';
+    const ahead = active && !demo.scripted.includes(active) ? futureEvents(demo, active) : 0;
+    const mode = (m: Mode, label: string) => `<button type="button" class="${ui.mode === m ? 'on' : ''}" data-act="mode" data-mode="${m}">${label}</button>`;
+    const speed = (s: 1 | 2 | 5) => `<button type="button" class="${ui.speed === s ? 'on' : ''}" data-act="speed" data-speed="${s}">×${s}</button>`;
+    return `<div class="lsp-bar">
+      <div class="lsp-bar-row">
+        <span class="lbl">ユーザー</span>${chips || '<span class="lsp-none">いません</span>'}
+        ${active ? '<button type="button" class="ghost" data-act="removeUser" title="選んでいるユーザーを外す">× 外す</button>' : ''}
+        <select data-change="addUser" aria-label="ユーザーを追加"><option value="">＋ ユーザーを追加…</option>${manual ? `<optgroup label="手で操作する">${manual}</optgroup>` : ''}${
+          scripted ? `<optgroup label="台本どおりに動く">${scripted}</optgroup>` : `<option value="m:">（ペルソナなし）</option>`
+        }</select>
+        ${scripted ? '<button type="button" data-act="allScripted" title="台本のあるペルソナ全員を、台本どおりに動く設定で並べ直す">台本つきで全員を並べる</button>' : ''}
+      </div>
+      <div class="lsp-bar-row">
+        <span class="lsp-clock">${esc(fmtTime(v.world.now))}</span>
+        <span class="lsp-group"><button type="button" data-act="prev" title="前に何かが起きた時点へ">◀ 前の出来事</button><button type="button" data-act="adv" data-min="-1440">−1日</button><button type="button" data-act="adv" data-min="-60">−1時間</button><button type="button" data-act="adv" data-min="60">＋1時間</button><button type="button" data-act="adv" data-min="1440">＋1日</button><button type="button" class="primary" data-act="next" title="次に誰かに何かが起きる時点へ">次の出来事 ▶</button></span>
+        <span class="lsp-group">Day <input type="number" min="0" max="365" value="${day}" data-jump="day" aria-label="日"><input type="text" value="${esc(time)}" data-jump="time" size="5" aria-label="時刻"><button type="button" data-act="jump">移動</button></span>
+        <button type="button" data-act="reset" title="顔ぶれと台本は残し、手の操作を消して最初の時刻に戻す">初期化</button>
+      </div>
+      <div class="lsp-bar-row">
+        <button type="button" class="primary" data-act="play">${ui.playing ? '⏸ 一時停止' : '▶ 自動再生'}</button>
+        <span class="lsp-group">${speed(1)}${speed(2)}${speed(5)}</span>
+        <span class="lsp-playstate" role="status">${esc(ui.status)}</span>
+        <span class="lsp-spacer"></span>
+        <span class="lsp-group">${mode('full', '裏側あり')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9')}</span>
+      </div>
+      ${ahead ? `<div class="lsp-warn">この先に、${esc(v.world.users[active]?.name ?? '')}の操作が${ahead}件あります。いまの時点から操作すると、それより後の操作は消えます。</div>` : ''}
+    </div>`;
+  }
+
   function render() {
+    let world;
     try {
       world = worldOf(project, demo);
     } catch (e) {
       root.innerHTML = `<div class="lsp-error">デモを表示できません：${esc(e instanceof Error ? e.message : e)}</div>`;
       return;
     }
-    const user = world.users[demo.userId];
+    view = { project, world, demo, ui, L: new Labels(project), assetUrl };
     const c = project.brand.colors;
     root.style.setProperty('--lsp-primary', c.primary);
     root.style.setProperty('--lsp-accent', c.accent);
     if (c.chatBg) root.style.setProperty('--lsp-chat', c.chatBg);
     else root.style.removeProperty('--lsp-chat');
-    root.innerHTML = user ? `<div class="lsp-stage">${phone(user, world)}${side(user, world)}</div>` : '<div class="lsp-error">ユーザーがいません</div>';
+
+    const user = world.users[demo.activeUserId];
+    let body: string;
+    if (!user) body = '<div class="lsp-empty">「＋ ユーザーを追加」から、デモのユーザーを追加してください。</div>';
+    else if (ui.mode === 'slide') body = slide(view, user);
+    else body = `<div class="lsp-stage ${ui.mode}">${phone(view, user)}${ui.mode === 'full' ? backstage(view, user) : ''}</div>`;
+    root.innerHTML = bar(view) + body;
+
     const scroller = root.querySelector<HTMLElement>('.lsp-chat');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    fitSlide();
   }
+
+  /** 資料用表示を、置き場所の幅に合わせて縮める（16:9 のまま） */
+  function fitSlide() {
+    const wrap = root.querySelector<HTMLElement>('.lsp-slide-wrap');
+    const canvas = root.querySelector<HTMLElement>('.lsp-slide');
+    if (!wrap || !canvas) return;
+    const k = Math.min(1, wrap.clientWidth / SLIDE_W);
+    canvas.style.transform = `scale(${k})`;
+    wrap.style.height = `${Math.round(SLIDE_H * k)}px`;
+  }
+  const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => fitSlide());
+  resize?.observe(root);
 
   // ---------- 操作 ----------
 
@@ -286,8 +222,10 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     if (!el || !root.contains(el) || (el as HTMLButtonElement).disabled) return;
     const d = el.dataset;
     const pageId = d['page'] ?? '';
-    const user = world?.users[demo.userId];
+    const world = view?.world;
+    const user = world?.users[demo.activeUserId];
     switch (d['act']) {
+      // スマホの中
       case 'visit':
         return send({ type: 'visitPage', pageId });
       case 'addFriend':
@@ -312,33 +250,89 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       case 'tapMenu':
         return send({ type: 'tapMenu', richMenuId: d['menu'] ?? '', cellId: d['cell'] ?? '' });
       case 'toggleMenu':
-        menuOpen = !menuOpen;
+        ui.menuOpen = !ui.menuOpen;
         return render();
       case 'answer':
         return send({ type: 'answer', surveyId: d['survey'] ?? '', questionId: d['q'] ?? '', choiceIds: [d['choice'] ?? ''] });
       case 'pick': {
         const c = d['choice'] ?? '';
-        picked = picked.includes(c) ? picked.filter((x) => x !== c) : [...picked, c];
+        ui.picked = ui.picked.includes(c) ? ui.picked.filter((x) => x !== c) : [...ui.picked, c];
         return render();
       }
       case 'answerMulti': {
-        const choiceIds = picked;
-        picked = [];
+        const choiceIds = ui.picked;
+        ui.picked = [];
         return send({ type: 'answer', surveyId: d['survey'] ?? '', questionId: d['q'] ?? '', choiceIds });
       }
       case 'block':
         return send({ type: 'block' });
       case 'unblock':
         return send({ type: 'unblock' });
+      case 'cv':
+        return send({ type: 'cv', cvId: d['cv'] ?? '' });
+
+      // ユーザー
+      case 'selectUser':
+        if (d['tab']) ui.tab = d['tab'] as Tab;
+        ui.picked = [];
+        return commit(selectUser(demo, d['user'] ?? ''));
+      case 'removeUser':
+        ui.picked = [];
+        return commit(removeUser(demo, demo.activeUserId));
+      case 'allScripted':
+        stopTimer();
+        ui.playing = false;
+        ui.status = '台本どおりに動く人を並べました。「▶ 自動再生」で流せます';
+        return commit(allScripted(project));
+
+      // 時間
       case 'next': {
-        const t = world ? upcoming(world, demo.userId)[0] : undefined;
-        if (t) commit(advance(demo, t.fireAt));
+        const t = world ? nextStop(world, demo) : null;
+        if (t !== null) moveTime(t);
+        else pause('この先に起きることはありません');
+        return;
+      }
+      case 'prev': {
+        const t = world ? prevStop(world, demo) : null;
+        if (t !== null) moveTime(t);
         return;
       }
       case 'adv':
-        return commit(advance(demo, demo.now + Number(d['min'] ?? 0)));
+        return moveTime(demo.now + Number(d['min'] ?? 0));
+      case 'jump': {
+        const day = Number(root.querySelector<HTMLInputElement>('[data-jump="day"]')?.value ?? 0);
+        const m = /^(\d{1,2}):(\d{2})$/.exec(root.querySelector<HTMLInputElement>('[data-jump="time"]')?.value.trim() ?? '');
+        if (!Number.isFinite(day) || !m) return pause('時刻は「09:00」の形で入れてください');
+        return moveTime(Math.max(0, day) * MINUTES_PER_DAY + Number(m[1]) * 60 + Number(m[2]));
+      }
       case 'reset':
-        return handle.reset(demo.session.users[0]?.personaId);
+        stopTimer();
+        ui.playing = false;
+        ui.status = '';
+        resumeWhenAnswered = false;
+        ui.picked = [];
+        return commit(resetDemo(demo, project));
+
+      // 再生
+      case 'play':
+        return ui.playing ? pause('一時停止しました') : startPlay();
+      case 'speed':
+        ui.speed = Number(d['speed']) as Ui['speed'];
+        return ui.playing ? startPlay() : render();
+
+      // 表示
+      case 'mode':
+        ui.mode = d['mode'] as Mode;
+        return render();
+      case 'tab':
+        ui.tab = d['tab'] as Tab;
+        return render();
+      case 'toggleWhy': {
+        const i = Number(d['i']);
+        if (ui.open.has(i)) ui.open.delete(i);
+        else ui.open.add(i);
+        return render();
+      }
     }
   }
 
@@ -359,8 +353,16 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   }
 
   function onChange(e: Event) {
-    const el = e.target as HTMLSelectElement;
-    if (root.contains(el) && el.dataset['change'] === 'persona') handle.reset(el.value);
+    const el = e.target as HTMLInputElement | HTMLSelectElement;
+    if (!root.contains(el)) return;
+    if (el.dataset['change'] === 'addUser' && el.value) {
+      const [kind, personaId] = el.value.split(':');
+      return commit(addUser(demo, project, personaId ?? '', kind === 's'));
+    }
+    if (el.dataset['change'] === 'onlyNg') {
+      ui.onlyNg = (el as HTMLInputElement).checked;
+      return render();
+    }
   }
 
   root.addEventListener('click', onClick);
@@ -373,12 +375,17 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       render();
     },
     reset(personaId) {
-      picked = [];
-      menuOpen = true;
+      stopTimer();
+      ui.playing = false;
+      ui.status = '';
+      ui.picked = [];
+      ui.menuOpen = true;
       commit(newDemo(project, personaId));
     },
     getDemo: () => demo,
     destroy() {
+      stopTimer();
+      resize?.disconnect();
       root.removeEventListener('click', onClick);
       root.removeEventListener('submit', onSubmit);
       root.removeEventListener('change', onChange);

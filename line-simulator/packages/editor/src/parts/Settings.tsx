@@ -45,6 +45,13 @@ export function Settings() {
           <Field label="重複配信を防ぐ期間（時間）" hint="この時間内に同じ文面を同じ人へ2回送りません。0 で防止しない">
             <NumberInput value={p.settings.dedupeWindowMinutes / 60} min={0} onChange={(v) => update((d) => (d.settings.dedupeWindowMinutes = Math.round((v ?? 0) * 60)))} />
           </Field>
+          <Field label="無料メッセージの通数（任意・目安）" hint="デモの配信履歴に「無料○通のうち△通」と出します。契約プランの数を入れてください。空なら出しません">
+            <NumberInput
+              value={p.settings.messageCounting?.freeQuota}
+              min={0}
+              onChange={(v) => update((d) => (d.settings.messageCounting = v === undefined ? { enabled: true } : { enabled: true, freeQuota: v }))}
+            />
+          </Field>
         </div>
       </div>
 

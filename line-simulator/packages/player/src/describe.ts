@@ -188,3 +188,110 @@ export function describeDecision(d: Decision, L: Labels, project: Project): stri
         : `自動応答の候補を見送り　理由：${d.trace ? describeFailure(d.trace, L) : REASON.condition_false}`;
   }
 }
+
+// ---------- 営業先に見せる説明（デモ画面の「なぜ」） ----------
+// CLI の1行（describeDecision）より、言い回しを「お客様が読んで分かる」側に寄せる。
+
+export type Explanation = {
+  /** ok=届いた・進んだ／ng=届かなかった・進まなかった／stop=止めた／info=始まった等 */
+  tone: 'ok' | 'ng' | 'stop' | 'info';
+  title: string;
+  /** 理由（無ければ出さない） */
+  reason?: string;
+};
+
+const BECAUSE: Record<string, string> = {
+  blocked: 'この人がブロックしているため',
+  not_friend: 'まだLINEの友だちになっていないため',
+  duplicate: '少し前に同じメッセージを送っているため（重複して送らない設定）',
+  reentry: '1回だけのシナリオで、すでに入ったことがあるため',
+  stop_all: '別のシナリオで、この人への配信をすべて止めたため',
+};
+
+export function explainDecision(d: Decision, L: Labels, project: Project, world?: { users: Record<string, UserState> }): Explanation {
+  const flow = `「${L.flow(d.flowId)}」`;
+  switch (d.kind) {
+    case 'deliver': {
+      const what = `「${L.message(d.ref ?? '')}」`;
+      if (d.outcome === 'taken') return { tone: 'ok', title: `${what}が届きました`, reason: d.flowId ? `${flow}の配信` : '自動応答' };
+      if (d.reason === 'lower_priority') {
+        // 同じ時刻に先に届いた、優先度の高いシナリオの名前を添える
+        const winner = world?.users[d.userId]?.deliveries.find((x) => x.at === d.at && x.flowId && x.flowId !== d.flowId);
+        return { tone: 'ng', title: `${what}は届きませんでした`, reason: `同じ時刻に、優先度の高い${winner ? `「${L.flow(winner.flowId)}」` : '別のシナリオ'}の配信があったため` };
+      }
+      return { tone: 'ng', title: `${what}は届きませんでした`, reason: (d.reason && BECAUSE[d.reason]) ?? '配信の条件に当てはまらないため' };
+    }
+    case 'branch': {
+      const name = L.node(d.nodeId);
+      const c = L.branchCase(d.nodeId, d.ref);
+      if (d.outcome === 'taken') return { tone: 'info', title: `「${name}」で「${c}」に進みました`, reason: flow };
+      return { tone: 'ng', title: `「${name}」で「${c}」には進みませんでした`, reason: d.trace ? `${describeFailure(d.trace, L)}ため` : '条件に当てはまらないため' };
+    }
+    case 'stopWhen': {
+      if (d.reason === 'stop_all') return { tone: 'stop', title: `${flow}を止めました`, reason: BECAUSE['stop_all'] };
+      const stopWhen = project.flows.find((f) => f.id === d.flowId)?.stopWhen;
+      return { tone: 'stop', title: `${flow}を止めました`, reason: `「${stopWhen ? describeExpr(stopWhen, L) : '停止条件'}」に当てはまったため` };
+    }
+    case 'trigger':
+      return d.outcome === 'taken'
+        ? { tone: 'info', title: `${flow}が始まりました` }
+        : { tone: 'ng', title: `${flow}には入りませんでした`, reason: (d.reason && BECAUSE[d.reason]) ?? '' };
+    case 'autoReply':
+      return d.outcome === 'taken'
+        ? { tone: 'info', title: d.ref?.endsWith('#fallback') ? '自動応答：どの条件にも当てはまらないので、いつもの返信' : '自動応答：条件に合う返信を選びました' }
+        : { tone: 'ng', title: '自動応答：この返信は選ばれませんでした', reason: d.trace ? `${describeFailure(d.trace, L)}ため` : '' };
+  }
+}
+
+/** 判定の木の1段を文にする（実際の値つき）。木を開いたときに出す */
+export function describeTraceNode(t: Trace, L: Labels): string {
+  const e = t.expr;
+  switch (e.op) {
+    case 'and':
+      return '次のすべてに当てはまる';
+    case 'or':
+      return '次のどれかに当てはまる';
+    case 'not':
+      return '次に当てはまらない';
+    default: {
+      const base = (() => {
+        try {
+          return describeExpr(e, L);
+        } catch {
+          return '読み取れない条件';
+        }
+      })();
+      return `${base}${actualText(t, L)}`;
+    }
+  }
+}
+
+function actualText(t: Trace, L: Labels): string {
+  const e = t.expr;
+  const a = t.actual;
+  switch (e.op) {
+    case 'hasTag': {
+      const tags = (a as string[] | undefined) ?? [];
+      return `（付いているタグ：${tags.length ? tags.map(L.tag).join('、') : 'なし'}）`;
+    }
+    case 'answer': {
+      const got = (a as string[] | undefined) ?? [];
+      return `（回答：${got.length ? L.choices(e.surveyId, e.questionId, got) : '未回答'}）`;
+    }
+    case 'cv':
+      return `（${L.cv(e.cvId)}：${typeof a === 'number' ? fmtTime(a) : 'まだ'}）`;
+    case 'friend':
+      return `（いま：${FRIEND[(a as UserState['friendState']) ?? 'not_friend']}）`;
+    case 'route':
+      return `（経路：${L.route((a as string | null) ?? null)}）`;
+    case 'attr':
+      return `（値：${a === null || a === undefined ? 'なし' : String(a)}）`;
+    case 'elapsed':
+      return typeof a === 'number' ? `（経過：${fmtDuration(a)}）` : '（まだ始まっていない）';
+    case 'did':
+    case 'delivered':
+      return `（${typeof a === 'number' ? a : 0}回）`;
+    default:
+      return '';
+  }
+}

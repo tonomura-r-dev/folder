@@ -80,6 +80,8 @@ export function describeIssue(i: Issue): string {
       return '停止条件がありません（CV済みの人にも送り続ける可能性）';
     case 'flow.friendRequired':
       return '友だち追加前に始まるシナリオが、待機を挟まずに配信しようとしています（届きません）';
+    case 'persona.noneMatch':
+      return `ペルソナを台本どおり${str(p['days'])}日流しても、誰もこのシナリオに入りません（デモで見せられません）`;
     case 'flow.neverStarted':
       return 'どこからも呼ばれないシナリオです';
     case 'text.unknownVar':

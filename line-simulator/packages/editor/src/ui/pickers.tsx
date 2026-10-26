@@ -1,10 +1,10 @@
 // 案件の中身を選ぶ部品（文面・タグ・ページ…）と、条件式・動作・時間の入力。
 
 import { useState } from 'react';
-import type { Action, Expr, Id, InputEventType, Minutes, Project, Trigger } from '../../../engine/src/index.ts';
-import { describeExpr, Labels } from '../../../player/src/describe.ts';
+import type { Action, Id, InputEventType, Minutes, Project, Trigger } from '../../../engine/src/index.ts';
+import { Labels } from '../../../player/src/describe.ts';
 import { issuesAt, useEditor } from '../ctx.ts';
-import { Checks, Field, InlineIssues, JsonField, NumberInput, Select, Text, type Option } from './form.tsx';
+import { Checks, Field, InlineIssues, NumberInput, Select, Text, type Option } from './form.tsx';
 
 export const options = {
   messages: (p: Project, onlyButtons = false): Option[] => {
@@ -58,51 +58,6 @@ export function DurationInput({ value, onChange }: { value: Minutes; onChange: (
         ))}
       </select>
     </div>
-  );
-}
-
-// ---------- 条件式 ----------
-
-/** 条件式。Phase 2b は JSON で書き、読めたら日本語で確認できる（ビルダー型の入力は Phase 4） */
-export function ExprField({ label, value, onChange, path, hint }: { label: string; value: Expr; onChange: (e: Expr) => void; path: string; hint?: string }) {
-  const { project, issues } = useEditor();
-  const L = new Labels(project);
-  return (
-    <Field label={label} wide issues={issuesAt(issues, path)} hint={hint ?? <ExprHelp />}>
-      <JsonField<Expr>
-        value={value}
-        onChange={onChange}
-        describe={(e) => {
-          try {
-            return `→ ${describeExpr(e, L)}`;
-          } catch {
-            return '→ （読み取れない条件です）';
-          }
-        }}
-      />
-    </Field>
-  );
-}
-
-function ExprHelp() {
-  const [open, setOpen] = useState(false);
-  return (
-    <span>
-      <button type="button" className="btn small ghost" onClick={() => setOpen((v) => !v)}>
-        {open ? '書き方を閉じる' : '書き方の例'}
-      </button>
-      {open && (
-        <pre className="mono" style={{ whiteSpace: 'pre-wrap', margin: '4px 0 0' }}>
-          {`タグが付いている　　{"op":"hasTag","tagId":"area_tokyo"}
-応募していない　　　{"op":"cv","cvId":"cv_apply","done":false}
-回答が「東京」　　　{"op":"answer","surveyId":"sv_hope","questionId":"q_area","match":"any","choiceIds":["c_tokyo"]}
-AかつB　　　　　　 {"op":"and","children":[ A , B ]}
-AまたはB　　　　　 {"op":"or","children":[ A , B ]}
-Aではない　　　　　{"op":"not","child": A }
-常に　　　　　　　 {"op":"always"}`}
-        </pre>
-      )}
-    </span>
   );
 }
 
