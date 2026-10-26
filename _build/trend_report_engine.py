@@ -253,6 +253,23 @@ def set_tag_highlight(slide, category_label):
             sh.line.dash_style = MSO_LINE_DASH_STYLE.SQUARE_DOT
 
 
+FUNNEL_STAGES = ["認知", "検討", "獲得", "伸長"]
+
+
+def set_funnel_highlight(slide, stages):
+    """右上の逆三角形（認知/検討/獲得/伸長）のうち stages に入っている段だけ
+    紺（枠と同じdk2）の塗り＋白文字にし、他は白塗り＋元の文字色に戻す。stages=[] なら全部白。"""
+    group = next(sh for sh in slide.shapes if sh.shape_type == 6
+                 and {c.text_frame.text for c in sh.shapes if c.has_text_frame} >= set(FUNNEL_STAGES))
+    kids = list(group.shapes)
+    for seg, label in zip(kids[0::2], kids[1::2]):
+        on = label.text_frame.text in stages
+        seg.fill.solid()
+        seg.fill.fore_color.theme_color = MSO_THEME_COLOR.DARK_2 if on else MSO_THEME_COLOR.LIGHT_1
+        for r in label.text_frame.paragraphs[0].runs:
+            r.font.color.rgb = WHITE if on else RGBColor(0x26, 0x26, 0x26)
+
+
 def find_body_area(slide):
     """ひな形の実施日テーブルの位置を、本文エリア（左・上・全幅）として使う。
     テーブル自体はもう使わないのでここで消す。"""
