@@ -319,6 +319,11 @@ type InputEvent = { at: Minutes; userId: Id } & (
   | { type: 'sendText'; text: string }
   | { type: 'answer'; surveyId: Id; questionId: Id; choiceIds: Id[] }
   | { type: 'cv'; cvId: Id }                                 // 手動でCVを起こす（応募など）
+  // Phase 3 で追加：Webページ上の操作。押したときの動作は案件JSONにあるので、エンジンが解釈する
+  | { type: 'closePage'; pageId: Id }                        // ページを閉じてトークへ戻る
+  | { type: 'tapPopupCta'; pageId: Id }                      // 離脱防止ポップアップのボタン
+  | { type: 'tapPageButton'; pageId: Id; blockIndex: number } // ページ内のボタン
+  | { type: 'tapLineCta'; pageId: Id }                       // サンクスページのLINE誘導
 );
 
 type ClockEvent = { at: Minutes; userId: '*'; type: 'advanceTo' };  // 時間を進める（全員共通）

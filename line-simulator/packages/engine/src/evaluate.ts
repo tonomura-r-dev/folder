@@ -36,11 +36,13 @@ function compare(actual: unknown, cmp: string, expected: unknown): boolean {
 
 export function evaluate(expr: Expr, ctx: EvalContext): Trace {
   const { user, now } = ctx;
+  // 編集中の壊れた条件式（検証では重大エラー）でも、デモが止まらないよう「当てはまらない」として扱う
+  if (!expr || typeof expr !== 'object') return { op: 'always', value: false, expr: { op: 'always' } };
   switch (expr.op) {
     case 'and':
     case 'or': {
-      const children = expr.children.map((c) => evaluate(c, ctx));
-      const value = expr.op === 'and' ? children.every((c) => c.value) : children.some((c) => c.value);
+      const children = (Array.isArray(expr.children) ? expr.children : []).map((c) => evaluate(c, ctx));
+      const value = children.length > 0 && (expr.op === 'and' ? children.every((c) => c.value) : children.some((c) => c.value));
       return { op: expr.op, value, expr, children };
     }
     case 'not': {
@@ -108,6 +110,9 @@ export function evaluate(expr: Expr, ctx: EvalContext): Trace {
       );
       return leaf(expr, hits.length > 0 === expr.done, hits.length);
     }
+    default:
+      // 未知の演算子（検証では expr.invalid）
+      return { op: (expr as { op: Expr['op'] }).op, value: false, expr };
   }
 }
 

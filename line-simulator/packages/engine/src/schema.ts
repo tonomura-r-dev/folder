@@ -252,7 +252,12 @@ export type InputEventBody =
   | { type: 'tapButton'; buttonId: Id; nodeId?: Id }
   | { type: 'sendText'; text: string }
   | { type: 'answer'; surveyId: Id; questionId: Id; choiceIds: Id[] }
-  | { type: 'cv'; cvId: Id };
+  | { type: 'cv'; cvId: Id }
+  // Webページ上の操作。押したときの動作は案件JSONにあるので、エンジンが解釈する
+  | { type: 'closePage'; pageId: Id }
+  | { type: 'tapPopupCta'; pageId: Id }
+  | { type: 'tapPageButton'; pageId: Id; blockIndex: number }
+  | { type: 'tapLineCta'; pageId: Id };
 export type InputEventType = InputEventBody['type'];
 export type InputEvent = { at: Minutes; userId: Id } & InputEventBody;
 /** 時間だけを進める（全員共通） */

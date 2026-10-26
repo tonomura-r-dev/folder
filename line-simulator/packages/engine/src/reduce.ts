@@ -458,6 +458,7 @@ function detailOf(ev: InputEventBody): Record<string, string> {
   for (const [k, v] of Object.entries(ev)) {
     if (k === 'type' || k === 'at' || k === 'userId') continue;
     if (typeof v === 'string') out[k] = v;
+    else if (typeof v === 'number') out[k] = String(v);
     else if (Array.isArray(v)) out[k] = v.join(',');
   }
   return out;
@@ -485,7 +486,7 @@ function applyEvent(ctx: Ctx, ev: InputEvent) {
 }
 
 /** 入力イベント1件を処理する。アクション経由（ボタン→ページ等）でも同じ関数を通す */
-function handle(ctx: Ctx, user: UserState, ev: InputEventBody) {
+function handle(ctx: Ctx, user: UserState, ev: InputEventBody): void {
   const { index } = ctx;
   const now = ctx.world.now;
   user.behaviors.push({ at: now, type: ev.type, detail: detailOf(ev) });
@@ -503,6 +504,26 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody) {
     case 'dismissPopup':
       user.surface = { kind: 'page', pageId: ev.pageId };
       return;
+    case 'closePage':
+      user.surface = { kind: 'talk' };
+      return;
+    case 'tapPopupCta': {
+      const popup = index.pages.get(ev.pageId)?.exitPopup;
+      if (!popup) return;
+      // ポップアップを閉じてから動作する（友だち追加ならトーク画面に切り替わる）
+      user.surface = { kind: 'page', pageId: ev.pageId };
+      return act(ctx, user, popup.cta.action);
+    }
+    case 'tapPageButton': {
+      const block = index.pages.get(ev.pageId)?.blocks[ev.blockIndex];
+      if (block?.kind === 'button') act(ctx, user, block.action);
+      return;
+    }
+    case 'tapLineCta': {
+      const cta = index.pages.get(ev.pageId)?.lineCta;
+      if (cta) handle(ctx, user, { type: 'addFriend', routeId: cta.routeId });
+      return;
+    }
     case 'submitForm': {
       const page = index.pages.get(ev.pageId);
       const onSubmit = page?.form?.onSubmit;
@@ -575,7 +596,7 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody) {
 }
 
 /** ボタン・メニュー等の動作。ユーザーの操作として行動履歴にも残す */
-function act(ctx: Ctx, user: UserState, action: Action) {
+function act(ctx: Ctx, user: UserState, action: Action): void {
   switch (action.kind) {
     case 'sendText':
       return handle(ctx, user, { type: 'sendText', text: action.text });

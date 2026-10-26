@@ -9,10 +9,13 @@
 //   - フォルダ名（slug）は英数字・-・_ だけ。パスの外に出られない
 
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { basename, extname, join, resolve, sep } from 'node:path';
 import type { Project } from '../packages/engine/src/index.ts';
 
 export const HISTORY_KEEP = 30;
+export const MAX_ASSET_BYTES = 10 * 1024 * 1024;
+/** 扱う画像の種類。SVG は中にスクリプトを書けるので受け付けない */
+const IMAGE_TYPES: Record<string, string> = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp' };
 const SLUG = /^[a-z0-9][a-z0-9_-]{0,63}$/;
 
 export class StoreError extends Error {
@@ -211,6 +214,32 @@ export class ProjectStore {
     const dest = join(this.trashDir, `${slug}__${stamp()}`);
     renameSync(this.dir(slug), dest);
     return dest;
+  }
+
+  // ---------- 画像 ----------
+
+  /** 案件フォルダの assets/ の中のファイルだけを読む（パスの外・他の場所は読まない） */
+  readAsset(slug: string, rel: string): { data: Buffer; type: string } {
+    const type = IMAGE_TYPES[extname(rel).toLowerCase()];
+    const base = resolve(this.dir(slug), 'assets');
+    const file = resolve(this.dir(slug), rel);
+    if (!type || !file.startsWith(base + sep) || !existsSync(file)) throw new StoreError(404, 'asset.notFound', `画像が見つかりません: ${rel}`);
+    return { data: readFileSync(file), type };
+  }
+
+  /** 画像を assets/ に保存し、案件から参照するパスを返す。同じ名前があれば番号を付ける */
+  saveAsset(slug: string, name: string, data: Buffer): string {
+    const ext = extname(name).toLowerCase();
+    if (!IMAGE_TYPES[ext]) throw new StoreError(415, 'asset.type', '画像は PNG・JPEG・GIF・WebP にしてください');
+    if (data.length > MAX_ASSET_BYTES) throw new StoreError(413, 'asset.tooLarge', `画像は ${MAX_ASSET_BYTES / 1024 / 1024}MB までにしてください`);
+    if (!this.exists(slug)) throw new StoreError(404, 'project.notFound', `案件が見つかりません: ${slug}`);
+    const dir = join(this.dir(slug), 'assets');
+    mkdirSync(dir, { recursive: true });
+    const stem = basename(name, extname(name)).replace(/[^\w.-]+/g, '_').replace(/^[._]+/, '').slice(0, 60) || 'image';
+    let file = `${stem}${ext}`;
+    for (let i = 2; existsSync(join(dir, file)); i++) file = `${stem}-${i}${ext}`;
+    writeFileSync(join(dir, file), data);
+    return `assets/${file}`;
   }
 
   // ---------- 履歴 ----------

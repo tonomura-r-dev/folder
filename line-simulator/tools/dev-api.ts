@@ -10,6 +10,8 @@
 //   GET    /api/projects/:slug/history/:id       履歴の中身
 //   POST   /api/projects/:slug/history/:id/restore
 //   POST   /api/projects/:slug/history/:id/label {label}
+//   GET    /api/projects/:slug/files/assets/<name>  画像（assets/ の中だけ）
+//   POST   /api/projects/:slug/assets {name,dataBase64}  画像の取り込み
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Project } from '../packages/engine/src/index.ts';
@@ -72,6 +74,17 @@ export function createApiHandler(store: ProjectStore) {
           return send(res, 200, store.save(slug, b.project, b.expectedUpdatedAt));
         }
         if (method === 'DELETE') return send(res, 200, { trashed: store.trash(slug) });
+      }
+      if (parts[1] === 'projects' && parts[3] === 'files' && method === 'GET') {
+        const { data, type } = store.readAsset(parts[2]!, parts.slice(4).join('/'));
+        res.statusCode = 200;
+        res.setHeader('Content-Type', type);
+        res.setHeader('Cache-Control', 'no-store');
+        return void res.end(data);
+      }
+      if (parts[1] === 'projects' && parts[3] === 'assets' && parts.length === 4 && method === 'POST') {
+        const b = (await body(req)) as { name: string; dataBase64: string };
+        return send(res, 201, { path: store.saveAsset(parts[2]!, b.name ?? '', Buffer.from(b.dataBase64 ?? '', 'base64')) });
       }
       if (parts[1] === 'projects' && parts[3] === 'history') {
         const slug = parts[2]!;

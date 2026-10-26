@@ -7,6 +7,7 @@ import { describeIssue } from '../../player/src/issues.ts';
 import { api, ApiError, downloadJson, fmtDateTime, type HistoryEntry } from './api.ts';
 import { Ctx, type EditorCtx } from './ctx.ts';
 import { FlowEditor } from './flow/FlowEditor.tsx';
+import { DemoView } from './DemoView.tsx';
 import { AutoReplies } from './parts/AutoReplies.tsx';
 import { LabelsEditor } from './parts/Labels.tsx';
 import { Messages } from './parts/Messages.tsx';
@@ -34,6 +35,8 @@ const NAV: { section: Section; label: string; count?: (p: Project) => number }[]
   { section: 'narration', label: '説明文', count: (p) => p.narration.length },
   { section: 'settings', label: '案件設定' },
 ];
+
+const NAV_DEMO: { section: Section; label: string } = { section: 'demo', label: '▶ デモ（動作確認）' };
 
 export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m: string, k?: 'ok' | 'err') => void }) {
   const { slug } = route;
@@ -164,6 +167,10 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
 
         <div className="body">
           <nav className="side" aria-label="編集する部品">
+            <h3>確かめる</h3>
+            <a href={href({ page: 'project', slug, section: NAV_DEMO.section })} className={route.section === NAV_DEMO.section ? 'on' : ''}>
+              {NAV_DEMO.label}
+            </a>
             <h3>編集</h3>
             {NAV.map((n) => (
               <a key={n.section} href={href({ page: 'project', slug, section: n.section })} className={route.section === n.section ? 'on' : ''}>
@@ -240,6 +247,8 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
 
 function SectionView({ section }: { section: Section }) {
   switch (section) {
+    case 'demo':
+      return <DemoView />;
     case 'flows':
       return <FlowEditor />;
     case 'messages':

@@ -1,7 +1,8 @@
-// 案件設定：会社名・アカウント名・配色・重複防止・画像の一覧・社内メモ。
+// 案件設定：会社名・アカウント名・配色・重複防止・画像・社内メモ。
 
 import { issuesAt, useEditor } from '../ctx.ts';
-import { Field, InlineIssues, newId, NumberInput, ReadOnly, Text, TextArea } from '../ui/form.tsx';
+import { Field, InlineIssues, NumberInput, ReadOnly, Text, TextArea } from '../ui/form.tsx';
+import { Images } from './Images.tsx';
 
 export function Settings() {
   const { project: p, update, issues } = useEditor();
@@ -47,46 +48,7 @@ export function Settings() {
         </div>
       </div>
 
-      <div className="section">
-        <h3>
-          画像
-          <span className="spacer" />
-          <button
-            className="btn small"
-            onClick={() =>
-              update((d) => d.assets.push({ id: newId('img', d.assets.map((a) => a.id)), kind: 'image', path: 'assets/', width: 1200, height: 810, alt: '' }))
-            }
-          >
-            ＋ 画像を登録
-          </button>
-        </h3>
-        <div className="muted small">画像ファイルは案件フォルダの assets/ に置き、ここでパスを登録します（画面からの取り込みは Phase 3 で付けます）。</div>
-        {p.assets.map((a, i) => (
-          <div className="sub" key={a.id}>
-            <div className="sub-head">
-              <span className="t mono">{a.id}</span>
-              <span className="spacer" />
-              <button className="btn small ghost danger" onClick={() => update((d) => d.assets.splice(i, 1))}>
-                削除
-              </button>
-            </div>
-            <div className="fields">
-              <Field label="ファイルのパス（案件フォルダから）" issues={issuesAt(issues, `/assets/${i}/path`)}>
-                <Text value={a.path} onChange={(v) => update((d) => (d.assets[i]!.path = v))} />
-              </Field>
-              <Field label="説明（代替テキスト）" issues={issuesAt(issues, `/assets/${i}/alt`)}>
-                <Text value={a.alt} onChange={(v) => update((d) => (d.assets[i]!.alt = v))} />
-              </Field>
-              <Field label="幅">
-                <NumberInput value={a.width} onChange={(v) => update((d) => (d.assets[i]!.width = v ?? 0))} />
-              </Field>
-              <Field label="高さ">
-                <NumberInput value={a.height} onChange={(v) => update((d) => (d.assets[i]!.height = v ?? 0))} />
-              </Field>
-            </div>
-          </div>
-        ))}
-      </div>
+      <Images />
 
       <div className="section">
         <h3>社内メモ</h3>

@@ -15,7 +15,10 @@ export const LINE_LIMITS = { bubblesPerMessage: 5, buttonsPerBubble: 4, textLeng
 
 const EXPR_OPS = new Set(['and', 'or', 'not', 'always', 'hasTag', 'answer', 'answered', 'attr', 'route', 'friend', 'cv', 'did', 'elapsed', 'delivered']);
 const CMPS = new Set(['eq', 'neq', 'in', 'gte', 'lte']);
-const EVENT_TYPES = new Set(['visitPage', 'exitIntent', 'dismissPopup', 'submitForm', 'addFriend', 'block', 'unblock', 'tapMenu', 'tapButton', 'sendText', 'answer', 'cv']);
+const EVENT_TYPES = new Set([
+  'visitPage', 'exitIntent', 'dismissPopup', 'submitForm', 'addFriend', 'block', 'unblock', 'tapMenu', 'tapButton', 'sendText', 'answer', 'cv',
+  'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta',
+]);
 const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
 export function validate(project: Project, options: ValidateOptions = {}): Issue[] {
@@ -435,7 +438,16 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       case 'exitIntent':
       case 'dismissPopup':
       case 'submitForm':
+      case 'closePage':
+      case 'tapPopupCta':
+      case 'tapLineCta':
         return need(pages.has(ev.pageId), `${path}/pageId`, 'page', ev.pageId);
+      case 'tapPageButton': {
+        const page = project.webPages.find((w) => w.id === ev.pageId);
+        need(!!page, `${path}/pageId`, 'page', ev.pageId);
+        if (page) need(page.blocks[ev.blockIndex]?.kind === 'button', `${path}/blockIndex`, 'button', ev.blockIndex);
+        return;
+      }
       case 'addFriend':
         return need(routes.has(ev.routeId), `${path}/routeId`, 'route', ev.routeId);
       case 'tapMenu': {

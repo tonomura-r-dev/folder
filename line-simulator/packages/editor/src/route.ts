@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { Project } from '../../engine/src/index.ts';
 
 export type Section =
+  | 'demo'
   | 'flows'
   | 'messages'
   | 'labels'

@@ -40,7 +40,30 @@ export const api = {
   history: (slug: string) => call<HistoryEntry[]>('GET', `${p(slug)}/history`),
   restore: (slug: string, id: string) => call<{ updatedAt: string }>('POST', `${p(slug)}/history/${id}/restore`),
   label: (slug: string, id: string, label: string) => call<{ ok: true }>('POST', `${p(slug)}/history/${id}/label`, { label }),
+  uploadAsset: (slug: string, name: string, dataBase64: string) => call<{ path: string }>('POST', `${p(slug)}/assets`, { name, dataBase64 }),
 };
+
+/** 案件フォルダの画像を表示する URL */
+export const assetUrl = (slug: string, path: string) => `${p(slug)}/files/${path.split('/').map(encodeURIComponent).join('/')}`;
+
+/** 画像ファイルを読み、Base64 と縦横の大きさを返す */
+export async function readImage(file: File): Promise<{ base64: string; width: number; height: number }> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const url = URL.createObjectURL(file);
+  try {
+    const size = await new Promise<{ width: number; height: number }>((ok, ng) => {
+      const img = new Image();
+      img.onload = () => ok({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => ng(new Error('画像として読めません'));
+      img.src = url;
+    });
+    return { base64: btoa(bin), ...size };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /** いまの内容を JSON ファイルとしてダウンロードさせる */
 export function downloadJson(filename: string, data: unknown) {

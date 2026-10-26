@@ -1,0 +1,142 @@
+/* デモ画面（スマホ枠・LINE・Web・裏側）。編集ツールと営業用HTMLで共通。
+   すべて .lsp の中だけに効かせる。色は案件の配色を --lsp-* で受け取る。 */
+
+.lsp {
+  --lsp-primary: #1f285a;
+  --lsp-accent: #06c755;
+  --lsp-chat: #8fa9d4;
+  --lsp-ink: #1f285a;
+  --lsp-text: #2b3044;
+  --lsp-muted: #6b7280;
+  --lsp-line: #dce0e8;
+  --lsp-soft: #eef1f7;
+  --lsp-paper: #fff;
+  --lsp-me: #8de39b;
+  --lsp-line-green: #06c755;
+  --lsp-warn: #b45309;
+  --lsp-warn-soft: #fdf1e2;
+  --lsp-err: #c0392b;
+  font-family: Meiryo, "Yu Gothic UI", "Hiragino Sans", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--lsp-text);
+}
+.lsp *, .lsp *::before, .lsp *::after { box-sizing: border-box; }
+.lsp button { font: inherit; cursor: pointer; }
+.lsp button:focus-visible, .lsp input:focus-visible, .lsp select:focus-visible { outline: 2px solid #3467b2; outline-offset: 2px; }
+
+.lsp-stage { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; justify-content: center; padding: 20px; }
+.lsp-error { padding: 20px; color: var(--lsp-err); background: #fbe5e2; border-radius: 10px; }
+
+/* ---------- スマホ枠 ---------- */
+.lsp-phone { width: 360px; flex: 0 0 360px; background: #15171f; border-radius: 34px; padding: 10px; box-shadow: 0 14px 40px rgba(20, 24, 40, .22); }
+.lsp-status { display: flex; justify-content: space-between; color: #e8eaf2; font-size: 11.5px; padding: 2px 14px 6px; font-variant-numeric: tabular-nums; }
+.lsp-screen { position: relative; height: 680px; border-radius: 24px; overflow: hidden; background: var(--lsp-paper); display: flex; flex-direction: column; }
+
+/* ---------- はじめかた ---------- */
+.lsp-start { flex: 1; overflow: auto; padding: 26px 18px; background: linear-gradient(180deg, #f4f6fb, #fff); }
+.lsp-start-title { font-size: 18px; font-weight: 700; color: var(--lsp-ink); }
+.lsp-start-sub { color: var(--lsp-muted); font-size: 12.5px; margin: 4px 0 18px; }
+.lsp-start-group { font-size: 12px; font-weight: 700; color: var(--lsp-muted); margin: 16px 0 6px; }
+.lsp-start button { display: block; width: 100%; text-align: left; padding: 12px 14px; margin-bottom: 8px; border-radius: 12px; border: 1px solid var(--lsp-line); background: var(--lsp-paper); color: var(--lsp-ink); font-weight: 700; }
+.lsp-start button small { display: block; font-weight: 400; color: var(--lsp-muted); font-size: 11.5px; }
+.lsp-start button.line { border-color: var(--lsp-line-green); color: #0b7a3a; }
+
+/* ---------- Webページ ---------- */
+.lsp-browser { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; background: #fff; }
+.lsp-urlbar { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f1f3f7; border-bottom: 1px solid var(--lsp-line); }
+.lsp-urlbar button { border: 0; background: #fff; border-radius: 8px; width: 32px; height: 28px; font-size: 18px; line-height: 1; color: var(--lsp-ink); box-shadow: 0 0 0 1px var(--lsp-line); }
+.lsp-url { flex: 1; font-size: 12px; color: var(--lsp-muted); background: #fff; border-radius: 999px; padding: 4px 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lsp-page { flex: 1; overflow: auto; padding: 22px 18px 28px; }
+.lsp-page h2 { font-size: 19px; line-height: 1.4; color: var(--lsp-primary); margin: 0 0 10px; }
+.lsp-page p { margin: 0 0 14px; white-space: pre-wrap; }
+.lsp-page img { width: 100%; border-radius: 10px; margin-bottom: 14px; display: block; }
+.lsp-pbtn { display: block; width: 100%; padding: 13px; border-radius: 12px; border: 0; background: var(--lsp-primary); color: #fff; font-weight: 700; margin: 6px 0 12px; }
+.lsp-form label { display: block; font-size: 12.5px; font-weight: 700; color: var(--lsp-ink); margin: 10px 0 4px; }
+.lsp-form input, .lsp-form select { width: 100%; padding: 10px; border: 1px solid var(--lsp-line); border-radius: 8px; font: inherit; background: #fff; }
+.lsp-form .lsp-pbtn { margin-top: 18px; }
+.lsp-line-cta { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 13px; border: 0; border-radius: 12px; background: var(--lsp-line-green); color: #fff; font-weight: 700; margin: 8px 0; }
+.lsp-line-cta::before { content: "LINE"; font-size: 10px; font-weight: 900; background: #fff; color: var(--lsp-line-green); border-radius: 6px; padding: 1px 5px; }
+.lsp-fake { font-size: 11px; color: var(--lsp-muted); text-align: center; margin-top: 18px; }
+
+.lsp-overlay { position: absolute; inset: 0; background: rgba(15, 18, 30, .55); display: flex; align-items: center; justify-content: center; padding: 22px; z-index: 5; }
+.lsp-popup { background: #fff; border-radius: 16px; padding: 20px 18px 14px; width: 100%; text-align: center; box-shadow: 0 16px 40px rgba(0, 0, 0, .3); }
+.lsp-popup img { width: 100%; border-radius: 10px; margin-bottom: 10px; }
+.lsp-popup-title { font-size: 16.5px; font-weight: 700; color: var(--lsp-ink); line-height: 1.45; }
+.lsp-popup-body { font-size: 13px; color: var(--lsp-text); margin: 8px 0 12px; white-space: pre-wrap; }
+.lsp-popup-dismiss { border: 0; background: none; color: var(--lsp-muted); font-size: 12.5px; padding: 6px; text-decoration: underline; }
+
+/* ---------- LINE トーク ---------- */
+.lsp-talk { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--lsp-chat); }
+.lsp-talkbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #fff; color: #111; font-weight: 700; font-size: 14.5px; border-bottom: 1px solid #e5e7eb; }
+.lsp-talkbar .lsp-back { color: #444; font-size: 20px; line-height: 1; }
+.lsp-banner { background: var(--lsp-warn-soft); color: var(--lsp-warn); font-size: 12.5px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; }
+.lsp-banner button { margin-left: auto; border: 1px solid currentColor; background: #fff; color: var(--lsp-warn); border-radius: 8px; padding: 2px 8px; font-size: 12px; }
+.lsp-chat { flex: 1; overflow-y: auto; padding: 12px 10px 16px; display: flex; flex-direction: column; gap: 6px; }
+.lsp-sys { align-self: center; background: rgba(20, 30, 60, .32); color: #fff; font-size: 11px; padding: 3px 10px; border-radius: 999px; margin: 4px 0; }
+.lsp-row { display: flex; gap: 6px; align-items: flex-end; }
+.lsp-row.me { justify-content: flex-end; }
+.lsp-avatar { width: 34px; height: 34px; flex: 0 0 34px; border-radius: 50%; background: var(--lsp-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; align-self: flex-start; }
+.lsp-avatar.ghost { visibility: hidden; }
+.lsp-col { display: flex; flex-direction: column; gap: 2px; max-width: 76%; }
+.lsp-name { font-size: 11px; color: rgba(255, 255, 255, .92); }
+.lsp-time { font-size: 10px; color: rgba(255, 255, 255, .85); white-space: nowrap; }
+.lsp-b { background: #fff; color: #111; border-radius: 16px; padding: 8px 12px; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.lsp-row.bot .lsp-b { border-top-left-radius: 4px; }
+.lsp-b.me { background: var(--lsp-me); border-top-right-radius: 4px; max-width: 76%; }
+.lsp-b.img { padding: 0; overflow: hidden; }
+.lsp-b.img img { display: block; width: 100%; }
+.lsp-b.tmpl, .lsp-b.card { padding: 0; overflow: hidden; width: 240px; }
+.lsp-tmpl-text { padding: 10px 12px; }
+.lsp-card img { display: block; width: 100%; }
+.lsp-card-title { padding: 10px 12px 2px; font-weight: 700; }
+.lsp-card-body { padding: 0 12px 10px; font-size: 12.5px; color: #444; }
+.lsp-btns { border-top: 1px solid #eceff4; display: flex; flex-direction: column; }
+.lsp-btns button { border: 0; border-top: 1px solid #eceff4; background: #fff; color: #2a6fd6; padding: 10px; font-weight: 700; font-size: 13px; }
+.lsp-btns button:first-child { border-top: 0; }
+.lsp-btns button:hover { background: #f5f8fd; }
+.lsp-noimg { display: flex; align-items: center; justify-content: center; height: 120px; background: #e6e9f0; color: var(--lsp-muted); font-size: 12px; }
+
+.lsp-quick { background: #fff; border-top: 1px solid #e5e7eb; padding: 10px 10px 12px; }
+.lsp-quick-q { font-size: 12.5px; font-weight: 700; color: #333; margin-bottom: 8px; }
+.lsp-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.lsp-chips button { border: 1.5px solid #2a6fd6; color: #2a6fd6; background: #fff; border-radius: 999px; padding: 5px 14px; font-weight: 700; font-size: 13px; }
+.lsp-chips button.on { background: #2a6fd6; color: #fff; }
+.lsp-quick .lsp-send-multi { margin-top: 8px; border: 0; background: #2a6fd6; color: #fff; border-radius: 8px; padding: 6px 14px; font-weight: 700; }
+
+.lsp-menu { background: #fff; border-top: 1px solid #e5e7eb; }
+.lsp-menu-bar { display: block; width: 100%; border: 0; background: #fff; color: #333; font-size: 12px; padding: 6px; font-weight: 700; }
+.lsp-menu-grid { display: grid; gap: 1px; background: #d9dde6; border-top: 1px solid #d9dde6; position: relative; }
+.lsp-menu-grid button { border: 0; background: var(--lsp-soft); color: var(--lsp-ink); font-weight: 700; font-size: 12.5px; padding: 6px 4px; min-height: 64px; }
+.lsp-menu-grid button:hover { background: #e3e8f4; }
+.lsp-menu-grid.has-img { background-size: 100% 100%; gap: 0; }
+.lsp-menu-grid.has-img button { background: transparent; color: transparent; }
+.lsp-menu-grid.has-img button:hover { background: rgba(255, 255, 255, .18); }
+
+.lsp-input { display: flex; gap: 6px; padding: 8px; background: #fff; border-top: 1px solid #e5e7eb; }
+.lsp-input input { flex: 1; border: 1px solid #e1e4ea; background: #f5f6f8; border-radius: 999px; padding: 7px 12px; font: inherit; font-size: 13px; }
+.lsp-input button { border: 0; background: var(--lsp-line-green); color: #fff; border-radius: 999px; padding: 0 14px; font-weight: 700; font-size: 13px; }
+.lsp-input button:disabled, .lsp-input input:disabled { opacity: .45; cursor: default; }
+
+/* ---------- 裏側（Phase 3 は最小限。Phase 4 で拡張） ---------- */
+.lsp-side { width: 340px; flex: 0 1 340px; display: flex; flex-direction: column; gap: 12px; }
+.lsp-card-side { background: #fff; border: 1px solid var(--lsp-line); border-radius: 14px; padding: 12px 14px; }
+.lsp-card-side h3 { margin: 0 0 8px; font-size: 12px; letter-spacing: .06em; color: var(--lsp-muted); }
+.lsp-clock { font-size: 22px; font-weight: 700; color: var(--lsp-ink); font-variant-numeric: tabular-nums; }
+.lsp-next { font-size: 12.5px; color: var(--lsp-text); margin: 4px 0 10px; }
+.lsp-next b { color: var(--lsp-ink); }
+.lsp-ctrls { display: flex; flex-wrap: wrap; gap: 6px; }
+.lsp-ctrls button, .lsp-ctrls select { border: 1px solid var(--lsp-line); background: #fff; color: var(--lsp-ink); border-radius: 8px; padding: 5px 10px; font-weight: 700; font-size: 12.5px; }
+.lsp-ctrls button.primary { background: var(--lsp-primary); border-color: var(--lsp-primary); color: #fff; }
+.lsp-ctrls button:disabled { opacity: .45; cursor: default; }
+.lsp-kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; }
+.lsp-kv dt { color: var(--lsp-muted); }
+.lsp-kv dd { margin: 0; font-weight: 700; color: var(--lsp-ink); }
+.lsp-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.lsp-tag { font-size: 12px; background: #f2eafb; color: #6b3fa0; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
+.lsp-none { color: var(--lsp-muted); font-size: 12.5px; }
+.lsp-log { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+.lsp-log li { display: grid; grid-template-columns: 86px 1fr; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--lsp-soft); font-size: 12.5px; }
+.lsp-log .t { color: var(--lsp-muted); font-variant-numeric: tabular-nums; }
+.lsp-log .f { display: block; font-size: 11px; color: var(--lsp-muted); }
+.lsp-log .reply { font-size: 10.5px; background: var(--lsp-soft); color: var(--lsp-muted); padding: 0 5px; border-radius: 4px; margin-left: 4px; }

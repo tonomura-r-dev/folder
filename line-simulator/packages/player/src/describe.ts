@@ -74,6 +74,10 @@ const EVENT = {
   sendText: 'メッセージを送った',
   answer: 'アンケートに答えた',
   cv: 'CVした',
+  closePage: 'ページを閉じた',
+  tapPopupCta: 'ポップアップのボタンを押した',
+  tapPageButton: 'ページのボタンを押した',
+  tapLineCta: 'LINE誘導のボタンを押した',
 } as const;
 
 export const friendText = (s: UserState['friendState']) => FRIEND[s];

@@ -83,6 +83,31 @@ describe('案件の保存', () => {
     const hist = store.history('a');
     expect(hist.filter((h) => !h.label)).toHaveLength(HISTORY_KEEP);
     expect(hist.find((h) => h.id === keep)?.label).toBe('提案前の版');
+  }, 30_000); // 実際のファイルに35回以上保存するので、PCの状態によって時間がかかる
+});
+
+describe('画像', () => {
+  const png = Buffer.from('89504e470d0a1a0a', 'hex');
+
+  it('assets/ に保存し、同じ名前なら番号を付ける。読み出せる', () => {
+    store.create('a', 'A');
+    // 英数字の無い名前は image になる。拡張子は小文字にそろえる
+    expect(store.saveAsset('a', 'メニュー 画像.PNG', png)).toBe('assets/image.png');
+    expect(store.saveAsset('a', 'menu.png', png)).toBe('assets/menu.png');
+    expect(store.saveAsset('a', 'menu.png', png)).toBe('assets/menu-2.png');
+    expect(store.readAsset('a', 'assets/menu.png')).toMatchObject({ type: 'image/png' });
+  });
+
+  it('SVG などの画像以外・大きすぎる画像は断る', () => {
+    store.create('a', 'A');
+    expect(fail(() => store.saveAsset('a', 'x.svg', png)).status).toBe(415);
+    expect(fail(() => store.saveAsset('a', 'x.html', png)).status).toBe(415);
+    expect(fail(() => store.saveAsset('a', 'x.png', Buffer.alloc(11 * 1024 * 1024))).status).toBe(413);
+  });
+
+  it('assets/ の外のファイルは読めない', () => {
+    store.create('a', 'A');
+    for (const bad of ['project.json', 'assets/../project.json', '../../package.json', 'history/x.png']) expect(fail(() => store.readAsset('a', bad)).status).toBe(404);
   });
 });
 

@@ -280,8 +280,7 @@
       "url": "https://example.com/apply/thanks",
       "blocks": [
         { "kind": "heading", "text": "ご応募ありがとうございました" },
-        { "kind": "text", "text": "選考のご連絡を、LINEで受け取れます。メールより見落としにくく、日程の調整もかんたんです。" },
-        { "kind": "button", "label": "LINEで選考の連絡を受け取る", "action": { "kind": "addFriend", "routeId": "route_thanks" } }
+        { "kind": "text", "text": "選考のご連絡を、LINEで受け取れます。メールより見落としにくく、日程の調整もかんたんです。" }
       ],
       "lineCta": { "label": "LINEで選考の連絡を受け取る", "routeId": "route_thanks" }
     }
@@ -448,7 +447,7 @@
       "script": [
         { "atMinutes": 780, "event": { "type": "visitPage", "pageId": "page_lp" } },
         { "atMinutes": 782, "event": { "type": "exitIntent", "pageId": "page_lp" } },
-        { "atMinutes": 783, "event": { "type": "addFriend", "routeId": "route_exit_popup" } },
+        { "atMinutes": 783, "event": { "type": "tapPopupCta", "pageId": "page_lp" } },
         { "atMinutes": 785, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_area", "choiceIds": ["c_tokyo"] } },
         { "atMinutes": 786, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_job", "choiceIds": ["c_office"] } },
         { "atMinutes": 3630, "event": { "type": "tapMenu", "richMenuId": "rm_main", "cellId": "cell_jobs" } },
@@ -463,7 +462,7 @@
       "script": [
         { "atMinutes": 900, "event": { "type": "visitPage", "pageId": "page_lp" } },
         { "atMinutes": 902, "event": { "type": "exitIntent", "pageId": "page_lp" } },
-        { "atMinutes": 903, "event": { "type": "addFriend", "routeId": "route_exit_popup" } },
+        { "atMinutes": 903, "event": { "type": "tapPopupCta", "pageId": "page_lp" } },
         { "atMinutes": 905, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_area", "choiceIds": ["c_osaka"] } },
         { "atMinutes": 906, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_job", "choiceIds": ["c_light"] } },
         { "atMinutes": 8400, "event": { "type": "sendText", "text": "求人ありますか" } }
@@ -475,9 +474,9 @@
       "attrs": { "area": "東京", "age": 22 },
       "script": [
         { "atMinutes": 600, "event": { "type": "visitPage", "pageId": "page_lp" } },
-        { "atMinutes": 603, "event": { "type": "visitPage", "pageId": "page_form" } },
+        { "atMinutes": 603, "event": { "type": "tapPageButton", "pageId": "page_lp", "blockIndex": 2 } },
         { "atMinutes": 610, "event": { "type": "submitForm", "pageId": "page_form", "values": { "f_name": "応募 花子", "f_area": "東京" } } },
-        { "atMinutes": 611, "event": { "type": "addFriend", "routeId": "route_thanks" } },
+        { "atMinutes": 611, "event": { "type": "tapLineCta", "pageId": "page_thanks" } },
         { "atMinutes": 615, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_area", "choiceIds": ["c_tokyo"] } },
         { "atMinutes": 616, "event": { "type": "answer", "surveyId": "sv_hope", "questionId": "q_job", "choiceIds": ["c_office"] } },
         { "atMinutes": 15120, "event": { "type": "tapButton", "buttonId": "btn_a_reapply", "nodeId": "n_a_reapply" } },
@@ -490,9 +489,9 @@
       "attrs": { "age": 41 },
       "script": [
         { "atMinutes": 1080, "event": { "type": "visitPage", "pageId": "page_lp" } },
-        { "atMinutes": 1082, "event": { "type": "visitPage", "pageId": "page_form" } },
+        { "atMinutes": 1082, "event": { "type": "tapPageButton", "pageId": "page_lp", "blockIndex": 2 } },
         { "atMinutes": 1090, "event": { "type": "exitIntent", "pageId": "page_form" } },
-        { "atMinutes": 1091, "event": { "type": "addFriend", "routeId": "route_exit_popup" } },
+        { "atMinutes": 1091, "event": { "type": "tapPopupCta", "pageId": "page_form" } },
         { "atMinutes": 5520, "event": { "type": "block" } }
       ]
     }
