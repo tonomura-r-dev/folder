@@ -139,3 +139,11 @@ for i, page in enumerate(doc):
 - **本文のまとまりは「■ 詳細」のすぐ下から置く。** 上下中央にすると下に寄りすぎるので、殿村さんが全ページ上に詰め直した（詳細の見出しから0.1〜0.3インチ下が目安）。枠の横幅は文字量に合わせ、空いた枠を作らない。
 - **右上の逆三角形（認知/検討/獲得/伸長）は、トピックごとに強調したい段を紺＋白文字にする**（`engine.set_funnel_highlight(slide, ["獲得"])`）。手続きだけの話・機材の値段など当てはまらないものは色なし。10月号：アプリ遷移・シリアルコード=獲得／ユニット統計・CRM=伸長／Friends AD=認知／UX申請・レストラン=なし。
 - 分類タグは `engine.set_tag_highlight(slide, "その他")` のように中身で選び直す。
+
+### ★新しい月の作り方（2026-10-26〜）：`_build/build_trend_report_template.py` をコピーする
+- 10月号で決まった見た目は `trend_report_engine.render_blocks` に組み込み済み。**`render="blocks"` で書けば、最初から10月号の最終版と同じ見た目で出る**（位置・幅・枠・表・数字の枠・逆三角形の色・2ページ物の目次1行）。
+- `cp _build/build_trend_report_template.py _build/build_trend_report_YYYYMM.py` → `MONTH_LABEL` と `TOPICS` だけ書き換え → `python3 _build/build_trend_report_YYYYMM.py <出力.pptx>`。
+- TOPICS の書き方は template の10月号の中身がそのまま見本。blocks は `cards`（1列 or `cols: 2`、`accent` で大きい数字）／`table`（`header`・`colw`・`note`）／`numbers`（大きい数字の枠）。
+- 枠に入りきらないときは本文の文字が1ptずつ自動で下がる（最小11pt）。それでも溢れると「⚠ はみ出しの恐れ」と出るので、そのトピックの文言を削る。
+- 対象業界を2行にしたいときは `\v` で区切る（例 `"食品・飲料メーカー、\v小売・コンビニ"`）。
+- 旧来の render（before_after / flow / grid_notes など）は残してあるが、新しい月では使わない。

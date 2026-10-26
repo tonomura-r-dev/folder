@@ -129,6 +129,24 @@ def set_single_run_text(shape, new_text):
         r._r.getparent().remove(r._r)
 
 
+def set_text_with_breaks(shape, text):
+    """1段落のまま、\\v の位置で改行（a:br）を入れて差し替える（対象業界の2行表示など）。"""
+    parts = text.split("\v")
+    set_single_run_text(shape, parts[0])
+    r0 = shape.text_frame.paragraphs[0].runs[0]._r
+    prev = r0
+    for part in parts[1:]:
+        br = r0.makeelement(qn("a:br"), {})
+        rpr = r0.find(qn("a:rPr"))
+        if rpr is not None:
+            br.append(copy.deepcopy(rpr))
+        r2 = copy.deepcopy(r0)
+        r2.find(qn("a:t")).text = part
+        prev.addnext(br)
+        br.addnext(r2)
+        prev = r2
+
+
 def set_multiline_text(shape, lines):
     """既存の段落数 <= len(lines) を前提に、各段落の先頭ランへ1行ずつ入れる。
     段落が足りない場合は最後の段落の書式を複製して追加する。"""
@@ -205,7 +223,8 @@ def edit_agenda(agenda, topics):
         else:
             page_label = f"P.{page}-{page + span - 1}"
             headlines = "・".join(t["headline"] for t in topics[i:j + 1])
-            title = f"【{topics[i]['bracket']}】{headlines}"
+            # toc_title があれば目次はそれ1本（10月号のように1枚目の見出しで代表させる）
+            title = topics[i].get("toc_title") or f"【{topics[i]['bracket']}】{headlines}"
         groups.append((page_label, title))
         page += span
         i = j + 1
@@ -577,6 +596,202 @@ def render_grid_notes(slide, x, y, w, h, data):
         _merit_card(slide, cx, cy, card_w, card_h, headline, desc)
 
 
+# ---------------------------------------------------------------------------
+# 2026-10-26 確定の型（10月号を1トピックずつ殿村さんと直して決まった見た目）。
+# 新しい月は render="blocks" で書く。本文のまとまりは全ページ同じ位置（10月号P.5基準）：
+#   左端0.72in・幅9.4in・一番上の枠の上端3.64in。枠は多くて2つ、「項目：値」は表、数字は大きい枠。
+# blocks は上から順に積む。種類：
+#   {"type": "cards", "cards": [(見出し, [行, ...]), ...], "cols": 1|2, "accent": [強調行, ...]}
+#   {"type": "table", "header": [見出し, ...] or None, "rows": [[ラベル, 値, ...], ...],
+#    "colw": [列幅in, ...] or None, "note": "※..." or None}
+#   {"type": "numbers", "items": [(大きい数字, ラベル, 補足), ...]}
+# ---------------------------------------------------------------------------
+BODY_LEFT_IN, BODY_TOP_IN, BODY_W_IN, BODY_BOTTOM_IN = 0.72, 3.64, 9.4, 7.08
+BLOCK_GAP_IN = 0.2
+
+
+def _text_w_in(s, pt):
+    # 半角は0.6em（PowerPointのメイリオは確認用の代替フォントより幅が出るので広めに見積もる）
+    return sum((0.6 if ord(c) < 0x2000 else 1.0) for c in s) * pt / 72
+
+
+def _wrapped(s, pt, width_in):
+    return sum(max(1, -(-_text_w_in(seg, pt) // max(width_in, 0.5))) for seg in s.split("\n"))
+
+
+def _head_pt(cols, size):
+    """見出しの大きさ（10月号の実物に合わせる）：1列は14pt本文→20pt（P.5）、12〜13pt本文→16〜17pt（P.12・P.13）。
+    左右2列は本文+2pt（P.11）。"""
+    if cols != 1:
+        return size + 2
+    return 20 if size >= 14 else size + 4
+
+
+def _card_height(heading, lines, w_in, head_pt, body_pt, accent=None):
+    """実測（LibreOffice描画）で合わせた高さ：見出し1行＝pt×0.0225in、本文1段落＝0.35in（14pt時）、
+    段落内の折り返し1行ごと＝0.27in（14pt時）、上下の余白0.22in。"""
+    usable = w_in - 0.8
+    h = 0.22 + _wrapped(heading, head_pt, usable) * head_pt * 0.0225
+    if accent:
+        h += (head_pt + 4) * 0.0225
+    k = body_pt / 14
+    for t in lines:
+        n = _wrapped(t, body_pt, usable)
+        h += (0.35 + 0.27 * (n - 1)) * k
+    return h
+
+
+def _std_card(slide, x, y, w, h, heading, lines, head_pt, body_pt, accent=None):
+    """10月号の「変更点」カードと同じ見た目（薄青・青枠・角丸、見出し紺太字、本文グレー）。"""
+    card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x), Inches(y), Inches(w), Inches(h))
+    card.adjustments[0] = 0.06
+    card.fill.solid()
+    card.fill.fore_color.rgb = LIGHT_BLUE
+    card.line.color.rgb = ACCENT
+    card.line.width = Pt(1)
+    card.shadow.inherit = False
+    tf = card.text_frame
+    tf.word_wrap = True
+    tf.vertical_anchor = MSO_ANCHOR.TOP
+    tf.margin_left, tf.margin_right = Inches(0.25), Inches(0.2)
+    items = [(heading, head_pt, True, NAVY)]
+    if accent:
+        items.append((accent, head_pt + 4, True, ACCENT))
+    items += [(t, body_pt, False, BODY_GRAY) for t in lines]
+    for i, (t, pt, bold, color) in enumerate(items):
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+        p.alignment = PP_ALIGN.LEFT
+        if i > 0 and not (accent and i == 1):
+            p.space_before = Pt(6)
+            p.line_spacing = 1.15
+        r = p.add_run()
+        r.text = t
+        r.font.size, r.font.bold, r.font.color.rgb = Pt(pt), bold, color
+        r.font.name = "メイリオ"
+
+
+def _cell(cell, val, size, bold, color, fill, align):
+    cell.fill.solid()
+    cell.fill.fore_color.rgb = fill
+    cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+    cell.margin_left = cell.margin_right = Inches(0.12)
+    cell.margin_top = cell.margin_bottom = Inches(0.03)
+    tf = cell.text_frame
+    for k, line in enumerate(val.split("\n")):
+        p = tf.paragraphs[0] if k == 0 else tf.add_paragraph()
+        p.alignment = align
+        r = p.add_run()
+        r.text = line
+        r.font.size, r.font.bold, r.font.color.rgb = Pt(size), bold, color
+        r.font.name = "メイリオ"
+
+
+def _table_layout(b, size):
+    ncol = len(b["rows"][0])
+    colw = b.get("colw") or ([1.9] + [(BODY_W_IN - 1.9) / (ncol - 1)] * (ncol - 1))
+    hs = []
+    if b.get("header"):
+        hs.append(0.36)
+    for row in b["rows"]:
+        n = max(_wrapped(v, size, w - 0.26) for v, w in zip(row, colw))
+        hs.append(0.08 + 0.21 * n * size / 12)  # 実測：12ptで1行0.29in・4行0.92in（10月号P.9）
+    return colw, hs
+
+
+def _block_height(b, size):
+    if b["type"] == "cards":
+        cols = b.get("cols", 1)
+        w = (BODY_W_IN - BLOCK_GAP_IN * (cols - 1)) / cols
+        acc = b.get("accent") or [None] * len(b["cards"])
+        hp = _head_pt(cols, size)
+        hs = [_card_height(h, ls, w, hp, size, a) for (h, ls), a in zip(b["cards"], acc)]
+        if cols == 1:
+            return sum(hs) + BLOCK_GAP_IN * (len(hs) - 1)
+        return max(hs)
+    if b["type"] == "table":
+        h = sum(_table_layout(b, size)[1])
+        return h + (0.4 if b.get("note") else 0)
+    if b["type"] == "numbers":
+        return 0.76  # 枠0.88から下の表との間を詰める分を引いた高さ
+    raise ValueError(b["type"])
+
+
+def render_blocks(slide, data):
+    """data["blocks"] を「■ 詳細」の下に上から積む。はみ出すときは本文の文字を1ptずつ下げる（最小11pt）。"""
+    blocks = data["blocks"]
+    room = BODY_BOTTOM_IN - BODY_TOP_IN
+    size = data.get("body_pt", 14)
+    while size > 11 and sum(_block_height(b, size) for b in blocks) + BLOCK_GAP_IN * (len(blocks) - 1) > room:
+        size -= 1
+    total = sum(_block_height(b, size) for b in blocks) + BLOCK_GAP_IN * (len(blocks) - 1)
+    if total > room:
+        print(f"  ⚠ はみ出しの恐れ：{data.get('headline')}（{total:.2f}in > {room:.2f}in）。文言を削ること")
+    x, y, W = BODY_LEFT_IN, BODY_TOP_IN, BODY_W_IN
+    for b in blocks:
+        bh = _block_height(b, size)
+        if b["type"] == "cards":
+            cols = b.get("cols", 1)
+            w = (W - BLOCK_GAP_IN * (cols - 1)) / cols
+            acc = b.get("accent") or [None] * len(b["cards"])
+            cy = y
+            for i, ((h, ls), a) in enumerate(zip(b["cards"], acc)):
+                hp = _head_pt(cols, size)
+                ch = _card_height(h, ls, w, hp, size, a) if cols == 1 else bh
+                cx = x + (i % cols) * (w + BLOCK_GAP_IN)
+                _std_card(slide, cx, cy, w, ch, h, ls, hp, size, a)
+                if cols == 1:
+                    cy += ch + BLOCK_GAP_IN
+        elif b["type"] == "table":
+            colw, hs = _table_layout(b, size)
+            rows = ([b["header"]] if b.get("header") else []) + b["rows"]
+            gf = slide.shapes.add_table(len(rows), len(colw), Inches(x), Inches(y), Inches(sum(colw)), Inches(sum(hs)))
+            t = gf.table
+            for j, cw in enumerate(colw):
+                t.columns[j].width = Inches(cw)
+            for i, rh in enumerate(hs):
+                t.rows[i].height = Inches(rh)
+            for i, row in enumerate(rows):
+                for j, v in enumerate(row):
+                    if b.get("header") and i == 0:
+                        _cell(t.cell(i, j), v, size, True, WHITE, NAVY, PP_ALIGN.CENTER)
+                    elif j == 0:
+                        _cell(t.cell(i, j), v, size, True, NAVY, LIGHT_BLUE, PP_ALIGN.CENTER)
+                    else:
+                        _cell(t.cell(i, j), v, size, False, BODY_GRAY, WHITE, PP_ALIGN.LEFT)
+            if b.get("note"):
+                nb = slide.shapes.add_textbox(Inches(x), Inches(y + sum(hs) + 0.08), Inches(W), Inches(0.3))
+                r = nb.text_frame.paragraphs[0].add_run()
+                r.text = b["note"]
+                r.font.size, r.font.color.rgb, r.font.name = Pt(12), BODY_GRAY, "メイリオ"
+        elif b["type"] == "numbers":
+            items = b["items"]
+            n = len(items)
+            tw = (W - 0.2 * (n - 1)) / n
+            for i, (big, label, sub) in enumerate(items):
+                card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(x + i * (tw + 0.2)), Inches(y),
+                                              Inches(tw), Inches(0.88))
+                card.adjustments[0] = 0.06
+                card.fill.solid()
+                card.fill.fore_color.rgb = LIGHT_BLUE
+                card.line.color.rgb = ACCENT
+                card.line.width = Pt(1)
+                card.shadow.inherit = False
+                tf = card.text_frame
+                tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+                tf.margin_top = tf.margin_bottom = Inches(0.02)
+                for k, (t, pt, bold, color) in enumerate([(big, 24, True, NAVY), (label, 12, False, ACCENT),
+                                                          (sub, 9, False, BODY_GRAY)]):
+                    if not t:
+                        continue
+                    p = tf.paragraphs[0] if k == 0 else tf.add_paragraph()
+                    p.alignment = PP_ALIGN.CENTER
+                    r = p.add_run()
+                    r.text = t
+                    r.font.size, r.font.bold, r.font.color.rgb, r.font.name = Pt(pt), bold, color, "メイリオ"
+            bh = 0.76  # 数字の枠と下の表の間は詰める（10月号P.9）
+        y += bh + BLOCK_GAP_IN
+
+
 def add_image_placeholder(slide, left, top, width, height, caption):
     """画像を後から差し込むための空きスペース（破線の枠＋説明キャプション）を置く。
     画像が届いたらこの枠を picture に差し替える。"""
@@ -628,7 +843,7 @@ def edit_topic_slide(slide, data):
     # 対象業界の値ボックス＝ひな形の元テキストで特定
     target = find_shape(slide, lambda t: t.strip() == "友だち獲得を強化したい全業種")
     if target is not None:
-        set_single_run_text(target, data["industry"])
+        set_text_with_breaks(target, data["industry"])
 
     src = find_shape(slide, lambda t: t.startswith("出典："))
     if src is not None:
@@ -644,9 +859,13 @@ def edit_topic_slide(slide, data):
         header.left = header.left + Inches(0.2)
 
     set_tag_highlight(slide, data["category"])
+    # 右上の逆三角形：強調したい段だけ紺＋白文字（なければ色なし）。2026-10-26 確定
+    set_funnel_highlight(slide, data.get("funnel", []))
     body_left, body_top, body_width, body_height = find_body_area(slide)
     render = data.get("render")
-    if render == "before_after":
+    if render == "blocks":
+        render_blocks(slide, data)
+    elif render == "before_after":
         render_before_after(slide, body_left, body_top, body_width, body_height, data)
     elif render == "impact":
         render_impact(slide, body_left, body_top, body_width, body_height, data)
