@@ -1,1 +1,3 @@
+# スナップショット比較が改行コードでずれないよう、LFに固定する（start.bat だけは cmd 用に CRLF）
+* text=auto eol=lf
 *.bat text eol=crlf
