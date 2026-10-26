@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "line-simulator-editor",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "line-simulator", "run", "dev:pane"],
+      "port": 5317
+    }
+  ]
+}

@@ -13,6 +13,7 @@ if not exist node_modules (
   )
 )
 
-rem Phase 2a: 編集画面はまだ無いので、検証案件を Day 30 まで流した結果を出す
-call npm run sim -- sample-staff --until-day 30
+echo 編集ツールを起動しています。ブラウザが開いたら、この黒い画面は閉じずにそのままにしてください。
+echo 終わるときは、編集画面で保存してから、この画面を閉じてください。
+call npm run dev
 pause

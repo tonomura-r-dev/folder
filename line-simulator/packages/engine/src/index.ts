@@ -7,3 +7,4 @@ export { validate, hasErrors, LINE_LIMITS, type ValidateOptions } from './valida
 export { applyPatch, approve, type PatchResult } from './patch.ts';
 export { renderText, isKnownVar } from './text.ts';
 export { projectHash } from './hash.ts';
+export { portsOf, choiceButtons, acceptsInput } from './ports.ts';

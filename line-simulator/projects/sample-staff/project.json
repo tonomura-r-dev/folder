@@ -296,19 +296,19 @@
       "reentry": "never",
       "nodes": [
         { "id": "n_w_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_w_isapplied", "type": "branch", "label": "応募済み？", "position": { "x": 0, "y": 120 },
+        { "id": "n_w_isapplied", "type": "branch", "label": "応募済み？", "position": { "x": 0, "y": 180 },
           "cases": [{ "id": "applied", "label": "応募済み", "when": { "op": "cv", "cvId": "cv_apply", "done": true } }] },
-        { "id": "n_w_msg_applied", "type": "message", "messageId": "msg_welcome_applied", "position": { "x": -180, "y": 240 } },
-        { "id": "n_w_msg", "type": "message", "messageId": "msg_welcome", "position": { "x": 180, "y": 240 } },
-        { "id": "n_w_survey", "type": "survey", "surveyId": "sv_hope", "timeoutMinutes": 1440, "position": { "x": 0, "y": 360 } },
-        { "id": "n_w_area", "type": "branch", "label": "希望エリア", "position": { "x": 0, "y": 480 },
+        { "id": "n_w_msg_applied", "type": "message", "messageId": "msg_welcome_applied", "position": { "x": -225, "y": 360 } },
+        { "id": "n_w_msg", "type": "message", "messageId": "msg_welcome", "position": { "x": 225, "y": 360 } },
+        { "id": "n_w_survey", "type": "survey", "surveyId": "sv_hope", "timeoutMinutes": 1440, "position": { "x": 0, "y": 540 } },
+        { "id": "n_w_area", "type": "branch", "label": "希望エリア", "position": { "x": 0, "y": 720 },
           "cases": [
             { "id": "tokyo", "label": "東京", "when": { "op": "hasTag", "tagId": "area_tokyo" } },
             { "id": "osaka", "label": "大阪", "when": { "op": "hasTag", "tagId": "area_osaka" } }
           ] },
-        { "id": "n_w_to_tokyo", "type": "jump", "flowId": "flow_step_tokyo", "position": { "x": -240, "y": 600 } },
-        { "id": "n_w_to_osaka", "type": "jump", "flowId": "flow_step_osaka", "position": { "x": 0, "y": 600 } },
-        { "id": "n_w_to_common", "type": "jump", "flowId": "flow_step_common", "position": { "x": 240, "y": 600 } }
+        { "id": "n_w_to_tokyo", "type": "jump", "flowId": "flow_step_tokyo", "position": { "x": -300, "y": 900 } },
+        { "id": "n_w_to_osaka", "type": "jump", "flowId": "flow_step_osaka", "position": { "x": 0, "y": 900 } },
+        { "id": "n_w_to_common", "type": "jump", "flowId": "flow_step_common", "position": { "x": 300, "y": 900 } }
       ],
       "edges": [
         { "id": "e_w1", "from": { "nodeId": "n_w_entry", "port": "out" }, "to": "n_w_isapplied" },
@@ -333,17 +333,17 @@
       "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
       "nodes": [
         { "id": "n_t_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_t_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 100 } },
-        { "id": "n_t_d1", "type": "message", "messageId": "msg_t_d1", "position": { "x": 0, "y": 200 } },
-        { "id": "n_t_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 300 } },
-        { "id": "n_t_job", "type": "branch", "label": "希望職種", "position": { "x": 0, "y": 400 },
+        { "id": "n_t_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
+        { "id": "n_t_d1", "type": "message", "messageId": "msg_t_d1", "position": { "x": 0, "y": 300 } },
+        { "id": "n_t_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
+        { "id": "n_t_job", "type": "branch", "label": "希望職種", "position": { "x": 0, "y": 600 },
           "cases": [{ "id": "office", "label": "事務", "when": { "op": "answer", "surveyId": "sv_hope", "questionId": "q_job", "match": "any", "choiceIds": ["c_office"] } }] },
-        { "id": "n_t_office", "type": "message", "messageId": "msg_t_office", "position": { "x": -160, "y": 500 } },
-        { "id": "n_t_light", "type": "message", "messageId": "msg_t_light", "position": { "x": 160, "y": 500 } },
-        { "id": "n_t_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 600 } },
-        { "id": "n_t_d7", "type": "choice", "messageId": "msg_t_d7", "timeoutMinutes": 4320, "position": { "x": 0, "y": 700 } },
-        { "id": "n_t_later", "type": "message", "messageId": "msg_t_later", "position": { "x": 160, "y": 800 } },
-        { "id": "n_t_end", "type": "end", "position": { "x": 0, "y": 900 } }
+        { "id": "n_t_office", "type": "message", "messageId": "msg_t_office", "position": { "x": -200, "y": 750 } },
+        { "id": "n_t_light", "type": "message", "messageId": "msg_t_light", "position": { "x": 200, "y": 750 } },
+        { "id": "n_t_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 900 } },
+        { "id": "n_t_d7", "type": "choice", "messageId": "msg_t_d7", "timeoutMinutes": 4320, "position": { "x": 0, "y": 1050 } },
+        { "id": "n_t_later", "type": "message", "messageId": "msg_t_later", "position": { "x": 200, "y": 1200 } },
+        { "id": "n_t_end", "type": "end", "position": { "x": 0, "y": 1350 } }
       ],
       "edges": [
         { "id": "e_t1", "from": { "nodeId": "n_t_entry", "port": "out" }, "to": "n_t_wait1" },
@@ -371,13 +371,13 @@
       "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
       "nodes": [
         { "id": "n_o_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_o_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 100 } },
-        { "id": "n_o_d1", "type": "message", "messageId": "msg_o_d1", "position": { "x": 0, "y": 200 } },
-        { "id": "n_o_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 300 } },
-        { "id": "n_o_d3", "type": "message", "messageId": "msg_o_d3", "position": { "x": 0, "y": 400 } },
-        { "id": "n_o_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 500 } },
-        { "id": "n_o_d7", "type": "message", "messageId": "msg_o_d7", "position": { "x": 0, "y": 600 } },
-        { "id": "n_o_end", "type": "end", "position": { "x": 0, "y": 700 } }
+        { "id": "n_o_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
+        { "id": "n_o_d1", "type": "message", "messageId": "msg_o_d1", "position": { "x": 0, "y": 300 } },
+        { "id": "n_o_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
+        { "id": "n_o_d3", "type": "message", "messageId": "msg_o_d3", "position": { "x": 0, "y": 600 } },
+        { "id": "n_o_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 750 } },
+        { "id": "n_o_d7", "type": "message", "messageId": "msg_o_d7", "position": { "x": 0, "y": 900 } },
+        { "id": "n_o_end", "type": "end", "position": { "x": 0, "y": 1050 } }
       ],
       "edges": [
         { "id": "e_o1", "from": { "nodeId": "n_o_entry", "port": "out" }, "to": "n_o_wait1" },
@@ -399,11 +399,11 @@
       "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
       "nodes": [
         { "id": "n_c_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_c_wait2", "type": "wait", "wait": { "kind": "dayAt", "day": 2, "time": "09:00" }, "position": { "x": 0, "y": 100 } },
-        { "id": "n_c_ask", "type": "message", "messageId": "msg_c_ask", "position": { "x": 0, "y": 200 } },
-        { "id": "n_c_wait4", "type": "wait", "wait": { "kind": "dayAt", "day": 4, "time": "09:00" }, "position": { "x": 0, "y": 300 } },
-        { "id": "n_c_general", "type": "message", "messageId": "msg_c_general", "position": { "x": 0, "y": 400 } },
-        { "id": "n_c_end", "type": "end", "position": { "x": 0, "y": 500 } }
+        { "id": "n_c_wait2", "type": "wait", "wait": { "kind": "dayAt", "day": 2, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
+        { "id": "n_c_ask", "type": "message", "messageId": "msg_c_ask", "position": { "x": 0, "y": 300 } },
+        { "id": "n_c_wait4", "type": "wait", "wait": { "kind": "dayAt", "day": 4, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
+        { "id": "n_c_general", "type": "message", "messageId": "msg_c_general", "position": { "x": 0, "y": 600 } },
+        { "id": "n_c_end", "type": "end", "position": { "x": 0, "y": 750 } }
       ],
       "edges": [
         { "id": "e_c1", "from": { "nodeId": "n_c_entry", "port": "out" }, "to": "n_c_wait2" },
@@ -423,12 +423,12 @@
       "stopWhen": { "op": "friend", "state": "blocked" },
       "nodes": [
         { "id": "n_a_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_a_tag", "type": "tag", "add": ["applied"], "position": { "x": 0, "y": 100 } },
-        { "id": "n_a_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "10:00", "from": "flowStart" }, "position": { "x": 0, "y": 200 } },
-        { "id": "n_a_interview", "type": "message", "messageId": "msg_a_interview", "position": { "x": 0, "y": 300 } },
-        { "id": "n_a_wait10", "type": "wait", "wait": { "kind": "dayAt", "day": 10, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 400 } },
-        { "id": "n_a_reapply", "type": "message", "messageId": "msg_a_reapply", "position": { "x": 0, "y": 500 } },
-        { "id": "n_a_end", "type": "end", "position": { "x": 0, "y": 600 } }
+        { "id": "n_a_tag", "type": "tag", "add": ["applied"], "position": { "x": 0, "y": 150 } },
+        { "id": "n_a_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "10:00", "from": "flowStart" }, "position": { "x": 0, "y": 300 } },
+        { "id": "n_a_interview", "type": "message", "messageId": "msg_a_interview", "position": { "x": 0, "y": 450 } },
+        { "id": "n_a_wait10", "type": "wait", "wait": { "kind": "dayAt", "day": 10, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 600 } },
+        { "id": "n_a_reapply", "type": "message", "messageId": "msg_a_reapply", "position": { "x": 0, "y": 750 } },
+        { "id": "n_a_end", "type": "end", "position": { "x": 0, "y": 900 } }
       ],
       "edges": [
         { "id": "e_a1", "from": { "nodeId": "n_a_entry", "port": "out" }, "to": "n_a_tag" },

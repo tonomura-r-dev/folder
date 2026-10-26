@@ -2,6 +2,7 @@
 // path は JSON Pointer。画面側はこれで該当箇所へ飛び、code から日本語の説明を作る。
 
 import type { Action, Expr, Flow, FlowNode, Id, InputEventBody, Issue, Project, Wait } from './schema.ts';
+import { choiceButtons, portsOf } from './ports.ts';
 import { bubbleTexts, isKnownVar, TEXT_VAR } from './text.ts';
 
 export type ValidateOptions = {
@@ -282,7 +283,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       if (!from) return void err('edge.danglingSource', ep, { nodeId: e.from.nodeId });
       if (!local.has(e.to)) err('edge.danglingTarget', ep, { nodeId: e.to });
       else if (local.get(e.to)!.node.type === 'entry') err('edge.danglingTarget', ep, { nodeId: e.to, reason: 'entry' });
-      if (!portsOf(from.node).includes(e.from.port)) err('edge.invalidPort', ep, { nodeId: e.from.nodeId, port: e.from.port });
+      if (!portsOf(from.node, project).includes(e.from.port)) err('edge.invalidPort', ep, { nodeId: e.from.nodeId, port: e.from.port });
       const key = `${e.from.nodeId}\u0000${e.from.port}`;
       if (used.has(key)) err('edge.invalidPort', ep, { nodeId: e.from.nodeId, port: e.from.port, reason: 'duplicate' });
       used.add(key);
@@ -290,7 +291,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
 
     // 分岐の行き場・行き止まり
     for (const [id, { node, path: np }] of local) {
-      const ports = portsOf(node);
+      const ports = portsOf(node, project);
       if (node.type === 'branch' && !used.has(`${id}\u0000else`)) err('branch.noExit', np);
       else if (ports.length > 0 && !ports.some((p) => used.has(`${id}\u0000${p}`))) warn('node.deadEnd', np);
     }
@@ -380,7 +381,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       case 'choice': {
         const m = messages.get(node.messageId);
         need(!!m, `${path}/messageId`, 'message', node.messageId);
-        if (m && choiceButtons(node).length === 0) err('node.requiredMissing', `${path}/messageId`, { reason: 'noButtons' });
+        if (m && choiceButtons(node, project).length === 0) err('node.requiredMissing', `${path}/messageId`, { reason: 'noButtons' });
         return;
       }
       case 'survey':
@@ -410,30 +411,6 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     }
   }
 
-  function choiceButtons(node: Extract<FlowNode, { type: 'choice' }>): Id[] {
-    const m = messages.get(node.messageId);
-    return (m?.bubbles ?? []).flatMap((b) => (b.kind === 'buttons' || b.kind === 'card' ? b.buttons.map((x) => x.id) : []));
-  }
-
-  /** ノード種別ごとに許される出口 */
-  function portsOf(node: FlowNode): string[] {
-    switch (node.type) {
-      case 'choice':
-        return [...choiceButtons(node).map((id) => `btn:${id}`), ...(node.timeoutMinutes !== undefined ? ['timeout'] : [])];
-      case 'survey':
-        return ['done', ...(node.timeoutMinutes !== undefined ? ['timeout'] : [])];
-      case 'wait':
-        return node.wait.kind === 'untilEvent' ? ['out', 'timeout'] : ['out'];
-      case 'branch':
-        return [...node.cases.map((c) => `case:${c.id}`), 'else'];
-      case 'jump':
-      case 'end':
-      case 'stopAll':
-        return [];
-      default:
-        return ['out'];
-    }
-  }
 
   // ---------- 時間が進まないループ ----------
   zeroTimeCycles(project, allNodes, err);
