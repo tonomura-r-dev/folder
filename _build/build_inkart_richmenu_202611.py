@@ -160,9 +160,9 @@ def rows_mode():
     cell[fix] = orange
     # 枠の上（画像の上端まで）と右（画像の右端まで）はオレンジで埋める（殿村さん 10/22「ここに緑が入る意味がない」）
     cell[0:y1 + 1, x0:] = np.where(nong[0:y1 + 1, x0:, None] & ~white_box[0:y1 + 1, x0:, None], cell[0:y1 + 1, x0:], cell[0:y1 + 1, x0:])
-    top_band = np.zeros(cell.shape[:2], bool); top_band[0:y0, x0:] = True
-    right_band = np.zeros(cell.shape[:2], bool); right_band[0:y1 + 1, x1 + 1:] = True
-    cell[top_band | right_band] = orange
+    # 2026-10-26 殿村さん「Cの枠線に合わせてオレンジを大きく」→ マスC全体（白い枠の外側ぜんぶ）をオレンジに
+    cell[~white_box] = np.where(nong[~white_box][:, None] & ~(abs(cell[~white_box] - np.array(green)).sum(-1) < 60)[:, None],
+                               cell[~white_box], orange)
     a[0:CH, 2 * CW:W] = cell
     out = Image.fromarray(a.astype("uint8"))
     out.save(OUT)
