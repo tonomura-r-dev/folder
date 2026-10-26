@@ -160,9 +160,19 @@ def rows_mode():
     cell[fix] = orange
     # 枠の上（画像の上端まで）と右（画像の右端まで）はオレンジで埋める（殿村さん 10/22「ここに緑が入る意味がない」）
     cell[0:y1 + 1, x0:] = np.where(nong[0:y1 + 1, x0:, None] & ~white_box[0:y1 + 1, x0:, None], cell[0:y1 + 1, x0:], cell[0:y1 + 1, x0:])
-    # 2026-10-26 殿村さん「Cの枠線に合わせてオレンジを大きく」→ マスC全体（白い枠の外側ぜんぶ）をオレンジに
-    cell[~white_box] = np.where(nong[~white_box][:, None] & ~(abs(cell[~white_box] - np.array(green)).sum(-1) < 60)[:, None],
-                               cell[~white_box], orange)
+    # 2026-10-26 殿村さん「スタンプカードの白枠に合わせて」→ オレンジの箱を下段右（スタンプカード）の白い枠と同じ位置・大きさにし、
+    # その中に白い枠（16px内側）と中身を入れる
+    bot = a[CH:H, 2 * CW:W]
+    bw = bot.min(-1) > 235
+    bys, bxs = np.where(bw)
+    bx0, bx1 = int(bxs.min()), int(bxs.max())
+    by0, by1 = int(bys.min()), int(bys.max())          # 下段の枠の上下（マス内の相対位置）
+    inner = Image.fromarray(cell[wys.min():wys.max() + 1, wxs.min():wxs.max() + 1].astype("uint8"))
+    pad = 16
+    inner = inner.resize((bx1 - bx0 + 1 - 2 * pad, by1 - by0 + 1 - 2 * pad), Image.LANCZOS)
+    cell[:, :] = green
+    cell[by0:by1 + 1, bx0:bx1 + 1] = orange
+    cell[by0 + pad:by0 + pad + inner.size[1], bx0 + pad:bx0 + pad + inner.size[0]] = np.array(inner)
     a[0:CH, 2 * CW:W] = cell
     out = Image.fromarray(a.astype("uint8"))
     out.save(OUT)
