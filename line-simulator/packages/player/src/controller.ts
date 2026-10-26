@@ -53,6 +53,13 @@ export function newDemo(project: Project, personaId?: Id, start: Minutes = DEMO_
   return addUser(emptyDemo(project, start), project, persona?.id ?? '', false);
 }
 
+/** 案件設定（settings.demoStart）どおりの始まり方。既定は1人を手で操作 */
+export function initialDemo(project: Project): Demo {
+  const s = project.settings.demoStart;
+  if (s?.mode === 'scripted' && project.personas.some((p) => (p.script ?? []).length > 0)) return allScripted(project);
+  return newDemo(project, s?.personaId);
+}
+
 export function addUser(demo: Demo, project: Project, personaId: Id, scripted: boolean): Demo {
   const id = nextUserId(demo);
   const name = displayNameFor(demo, project, personaId);

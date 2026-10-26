@@ -69,6 +69,7 @@ type Project = {
   settings: {
     dedupeWindowMinutes: Minutes;                // 重複配信の防止期間（FR-16）。既定 1440
     defaultRichMenuId?: Id;                      // 友だち追加時に出すリッチメニュー（Phase 2a で追加）
+    demoStart?: { mode: 'single' | 'scripted'; personaId?: Id }; // デモの始まり方（Phase 5）。既定 single＝1人を手で操作
     messageCounting?: { enabled: boolean; freeQuota?: number }; // 通数（追加提案G-6・採否待ち）
     labels?: Record<string, string>;             // 画面用の言い換え（例: "cv" → "応募"）
   };

@@ -1,12 +1,16 @@
 // 編集ツールの開発サーバー。保存API（tools/dev-api.ts）を同じサーバーに差し込む。
 // 社内PCのこのフォルダでだけ動かす前提なので、外からの接続は受けない（localhost のみ）。
 
+import { realpathSync } from 'node:fs';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type Plugin } from 'vite';
 import { createApiHandler } from './tools/dev-api.ts';
 import { ProjectStore } from './tools/project-store.ts';
 
-const ROOT = import.meta.dirname;
+// Windows の短い名前（TONOMU~1 など）で開かれると、ファイル監視が落ちることがある（libuv の fs-event）。
+// 長い名前に直してから動かす。
+const ROOT = realpathSync.native(import.meta.dirname);
+process.chdir(ROOT);
 
 function projectApi(): Plugin {
   return {

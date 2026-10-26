@@ -176,6 +176,13 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
   if (project.brand.iconAssetId) need(assets.has(project.brand.iconAssetId), '/brand/iconAssetId', 'asset', project.brand.iconAssetId);
   if (project.settings.defaultRichMenuId)
     need(richMenus.has(project.settings.defaultRichMenuId), '/settings/defaultRichMenuId', 'richMenu', project.settings.defaultRichMenuId);
+  const start = project.settings.demoStart;
+  if (start) {
+    if (start.mode !== 'single' && start.mode !== 'scripted') err('node.requiredMissing', '/settings/demoStart/mode');
+    if (start.personaId) need(project.personas.some((p) => p.id === start.personaId), '/settings/demoStart/personaId', 'persona', start.personaId);
+    if (start.mode === 'scripted' && !project.personas.some((p) => (p.script ?? []).length > 0))
+      warn('optional.empty', '/settings/demoStart', { reason: 'noScript' });
+  }
 
   project.assets.forEach((a, i) => {
     if (!a.alt.trim()) warn('optional.empty', `/assets/${i}/alt`);

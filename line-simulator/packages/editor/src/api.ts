@@ -1,6 +1,6 @@
 // 保存API（tools/dev-api.ts）の呼び出し。
 
-import type { Project } from '../../engine/src/index.ts';
+import type { Issue, Project } from '../../engine/src/index.ts';
 
 export type ProjectSummary = { slug: string; name: string; industry?: string; updatedAt: string };
 export type HistoryEntry = { id: string; savedAt: string; label?: string; bytes: number };
@@ -41,7 +41,16 @@ export const api = {
   restore: (slug: string, id: string) => call<{ updatedAt: string }>('POST', `${p(slug)}/history/${id}/restore`),
   label: (slug: string, id: string, label: string) => call<{ ok: true }>('POST', `${p(slug)}/history/${id}/label`, { label }),
   uploadAsset: (slug: string, name: string, dataBase64: string) => call<{ path: string }>('POST', `${p(slug)}/assets`, { name, dataBase64 }),
+  /** 営業用HTMLの書き出し。重大エラーのときも issues を返すので、例外にしない */
+  exportHtml: async (slug: string, confirmFictional: boolean): Promise<ExportResponse> => {
+    const res = await fetch(`${p(slug)}/export`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmFictional }) });
+    const data = (await res.json().catch(() => ({}))) as Partial<ExportResponse> & { message?: string };
+    if (!data.issues) throw new ApiError(res.status, 'export.failed', data.message ?? `${res.status}`);
+    return { ok: !!data.ok, bytes: data.bytes ?? 0, issues: data.issues, ...(data.path ? { path: data.path } : {}) };
+  },
 };
+
+export type ExportResponse = { ok: boolean; path?: string; bytes: number; issues: Issue[] };
 
 /** 案件フォルダの画像を表示する URL */
 export const assetUrl = (slug: string, path: string) => `${p(slug)}/files/${path.split('/').map(encodeURIComponent).join('/')}`;

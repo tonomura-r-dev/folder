@@ -112,14 +112,16 @@ tools/export.ts <案件>
   1. project.json を読む
   2. engine.validate → 重大エラーがあれば中止
   3. 社内専用の項目を取り除く（internal／_internal／出所メモ）
-  4. 画像を WebP・横600px に縮小して Base64 化
+  4. 画像を Base64 化（横800pxより大きい・300KBより重い画像は WebP に縮小）
   5. テンプレートHTMLに、エンジン（1本のJSに束ねたもの）・player・案件JSON・CSS を埋め込む
   6. 出来上がったHTMLを検査：社内項目・APIキーらしき文字列・編集ツールのコード・外部URL が無いこと
   7. サイズ判定（5MB超で警告／15MB超で中止）
   8. Downloads 直下に <案件名>_デモ_YYYYMMDD.html として保存
 ```
 
-- JSの束ね（バンドル）は **esbuild**（Vite に同梱されているので追加なし）
+- JSの束ね（バンドル）は **Vite の build（中身は rolldown）**。追加のツールは要らない（Phase 5 で Vite 8 に合わせて変更）
+- HTMLに通信禁止の設定（CSP：`default-src 'none'; img-src data:` ほか）を入れ、外部の読み込みをブラウザに禁止させる
+- 書き出す前に「架空または匿名化したデータだけ」の確認を必須にする（自動では見分けられないため）
 - 書き出したHTMLは `fetch`・`localStorage`・外部フォント・外部スクリプトを一切使わない（`file://` で開くと使えない・使えても不安定なため）。状態はすべてメモリ上
 - フォントはシステムフォント（`Meiryo, "Yu Gothic UI", sans-serif`）。Windows には必ず入っている
 - 編集ツールの画面からもボタン1つで書き出せる（開発サーバーのAPI経由で同じ `export.ts` を呼ぶ）
@@ -201,7 +203,7 @@ tools/export.ts <案件>
 |---|---|---|---|
 | 編集画面 | React, React DOM | MIT | 入らない（playerは素のDOMで書く） |
 | フローチャート | @xyflow/react | MIT | 入らない |
-| 開発サーバー・束ね | Vite（esbuild同梱） | MIT | 入らない |
+| 開発サーバー・束ね | Vite（rolldown同梱） | MIT | 入らない |
 | 型 | TypeScript | Apache-2.0 | 入らない |
 | テスト | Vitest | MIT | 入らない |
 | 画像縮小 | sharp | Apache-2.0 | 入らない（書き出し時のみ） |

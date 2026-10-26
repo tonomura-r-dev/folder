@@ -38,6 +38,11 @@ export type Project = {
     dedupeWindowMinutes: Minutes;
     defaultRichMenuId?: Id;
     messageCounting?: { enabled: boolean; freeQuota?: number };
+    /**
+     * デモ（営業用HTML・編集ツールのデモ画面）を開いたときの始まり方。既定は single。
+     * single = 1人を手で操作（personaId のペルソナ。無ければ先頭）／scripted = 台本のあるペルソナ全員を台本どおりに並べる
+     */
+    demoStart?: { mode: 'single' | 'scripted'; personaId?: Id };
     labels?: Record<string, string>;
   };
   assets: Asset[];

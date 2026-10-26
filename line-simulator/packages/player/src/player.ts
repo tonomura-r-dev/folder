@@ -15,6 +15,7 @@ import {
   autoStep,
   dispatch,
   futureEvents,
+  initialDemo,
   newDemo,
   nextStop,
   pendingInputs,
@@ -55,7 +56,7 @@ const TICK_MS = 1200;
 
 export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHandle {
   let project = opts.project;
-  let demo = opts.demo ?? newDemo(project, opts.personaId);
+  let demo = opts.demo ?? (opts.personaId ? newDemo(project, opts.personaId) : initialDemo(project));
   let view: View | null = null;
   const ui: Ui = { menuOpen: true, picked: [], mode: 'full', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '' };
   let timer: ReturnType<typeof setInterval> | null = null;
@@ -380,7 +381,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       ui.status = '';
       ui.picked = [];
       ui.menuOpen = true;
-      commit(newDemo(project, personaId));
+      commit(personaId ? newDemo(project, personaId) : initialDemo(project));
     },
     getDemo: () => demo,
     destroy() {

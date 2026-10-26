@@ -28,6 +28,7 @@ const LIMIT: Record<string, string> = {
   menuCells: 'リッチメニューは20区画まで',
 };
 
+const mb = (v: unknown) => (Number(v) / 1024 / 1024).toFixed(1);
 const str = (v: unknown) => (v === undefined || v === null || v === '' ? '（未設定）' : String(v));
 
 export function describeIssue(i: Issue): string {
@@ -73,7 +74,7 @@ export function describeIssue(i: Issue): string {
     case 'node.deadEnd':
       return '出口がどこにも繋がっていません（ここでシナリオが終わります）';
     case 'optional.empty':
-      return '任意の項目が空です';
+      return p['reason'] === 'noScript' ? '「台本つきで全員」で始める設定ですが、台本のあるペルソナがいません（1人の手動操作で始まります）' : '任意の項目が空です';
     case 'delivery.possibleDuplicate':
       return `同じ文面に、別々のシナリオから届く経路があります（重複配信の可能性）`;
     case 'flow.noStop':
@@ -88,6 +89,23 @@ export function describeIssue(i: Issue): string {
       return `差し込み「{{${str(p['key'])}}}」は使えません`;
     case 'line.limit':
       return `LINEの上限を超えています（${LIMIT[String(p['limit'])] ?? String(p['limit'])}）`;
+    // 営業用HTMLの書き出し
+    case 'export.notConfirmed':
+      return '架空または匿名化したデータだけであることの確認が済んでいません';
+    case 'export.large':
+      return `HTMLが ${mb(p['bytes'])}MB あります（5MBを超えるとメールで送れないことがあります）`;
+    case 'export.tooLarge':
+      return `HTMLが ${mb(p['bytes'])}MB あり、15MBを超えるため書き出せません（画像を減らすか小さくしてください）`;
+    case 'export.imageResized':
+      return `画像「${str(p['id'])}」を横${str(p['width'])}pxに縮小して埋め込みました`;
+    case 'export.leak':
+      return `書き出したHTMLに${str(p['what'])}が残っていたため、保存しませんでした`;
+    case 'export.secret':
+      return 'APIキーや秘密鍵らしき文字列が含まれていたため、保存しませんでした';
+    case 'export.external':
+      return `外部から読み込む指定（${str(p['sample'])}）が含まれていたため、保存しませんでした`;
+    case 'export.editorCode':
+      return '編集ツールのコードが混ざっていたため、保存しませんでした';
     default:
       return i.code;
   }

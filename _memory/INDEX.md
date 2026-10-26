@@ -56,7 +56,7 @@
 | **案件引き継ぎシート** | `_drafts/案件引き継ぎシート_GAS.gs`／`_drafts/案件引き継ぎシート_構成案.md` |
 | **リッチメニュー運用** | `_drafts/リッチメニュー_予約公開の運用手順.md` |
 | **資料ビルド** | `_build/build_*.py`（案件ごとのデッキ生成）／`qa_render.py`（検品）／`make_images.py`（図版生成） |
-| **LINE施策統合シミュレーター** | `line-simulator/`。実装前のLINE施策を操作して見せ、営業用HTMLに書き出すツール。段階確認型（各Phaseで承認を取ってから次へ）。**Phase 1 設計（`docs/`6本）・Phase 2a エンジン＋検証案件＋CLI・Phase 2b 案件管理＋フロー編集画面・Phase 3 LINE／Web画面と6施策のデモ（2026-10-26）・Phase 4 複数ユーザー・時間の巻き戻し・自動再生・「なぜ」の表示・資料用16:9・条件式ビルダー（2026-10-27）完了**。次は **Phase 5＝営業用HTMLの書き出し**（承認待ち）。起動は `start.bat`（ブラウザで編集画面が開く。左の「▶ デモ」で動作確認）、確認は `npm run check`。検証案件は架空の「サンプルスタッフ（仮）」 |
+| **LINE施策統合シミュレーター** | `line-simulator/`。実装前のLINE施策を操作して見せ、営業用HTMLに書き出すツール。段階確認型（各Phaseで承認を取ってから次へ）。**Phase 1 設計（`docs/`6本）・Phase 2a エンジン＋検証案件＋CLI・Phase 2b 案件管理＋フロー編集画面・Phase 3 LINE／Web画面と6施策のデモ（2026-10-26）・Phase 4 複数ユーザー・時間の巻き戻し・自動再生・「なぜ」の表示・資料用16:9・条件式ビルダー・Phase 5 営業用HTMLの書き出し（2026-10-27）完了**。次は **Phase 6＝スクショからシナリオ案を作る流れ・最終検証**（承認待ち）。営業用HTMLは編集画面の「営業用HTMLを書き出す」か `npm run export -- <案件> --confirm-fictional` で Downloads 直下へ（サンプル＝`Downloads\サンプルスタッフ株式会社（仮）_デモ_20261027.html`）。起動は `start.bat`（ブラウザで編集画面が開く。左の「▶ デモ」で動作確認）、確認は `npm run check`。検証案件は架空の「サンプルスタッフ（仮）」 |
 | **ChatGPT中継リポジトリ** | **別リポジトリ** `tonomura-r-dev/ai-relay`（private・ローカルは `C:\Users\tonomura-r\Downloads\ai-relay`）。Claudeが `requests/` に依頼を置き、PCではデスクトップ版ChatGPTの**Codex（ai-relayを開いた1スレッド）**が `results/` に結果を保存＝コピペ不要（2026-10-24開通テスト合格）。**さらにClaudeが `codex` コマンドで直接実行できる＝殿村さんの手作業ゼロ**（画像・調査ともテスト合格）。スマホ時はGitHubコネクタで読む（帰りコピペ）。雛形3本は `_templates/`。**このリポジトリ（folder）やDownloads直下はGPTに繋がない** |
 
 ## スキル（`.claude/skills/`）

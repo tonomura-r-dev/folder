@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Project } from '../../engine/src/index.ts';
 import { personaCoverage, validate } from '../../engine/src/index.ts';
 import { describeIssue } from '../../player/src/issues.ts';
-import { api, ApiError, downloadJson, fmtDateTime, type HistoryEntry } from './api.ts';
+import { api, ApiError, downloadJson, fmtDateTime, type ExportResponse, type HistoryEntry } from './api.ts';
 import { Ctx, type EditorCtx } from './ctx.ts';
 import { FlowEditor } from './flow/FlowEditor.tsx';
 import { DemoView } from './DemoView.tsx';
@@ -18,7 +18,7 @@ import { Settings } from './parts/Settings.tsx';
 import { Surveys } from './parts/Surveys.tsx';
 import { WebPages } from './parts/WebPages.tsx';
 import { go, href, locate, where, type Route, type Section } from './route.ts';
-import { Modal } from './ui/form.tsx';
+import { InlineIssues, Modal } from './ui/form.tsx';
 
 type Doc = { project: Project; base: string; rev: number; savedRev: number };
 type ProjectRoute = Extract<Route, { page: 'project' }>;
@@ -45,6 +45,7 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
   const [saving, setSaving] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   const [issuesOpen, setIssuesOpen] = useState(true);
   const docRef = useRef<Doc | null>(null);
   docRef.current = doc;
@@ -165,6 +166,9 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
           <button className="btn" onClick={() => downloadJson(`${slug}.json`, p)} title="いま画面にある内容（未保存の変更も含む）をJSONで保存">
             JSONで書き出し
           </button>
+          <button className="btn" onClick={() => setExportOpen(true)} title="社外にも渡せる、ネット接続なしで動く単一のHTMLを Downloads に書き出す">
+            営業用HTMLを書き出す
+          </button>
           <button className="btn primary" disabled={!dirty || saving} onClick={() => void save()} title="Ctrl+S でも保存できます">
             {saving ? '保存中…' : '保存'}
           </button>
@@ -209,6 +213,8 @@ export function ProjectEditor({ route, toast }: { route: ProjectRoute; toast: (m
           </div>
         )}
       </div>
+
+      {exportOpen && <ExportDialog slug={slug} dirty={dirty} errors={errors} onClose={() => setExportOpen(false)} onSave={() => void save()} />}
 
       {historyOpen && (
         <HistoryDialog
@@ -349,6 +355,70 @@ function HistoryDialog({
       <div className="actions">
         <button className="btn" onClick={onClose}>
           閉じる
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/** 営業用HTMLの書き出し。保存済みの内容を書き出すので、未保存の変更があれば先に保存してもらう */
+function ExportDialog({ slug, dirty, errors, onClose, onSave }: { slug: string; dirty: boolean; errors: number; onClose: () => void; onSave: () => void }) {
+  const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<ExportResponse | null>(null);
+  const [failure, setFailure] = useState<string | null>(null);
+  const run = async () => {
+    setBusy(true);
+    setFailure(null);
+    try {
+      setResult(await api.exportHtml(slug, confirmed));
+    } catch (e) {
+      setFailure((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const shown = result?.issues ?? [];
+  return (
+    <Modal title="営業用HTMLを書き出す" onClose={onClose}>
+      <p className="small">
+        ネット接続なしで動く単一のHTMLを、<b>Downloads</b> フォルダに書き出します。編集機能・社内メモは入りません。
+        重大エラーがあると書き出せません（いま {errors} 件）。
+      </p>
+      {dirty && (
+        <div className="row" style={{ background: 'var(--warn-soft)', padding: 8, borderRadius: 8 }}>
+          <span className="small">保存していない変更があります。書き出すのは保存済みの内容です。</span>
+          <button className="btn small" onClick={onSave}>
+            いま保存する
+          </button>
+        </div>
+      )}
+      <label className="row small" style={{ marginTop: 10 }}>
+        <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+        会社名・人物・求人などは、架空または匿名化したものだけです（実在の顧客情報は入っていません）
+      </label>
+      {result && (
+        <div className="section" style={{ marginTop: 12 }}>
+          {result.ok ? (
+            <>
+              <b style={{ color: 'var(--accent-ink)' }}>書き出しました（{Math.round(result.bytes / 1024)}KB）</b>
+              <div className="readonly" style={{ marginTop: 6, wordBreak: 'break-all' }}>
+                {result.path}
+              </div>
+            </>
+          ) : (
+            <b style={{ color: 'var(--err)' }}>書き出しませんでした</b>
+          )}
+          {shown.length > 0 && <InlineIssues issues={shown} />}
+        </div>
+      )}
+      {failure && <div className="bad small">書き出せませんでした：{failure}</div>}
+      <div className="actions">
+        <button className="btn" onClick={onClose}>
+          閉じる
+        </button>
+        <button className="btn primary" disabled={!confirmed || busy || dirty} onClick={() => void run()}>
+          {busy ? '書き出し中…' : '書き出す'}
         </button>
       </div>
     </Modal>

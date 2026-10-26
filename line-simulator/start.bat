@@ -1,19 +1,27 @@
 @echo off
+rem LINE simulator editor launcher.
+rem Keep this file ASCII only: cmd can break UTF-8 Japanese text in .bat files.
+rem Japanese messages are printed by tools\say.ts instead.
 chcp 65001 > nul
 cd /d "%~dp0"
 
-rem 初回だけ依存を入れる（数分かかります）
+where node > nul 2> nul
+if errorlevel 1 (
+  echo [line-simulator] Node.js was not found. Please install Node.js 24 or later, then run this file again.
+  pause
+  exit /b 1
+)
+
 if not exist node_modules (
-  echo 初回の準備をしています...
+  node tools\say.ts install
   call npm install --no-audit --no-fund
   if errorlevel 1 (
-    echo 準備に失敗しました。画面をそのまま担当者に見せてください。
+    node tools\say.ts installFailed
     pause
     exit /b 1
   )
 )
 
-echo 編集ツールを起動しています。ブラウザが開いたら、この黒い画面は閉じずにそのままにしてください。
-echo 終わるときは、編集画面で保存してから、この画面を閉じてください。
+node tools\say.ts starting
 call npm run dev
 pause

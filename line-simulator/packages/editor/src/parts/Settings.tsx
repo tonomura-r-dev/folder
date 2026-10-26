@@ -1,7 +1,7 @@
 // 案件設定：会社名・アカウント名・配色・重複防止・画像・社内メモ。
 
 import { issuesAt, useEditor } from '../ctx.ts';
-import { Field, InlineIssues, NumberInput, ReadOnly, Text, TextArea } from '../ui/form.tsx';
+import { Field, InlineIssues, NumberInput, ReadOnly, Select, Text, TextArea } from '../ui/form.tsx';
 import { Images } from './Images.tsx';
 
 export function Settings() {
@@ -52,6 +52,40 @@ export function Settings() {
               onChange={(v) => update((d) => (d.settings.messageCounting = v === undefined ? { enabled: true } : { enabled: true, freeQuota: v }))}
             />
           </Field>
+        </div>
+      </div>
+
+      <div className="section">
+        <h3>デモの始まり方（営業用HTML・デモ画面）</h3>
+        <div className="fields">
+          <Field label="開いたときの状態" issues={issuesAt(issues, '/settings/demoStart')}>
+            <Select
+              value={p.settings.demoStart?.mode ?? 'single'}
+              options={[
+                { value: 'single', label: '1人を手で操作する（標準）' },
+                { value: 'scripted', label: '台本のあるペルソナ全員を、台本どおりに並べる' },
+              ]}
+              onChange={(mode) =>
+                update((d) => {
+                  const personaId = d.settings.demoStart?.personaId;
+                  d.settings.demoStart = mode === 'scripted' ? { mode: 'scripted' } : { mode: 'single', ...(personaId ? { personaId } : {}) };
+                })
+              }
+            />
+          </Field>
+          {(p.settings.demoStart?.mode ?? 'single') === 'single' && (
+            <Field label="手で操作する人" hint="選ばなければ、ペルソナの先頭の人">
+              <Select
+                value={p.settings.demoStart?.personaId ?? ''}
+                empty="ペルソナの先頭"
+                options={p.personas.map((x) => ({ value: x.id, label: x.name }))}
+                onChange={(personaId) => update((d) => (d.settings.demoStart = { mode: 'single', ...(personaId ? { personaId } : {}) }))}
+              />
+            </Field>
+          )}
+        </div>
+        <div className="muted small" style={{ marginTop: 6 }}>
+          デモ画面の「初期化」や、開き直したときもこの状態から始まります。台本つきで始めると「▶ 自動再生」ですぐに流せます。
         </div>
       </div>
 

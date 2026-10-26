@@ -12,10 +12,18 @@
 //   POST   /api/projects/:slug/history/:id/label {label}
 //   GET    /api/projects/:slug/files/assets/<name>  画像（assets/ の中だけ）
 //   POST   /api/projects/:slug/assets {name,dataBase64}  画像の取り込み
+//   POST   /api/projects/:slug/export {confirmFictional}  営業用HTMLを Downloads に書き出す
 
+import { existsSync, mkdirSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import type { Project } from '../packages/engine/src/index.ts';
-import { ProjectStore, StoreError } from './project-store.ts';
+import { buildExport, uniqueName } from './export-lib.ts';
+import { ProjectStore, StoreError, writeAtomic } from './project-store.ts';
+
+/** 営業用HTMLの保存先（社内の決まりで Downloads 直下） */
+const exportDir = () => join(homedir(), 'Downloads');
 
 const MAX_BODY = 20 * 1024 * 1024;
 
@@ -85,6 +93,27 @@ export function createApiHandler(store: ProjectStore) {
       if (parts[1] === 'projects' && parts[3] === 'assets' && parts.length === 4 && method === 'POST') {
         const b = (await body(req)) as { name: string; dataBase64: string };
         return send(res, 201, { path: store.saveAsset(parts[2]!, b.name ?? '', Buffer.from(b.dataBase64 ?? '', 'base64')) });
+      }
+      if (parts[1] === 'projects' && parts[3] === 'export' && parts.length === 4 && method === 'POST') {
+        // 保存済みの案件を書き出す（画面の未保存の変更は含めない）
+        const slug = parts[2]!;
+        const b = (await body(req)) as { confirmFictional?: boolean };
+        const result = await buildExport(store.read(slug), {
+          readAsset: (p) => {
+            try {
+              return store.readAsset(slug, p).data;
+            } catch {
+              return null;
+            }
+          },
+          confirmFictional: b.confirmFictional === true,
+        });
+        if (!result.ok || !result.html) return send(res, 422, { ok: false, bytes: result.bytes, issues: result.issues });
+        const dir = exportDir();
+        mkdirSync(dir, { recursive: true });
+        const path = join(dir, uniqueName(result.fileName, (n) => existsSync(join(dir, n))));
+        writeAtomic(path, result.html);
+        return send(res, 201, { ok: true, path, bytes: result.bytes, issues: result.issues });
       }
       if (parts[1] === 'projects' && parts[3] === 'history') {
         const slug = parts[2]!;
