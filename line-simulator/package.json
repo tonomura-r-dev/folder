@@ -1,0 +1,22 @@
+{
+  "name": "line-simulator",
+  "private": true,
+  "version": "0.1.0",
+  "description": "LINE施策統合シミュレーター",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "sim": "node tools/run.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check:engine": "node tools/check-engine.ts",
+    "check": "npm run typecheck && npm run check:engine && npm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

@@ -68,7 +68,7 @@ type Project = {
   };
   settings: {
     dedupeWindowMinutes: Minutes;                // 重複配信の防止期間（FR-16）。既定 1440
-    defaultDeliveryTime?: string;                // "09:00"
+    defaultRichMenuId?: Id;                      // 友だち追加時に出すリッチメニュー（Phase 2a で追加）
     messageCounting?: { enabled: boolean; freeQuota?: number }; // 通数（追加提案G-6・採否待ち）
     labels?: Record<string, string>;             // 画面用の言い換え（例: "cv" → "応募"）
   };
@@ -214,7 +214,7 @@ type Node = NodeBase & (
   | { type: 'image'; assetId: Id }                               // ポート: out
   | { type: 'richMenu'; richMenuId: Id }                         // ポート: out
   | { type: 'choice'; messageId: Id; timeoutMinutes?: Minutes }  // ボタン選択。ポート: btn:<buttonId> / timeout
-  | { type: 'survey'; surveyId: Id; timeoutMinutes?: Minutes }   // ポート: done / timeout
+  | { type: 'survey'; surveyId: Id; introMessageId?: Id; timeoutMinutes?: Minutes } // ポート: done / timeout。全問回答済みなら待たずに done
   | { type: 'tag'; add?: Id[]; remove?: Id[] }                   // ポート: out
   | { type: 'branch'; cases: { id: Id; label: string; when: Expr }[] } // ポート: case:<id> / else
   | { type: 'wait'; wait: Wait }                                 // ポート: out
@@ -226,7 +226,8 @@ type Node = NodeBase & (
 
 type Wait =
   | { kind: 'duration'; minutes: Minutes }                       // N分後
-  | { kind: 'dayAt'; day: number; time: string }                 // 起点から N日目の HH:MM（G-2）
+  | { kind: 'dayAt'; day: number; time: string;                  // 起点から N日目の HH:MM（G-2）
+      from?: 'friendAdd' | 'flowStart' }                         // 起点。既定は友だち追加（未追加ならフロー開始）。過ぎていれば即時
   | { kind: 'untilEvent'; event: InputEvent['type']; timeoutMinutes: Minutes }; // ポート: out / timeout
 ```
 
@@ -314,7 +315,7 @@ type InputEvent = { at: Minutes; userId: Id } & (
   | { type: 'addFriend'; routeId: Id }
   | { type: 'block' } | { type: 'unblock' }
   | { type: 'tapMenu'; richMenuId: Id; cellId: Id }
-  | { type: 'tapButton'; nodeId: Id; buttonId: Id }
+  | { type: 'tapButton'; buttonId: Id; nodeId?: Id }         // nodeId があり、そのボタン選択ノードで待っていれば btn:<id> へ進む
   | { type: 'sendText'; text: string }
   | { type: 'answer'; surveyId: Id; questionId: Id; choiceIds: Id[] }
   | { type: 'cv'; cvId: Id }                                 // 手動でCVを起こす（応募など）
@@ -355,7 +356,7 @@ type UserState = {
   route: Id | null;                                     // 友だち追加経路
   tags: Record<Id, { at: Minutes; byNodeId?: Id }>;
   answers: Record<Id, Record<Id, Id[]>>;                // surveyId → questionId → choiceIds
-  cvs: Record<Id, { at: Minutes }>;
+  cvs: Record<Id, { at: Minutes; count: number }>;      // at = 直近のCV時刻、count = 回数（再応募）
   behaviors: { at: Minutes; type: string; detail?: Record<string, string> }[];  // 行動履歴
   deliveries: Delivery[];                                // 配信履歴
   flows: Record<Id, FlowCursor>;                         // シナリオ進行状況
@@ -367,13 +368,20 @@ type UserState = {
 };
 
 type FlowCursor = { status: 'running' | 'waiting' | 'ended' | 'stopped';
-                    nodeId: Id | null; startedAt: Minutes; endedAt?: Minutes; stopReason?: string };
-type Timer = { flowId: Id; nodeId: Id; fireAt: Minutes; kind: 'wait' | 'timeout' };
-type Delivery = { at: Minutes; flowId: Id; nodeId: Id; messageId: Id; count: number };
+                    nodeId: Id | null; startedAt: Minutes; endedAt?: Minutes;
+                    awaitEvent?: InputEventType; runs: number };     // runs = 何回目の実行か（再応募など）
+type Timer = { userId: Id; flowId: Id; nodeId: Id; fireAt: Minutes; kind: 'wait' | 'timeout' };
+type Delivery = { at: Minutes; flowId: Id | null; nodeId: Id | null; messageId: Id; count: number };
+// flowId が null = 自動応答。自動応答は LINE では無料なので count = 0
+// 画像ノードの配信は messageId = "image:<assetId>"
 type Surface =
   | { kind: 'talk' } | { kind: 'page'; pageId: Id } | { kind: 'popup'; pageId: Id }
   | { kind: 'survey'; surveyId: Id; questionId: Id };
-type TalkItem = { at: Minutes; side: 'bot' | 'user' | 'system'; bubble: Bubble; fromNodeId?: Id };
+type TalkItem =
+  | { at: Minutes; side: 'bot'; bubble: Bubble; messageId: Id; fromNodeId?: Id }   // 差し込み済みの吹き出し
+  | { at: Minutes; side: 'user'; bubble: Bubble }
+  | { at: Minutes; side: 'system'; code: 'friendAdded' | 'blocked' | 'unblocked' | 'surveyShown' | 'pageOpened';
+      params?: Record<string, string> };   // エンジンは日本語を持たないので、文言は player が code から作る
 ```
 
 ### 7.2 判定記録（なぜ届いた／なぜ届かなかった）
@@ -443,16 +451,18 @@ function validate(project: Project): Issue[];
 
 | code | 中身 |
 |---|---|
-| `edge.danglingTarget` | エッジの行き先ノードが存在しない |
-| `edge.invalidPort` | そのノード種別に無いポートから出ている（例: `message` から `case:x`） |
+| `id.duplicate` | IDの重複（ノードID・ボタンIDは案件全体で一意。それ以外は種類ごとに一意） |
+| `edge.danglingSource` | エッジの出発ノードが存在しない |
+| `edge.danglingTarget` | エッジの行き先ノードが存在しない／入口ノードに入っている |
+| `edge.invalidPort` | そのノード種別に無いポートから出ている（例: `message` から `case:x`）／同じポートから2本出ている |
 | `ref.missing` | 参照先が無い（messageId・surveyId・pageId・tagId・assetId・flowId・routeId・cvId） |
 | `expr.invalid` | 条件式が壊れている（未知の op・子が空の and/or・型の不一致） |
 | `flow.noEntry` | フローに entry が無い／2つ以上ある |
 | `flow.zeroTimeCycle` | 待機（1分以上）も入力待ちも含まないループがある（C-1） |
 | `branch.noExit` | 分岐ノードに else が無く、どの case にも当てはまらない場合の行き場が無い |
 | `node.requiredMissing` | 必須設定が空（メッセージの吹き出しが0個、アンケートの選択肢が0個、メニューのセルに動作が無い、wait の時間が負 など） |
-| `flow.friendRequired` | 友だちでないユーザーが通る経路（ポップアップ・サンクス）から、友だち追加を経ずにLINE配信ノードへ行く |
 | `prov.unapproved` | 未承認の AI 推定（`prov.state = 'inferred'`）が残っている（FR-82・追加提案） |
+| `patch.approvedByAi` | AIの差分に `approved` が付いている（承認は人だけが付ける） |
 | `asset.fileMissing` | 画像ファイルが無い |
 
 ### 8.2 警告（書き出し可）
@@ -461,12 +471,16 @@ function validate(project: Project): Issue[];
 |---|---|
 | `tag.unused` | 定義したが、どこからも付与も参照もされないタグ |
 | `node.unreachable` | entry から辿り着けないノード |
+| `node.deadEnd` | 出口があるのにどこにも繋がっていない（そこでフローが黙って終わる） |
 | `optional.empty` | 任意項目が未設定（説明文が無い・画像の alt が無い 等） |
-| `delivery.possibleDuplicate` | 同じ messageId に届く経路が2本以上あり、重複防止期間が0か、停止条件が無い |
+| `delivery.possibleDuplicate` | 同じ messageId に別々のフローから届く経路があり、重複防止期間が0か、停止条件の無いフローがある |
 | `flow.noStop` | 停止条件の無いステップ配信（CV済みにも送り続ける可能性） |
-| `persona.noneMatch` | どのペルソナも入口に入らないフロー（デモで見せられない） |
-| `line.limit` | LINE側の上限超え（吹き出し6個以上・ステップ365日超・ボタン数超過 など） |
-| `export.large` | 画像の合計が大きく、書き出しが5MBを超えそう |
+| `flow.friendRequired` | 離脱・フォーム送信から始まるフローが、待機を挟まずに配信しようとしている（友だち追加前なので届かない）。**当初は重大エラーとしていたが、応募→待機→配信のような正しい設計まで弾くため警告に変更** |
+| `flow.neverStarted` | 入口が「手動」なのに、どこからも呼ばれていないフロー |
+| `text.unknownVar` | 文面の `{{...}}` が解決できないキー |
+| `line.limit` | LINE側の上限超え（吹き出し6個以上・ボタン5個以上・本文5,000字超・ステップ365日超・メニュー20区画超） |
+| `persona.noneMatch` | どのペルソナも入口に入らないフロー（デモで見せられない）。**Phase 4 で実装**（実行結果が要るため） |
+| `export.large` | 画像の合計が大きく、書き出しが5MBを超えそう。**Phase 5 で実装** |
 
 ---
 
@@ -542,9 +556,11 @@ flow_after_apply trigger: cv(cv_apply)  priority:5
 
 | ID | 名前 | 入口 | 回答 | 期待される違い |
 |---|---|---|---|---|
-| p_tokyo | 東京希望さん | 経路A（離脱ポップアップ） | 東京・事務 | 東京のステップが届く |
-| p_osaka | 大阪希望さん | 経路A | 大阪・軽作業 | 大阪のステップが届き、東京分は「条件外」で除外理由が出る |
-| p_applied | 応募済みさん | 経路B（応募サンクス） | 東京・事務 | 応募済みなので東京ステップは「停止条件」で止まる |
-| p_notyet | 未応募さん | 経路B 途中離脱 → 経路A | 回答しない | アンケート未回答で else（共通）に流れる |
+| p_tokyo | 東京希望さん | 経路A（離脱ポップアップ） | 東京・事務 | 東京のステップ（事務向け）が届く。Day 7 のボタンから応募 → 応募後フォローへ |
+| p_osaka | 大阪希望さん | 経路A | 大阪・軽作業 | 大阪のステップが届き、東京分は「東京のタグが無い」で外れる。「求人」と送ると大阪の返信 |
+| p_applied | 応募済みさん | 経路B（応募サンクス） | 東京・事務 | 応募済みなので東京ステップは「停止条件」で止まる。Day 10 に再応募 → 応募後フォローが2回目 |
+| p_notyet | 未応募さん | 経路B 途中離脱 → 経路A | 回答しない | 24時間で回答待ちが切れて共通ステップへ。Day 3 にブロック → Day 4 の配信は「ブロック中」で届かない |
+
+実データは `projects/sample-staff/project.json`、期待どおりかの確認は `tests/acceptance.test.ts`。
 
 この表の「期待される違い」が Phase 2 の検収条件になる（ROADMAP 参照）。
