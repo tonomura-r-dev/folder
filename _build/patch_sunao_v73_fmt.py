@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """すなお ver7.2 → ver7.3（案）：「配信の内容」の章の4ページを、提案FMT（MAX版）のページを写して作る（2026-10-27 殿村さん）。
 
-    python -m _build.patch_sunao_v73_fmt <ver7.2.pptx> <提案FMT_MAX版_20261024d.pptx> <ver7.3.pptx>
+    python -m _build.patch_sunao_v73_fmt <ver7.2.pptx> <提案FMT_MAX版_20261024d.pptx> <タナカホーム_v3.pptx> <ver7.3.pptx>
 
   ・前後検索「投資セミナー」＝FMTのS15（施策の考え方：短期・前後検索の図）。前後検索の画像を色分け済みの「投資セミナー」に差し替え、
     右の札を3分類（比べる／確かめる／始める）に、緑の帯（友だち追加の想定）を画像の0〜1日に合わせる
@@ -13,6 +13,7 @@
   主役はCV（セミナー予約）までの配信の設計、診断はセグメント・タグ付けの手段なので後ろに置く（殿村さん 2026-10-27）。
 """
 import copy
+import io
 import sys
 
 from pptx import Presentation
@@ -70,38 +71,56 @@ def recolor(sh, old, new):
 
 
 # ── 1. 前後検索「投資セミナー」（FMT S15） ─────────────────────────
-def page_zengo(prs, f15):
-    s = copy_slide(prs, f15)
-    remove(s, {4, 8, 10, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 849, 850, 851, 852, 3, 6})
-    # FMTの文字（タイトル・「長期検討へ」・札の形）は変えない（殿村さん 2026-10-27「勝手にFMTをいじる」）。変えるのはリード・キーワード・画像・札の中身だけ
-    set_lines(sid(s, 10), ["セミナーを探した方は、その日にほかのセミナーと比べて不安を確かめ、",
-                           "1〜4日後に始め方を調べる。関心が続く15日間をステップ配信で追う。"])
-    set_lines(sid(s, 852), ["投資セミナー"])
-    x, y, w = 0.95, 2.36, 7.7
-    pic = s.shapes.add_picture(IMG, Inches(x), Inches(y), Inches(w), Inches(w * 1167 / 2000))
-    band = sid(s, 267)                                      # 緑の帯（友だち追加の想定）を、画像の0日〜1日に合わせて画像の後ろへ
-    band.left, band.width = Inches(x + w * 1030 / 2000), Inches(w * (1264 - 1030) / 2000)
-    band.top, band.height = Inches(1.86), Inches(y + w * 1167 / 2000 - 1.86)
-    band._element.addprevious(pic._element)                 # 画像を帯の前（下）に置き、帯を画像の上に重ねる
-    sid(s, 268).left = band.left - Inches(0.15)
-    sid(s, 269).left = band.left + Inches(0.21)
-    sid(s, 263).left, sid(s, 263).width = Inches(x), band.left - Inches(x) - Inches(0.05)
-    sid(s, 264).left, sid(s, 264).width = band.left, Inches(x + w) - band.left
-    for n, (col, text) in zip((270, 271, 272), ZENGO):       # 右の札（FMTの札のまま）＝色分けの3分類
+ZENGO_TEXTS = {
+    2: "前後検索「投資セミナー」：当日にセミナーを比べ、その後は始め方を調べる",
+    6: "検討期間の約2週間の接点が、セミナー予約を左右する",
+    11: "ほかのセミナーと比べる",
+    13: "不安を確かめる",
+    15: "自分で始める",
+    18: "当日",
+    19: "セミナーを比べ、不安を確かめる\n投資セミナー 東京・資産運用セミナー。投資詐欺・金融庁も",
+    20: "1〜4日後",
+    21: "始め方を調べる\n口座開設・ポートフォリオ・etfとは・nisa つみたて投資枠",
+    22: "7〜15日後",
+    23: "学びの検索が続く\nインデックスファンド・インカムゲインとは など",
+    24: "セミナーを比べる → 不安を確かめる → 始め方 の順に、約2週間かけて検討が進む",
+    25: "※LINEヤフー社の前後検索データより。「投資セミナー」を検索した方が、前後15日間に検索した言葉（縦軸＝検索した人数）。",
+}
+
+
+def page_zengo(prs, tanaka_page):
+    """タナカホームの前後検索「注文住宅」のページをそのまま写し、画像と言葉だけ入れ替える（あらうち・タナカホームの形。殿村さん 2026-10-27）。
+    やり方は横浜シミズと同じ（patch_yokohama_shimizu_add_zengo）。凡例は3つ、下の一言は紺の1本"""
+    from _build.patch_yokohama_shimizu_add_zengo import set_paras
+    from _build.patch_yokohama_shimizu_deck_plans import set_text
+    s = copy_slide(prs, tanaka_page)
+    pic = sid(s, 7)
+    blip = pic._element.find(".//" + qn("a:blip"))
+    old = blip.get(qn("r:embed"))
+    _, rid = s.part.get_or_add_image_part(io.BytesIO(open(IMG, "rb").read()))
+    blip.set(qn("r:embed"), rid)
+    s.part.drop_rel(old)
+    pic.name = "前後検索 投資セミナー（色分け）"
+    for n in (16, 17):                                        # 凡例は3つ
+        el = sid(s, n)._element
+        el.getparent().remove(el)
+    for n, (col, _) in zip((10, 12, 14), ZENGO):
+        sid(s, n)._element.find(qn("p:spPr")).find(qn("a:solidFill")).find(qn("a:srgbClr")).set("val", col)
+    step = sid(s, 12).top - sid(s, 10).top                    # 凡例が1つ減った分、時期の枠を上げる
+    for n in range(18, 24):
+        sid(s, n).top -= step
+    band, tag = sid(s, 8), sid(s, 9)                          # 0日〜1日（画像の 1030px〜1264px）に合わせる
+    band.left = int(pic.left + pic.width * 1030 / 2000)
+    band.width = int(pic.width * (1264 - 1030) / 2000)
+    tag.left = int(band.left + band.width / 2 - tag.width / 2)
+    for n, t in ZENGO_TEXTS.items():
         sh = sid(s, n)
-        set_lines(sh, [text.split("：")[0]])
-        clr = sh._element.spPr.find(qn("a:solidFill")).find(qn("a:srgbClr"))   # FMTの札と同じ薄い色（透明度80%）＋黒い文字
-        if clr is None:
-            sf = sh._element.spPr.find(qn("a:solidFill"))
-            for ch in list(sf):
-                sf.remove(ch)
-            clr = sf.makeelement(qn("a:srgbClr"), {})
-            sf.append(clr)
-        clr.set("val", col)
-        if clr.find(qn("a:alpha")) is None:
-            clr.append(clr.makeelement(qn("a:alpha"), {"val": "20000"}))
-        for r in sh.text_frame.paragraphs[0].runs:
-            r.font.color.rgb = RGBColor.from_string(INK)
+        if n in (19, 21, 23):
+            set_paras(sh, t.split("\n"))
+        else:
+            set_text(sh.text_frame, t)
+    for r in sid(s, 24)._element.iter(qn("a:srgbClr")):
+        assert r.get("val") != "C00000"
     return s
 
 
@@ -165,21 +184,21 @@ def page_shindan(prs, f13):
 # ── 3. ステップ配信（FMT S16 の形・8通を4枚×2段） ───────────────────
 STEPS = [  # (Day, 役割, メッセージの見出し, 中身2行, 検索データ, ボタン)
     ("0日目", "追加直後：診断", "ご登録ありがとう\nございます！", ["参加特典のご案内", "2問の診断で関心を確認"],
-     "—（診断の答えで出し分け）", "2問で診断する"),
+     "—（診断の答えで出し分け）", "参加特典"),
     ("2日目", "比べる", "ほかのセミナーと、\nここが違います", ["両想い営業・ライフプラン", "ブロックを動画で紹介"],
-     "検索した日に「投資セミナー 東京」「資産運用セミナー」と比べている", "見どころ動画を見る"),
+     "検索した日に「投資セミナー 東京」「資産運用セミナー」と比べている", "セミナー予約"),
     ("4日目", "確かめる", "安心してご参加ください", ["講師の経歴と実績", "参加は無料"],
-     "検索した日に「投資詐欺」「金融庁」で不安を確かめている", "講師紹介を見る"),
+     "検索した日に「投資詐欺」「金融庁」で不安を確かめている", "講師紹介"),
     ("6日目", "始める", "セミナーで持ち帰れること", ["週2日で成果を出す", "面談メソッド"],
-     "1〜4日後に「口座開設」「nisa つみたて投資枠」など始め方を検索", "内容を詳しく見る"),
+     "1〜4日後に「口座開設」「nisa つみたて投資枠」など始め方を検索", "セミナー予約"),
     ("8日目", "受講生の声", "同じ悩みから、\n成果を出した方の声", ["診断の答えに合わせる", "（成約／働く時間）"],
-     "—（診断の答えで出し分け）", "受講生の声を見る"),
+     "—（診断の答えで出し分け）", "受講生の声"),
     ("10日目", "よくある質問", "参加前のよくある質問", ["地方からも参加できる", "初心者でも分かる"],
-     "7〜15日後も「インデックスファンド」など学びの検索が続く", "よくある質問を見る"),
+     "7〜15日後も「インデックスファンド」など学びの検索が続く", "よくある質問"),
     ("12日目", "予約", "次回セミナーのご案内", ["開催日程", "予約ページ"],
-     "—（募集期間に合わせて配信）", "日程を見て予約する"),
+     "—（募集期間に合わせて配信）", "セミナー予約"),
     ("14日目", "締切", "予約の締切が\n近づいています", ["締切日のお知らせ", "予約ページ"],
-     "—（募集期間に合わせて配信）", "予約する"),
+     "—（募集期間に合わせて配信）", "セミナー予約"),
 ]
 
 
@@ -257,15 +276,18 @@ def five_to_eight(prs):
         assert hit == count, (old, hit)
 
 
-def main(src, fmt_path, out):
+def main(src, fmt_path, tanaka_path, out):
     prs = Presentation(src)
     fmt = Presentation(fmt_path)
+    tanaka = Presentation(tanaka_path)
+    tp = tanaka.slides[7]
+    assert sid(tp, 2).text_frame.text.startswith("前後検索「注文住宅」")
     fs = list(fmt.slides)
     slides = list(prs.slides)
     assert len(slides) == 61 and len(fs) == 43
     p32, p33, p34 = slides[31], slides[32], slides[33]
     assert p34.shapes[0].text_frame.text.startswith("友だち追加直後のステップ配信")
-    new = [page_zengo(prs, fs[14]), page_step(prs, fs[15]), page_after(prs, fs[16]), page_shindan(prs, fs[12])]
+    new = [page_zengo(prs, tp), page_step(prs, fs[15]), page_after(prs, fs[16]), page_shindan(prs, fs[12])]
     lst = prs.slides._sldIdLst
     el = {int(e.get("id")): e for e in lst}
     order = [el[x.slide_id] for x in [p32] + new]
@@ -284,4 +306,4 @@ def main(src, fmt_path, out):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
