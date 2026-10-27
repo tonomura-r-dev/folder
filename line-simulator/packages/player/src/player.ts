@@ -28,7 +28,7 @@ import {
   type Demo,
 } from './controller.ts';
 import { fmtTime, Labels } from './describe.ts';
-import { journeyPane } from './journey.ts';
+import { fcDialog, journeyPane } from './journey.ts';
 import { phone } from './phone.ts';
 import { SLIDE_H, SLIDE_W, slide, slide3 } from './slide.ts';
 import { esc, pane, type Mode, type Tab, type Ui, type View } from './view.ts';
@@ -59,7 +59,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   let project = opts.project;
   let demo = opts.demo ?? (opts.personaId ? newDemo(project, opts.personaId) : initialDemo(project));
   let view: View | null = null;
-  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '' };
+  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null };
   let timer: ReturnType<typeof setInterval> | null = null;
   /** 回答待ちで止まった再生を、答えたら続けるか */
   let resumeWhenAnswered = false;
@@ -201,11 +201,25 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     else if (ui.mode === 'three')
       body = `<div class="lsp-stage three">${pane(1, 'ユーザーが見る画面', phone(view, user))}${pane(2, '裏側の処理', backstage(view, user))}${pane(3, 'CVまでの道筋', journeyPane(view, user))}</div>`;
     else body = `<div class="lsp-stage ${ui.mode}">${phone(view, user)}${ui.mode === 'full' ? backstage(view, user) : ''}</div>`;
-    root.innerHTML = bar(view) + body;
+    root.innerHTML = bar(view) + body + (user ? fcDialog(view, user) : '');
 
     const scroller = root.querySelector<HTMLElement>('.lsp-chat');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
     fitSlide();
+    fitChart();
+  }
+
+  /** ③のフローチャートを、置き場所に収まる拡大率にする（資料用は常に、通常表示は「幅に合わせる」のとき） */
+  function fitChart(widthOnly = false): number | null {
+    const box = root.querySelector<HTMLElement>(widthOnly ? '.lsp-fc-scroll' : '.lsp-journey.compact .lsp-fc-scroll');
+    const chart = box?.querySelector<HTMLElement>('.lsp-fc');
+    if (!box || !chart) return null;
+    chart.style.zoom = '1';
+    const kw = box.clientWidth / Math.max(1, chart.scrollWidth);
+    const kh = widthOnly ? 1 : box.clientHeight / Math.max(1, chart.scrollHeight);
+    const k = Math.max(0.4, Math.min(1, kw, kh));
+    chart.style.zoom = String(widthOnly ? Math.min(1.5, Math.max(0.4, kw)) : k);
+    return widthOnly ? Math.min(1.5, Math.max(0.4, kw)) : k;
   }
 
   /** 資料用表示を、置き場所の幅に合わせて縮める（16:9 のまま） */
@@ -332,6 +346,21 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       case 'tab':
         ui.tab = d['tab'] as Tab;
         return render();
+      // ③フローチャート
+      case 'fcOpen':
+        ui.fcOpen = { step: d['step'] ?? '', ...(d['variant'] ? { variant: d['variant'] } : {}), ...(d['option'] ? { option: d['option'] } : {}) };
+        return render();
+      case 'fcClose':
+        ui.fcOpen = null;
+        return render();
+      case 'fcStay':
+        return;
+      case 'fcZoom': {
+        const z = d['z'];
+        if (z === 'fit') ui.fcZoom = Math.round((fitChart(true) ?? 1) * 100) / 100;
+        else ui.fcZoom = Math.min(1.5, Math.max(0.4, Math.round((ui.fcZoom + (z === 'in' ? 0.1 : -0.1)) * 10) / 10));
+        return render();
+      }
       case 'toggleWhy': {
         const i = Number(d['i']);
         if (ui.open.has(i)) ui.open.delete(i);
@@ -364,15 +393,28 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       const [kind, personaId] = el.value.split(':');
       return commit(addUser(demo, project, personaId ?? '', kind === 's'));
     }
+    if (el.dataset['change'] === 'fcOptions') {
+      ui.fcOptions = (el as HTMLInputElement).checked;
+      return render();
+    }
     if (el.dataset['change'] === 'onlyNg') {
       ui.onlyNg = (el as HTMLInputElement).checked;
       return render();
     }
   }
 
+  /** Esc で③の詳細を閉じる */
+  function onKey(e: KeyboardEvent) {
+    if (e.key === 'Escape' && ui.fcOpen) {
+      ui.fcOpen = null;
+      render();
+    }
+  }
+
   root.addEventListener('click', onClick);
   root.addEventListener('submit', onSubmit);
   root.addEventListener('change', onChange);
+  document.addEventListener('keydown', onKey);
 
   const handle: PlayerHandle = {
     setProject(p) {
@@ -394,6 +436,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       root.removeEventListener('click', onClick);
       root.removeEventListener('submit', onSubmit);
       root.removeEventListener('change', onChange);
+      document.removeEventListener('keydown', onKey);
       root.classList.remove('lsp');
       root.innerHTML = '';
     },

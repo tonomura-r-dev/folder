@@ -73,6 +73,8 @@ export function describeIssue(i: Issue): string {
       return '入口からたどり着けないノードです';
     case 'node.deadEnd':
       return '出口がどこにも繋がっていません（ここでシナリオが終わります）';
+    case 'journey.feasibility':
+      return 'Lステップでの実現性の値が正しくありません';
     case 'optional.empty':
       return p['reason'] === 'noScript'
         ? '「台本つきで全員」で始める設定ですが、台本のあるペルソナがいません（1人の手動操作で始まります）'

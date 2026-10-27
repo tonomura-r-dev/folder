@@ -24,6 +24,10 @@ export type Ui = {
   speed: 1 | 2 | 5;
   /** 再生の状態の一言（回答待ち・最後まで再生した 等） */
   status: string;
+  /** ③フローチャートの拡大率・追加候補を出すか・開いている箱 */
+  fcZoom: number;
+  fcOptions: boolean;
+  fcOpen: { step: Id; variant?: Id; option?: Id } | null;
 };
 
 export type View = {

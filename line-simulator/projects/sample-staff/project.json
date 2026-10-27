@@ -568,39 +568,122 @@
   ],
   "_internal": { "memo": "検証案件。実在の企業・求人ではない。" },
   "journey": [
-    { "id": "j_visit", "label": "Webサイト訪問", "purpose": "求人ページを見てもらう", "reachedWhen": { "op": "did", "event": "visitPage", "cmp": "exists" } },
     {
       "id": "j_friend",
       "label": "LINE友だち追加",
-      "purpose": "応募せずに帰る人も、応募した人も、LINEでつながる",
+      "purpose": "求人ページから帰ろうとした人・応募した人を、LINEの友だちにする",
       "reachedWhen": { "op": "did", "event": "addFriend", "cmp": "exists" },
-      "variants": [
-        { "id": "v_popup", "label": "離脱ポップアップから", "when": { "op": "route", "routeIds": ["route_exit_popup"] }, "purpose": "応募せずに帰ろうとした人に、LINE登録を案内" },
-        { "id": "v_thanks", "label": "応募完了画面から", "when": { "op": "route", "routeIds": ["route_thanks"] }, "purpose": "応募した人に、選考の連絡用としてLINEを案内" }
-      ]
+      "nodeIds": ["n_w_msg", "n_w_msg_applied"],
+      "feasibility": "external",
+      "feasibilityNote": "友だち追加時のあいさつはLステップ単体で可。入口の離脱ポップアップ・応募完了画面のLINE誘導は、Webサイト側の実装が必要"
     },
     {
       "id": "j_survey",
-      "label": "希望エリアのアンケート",
-      "purpose": "希望エリア・職種を聞き、回答をタグにする",
+      "label": "希望地域アンケート",
+      "purpose": "希望エリア・職種を聞き、回答に応じてタグを付ける。答えるまでは「未選択」タグで管理する",
       "nodeIds": ["n_w_survey"],
+      "feasibility": "lstep",
+      "feasibilityNote": "アンケート（回答フォーム）の回答に応じたタグ付け"
+    },
+    {
+      "id": "j_area",
+      "label": "地域別の求人配信",
+      "decision": "地域選択済み？",
+      "purpose": "選んだ地域の求人だけを届ける。選んでいない人には、選ぶよう促す",
       "variants": [
-        { "id": "v_answered", "label": "回答した", "when": { "op": "hasTag", "tagId": "area_selected" }, "purpose": "回答に合わせて、エリアのタグが付く" },
-        { "id": "v_none", "label": "まだ選んでいない", "when": { "op": "hasTag", "tagId": "area_none" }, "purpose": "「希望エリア：未選択」のタグで管理し、選ぶよう促す" }
+        {
+          "id": "v_tokyo",
+          "label": "東京",
+          "title": "東京向け求人配信",
+          "when": { "op": "hasTag", "tagId": "area_tokyo" },
+          "nodeIds": ["n_t_d1"],
+          "purpose": "翌日9時に、東京エリアの新着求人を届ける",
+          "feasibility": "lstep"
+        },
+        {
+          "id": "v_osaka",
+          "label": "大阪",
+          "title": "大阪向け求人配信",
+          "when": { "op": "hasTag", "tagId": "area_osaka" },
+          "nodeIds": ["n_o_d1"],
+          "purpose": "翌日9時に、大阪エリアの新着求人を届ける",
+          "feasibility": "lstep"
+        },
+        {
+          "id": "v_none",
+          "label": "未回答",
+          "title": "地域選択リマインド",
+          "when": { "op": "hasTag", "tagId": "area_none" },
+          "nodeIds": ["n_c_remind", "n_c_ask", "n_c_general"],
+          "purpose": "Day 1 にリマインド、Day 3 に再案内。地域を選んだ時点で止まり、その地域の求人配信に移る",
+          "feasibility": "lstep",
+          "feasibilityNote": "タグを条件にしたステップ配信。回答したらタグを外して配信を止める",
+          "options": [
+            {
+              "id": "o_reanswer",
+              "label": "希望条件の再回答促進",
+              "summary": "アンケートへのリンクを付けて、希望条件をまとめて登録してもらう",
+              "sample": "【1分で完了】\n希望の勤務地・職種を登録すると、あなたに合う求人だけが届くようになります。\n▼登録はこちら",
+              "feasibility": "lstep"
+            },
+            {
+              "id": "o_appeal",
+              "label": "求人の魅力を伝える配信",
+              "summary": "エリアを問わない人気の求人や働き方の紹介を先に届け、関心を高めてから地域を選んでもらう",
+              "sample": "未経験から始めた方の声をご紹介します。\n「最初は不安でしたが、研修があって安心でした」\nあなたの希望のエリアも教えてください。",
+              "feasibility": "lstep"
+            },
+            {
+              "id": "o_menu",
+              "label": "リッチメニューからの条件登録誘導",
+              "summary": "地域を選んでいない人だけ、リッチメニューの目立つ位置に「希望条件を登録」を出す",
+              "feasibility": "unknown",
+              "note": "タグに応じてリッチメニューを出し分ける想定。利用できるプラン・設定は要確認"
+            }
+          ]
+        }
       ]
     },
     {
-      "id": "j_jobs",
-      "label": "地域別の求人紹介",
-      "purpose": "希望エリアの求人だけを届ける",
-      "nodeIds": ["n_t_d1", "n_o_d1", "n_c_remind"],
-      "variants": [
-        { "id": "v_tokyo", "label": "東京", "when": { "op": "hasTag", "tagId": "area_tokyo" }, "purpose": "東京の新着求人（翌日）→ 希望職種の求人（3日目）" },
-        { "id": "v_osaka", "label": "大阪", "when": { "op": "hasTag", "tagId": "area_osaka" }, "purpose": "大阪の新着求人（翌日）→ 週2日からの求人（3日目）" },
-        { "id": "v_area_none", "label": "未選択", "when": { "op": "hasTag", "tagId": "area_none" }, "purpose": "Day 1 にリマインド、Day 3 に再案内。選んだ時点で、そのエリアの求人に切り替わる" }
+      "id": "j_detail",
+      "label": "求人詳細案内",
+      "purpose": "希望職種に合う求人をカードで紹介する。「求人」と送れば、いつでも地域の求人が返ってくる",
+      "nodeIds": ["n_t_office", "n_t_light", "n_o_d3"],
+      "messageIds": ["msg_r_tokyo", "msg_r_osaka"],
+      "feasibility": "lstep",
+      "feasibilityNote": "カード型のメッセージと、キーワードへの自動応答"
+    },
+    {
+      "id": "j_push",
+      "label": "応募促進",
+      "purpose": "7日目に、応募ボタン付きで後押しする",
+      "nodeIds": ["n_t_d7", "n_o_d7"],
+      "feasibility": "lstep",
+      "options": [
+        {
+          "id": "o_faq",
+          "label": "応募前の不安を解消するQ&A",
+          "summary": "「未経験でも大丈夫？」など、応募をためらう理由に先回りして答える",
+          "sample": "Q. 未経験でも応募できますか？\nA. はい。多くの求人が未経験から応募できます。",
+          "feasibility": "lstep"
+        },
+        {
+          "id": "o_interview",
+          "label": "面接日程をLINEで予約",
+          "summary": "応募のあと、面接の日程をLINE上のカレンダーから選んでもらう",
+          "feasibility": "unknown",
+          "note": "Lステップの予約機能を使う想定。利用できるプラン・設定は要確認"
+        }
       ]
     },
-    { "id": "j_push", "label": "応募の後押し", "purpose": "7日目に、応募ボタン付きで後押しする", "nodeIds": ["n_t_d7", "n_o_d7"] },
-    { "id": "j_apply", "label": "求人応募（CV）", "purpose": "応募したら求人の案内を止め、面接の連絡に切り替える", "cvId": "cv_apply" }
+    {
+      "id": "j_apply",
+      "label": "求人応募（CV）",
+      "cvId": "cv_apply",
+      "nodeIds": ["n_a_interview", "n_a_reapply"],
+      "purpose": "応募したら求人の案内を止め、面接の連絡に切り替える",
+      "feasibility": "external",
+      "feasibilityNote": "応募は自社サイトの応募フォーム。応募をLINEの配信停止につなげるには、フォームとの連携（例：応募完了画面からの友だち追加・タグ付け）が必要。連携の方法は要確認"
+    }
   ]
 }

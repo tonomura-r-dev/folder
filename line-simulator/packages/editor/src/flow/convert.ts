@@ -4,7 +4,9 @@ import type { Edge as RFEdge, Node as RFNode } from '@xyflow/react';
 import { MarkerType } from '@xyflow/react';
 import type { Flow, FlowNode, Id, Issue, NodeType, Project, Trigger } from '../../../engine/src/index.ts';
 import { acceptsInput, portsOf } from '../../../engine/src/index.ts';
-import { describeExpr, fmtDuration, Labels } from '../../../player/src/describe.ts';
+import { describeExpr, describeTrigger, fmtDuration, Labels } from '../../../player/src/describe.ts';
+
+export { describeTrigger };
 
 export const TYPE_LABEL: Record<NodeType, string> = {
   entry: '入口',
@@ -52,30 +54,6 @@ export function portLabel(node: FlowNode, port: string, project: Project): strin
     return id;
   }
   return port;
-}
-
-export function describeTrigger(t: Trigger, project: Project): string {
-  const L = new Labels(project);
-  switch (t.kind) {
-    case 'friendAdd':
-      return `友だち追加${t.routeIds?.length ? `（${t.routeIds.map(L.route).join('・')}）` : '（すべての経路）'}`;
-    case 'keyword':
-      return `自動応答「${project.autoReplies.find((a) => a.id === t.autoReplyId)?.match.keywords.join('・') ?? t.autoReplyId}」に反応`;
-    case 'menuTap': {
-      const m = project.richMenus.find((r) => r.id === t.richMenuId);
-      return `メニュー「${m?.cells.find((c) => c.id === t.cellId)?.label ?? t.cellId}」を押した`;
-    }
-    case 'cv':
-      return `${L.cv(t.cvId)}した`;
-    case 'pageExit':
-      return `「${L.page(t.pageId)}」から離脱しようとした`;
-    case 'formSubmit':
-      return `「${L.page(t.pageId)}」のフォームを送信した`;
-    case 'tagAdded':
-      return `タグ「${L.tag(t.tagId)}」が付いた`;
-    case 'manual':
-      return '別のシナリオから呼ばれる';
-  }
 }
 
 /** ノードの見出しと中身（カードに出す要約） */

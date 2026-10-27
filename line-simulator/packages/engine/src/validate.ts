@@ -15,6 +15,7 @@ export const LINE_LIMITS = { bubblesPerMessage: 5, buttonsPerBubble: 4, textLeng
 
 const EXPR_OPS = new Set(['and', 'or', 'not', 'always', 'hasTag', 'answer', 'answered', 'attr', 'route', 'friend', 'cv', 'did', 'elapsed', 'delivered']);
 const CMPS = new Set(['eq', 'neq', 'in', 'gte', 'lte']);
+const FEASIBILITY = new Set(['lstep', 'conditional', 'external', 'unknown']);
 const EVENT_TYPES = new Set([
   'visitPage', 'exitIntent', 'dismissPopup', 'submitForm', 'addFriend', 'block', 'unblock', 'tapMenu', 'tapButton', 'sendText', 'answer', 'cv',
   'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta',
@@ -446,10 +447,23 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     (s.nodeIds ?? []).forEach((n, j) => need(allNodes.has(n), `${path}/nodeIds/${j}`, 'node', n));
     if (s.reachedWhen) checkExpr(s.reachedWhen, `${path}/reachedWhen`);
     if (s.cvId !== undefined) need(cvs.has(s.cvId), `${path}/cvId`, 'cv', s.cvId);
-    if (!s.nodeIds?.length && !s.reachedWhen && s.cvId === undefined) warn('optional.empty', path, { reason: 'journeyReach' });
+    if (!s.nodeIds?.length && !s.reachedWhen && s.cvId === undefined && !(s.variants ?? []).some((x) => x.nodeIds?.length)) warn('optional.empty', path, { reason: 'journeyReach' });
+    const refs = (p: string, nodeIds?: Id[], messageIds?: Id[], feasibility?: string, options?: { id: Id; label: string; feasibility?: string }[]) => {
+      (nodeIds ?? []).forEach((n, j) => need(allNodes.has(n), `${p}/nodeIds/${j}`, 'node', n));
+      (messageIds ?? []).forEach((m, j) => need(messages.has(m), `${p}/messageIds/${j}`, 'message', m));
+      if (feasibility !== undefined && !FEASIBILITY.has(feasibility)) err('journey.feasibility', `${p}/feasibility`);
+      unique(options ?? [], `${p}/options`);
+      (options ?? []).forEach((o, j) => {
+        if (!o.label?.trim()) err('node.requiredMissing', `${p}/options/${j}/label`);
+        if (o.feasibility !== undefined && !FEASIBILITY.has(o.feasibility)) err('journey.feasibility', `${p}/options/${j}/feasibility`);
+      });
+    };
+    refs(path, undefined, s.messageIds, s.feasibility, s.options);
+    unique(s.variants ?? [], `${path}/variants`);
     (s.variants ?? []).forEach((x, j) => {
       if (!x.label?.trim()) err('node.requiredMissing', `${path}/variants/${j}/label`);
       checkExpr(x.when, `${path}/variants/${j}/when`);
+      refs(`${path}/variants/${j}`, x.nodeIds, x.messageIds, x.feasibility, x.options);
     });
   });
 

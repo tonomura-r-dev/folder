@@ -1216,93 +1216,101 @@
     {
       "id": "j_friend",
       "label": "LINE友だち追加",
-      "purpose": "店頭・予約フォームから、LINEでつながる",
+      "purpose": "予約フォームから帰ろうとした人・来店したお客様を、LINEの友だちにする",
       "reachedWhen": {
         "op": "did",
         "event": "addFriend",
         "cmp": "exists"
       },
-      "variants": [
-        {
-          "id": "v_popup",
-          "label": "予約フォームの離脱ポップアップから",
-          "when": {
-            "op": "route",
-            "routeIds": [
-              "route_popup"
-            ]
-          },
-          "purpose": "予約せずに帰ろうとした人に、クーポンを受け取れるLINE登録を案内"
-        },
-        {
-          "id": "v_thanks",
-          "label": "予約完了ページから",
-          "when": {
-            "op": "route",
-            "routeIds": [
-              "route_thanks"
-            ]
-          },
-          "purpose": "予約した人に、当日の案内用としてLINEを案内"
-        },
-        {
-          "id": "v_default",
-          "label": "そのほか（店頭・検索など）",
-          "when": {
-            "op": "always"
-          }
-        }
-      ]
+      "nodeIds": [
+        "n_b_greet"
+      ],
+      "feasibility": "external",
+      "feasibilityNote": "あいさつ配信はLステップ単体で可。予約フォームの離脱ポップアップはWebサイト側の実装が必要"
     },
     {
       "id": "j_survey",
-      "label": "メニュー・来店回数のアンケート",
+      "label": "メニュー・来店回数アンケート",
       "purpose": "希望メニューと来店回数を聞いて、タグにする",
       "nodeIds": [
         "n_b_survey"
-      ]
+      ],
+      "feasibility": "lstep"
     },
     {
       "id": "j_follow",
       "label": "来店回数で出し分け",
+      "decision": "来店は2回目以上？",
       "purpose": "はじめての人と常連で、送る内容を変える",
-      "nodeIds": [
-        "n_b_visit"
-      ],
       "variants": [
         {
           "id": "v_repeat",
           "label": "2回目以上",
+          "title": "来店1か月後のリタッチ案内",
           "when": {
             "op": "hasTag",
             "tagId": "tag_visit_repeat"
           },
-          "purpose": "常連向けのクーポン。来店1か月後にリタッチのおすすめ"
+          "nodeIds": [
+            "n_r_msg"
+          ],
+          "messageIds": [
+            "msg_coupon_repeat"
+          ],
+          "purpose": "約1か月後にリタッチの時期を知らせる。「クーポン」と送られたら常連向けの返信",
+          "feasibility": "lstep"
         },
         {
           "id": "v_first",
           "label": "はじめて・未回答",
+          "title": "初来店クーポン → スタイル写真",
           "when": {
             "op": "always"
           },
-          "purpose": "翌日にクーポンをもう一度、3日目にスタイル写真で予約を後押し"
+          "nodeIds": [
+            "n_f_coupon",
+            "n_f_style"
+          ],
+          "purpose": "翌日にクーポンをもう一度、3日目にスタイル写真で予約を後押しする",
+          "feasibility": "lstep",
+          "options": [
+            {
+              "id": "o_diag",
+              "label": "スタイル診断でメニュー提案",
+              "summary": "髪の悩みを3問で聞き、合うメニューと写真を返す",
+              "sample": "髪のお悩みはどれですか？\n・広がる　・パサつく　・色落ち",
+              "feasibility": "lstep"
+            },
+            {
+              "id": "o_remind",
+              "label": "予約前日のリマインド",
+              "summary": "予約日の前日に、日時と持ち物を知らせる",
+              "feasibility": "external",
+              "note": "予約システム側の予約情報との連携が必要"
+            }
+          ]
         }
       ]
     },
     {
       "id": "j_book",
       "label": "予約（CV）",
+      "cvId": "cv_book",
+      "nodeIds": [
+        "n_k_thanks"
+      ],
       "purpose": "予約したら初来店向けの配信を止め、お礼に切り替える",
-      "cvId": "cv_book"
+      "feasibility": "external",
+      "feasibilityNote": "予約はWeb予約フォーム。予約をLINEの配信停止につなげるには、予約フォームとの連携が必要（方法は要確認）"
     },
     {
       "id": "j_return",
       "label": "再来店のおすすめ",
-      "purpose": "約1か月後に、リタッチの時期を知らせる",
+      "purpose": "予約の約1か月後に、リタッチの時期を知らせる",
       "nodeIds": [
-        "n_k_reminder",
-        "n_r_msg"
-      ]
+        "n_k_reminder"
+      ],
+      "feasibility": "lstep"
     }
   ]
 }

@@ -1,7 +1,7 @@
 // エンジンの判定結果を、案件のラベルを使って日本語にする。
 // エンジンは日本語を持たないので、画面・CLI に出す言葉はすべてここで作る。
 
-import type { Decision, Expr, Id, Minutes, Project, Trace, UserState } from '../../engine/src/index.ts';
+import type { Decision, Expr, Id, Minutes, Project, Trace, Trigger, UserState } from '../../engine/src/index.ts';
 import { failingLeaves, MINUTES_PER_DAY } from '../../engine/src/index.ts';
 
 export function fmtTime(min: Minutes): string {
@@ -57,6 +57,31 @@ export class Labels {
       if (n?.type === 'branch') return n.cases.find((c) => c.id === caseId)?.label ?? caseId ?? '';
     }
     return caseId ?? '';
+  }
+}
+
+/** シナリオの始まり方を文にする */
+export function describeTrigger(t: Trigger, project: Project): string {
+  const L = new Labels(project);
+  switch (t.kind) {
+    case 'friendAdd':
+      return `友だち追加${t.routeIds?.length ? `（${t.routeIds.map(L.route).join('・')}）` : '（すべての経路）'}`;
+    case 'keyword':
+      return `自動応答「${project.autoReplies.find((a) => a.id === t.autoReplyId)?.match.keywords.join('・') ?? t.autoReplyId}」に反応`;
+    case 'menuTap': {
+      const m = project.richMenus.find((r) => r.id === t.richMenuId);
+      return `メニュー「${m?.cells.find((c) => c.id === t.cellId)?.label ?? t.cellId}」を押した`;
+    }
+    case 'cv':
+      return `${L.cv(t.cvId)}した`;
+    case 'pageExit':
+      return `「${L.page(t.pageId)}」から離脱しようとした`;
+    case 'formSubmit':
+      return `「${L.page(t.pageId)}」のフォームを送信した`;
+    case 'tagAdded':
+      return `タグ「${L.tag(t.tagId)}」が付いた`;
+    case 'manual':
+      return '別のシナリオから呼ばれる';
   }
 }
 

@@ -158,9 +158,36 @@ export type NarrationDef = Tracked & {
 };
 
 /**
- * 道筋の1段（例：Webサイト訪問 → 友だち追加 → アンケート → 出し分け → 後押し → CV）。
- * 到達：nodeIds のどれかを通った／reachedWhen が真／cvId をした のどれか。
- * variants：人によって中身が変わる段。上から順に、最初に when が真になったものがその人のルート
+ * Lステップでの実現性（営業説明用の目安）。
+ * lstep = Lステップ単体で可／conditional = プラン・設定に条件あり／external = 外部ツール・Webサイト側の実装が必要／unknown = 未確認
+ */
+export type Feasibility = 'lstep' | 'conditional' | 'external' | 'unknown';
+
+/** 追加提案の候補。表示するだけで、シナリオには入らず配信もされない */
+export type JourneyOption = Tracked & { id: Id; label: string; summary?: Text; sample?: Text; feasibility?: Feasibility; note?: Text };
+
+/** 分岐の行き先（例：東京 → 東京向け求人配信） */
+export type JourneyVariant = Tracked & {
+  id: Id;
+  /** 矢印に付ける分岐の名前 */
+  label: string;
+  when: Expr;
+  /** 行き先の施策名（無ければ label） */
+  title?: string;
+  purpose?: Text;
+  /** この行き先の施策＝シナリオのノード（通ったら「通った経路」。文面はここから参照する） */
+  nodeIds?: Id[];
+  /** シナリオ外の文面（自動応答など）を参照するとき */
+  messageIds?: Id[];
+  feasibility?: Feasibility;
+  feasibilityNote?: Text;
+  options?: JourneyOption[];
+};
+
+/**
+ * 道筋の1段（例：友だち追加 → アンケート → 出し分け → 後押し → CV）。最初の段が START、最後のCV地点が GOAL。
+ * 到達：nodeIds のどれかを通った／reachedWhen が真／cvId をした／variants の nodeIds を通った のどれか。
+ * variants があると分岐（ひし形）になり、上から順に最初に when が真になったものがその人のルート
  */
 export type JourneyStep = Tracked & {
   id: Id;
@@ -169,7 +196,13 @@ export type JourneyStep = Tracked & {
   nodeIds?: Id[];
   reachedWhen?: Expr;
   cvId?: Id;
-  variants?: { id: Id; label: string; when: Expr; purpose?: Text }[];
+  /** 分岐のひし形に書く問い（例：地域選択済み？）。無ければ label */
+  decision?: string;
+  variants?: JourneyVariant[];
+  messageIds?: Id[];
+  feasibility?: Feasibility;
+  feasibilityNote?: Text;
+  options?: JourneyOption[];
 };
 
 // ---------- フロー ----------

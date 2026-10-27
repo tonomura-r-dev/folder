@@ -172,15 +172,28 @@ type NarrationDef = {
   eyebrow?: string; title: Text; body: Text;     // 八十吉デモの説明カード
 };
 
-/** CVまでの道筋の1段。エンジンの動きには関係しない（表示だけ） */
+/** CVまでの道筋の1段（③フローチャートの箱）。エンジンの動きには関係しない（表示だけ）。最初の段が START、最後のCV地点が GOAL */
 type JourneyStep = {
-  id: Id; label: string; purpose?: Text;         // 段の名前・営業先への説明
-  nodeIds?: Id[];                                // このノードのどれかを通ったら「済」
+  id: Id; label: string; purpose?: Text;         // 施策名・営業先への説明
+  nodeIds?: Id[];                                // このノードを通ったら「済」。文面・アンケートのノードは中身を③に出す（参照するだけ）
+  messageIds?: Id[];                             // シナリオ外の文面（自動応答）を参照するとき
   reachedWhen?: Expr;                            // または、この条件が真なら「済」
-  cvId?: Id;                                     // または、このCVをしたら「済」。最後のCV地点がゴール（★）
-  variants?: { id: Id; label: string; when: Expr; purpose?: Text }[];  // 人によって変わるルート。上から最初に真のもの
+  cvId?: Id;                                     // または、このCVをしたら「済」
+  decision?: string;                             // 分岐のひし形に書く問い（例：地域選択済み？）
+  variants?: JourneyVariant[];                   // 分岐の行き先。上から最初に when が真のものが「この人のルート」
+  feasibility?: Feasibility; feasibilityNote?: Text;
+  options?: JourneyOption[];                     // 追加候補（表示だけ・配信しない）
 };
-// いちばん先まで来た段が「いまここ」。それより手前で来ていない段は「通らず」（例：先に応募した人の求人紹介）
+type JourneyVariant = {
+  id: Id; label: string;                         // 矢印の名前（例：東京）
+  when: Expr; title?: string; purpose?: Text;    // 行き先の施策名（例：東京向け求人配信）
+  nodeIds?: Id[]; messageIds?: Id[];             // 通ったら「通った経路」。文面はここから参照
+  feasibility?: Feasibility; feasibilityNote?: Text; options?: JourneyOption[];
+};
+type JourneyOption = { id: Id; label: string; summary?: Text; sample?: Text; feasibility?: Feasibility; note?: Text };
+/** Lステップでの実現性：単体で可／プラン・設定に条件あり／外部ツール・Web側の実装が必要／未確認 */
+type Feasibility = 'lstep' | 'conditional' | 'external' | 'unknown';
+// いちばん先まで来た段が「現在ここ」。それより手前で来ていない段は「通らず」（例：先に応募した人の求人紹介）
 ```
 
 ---

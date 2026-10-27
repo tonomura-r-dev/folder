@@ -1,6 +1,6 @@
 // スマホ枠の中（はじめかた・Webページ・ポップアップ・LINEトーク）。選んでいるユーザー1人分を描く。
 
-import type { Bubble, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
+import type { Action, Bubble, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
 import { fmtTime, type Labels } from './describe.ts';
 import { dayOf, esc, hhmm, type View } from './view.ts';
 
@@ -22,6 +22,39 @@ function bubble(v: View, b: Bubble, nodeId?: Id): string {
     `<div class="lsp-btns">${list
       .map((x) => `<button type="button" data-act="tapButton" data-button="${esc(x.id)}"${nodeId ? ` data-node="${esc(nodeId)}"` : ''}>${esc(x.label)}</button>`)
       .join('')}</div>`;
+  switch (b.kind) {
+    case 'text':
+      return `<div class="lsp-b">${esc(b.text)}</div>`;
+    case 'image':
+      return `<div class="lsp-b img">${img(v, b.assetId)}</div>`;
+    case 'buttons':
+      return `<div class="lsp-b tmpl"><div class="lsp-tmpl-text">${esc(b.text)}</div>${btns(b.buttons)}</div>`;
+    case 'card':
+      return `<div class="lsp-b card lsp-card">${b.assetId ? img(v, b.assetId) : ''}<div class="lsp-card-title">${esc(b.title)}</div>${
+        b.body ? `<div class="lsp-card-body">${esc(b.body)}</div>` : ''
+      }${btns(b.buttons)}</div>`;
+  }
+}
+
+/** 押しても何も起きない吹き出し（③の文面確認用）。ボタンには押したときの動作を添える */
+export function previewBubble(v: View, b: Bubble): string {
+  const L = v.L;
+  const what = (a: Action) =>
+    a.kind === 'openPage'
+      ? `「${L.page(a.pageId)}」を開く`
+      : a.kind === 'answer'
+        ? `アンケートに「${L.choices(a.surveyId, a.questionId, [a.choiceId])}」と回答`
+        : a.kind === 'sendText'
+          ? `「${a.text}」と送る`
+          : a.kind === 'startFlow'
+            ? `「${L.flow(a.flowId)}」を始める`
+            : a.kind === 'addFriend'
+              ? '友だち追加'
+              : a.kind === 'switchMenu'
+                ? 'メニューを切り替える'
+                : '';
+  const btns = (list: { label: string; action: Action }[]) =>
+    `<div class="lsp-btns">${list.map((x) => `<span class="lsp-btn-ro">${esc(x.label)}${what(x.action) ? `<small>→ ${esc(what(x.action))}</small>` : ''}</span>`).join('')}</div>`;
   switch (b.kind) {
     case 'text':
       return `<div class="lsp-b">${esc(b.text)}</div>`;
