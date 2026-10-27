@@ -213,6 +213,25 @@ def page_after(prs, f17):
     return s
 
 
+FIVE_TO_EIGHT = [  # ステップ配信を8通にしたので、資料の中の「5通」もそろえる（殿村さん 2026-10-27）。(元の文字, 新しい文字, 件数)
+    ("5通を構築", "8通を構築", 1), ("5通の改善", "8通の改善", 1), ("5通", "8通", 3),
+    ("LINEステップ配信シナリオ（5通）", "LINEステップ配信シナリオ（8通）", 1),
+    ("（必要に応じて、簡易的な興味分野の把握）", "（診断で、関心に合わせて出し分け）", 1),
+    ("興味分野の把握（簡易アンケート）", "診断によるセグメント分け（2問）", 1),
+]
+
+
+def five_to_eight(prs):
+    for old, new, count in FIVE_TO_EIGHT:
+        hit = 0
+        for sl in prs.slides:
+            for t in sl._element.iter(qn("a:t")):
+                if t.text == old:
+                    t.text = new
+                    hit += 1
+        assert hit == count, (old, hit)
+
+
 def main(src, fmt_path, out):
     prs = Presentation(src)
     fmt = Presentation(fmt_path)
@@ -232,6 +251,7 @@ def main(src, fmt_path, out):
         anchor.addnext(e)
         anchor = e
     drop_slide(prs, p34)
+    five_to_eight(prs)
     assert len(prs.slides) == 64
     prs.save(out)
     print("saved:", out)
