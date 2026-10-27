@@ -70,6 +70,9 @@ export function journeyOf(project: Project, world: WorldState, user: UserState):
       .filter((x): x is { id: Id; at: Minutes } => x.at !== undefined)
       .sort((a, b) => a.at - b.at)
       .map((x) => x.id);
+    // ノードを持たない行き先（例：友だち追加の経路）は、段に来ていて条件に当てはまれば「通った」とみなす
+    const matched = step.variants?.find((x) => x.id === variantId);
+    if (r.reached && matched && !matched.nodeIds?.length && !traversed.includes(matched.id)) traversed.push(matched.id);
     return { step, status, traversed, isStart: i === 0, isGoal: i === goalIndex, ...(r.at !== undefined ? { at: r.at } : {}), ...(variantId ? { variantId } : {}) };
   });
 }
@@ -254,10 +257,30 @@ function nodeHtml(v: View, b: Box, row: JourneyRow, state: string, here: boolean
 
 const STEP_STATE: Record<StepStatus, string> = { done: 'passed', current: 'passed', skipped: 'skipped', todo: 'todo' };
 
+/** 資料用16:9で、段が多いときに出す段：START・GOAL・最後の段と、「現在ここ」の前後2段。ほかは「⋮ ほか○段」にまとめる */
+export const COMPACT_MAX_ROWS = 7;
+export function compactVisible(rows: JourneyRow[]): boolean[] {
+  if (rows.length <= COMPACT_MAX_ROWS) return rows.map(() => true);
+  const cur = Math.max(0, rows.findIndex((r) => r.status === 'current'));
+  return rows.map((r, i) => i === 0 || r.isGoal || i === rows.length - 1 || Math.abs(i - cur) <= 2);
+}
+
 function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {
-  return rows
+  const show = compact ? compactVisible(rows) : rows.map(() => true);
+  let hidden = 0;
+  const gap = () => {
+    const n = hidden;
+    hidden = 0;
+    return n ? `<div class="lsp-fc-gap">⋮ ほか${n}段</div>` : '';
+  };
+  const html = rows
     .map((row, i) => {
-      const arrow = i === 0 ? '' : `<div class="lsp-fc-arrow${row.status === 'done' || row.status === 'current' ? ' on' : ''}"></div>`;
+      if (!show[i]) {
+        hidden++;
+        return '';
+      }
+      const skippedBefore = hidden > 0;
+      const arrow = (skippedBefore ? gap() : '') + (i === 0 ? '' : `<div class="lsp-fc-arrow${row.status === 'done' || row.status === 'current' ? ' on' : ''}"></div>`);
       const vs = row.step.variants ?? [];
       if (!vs.length) {
         const here = row.status === 'current';
@@ -284,6 +307,7 @@ function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {
       return `${arrow}<div class="lsp-fc-row">${dia}<div class="lsp-fc-line${reached ? ' on' : ''}"></div></div><div class="lsp-fc-branches${i < rows.length - 1 ? ' merge' : ''}" style="--n:${vs.length}">${branches}</div>`;
     })
     .join('');
+  return html + gap();
 }
 
 /** ③の本体。compact は資料用16:9（文面のさわりと候補の中身は出さず、枠に収まるよう縮める） */

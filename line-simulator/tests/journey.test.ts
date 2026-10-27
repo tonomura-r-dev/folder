@@ -5,7 +5,7 @@ import type { Project, ScenarioPatch, UserState, WorldState } from '../packages/
 import { applyPatch, approve, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { allScripted, dispatch, newDemo, seek, worldOf, type Demo } from '../packages/player/src/controller.ts';
 import { explainDecision, Labels } from '../packages/player/src/describe.ts';
-import { contentsOf, fcDialog, journeyOf, journeyPane, journeySteps, nextAction } from '../packages/player/src/journey.ts';
+import { compactVisible, contentsOf, fcDialog, journeyOf, journeyPane, journeySteps, nextAction, type JourneyRow } from '../packages/player/src/journey.ts';
 import type { Ui, View } from '../packages/player/src/view.ts';
 import { loadProject } from '../tools/project-io.ts';
 import { buildExport, sanitize } from '../tools/export-lib.ts';
@@ -246,6 +246,15 @@ describe('③ フローチャートの表示と操作', () => {
         expect.objectContaining({ level: 'warning', code: 'optional.empty', params: { reason: 'journeyReach' } }),
       ]),
     );
+  });
+
+  it('資料用16:9で段が多いときは、START・GOAL・最後の段と「現在ここ」の前後2段だけ出し、ほかは「ほか○段」にまとめる', () => {
+    const fake = (n: number, cur: number, goal: number): JourneyRow[] =>
+      Array.from({ length: n }, (_, i) => ({ step: { id: `s${i}`, label: `s${i}` }, status: i < cur ? 'done' : i === cur ? 'current' : 'todo', traversed: [], isStart: i === 0, isGoal: i === goal }));
+    expect(compactVisible(fake(6, 3, 5))).toEqual([true, true, true, true, true, true]);
+    expect(compactVisible(fake(12, 5, 8))).toEqual([true, false, false, true, true, true, true, true, true, false, false, true]);
+    const html = journeyPane(viewOf(project, allScripted(project)), u(w30, 'p_tokyo'), true);
+    expect(html).not.toContain('lsp-fc-gap');
   });
 
   it('営業用HTMLにも道筋が入り、同じ部品（フローチャート・詳細）で表示される', async () => {

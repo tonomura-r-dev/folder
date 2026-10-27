@@ -43,6 +43,8 @@ export type Project = {
      * single = 1人を手で操作（personaId のペルソナ。無ければ先頭）／scripted = 台本のあるペルソナ全員を台本どおりに並べる
      */
     demoStart?: { mode: 'single' | 'scripted'; personaId?: Id };
+    /** 自動再生で最後まで流す日数（既定 30）。30日より先の配信（休眠掘り起こし等）を見せたい案件で延ばす */
+    demoEndDay?: number;
     labels?: Record<string, string>;
   };
   assets: Asset[];

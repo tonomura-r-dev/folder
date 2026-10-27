@@ -183,7 +183,7 @@ export type StepResult = { demo: Demo; stopped: null | 'pending' | 'end'; pendin
  * 自動再生の1コマ：回答待ちの人がいれば止まる。いなければ次に何かが起きる時刻まで進める。
  * 再生の速さはこの呼び出しの間隔だけで決まるので、速さを変えても結果は変わらない。
  */
-export function autoStep(project: Project, demo: Demo, endDay = DEMO_END_DAY): StepResult {
+export function autoStep(project: Project, demo: Demo, endDay = project.settings.demoEndDay ?? DEMO_END_DAY): StepResult {
   const world = worldOf(project, demo);
   const pending = pendingInputs(project, world, demo)[0];
   if (pending) return { demo, stopped: 'pending', pending };

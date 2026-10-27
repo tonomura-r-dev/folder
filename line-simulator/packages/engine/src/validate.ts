@@ -178,6 +178,8 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
   if (project.brand.iconAssetId) need(assets.has(project.brand.iconAssetId), '/brand/iconAssetId', 'asset', project.brand.iconAssetId);
   if (project.settings.defaultRichMenuId)
     need(richMenus.has(project.settings.defaultRichMenuId), '/settings/defaultRichMenuId', 'richMenu', project.settings.defaultRichMenuId);
+  const endDay = project.settings.demoEndDay;
+  if (endDay !== undefined && (!Number.isInteger(endDay) || endDay < 1 || endDay > 365)) err('node.requiredMissing', '/settings/demoEndDay');
   const start = project.settings.demoStart;
   if (start) {
     if (start.mode !== 'single' && start.mode !== 'scripted') err('node.requiredMissing', '/settings/demoStart/mode');

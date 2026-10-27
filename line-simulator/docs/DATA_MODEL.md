@@ -86,6 +86,7 @@ type Project = {
   flows: Flow[];
   personas: Persona[];
   narration: NarrationDef[];                     // 説明文（FR-54）
+  // settings.demoEndDay?: number               // 自動再生で流す日数（既定30。休眠掘り起こし等を見せる案件で延ばす）
   journey?: JourneyStep[];                       // CVまでの道筋（デモ画面の③）。表示専用・無ければ簡易表示
 
   _internal?: Internal;                          // 案件全体の社内メモ
