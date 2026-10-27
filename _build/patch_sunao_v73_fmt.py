@@ -243,7 +243,7 @@ def main(src, fmt_path, out):
     new = [page_zengo(prs, fs[14]), page_step(prs, fs[15]), page_after(prs, fs[16]), page_shindan(prs, fs[12])]
     lst = prs.slides._sldIdLst
     el = {int(e.get("id")): e for e in lst}
-    order = [el[x.slide_id] for x in [p32] + new + [p33]]
+    order = [el[x.slide_id] for x in [p32] + new]
     for e in order[1:]:
         lst.remove(e)
     anchor = order[0]
@@ -251,8 +251,9 @@ def main(src, fmt_path, out):
         anchor.addnext(e)
         anchor = e
     drop_slide(prs, p34)
+    drop_slide(prs, p33)                                     # 配信の出し分け（予約した方／予約していない方）は16日以降のページと重なるので外す（殿村さん 2026-10-27）
     five_to_eight(prs)
-    assert len(prs.slides) == 64
+    assert len(prs.slides) == 63
     prs.save(out)
     print("saved:", out)
 
