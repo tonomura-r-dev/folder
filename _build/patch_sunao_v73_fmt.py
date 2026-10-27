@@ -9,7 +9,8 @@
   ・ステップ配信＝FMTのS16の形（Dayの帯 → メッセージの見出し → 中身 → ［検索データ］ → ボタン）。8通を4枚×2段（殿村さん「B」）
   ・16日以降＝FMTのS17（施策の考え方：長期・企画配信）。下の月のバー（トレンド）は外す（殿村さん「B」）
   色は紺・白・黒・灰（LINEの部分だけ緑）。FMTの「ご提案時に詳細記載」の札・黄色や金色の札は使わない。
-  並び：P32（重要な考え方）→ 前後検索 → 診断 → ステップ配信（P34と差し替え）→ 16日以降 → P33 → P35。ほかのページは変えない。
+  並び：P32（重要な考え方）→ 前後検索 → ステップ配信（P34と差し替え）→ 16日以降 → 診断 → P33 → P35。ほかのページは変えない。
+  主役はCV（セミナー予約）までの配信の設計、診断はセグメント・タグ付けの手段なので後ろに置く（殿村さん 2026-10-27）。
 """
 import copy
 import sys
@@ -101,11 +102,11 @@ def page_shindan(prs, f13):
     s = copy_slide(prs, f13)
     remove(s, {3, 5, 7, 9, 58} | PHONE | TAGCARD)
     set_lines(sid(s, 9), [" 施策の考え方"])
-    title = "診断：最初の2問で、どんな方かを分かるようにする"
+    title = "診断：回答でセグメントを分け、配信の精度を高める"
     set_lines(sid(s, 5), [title])
     sid(s, 5).width = Inches(8.5)
     sid(s, 58).width = Inches(min(0.25 * len(title) + 0.2, 8.0))
-    set_lines(sid(s, 7), ["答えでタグを付け、その後の配信をその方に合わせる"])
+    set_lines(sid(s, 7), ["診断の答えでタグを付け、配信の出し分けに使う"])
     texts = {41: "友だち追加ありがとうございます！参加特典は…", 43: "あてはまる方は？", 44: "一般", 45: "保険営業",
              49: "【8日目】受講生の声", 51: "【今月】次回セミナーのご案内", 52: "日程を教えて", 54: "次回の日程はこちらです→",
              60: "講師", 33: "タグ・セグメント（例）", 36: "保険営業", 37: "紹介を増やしたい",
@@ -160,8 +161,8 @@ STEPS = [  # (Day, 役割, メッセージの見出し, 中身2行, 検索デー
 def page_step(prs, f16):
     s = copy_slide(prs, f16)
     remove(s, {4, 8, 10})
-    set_lines(sid(s, 10), ["セミナーを探した直後から、比べる → 確かめる → 始めるの順に不安を解消し、",
-                           "15日以内にセミナーの予約へつなげる配信を構築。"])
+    set_lines(sid(s, 10), ["セミナーを探した直後から不安を順に解消し、",
+                           "15日以内にCV（セミナー予約）へつなげる配信を設計。"])
     w, gap, h = 2.4, 0.12, 2.4
     for k, (day, role, head, body, data, btn) in enumerate(STEPS):
         x = 0.42 + (w + gap) * (k % 4)
@@ -220,7 +221,7 @@ def main(src, fmt_path, out):
     assert len(slides) == 61 and len(fs) == 43
     p32, p33, p34 = slides[31], slides[32], slides[33]
     assert p34.shapes[0].text_frame.text.startswith("友だち追加直後のステップ配信")
-    new = [page_zengo(prs, fs[14]), page_shindan(prs, fs[12]), page_step(prs, fs[15]), page_after(prs, fs[16])]
+    new = [page_zengo(prs, fs[14]), page_step(prs, fs[15]), page_after(prs, fs[16]), page_shindan(prs, fs[12])]
     lst = prs.slides._sldIdLst
     el = {int(e.get("id")): e for e in lst}
     order = [el[x.slide_id] for x in [p32] + new + [p33]]
