@@ -74,7 +74,11 @@ export function describeIssue(i: Issue): string {
     case 'node.deadEnd':
       return '出口がどこにも繋がっていません（ここでシナリオが終わります）';
     case 'optional.empty':
-      return p['reason'] === 'noScript' ? '「台本つきで全員」で始める設定ですが、台本のあるペルソナがいません（1人の手動操作で始まります）' : '任意の項目が空です';
+      return p['reason'] === 'noScript'
+        ? '「台本つきで全員」で始める設定ですが、台本のあるペルソナがいません（1人の手動操作で始まります）'
+        : p['reason'] === 'journeyReach'
+          ? 'この段に「来たとみなす条件」がありません（デモで「済」になりません）'
+          : '任意の項目が空です';
     case 'delivery.possibleDuplicate':
       return `同じ文面に、別々のシナリオから届く経路があります（重複配信の可能性）`;
     case 'flow.noStop':

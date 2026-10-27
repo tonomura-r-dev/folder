@@ -8,61 +8,55 @@
     "createdAt": "2026-10-26T00:00:00+09:00",
     "updatedAt": "2026-10-26T00:00:00+09:00"
   },
-  "brand": {
-    "companyName": "サンプルスタッフ株式会社（仮）",
-    "accountName": "サンプルスタッフ（仮）",
-    "colors": { "primary": "#1F285A", "accent": "#06C755", "chatBg": "#7C9BD0" }
-  },
-  "settings": {
-    "dedupeWindowMinutes": 1440,
-    "defaultRichMenuId": "rm_main",
-    "messageCounting": { "enabled": true },
-    "labels": { "cv_apply": "応募" }
-  },
+  "brand": { "companyName": "サンプルスタッフ株式会社（仮）", "accountName": "サンプルスタッフ（仮）", "colors": { "primary": "#1F285A", "accent": "#06C755", "chatBg": "#7C9BD0" } },
+  "settings": { "dedupeWindowMinutes": 1440, "defaultRichMenuId": "rm_main", "messageCounting": { "enabled": true }, "labels": { "cv_apply": "応募" } },
   "assets": [],
   "tags": [
     { "id": "area_tokyo", "label": "希望エリア：東京", "group": "希望エリア" },
     { "id": "area_osaka", "label": "希望エリア：大阪", "group": "希望エリア" },
+    { "id": "area_none", "label": "希望エリア：未選択", "group": "希望エリア", "description": "友だち追加の時点で付け、東京か大阪を選んだら外す" },
+    { "id": "area_selected", "label": "希望エリア：回答済み", "group": "希望エリア", "description": "東京・大阪のどちらかを選ぶと付く。付いた時点で、地域別の求人配信に振り分ける" },
     { "id": "job_office", "label": "希望職種：事務", "group": "希望職種" },
     { "id": "job_light", "label": "希望職種：軽作業", "group": "希望職種" },
     { "id": "applied", "label": "応募済み", "group": "状態" }
   ],
   "cvs": [{ "id": "cv_apply", "label": "応募" }],
-  "routes": [
-    { "id": "route_exit_popup", "label": "離脱ポップアップ" },
-    { "id": "route_thanks", "label": "応募サンクス" }
-  ],
+  "routes": [{ "id": "route_exit_popup", "label": "離脱ポップアップ" }, { "id": "route_thanks", "label": "応募サンクス" }],
   "messages": [
     {
       "id": "msg_welcome",
-      "bubbles": [
-        { "kind": "text", "text": "{{user.name}}、友だち追加ありがとうございます。\n{{brand.accountName}}です。\n\nあなたに合う求人だけをお届けするため、2つだけ質問させてください。" }
-      ]
+      "bubbles": [{ "kind": "text", "text": "{{user.name}}、友だち追加ありがとうございます。\n{{brand.accountName}}です。\n\nあなたに合う求人だけをお届けするため、2つだけ質問させてください。" }]
     },
     {
       "id": "msg_welcome_applied",
-      "bubbles": [
-        { "kind": "text", "text": "{{user.name}}、ご応募ありがとうございます。\n選考のご連絡は、このLINEでお送りします。\n\nほかにも合う求人があればお届けしますので、2つだけ教えてください。" }
-      ]
+      "bubbles": [{ "kind": "text", "text": "{{user.name}}、ご応募ありがとうございます。\n選考のご連絡は、このLINEでお送りします。\n\nほかにも合う求人があればお届けしますので、2つだけ教えてください。" }]
     },
     {
       "id": "msg_t_d1",
-      "bubbles": [
-        { "kind": "text", "text": "【東京エリア】今週の新着求人です。\n\n・丸の内　一般事務　時給1,600円\n・新宿　データ入力　時給1,500円\n・品川　倉庫内軽作業　時給1,400円\n\n※架空の求人です" }
-      ]
+      "bubbles": [{ "kind": "text", "text": "【東京エリア】今週の新着求人です。\n\n・丸の内　一般事務　時給1,600円\n・新宿　データ入力　時給1,500円\n・品川　倉庫内軽作業　時給1,400円\n\n※架空の求人です" }]
     },
     {
       "id": "msg_t_office",
       "bubbles": [
         { "kind": "text", "text": "事務のお仕事をお探しの方へ。\n未経験から始められる東京の事務求人をまとめました。" },
-        { "kind": "card", "title": "丸の内　一般事務（架空）", "body": "時給1,600円／週3日〜／残業ほぼなし", "buttons": [{ "id": "btn_t_office_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }] }
+        {
+          "kind": "card",
+          "title": "丸の内　一般事務（架空）",
+          "body": "時給1,600円／週3日〜／残業ほぼなし",
+          "buttons": [{ "id": "btn_t_office_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }]
+        }
       ]
     },
     {
       "id": "msg_t_light",
       "bubbles": [
         { "kind": "text", "text": "軽作業のお仕事をお探しの方へ。\n東京で人気の軽作業求人です。" },
-        { "kind": "card", "title": "品川　倉庫内軽作業（架空）", "body": "時給1,400円／日払いOK", "buttons": [{ "id": "btn_t_light_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }] }
+        {
+          "kind": "card",
+          "title": "品川　倉庫内軽作業（架空）",
+          "body": "時給1,400円／日払いOK",
+          "buttons": [{ "id": "btn_t_light_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }]
+        }
       ]
     },
     {
@@ -78,24 +72,34 @@
         }
       ]
     },
-    {
-      "id": "msg_t_later",
-      "bubbles": [{ "kind": "text", "text": "承知しました。\n条件に合う求人が出たら、またお知らせします。" }]
-    },
+    { "id": "msg_t_later", "bubbles": [{ "kind": "text", "text": "承知しました。\n条件に合う求人が出たら、またお知らせします。" }] },
     {
       "id": "msg_o_d1",
-      "bubbles": [
-        { "kind": "text", "text": "【大阪エリア】今週の新着求人です。\n\n・梅田　受付事務　時給1,350円\n・堺　ピッキング　時給1,250円\n・なんば　コールセンター　時給1,400円\n\n※架空の求人です" }
-      ]
+      "bubbles": [{ "kind": "text", "text": "【大阪エリア】今週の新着求人です。\n\n・梅田　受付事務　時給1,350円\n・堺　ピッキング　時給1,250円\n・なんば　コールセンター　時給1,400円\n\n※架空の求人です" }]
     },
-    {
-      "id": "msg_o_d3",
-      "bubbles": [{ "kind": "text", "text": "大阪エリアの、週2日から働ける求人をまとめました。\n家庭やほかの予定と両立したい方におすすめです。" }]
-    },
+    { "id": "msg_o_d3", "bubbles": [{ "kind": "text", "text": "大阪エリアの、週2日から働ける求人をまとめました。\n家庭やほかの予定と両立したい方におすすめです。" }] },
     {
       "id": "msg_o_d7",
       "bubbles": [
-        { "kind": "card", "title": "梅田　受付事務（架空）", "body": "時給1,350円／駅直結", "buttons": [{ "id": "btn_o_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }] }
+        {
+          "kind": "card",
+          "title": "梅田　受付事務（架空）",
+          "body": "時給1,350円／駅直結",
+          "buttons": [{ "id": "btn_o_apply", "label": "この求人に応募する", "action": { "kind": "openPage", "pageId": "page_form" } }]
+        }
+      ]
+    },
+    {
+      "id": "msg_c_remind",
+      "bubbles": [
+        {
+          "kind": "buttons",
+          "text": "{{user.name}}、希望エリアがまだ選ばれていません。\nエリアを選ぶと、そのエリアの新着求人だけをお届けします。",
+          "buttons": [
+            { "id": "btn_c_remind_tokyo", "label": "東京", "action": { "kind": "answer", "surveyId": "sv_hope", "questionId": "q_area", "choiceId": "c_tokyo" } },
+            { "id": "btn_c_remind_osaka", "label": "大阪", "action": { "kind": "answer", "surveyId": "sv_hope", "questionId": "q_area", "choiceId": "c_osaka" } }
+          ]
+        }
       ]
     },
     {
@@ -111,29 +115,22 @@
         }
       ]
     },
-    {
-      "id": "msg_c_general",
-      "bubbles": [{ "kind": "text", "text": "今週の人気求人です。\n\n・丸の内　一般事務\n・梅田　受付事務\n\n気になる求人があれば、メニューの「応募する」からどうぞ。" }]
-    },
-    {
-      "id": "msg_a_interview",
-      "bubbles": [{ "kind": "text", "text": "ご応募いただいた求人について、担当者から面接日程のご連絡をします。\n当日の持ち物や服装は、このLINEでご案内します。" }]
-    },
+    { "id": "msg_c_general", "bubbles": [{ "kind": "text", "text": "今週の人気求人です。\n\n・丸の内　一般事務\n・梅田　受付事務\n\n気になる求人があれば、メニューの「応募する」からどうぞ。" }] },
+    { "id": "msg_a_interview", "bubbles": [{ "kind": "text", "text": "ご応募いただいた求人について、担当者から面接日程のご連絡をします。\n当日の持ち物や服装は、このLINEでご案内します。" }] },
     {
       "id": "msg_a_reapply",
       "bubbles": [
         { "kind": "text", "text": "ご希望に近い求人が、ほかにも出ています。" },
-        { "kind": "card", "title": "新宿　データ入力（架空）", "body": "時給1,500円／在宅併用あり", "buttons": [{ "id": "btn_a_reapply", "label": "この求人にも応募する", "action": { "kind": "openPage", "pageId": "page_form" } }] }
+        {
+          "kind": "card",
+          "title": "新宿　データ入力（架空）",
+          "body": "時給1,500円／在宅併用あり",
+          "buttons": [{ "id": "btn_a_reapply", "label": "この求人にも応募する", "action": { "kind": "openPage", "pageId": "page_form" } }]
+        }
       ]
     },
-    {
-      "id": "msg_r_tokyo",
-      "bubbles": [{ "kind": "text", "text": "東京エリアの求人は、こちらです。\n・丸の内　一般事務\n・新宿　データ入力\n・品川　倉庫内軽作業" }]
-    },
-    {
-      "id": "msg_r_osaka",
-      "bubbles": [{ "kind": "text", "text": "大阪エリアの求人は、こちらです。\n・梅田　受付事務\n・堺　ピッキング\n・なんば　コールセンター" }]
-    },
+    { "id": "msg_r_tokyo", "bubbles": [{ "kind": "text", "text": "東京エリアの求人は、こちらです。\n・丸の内　一般事務\n・新宿　データ入力\n・品川　倉庫内軽作業" }] },
+    { "id": "msg_r_osaka", "bubbles": [{ "kind": "text", "text": "大阪エリアの求人は、こちらです。\n・梅田　受付事務\n・堺　ピッキング\n・なんば　コールセンター" }] },
     {
       "id": "msg_r_ask_area",
       "bubbles": [
@@ -147,18 +144,12 @@
         }
       ]
     },
-    {
-      "id": "msg_r_condition",
-      "bubbles": [{ "kind": "text", "text": "いま登録されている希望条件です。\nエリア：{{answer.sv_hope.q_area}}\n職種：{{answer.sv_hope.q_job}}" }]
-    },
+    { "id": "msg_r_condition", "bubbles": [{ "kind": "text", "text": "いま登録されている希望条件です。\nエリア：{{answer.sv_hope.q_area}}\n職種：{{answer.sv_hope.q_job}}" }] },
     {
       "id": "msg_r_faq",
       "bubbles": [{ "kind": "text", "text": "よくあるご質問\n\nQ. 未経験でも応募できますか？\nA. はい。多くの求人が未経験から応募できます。\n\nQ. 応募したら必ず働く必要がありますか？\nA. いいえ。面談のうえでお決めいただけます。" }]
     },
-    {
-      "id": "msg_r_contact",
-      "bubbles": [{ "kind": "text", "text": "お問い合わせありがとうございます。\n担当者から順にご返信します。" }]
-    }
+    { "id": "msg_r_contact", "bubbles": [{ "kind": "text", "text": "お問い合わせありがとうございます。\n担当者から順にご返信します。" }] }
   ],
   "richMenus": [
     {
@@ -193,20 +184,8 @@
       "cases": [{ "when": { "op": "answered", "surveyId": "sv_hope" }, "messageId": "msg_r_condition" }],
       "fallbackMessageId": "msg_r_ask_area"
     },
-    {
-      "id": "ar_faq",
-      "priority": 30,
-      "match": { "mode": "exact", "keywords": ["よくある質問"] },
-      "cases": [],
-      "fallbackMessageId": "msg_r_faq"
-    },
-    {
-      "id": "ar_contact",
-      "priority": 40,
-      "match": { "mode": "contains", "keywords": ["問い合わせ"] },
-      "cases": [],
-      "fallbackMessageId": "msg_r_contact"
-    }
+    { "id": "ar_faq", "priority": 30, "match": { "mode": "exact", "keywords": ["よくある質問"] }, "cases": [], "fallbackMessageId": "msg_r_faq" },
+    { "id": "ar_contact", "priority": 40, "match": { "mode": "contains", "keywords": ["問い合わせ"] }, "cases": [], "fallbackMessageId": "msg_r_contact" }
   ],
   "surveys": [
     {
@@ -218,8 +197,8 @@
           "text": "希望の勤務エリアを教えてください",
           "mode": "single",
           "choices": [
-            { "id": "c_tokyo", "label": "東京", "addTags": ["area_tokyo"], "removeTags": ["area_osaka"] },
-            { "id": "c_osaka", "label": "大阪", "addTags": ["area_osaka"], "removeTags": ["area_tokyo"] }
+            { "id": "c_tokyo", "label": "東京", "addTags": ["area_tokyo", "area_selected"], "removeTags": ["area_osaka", "area_none"] },
+            { "id": "c_osaka", "label": "大阪", "addTags": ["area_osaka", "area_selected"], "removeTags": ["area_tokyo", "area_none"] }
           ]
         },
         {
@@ -278,48 +257,42 @@
       "kind": "thanks",
       "title": "応募完了",
       "url": "https://example.com/apply/thanks",
-      "blocks": [
-        { "kind": "heading", "text": "ご応募ありがとうございました" },
-        { "kind": "text", "text": "選考のご連絡を、LINEで受け取れます。メールより見落としにくく、日程の調整もかんたんです。" }
-      ],
+      "blocks": [{ "kind": "heading", "text": "ご応募ありがとうございました" }, { "kind": "text", "text": "選考のご連絡を、LINEで受け取れます。メールより見落としにくく、日程の調整もかんたんです。" }],
       "lineCta": { "label": "LINEで選考の連絡を受け取る", "routeId": "route_thanks" }
     }
   ],
   "flows": [
     {
       "id": "flow_welcome",
-      "label": "友だち追加 → 挨拶 → アンケート → エリア分岐",
+      "label": "友だち追加 → 挨拶 → アンケート",
       "trigger": { "kind": "friendAdd" },
       "priority": 10,
       "concurrency": "exclusive",
       "reentry": "never",
       "nodes": [
         { "id": "n_w_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_w_isapplied", "type": "branch", "label": "応募済み？", "position": { "x": 0, "y": 180 },
-          "cases": [{ "id": "applied", "label": "応募済み", "when": { "op": "cv", "cvId": "cv_apply", "done": true } }] },
+        {
+          "id": "n_w_isapplied",
+          "type": "branch",
+          "label": "応募済み？",
+          "position": { "x": 0, "y": 180 },
+          "cases": [{ "id": "applied", "label": "応募済み", "when": { "op": "cv", "cvId": "cv_apply", "done": true } }]
+        },
         { "id": "n_w_msg_applied", "type": "message", "messageId": "msg_welcome_applied", "position": { "x": -225, "y": 360 } },
         { "id": "n_w_msg", "type": "message", "messageId": "msg_welcome", "position": { "x": 225, "y": 360 } },
-        { "id": "n_w_survey", "type": "survey", "surveyId": "sv_hope", "timeoutMinutes": 1440, "position": { "x": 0, "y": 540 } },
-        { "id": "n_w_area", "type": "branch", "label": "希望エリア", "position": { "x": 0, "y": 720 },
-          "cases": [
-            { "id": "tokyo", "label": "東京", "when": { "op": "hasTag", "tagId": "area_tokyo" } },
-            { "id": "osaka", "label": "大阪", "when": { "op": "hasTag", "tagId": "area_osaka" } }
-          ] },
-        { "id": "n_w_to_tokyo", "type": "jump", "flowId": "flow_step_tokyo", "position": { "x": -300, "y": 900 } },
-        { "id": "n_w_to_osaka", "type": "jump", "flowId": "flow_step_osaka", "position": { "x": 0, "y": 900 } },
-        { "id": "n_w_to_common", "type": "jump", "flowId": "flow_step_common", "position": { "x": 300, "y": 900 } }
+        { "id": "n_w_none", "type": "tag", "position": { "x": 0, "y": 540 }, "label": "未選択を付ける", "add": ["area_none"] },
+        { "id": "n_w_survey", "type": "survey", "surveyId": "sv_hope", "timeoutMinutes": 1440, "position": { "x": 0, "y": 720 } },
+        { "id": "n_w_end", "type": "end", "position": { "x": 0, "y": 900 }, "label": "エリア別の配信は、回答した時点で始まる" }
       ],
       "edges": [
         { "id": "e_w1", "from": { "nodeId": "n_w_entry", "port": "out" }, "to": "n_w_isapplied" },
         { "id": "e_w2", "from": { "nodeId": "n_w_isapplied", "port": "case:applied" }, "to": "n_w_msg_applied" },
         { "id": "e_w3", "from": { "nodeId": "n_w_isapplied", "port": "else" }, "to": "n_w_msg" },
-        { "id": "e_w4", "from": { "nodeId": "n_w_msg_applied", "port": "out" }, "to": "n_w_survey" },
-        { "id": "e_w5", "from": { "nodeId": "n_w_msg", "port": "out" }, "to": "n_w_survey" },
-        { "id": "e_w6", "from": { "nodeId": "n_w_survey", "port": "done" }, "to": "n_w_area" },
-        { "id": "e_w7", "from": { "nodeId": "n_w_survey", "port": "timeout" }, "to": "n_w_area" },
-        { "id": "e_w8", "from": { "nodeId": "n_w_area", "port": "case:tokyo" }, "to": "n_w_to_tokyo" },
-        { "id": "e_w9", "from": { "nodeId": "n_w_area", "port": "case:osaka" }, "to": "n_w_to_osaka" },
-        { "id": "e_w10", "from": { "nodeId": "n_w_area", "port": "else" }, "to": "n_w_to_common" }
+        { "id": "e_w4", "from": { "nodeId": "n_w_msg_applied", "port": "out" }, "to": "n_w_none" },
+        { "id": "e_w5", "from": { "nodeId": "n_w_msg", "port": "out" }, "to": "n_w_none" },
+        { "id": "e_w_none", "from": { "nodeId": "n_w_none", "port": "out" }, "to": "n_w_survey" },
+        { "id": "e_w6", "from": { "nodeId": "n_w_survey", "port": "done" }, "to": "n_w_end" },
+        { "id": "e_w7", "from": { "nodeId": "n_w_survey", "port": "timeout" }, "to": "n_w_end" }
       ]
     },
     {
@@ -332,14 +305,25 @@
       "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
       "nodes": [
         { "id": "n_t_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_t_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
+        { "id": "n_t_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 150 } },
         { "id": "n_t_d1", "type": "message", "messageId": "msg_t_d1", "position": { "x": 0, "y": 300 } },
-        { "id": "n_t_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
-        { "id": "n_t_job", "type": "branch", "label": "希望職種", "position": { "x": 0, "y": 600 },
-          "cases": [{ "id": "office", "label": "事務", "when": { "op": "answer", "surveyId": "sv_hope", "questionId": "q_job", "match": "any", "choiceIds": ["c_office"] } }] },
+        { "id": "n_t_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 450 } },
+        {
+          "id": "n_t_job",
+          "type": "branch",
+          "label": "希望職種",
+          "position": { "x": 0, "y": 600 },
+          "cases": [
+            {
+              "id": "office",
+              "label": "事務",
+              "when": { "op": "answer", "surveyId": "sv_hope", "questionId": "q_job", "match": "any", "choiceIds": ["c_office"] }
+            }
+          ]
+        },
         { "id": "n_t_office", "type": "message", "messageId": "msg_t_office", "position": { "x": -200, "y": 750 } },
         { "id": "n_t_light", "type": "message", "messageId": "msg_t_light", "position": { "x": 200, "y": 750 } },
-        { "id": "n_t_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 900 } },
+        { "id": "n_t_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00", "from": "flowStart" }, "position": { "x": 0, "y": 900 } },
         { "id": "n_t_d7", "type": "choice", "messageId": "msg_t_d7", "timeoutMinutes": 4320, "position": { "x": 0, "y": 1050 } },
         { "id": "n_t_later", "type": "message", "messageId": "msg_t_later", "position": { "x": 200, "y": 1200 } },
         { "id": "n_t_end", "type": "end", "position": { "x": 0, "y": 1350 } }
@@ -370,11 +354,11 @@
       "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
       "nodes": [
         { "id": "n_o_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_o_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
+        { "id": "n_o_wait1", "type": "wait", "wait": { "kind": "dayAt", "day": 1, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 150 } },
         { "id": "n_o_d1", "type": "message", "messageId": "msg_o_d1", "position": { "x": 0, "y": 300 } },
-        { "id": "n_o_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
+        { "id": "n_o_wait3", "type": "wait", "wait": { "kind": "dayAt", "day": 3, "time": "09:00", "from": "flowStart" }, "position": { "x": 0, "y": 450 } },
         { "id": "n_o_d3", "type": "message", "messageId": "msg_o_d3", "position": { "x": 0, "y": 600 } },
-        { "id": "n_o_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00" }, "position": { "x": 0, "y": 750 } },
+        { "id": "n_o_wait7", "type": "wait", "wait": { "kind": "dayAt", "day": 7, "time": "12:00", "from": "flowStart" }, "position": { "x": 0, "y": 750 } },
         { "id": "n_o_d7", "type": "message", "messageId": "msg_o_d7", "position": { "x": 0, "y": 900 } },
         { "id": "n_o_end", "type": "end", "position": { "x": 0, "y": 1050 } }
       ],
@@ -390,26 +374,33 @@
     },
     {
       "id": "flow_step_common",
-      "label": "エリア未回答の共通ステップ配信",
-      "trigger": { "kind": "manual" },
+      "label": "エリア未選択のリマインド・再案内",
+      "trigger": { "kind": "tagAdded", "tagId": "area_none" },
       "priority": 20,
       "concurrency": "exclusive",
       "reentry": "never",
-      "stopWhen": { "op": "cv", "cvId": "cv_apply", "done": true },
+      "stopWhen": {
+        "op": "or",
+        "children": [{ "op": "not", "child": { "op": "hasTag", "tagId": "area_none" } }, { "op": "cv", "cvId": "cv_apply", "done": true }]
+      },
       "nodes": [
         { "id": "n_c_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
-        { "id": "n_c_wait2", "type": "wait", "wait": { "kind": "dayAt", "day": 2, "time": "09:00" }, "position": { "x": 0, "y": 150 } },
-        { "id": "n_c_ask", "type": "message", "messageId": "msg_c_ask", "position": { "x": 0, "y": 300 } },
-        { "id": "n_c_wait4", "type": "wait", "wait": { "kind": "dayAt", "day": 4, "time": "09:00" }, "position": { "x": 0, "y": 450 } },
-        { "id": "n_c_general", "type": "message", "messageId": "msg_c_general", "position": { "x": 0, "y": 600 } },
-        { "id": "n_c_end", "type": "end", "position": { "x": 0, "y": 750 } }
+        { "id": "n_c_wait1", "type": "wait", "position": { "x": 0, "y": 150 }, "wait": { "kind": "dayAt", "day": 1, "time": "12:00" } },
+        { "id": "n_c_remind", "type": "message", "position": { "x": 0, "y": 300 }, "label": "未回答リマインド", "messageId": "msg_c_remind" },
+        { "id": "n_c_wait3", "type": "wait", "position": { "x": 0, "y": 450 }, "wait": { "kind": "dayAt", "day": 3, "time": "12:00" } },
+        { "id": "n_c_ask", "type": "message", "position": { "x": 0, "y": 600 }, "label": "再案内", "messageId": "msg_c_ask" },
+        { "id": "n_c_wait5", "type": "wait", "position": { "x": 0, "y": 750 }, "wait": { "kind": "dayAt", "day": 5, "time": "09:00" } },
+        { "id": "n_c_general", "type": "message", "position": { "x": 0, "y": 900 }, "label": "選ばないままの人へ人気求人", "messageId": "msg_c_general" },
+        { "id": "n_c_end", "type": "end", "position": { "x": 0, "y": 1050 } }
       ],
       "edges": [
-        { "id": "e_c1", "from": { "nodeId": "n_c_entry", "port": "out" }, "to": "n_c_wait2" },
-        { "id": "e_c2", "from": { "nodeId": "n_c_wait2", "port": "out" }, "to": "n_c_ask" },
-        { "id": "e_c3", "from": { "nodeId": "n_c_ask", "port": "out" }, "to": "n_c_wait4" },
-        { "id": "e_c4", "from": { "nodeId": "n_c_wait4", "port": "out" }, "to": "n_c_general" },
-        { "id": "e_c5", "from": { "nodeId": "n_c_general", "port": "out" }, "to": "n_c_end" }
+        { "id": "e_c1", "from": { "nodeId": "n_c_entry", "port": "out" }, "to": "n_c_wait1" },
+        { "id": "e_c2", "from": { "nodeId": "n_c_wait1", "port": "out" }, "to": "n_c_remind" },
+        { "id": "e_c3", "from": { "nodeId": "n_c_remind", "port": "out" }, "to": "n_c_wait3" },
+        { "id": "e_c4", "from": { "nodeId": "n_c_wait3", "port": "out" }, "to": "n_c_ask" },
+        { "id": "e_c5", "from": { "nodeId": "n_c_ask", "port": "out" }, "to": "n_c_wait5" },
+        { "id": "e_c6", "from": { "nodeId": "n_c_wait5", "port": "out" }, "to": "n_c_general" },
+        { "id": "e_c7", "from": { "nodeId": "n_c_general", "port": "out" }, "to": "n_c_end" }
       ]
     },
     {
@@ -436,6 +427,36 @@
         { "id": "e_a4", "from": { "nodeId": "n_a_interview", "port": "out" }, "to": "n_a_wait10" },
         { "id": "e_a5", "from": { "nodeId": "n_a_wait10", "port": "out" }, "to": "n_a_reapply" },
         { "id": "e_a6", "from": { "nodeId": "n_a_reapply", "port": "out" }, "to": "n_a_end" }
+      ]
+    },
+    {
+      "id": "flow_area_route",
+      "label": "希望エリアで振り分け（回答した時点で）",
+      "trigger": { "kind": "tagAdded", "tagId": "area_selected" },
+      "priority": 15,
+      "concurrency": "exclusive",
+      "reentry": "never",
+      "nodes": [
+        { "id": "n_r_entry", "type": "entry", "position": { "x": 0, "y": 0 } },
+        {
+          "id": "n_w_area",
+          "type": "branch",
+          "label": "希望エリア",
+          "position": { "x": 0, "y": 150 },
+          "cases": [
+            { "id": "tokyo", "label": "東京", "when": { "op": "hasTag", "tagId": "area_tokyo" } },
+            { "id": "osaka", "label": "大阪", "when": { "op": "hasTag", "tagId": "area_osaka" } }
+          ]
+        },
+        { "id": "n_w_to_tokyo", "type": "jump", "position": { "x": -260, "y": 300 }, "flowId": "flow_step_tokyo" },
+        { "id": "n_w_to_osaka", "type": "jump", "position": { "x": 260, "y": 300 }, "flowId": "flow_step_osaka" },
+        { "id": "n_r_end", "type": "end", "position": { "x": 0, "y": 300 }, "label": "（東京・大阪以外は無い）" }
+      ],
+      "edges": [
+        { "id": "e_r1", "from": { "nodeId": "n_r_entry", "port": "out" }, "to": "n_w_area" },
+        { "id": "e_r_tokyo", "from": { "nodeId": "n_w_area", "port": "case:tokyo" }, "to": "n_w_to_tokyo" },
+        { "id": "e_r_osaka", "from": { "nodeId": "n_w_area", "port": "case:osaka" }, "to": "n_w_to_osaka" },
+        { "id": "e_r_else", "from": { "nodeId": "n_w_area", "port": "else" }, "to": "n_r_end" }
       ]
     }
   ],
@@ -494,14 +515,92 @@
         { "atMinutes": 1091, "event": { "type": "tapPopupCta", "pageId": "page_form" } },
         { "atMinutes": 5520, "event": { "type": "block" } }
       ]
+    },
+    {
+      "id": "p_late",
+      "name": "途中で回答さん",
+      "attrs": { "area": "大阪", "age": 30 },
+      "script": [
+        { "atMinutes": 660, "event": { "type": "visitPage", "pageId": "page_lp" } },
+        { "atMinutes": 662, "event": { "type": "exitIntent", "pageId": "page_lp" } },
+        { "atMinutes": 663, "event": { "type": "tapPopupCta", "pageId": "page_lp" } },
+        { "atMinutes": 2640, "event": { "type": "tapButton", "buttonId": "btn_c_remind_osaka" } }
+      ]
     }
   ],
   "narration": [
-    { "id": "nar_popup", "on": { "kind": "event", "type": "exitIntent" }, "eyebrow": "経路A", "title": "ページを離れようとすると、LINE登録を案内する", "body": "応募せずに帰る人を、LINEの友だちとして残します。" },
-    { "id": "nar_thanks", "on": { "kind": "event", "type": "submitForm" }, "eyebrow": "経路B", "title": "応募完了の画面で、LINEに誘導する", "body": "選考の連絡をLINEで受け取れるようにして、応募者との連絡手段を確保します。" },
-    { "id": "nar_survey", "on": { "kind": "node", "nodeId": "n_w_survey" }, "eyebrow": "アンケート", "title": "2問のアンケートで希望条件を聞く", "body": "回答に応じて、エリア・職種のタグが自動で付きます。" },
-    { "id": "nar_area", "on": { "kind": "node", "nodeId": "n_w_area" }, "eyebrow": "分岐", "title": "回答したエリアで、届くステップ配信が変わる", "body": "東京希望には東京の求人、大阪希望には大阪の求人。未回答の人には共通の配信が届きます。" },
+    {
+      "id": "nar_popup",
+      "on": { "kind": "event", "type": "exitIntent" },
+      "eyebrow": "経路A",
+      "title": "ページを離れようとすると、LINE登録を案内する",
+      "body": "応募せずに帰る人を、LINEの友だちとして残します。"
+    },
+    {
+      "id": "nar_thanks",
+      "on": { "kind": "event", "type": "submitForm" },
+      "eyebrow": "経路B",
+      "title": "応募完了の画面で、LINEに誘導する",
+      "body": "選考の連絡をLINEで受け取れるようにして、応募者との連絡手段を確保します。"
+    },
+    {
+      "id": "nar_survey",
+      "on": { "kind": "node", "nodeId": "n_w_survey" },
+      "eyebrow": "アンケート",
+      "title": "2問のアンケートで希望条件を聞く",
+      "body": "回答に応じて、エリア・職種のタグが自動で付きます。答えるまでは「希望エリア：未選択」のタグで管理します。"
+    },
+    {
+      "id": "nar_area",
+      "on": { "kind": "node", "nodeId": "n_w_area" },
+      "eyebrow": "分岐",
+      "title": "回答したエリアで、届くステップ配信が変わる",
+      "body": "東京希望には東京の求人、大阪希望には大阪の求人。後から回答した人も、回答した時点からそのエリアの配信に移ります。"
+    },
+    {
+      "id": "nar_remind",
+      "on": { "kind": "node", "nodeId": "n_c_remind" },
+      "eyebrow": "未選択",
+      "title": "エリアを選んでいない人には、選ぶよう促す",
+      "body": "Day 1 にリマインド、Day 3 に再案内します。エリアを選ぶと「未選択」のタグが外れてリマインドは止まり、そのエリアの求人配信に移ります。"
+    },
     { "id": "nar_stop", "on": { "kind": "node", "nodeId": "n_t_entry" }, "eyebrow": "停止", "title": "応募した人には、求人の案内を止める", "body": "応募が完了した時点で、求人のステップ配信は停止します。" }
   ],
-  "_internal": { "memo": "検証案件。実在の企業・求人ではない。" }
+  "_internal": { "memo": "検証案件。実在の企業・求人ではない。" },
+  "journey": [
+    { "id": "j_visit", "label": "Webサイト訪問", "purpose": "求人ページを見てもらう", "reachedWhen": { "op": "did", "event": "visitPage", "cmp": "exists" } },
+    {
+      "id": "j_friend",
+      "label": "LINE友だち追加",
+      "purpose": "応募せずに帰る人も、応募した人も、LINEでつながる",
+      "reachedWhen": { "op": "did", "event": "addFriend", "cmp": "exists" },
+      "variants": [
+        { "id": "v_popup", "label": "離脱ポップアップから", "when": { "op": "route", "routeIds": ["route_exit_popup"] }, "purpose": "応募せずに帰ろうとした人に、LINE登録を案内" },
+        { "id": "v_thanks", "label": "応募完了画面から", "when": { "op": "route", "routeIds": ["route_thanks"] }, "purpose": "応募した人に、選考の連絡用としてLINEを案内" }
+      ]
+    },
+    {
+      "id": "j_survey",
+      "label": "希望エリアのアンケート",
+      "purpose": "希望エリア・職種を聞き、回答をタグにする",
+      "nodeIds": ["n_w_survey"],
+      "variants": [
+        { "id": "v_answered", "label": "回答した", "when": { "op": "hasTag", "tagId": "area_selected" }, "purpose": "回答に合わせて、エリアのタグが付く" },
+        { "id": "v_none", "label": "まだ選んでいない", "when": { "op": "hasTag", "tagId": "area_none" }, "purpose": "「希望エリア：未選択」のタグで管理し、選ぶよう促す" }
+      ]
+    },
+    {
+      "id": "j_jobs",
+      "label": "地域別の求人紹介",
+      "purpose": "希望エリアの求人だけを届ける",
+      "nodeIds": ["n_t_d1", "n_o_d1", "n_c_remind"],
+      "variants": [
+        { "id": "v_tokyo", "label": "東京", "when": { "op": "hasTag", "tagId": "area_tokyo" }, "purpose": "東京の新着求人（翌日）→ 希望職種の求人（3日目）" },
+        { "id": "v_osaka", "label": "大阪", "when": { "op": "hasTag", "tagId": "area_osaka" }, "purpose": "大阪の新着求人（翌日）→ 週2日からの求人（3日目）" },
+        { "id": "v_area_none", "label": "未選択", "when": { "op": "hasTag", "tagId": "area_none" }, "purpose": "Day 1 にリマインド、Day 3 に再案内。選んだ時点で、そのエリアの求人に切り替わる" }
+      ]
+    },
+    { "id": "j_push", "label": "応募の後押し", "purpose": "7日目に、応募ボタン付きで後押しする", "nodeIds": ["n_t_d7", "n_o_d7"] },
+    { "id": "j_apply", "label": "求人応募（CV）", "purpose": "応募したら求人の案内を止め、面接の連絡に切り替える", "cvId": "cv_apply" }
+  ]
 }

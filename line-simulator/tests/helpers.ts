@@ -5,6 +5,16 @@ import { loadProject } from '../tools/project-io.ts';
 
 export const sample = () => loadProject('sample-staff');
 
+/** 検証案件の「希望エリア」分岐ノードと、その場所（どのシナリオにあっても探す） */
+export function areaBranch(p: Project) {
+  for (const [fi, flow] of p.flows.entries()) {
+    const ni = flow.nodes.findIndex((n) => n.id === 'n_w_area');
+    const node = flow.nodes[ni];
+    if (node?.type === 'branch') return { flow, node, path: `/flows/${fi}/nodes/${ni}` };
+  }
+  throw new Error('n_w_area がありません');
+}
+
 export const DAY = 1440;
 
 export function baseProject(over: Partial<Project> = {}): Project {

@@ -13,6 +13,7 @@ import { countProv } from '../../ai/src/review.ts';
 import { AutoReplies } from './parts/AutoReplies.tsx';
 import { LabelsEditor } from './parts/Labels.tsx';
 import { Messages } from './parts/Messages.tsx';
+import { Journey } from './parts/Journey.tsx';
 import { Narration } from './parts/Narration.tsx';
 import { Personas } from './parts/Personas.tsx';
 import { RichMenus } from './parts/RichMenus.tsx';
@@ -35,6 +36,7 @@ const NAV: { section: Section; label: string; count?: (p: Project) => number }[]
   { section: 'webPages', label: 'Webページ', count: (p) => p.webPages.length },
   { section: 'personas', label: 'ペルソナ', count: (p) => p.personas.length },
   { section: 'narration', label: '説明文', count: (p) => p.narration.length },
+  { section: 'journey', label: 'CVまでの道筋', count: (p) => p.journey?.length ?? 0 },
   { section: 'ai', label: 'AI提案（スクショから）', count: (p) => countProv(p).inferred },
   { section: 'settings', label: '案件設定' },
 ];
@@ -283,6 +285,8 @@ function SectionView({ section }: { section: Section }) {
       return <Personas />;
     case 'narration':
       return <Narration />;
+    case 'journey':
+      return <Journey />;
     case 'settings':
       return <Settings />;
   }

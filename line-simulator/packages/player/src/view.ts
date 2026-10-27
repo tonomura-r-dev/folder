@@ -5,7 +5,8 @@ import { MINUTES_PER_DAY } from '../../engine/src/index.ts';
 import type { Demo } from './controller.ts';
 import type { Labels } from './describe.ts';
 
-export type Mode = 'full' | 'phone' | 'slide';
+/** three = ①画面・②裏側・③CVまでの道筋／full = 画面＋裏側／phone = 画面のみ／slide・slide3 = 資料用16:9（2画面・3画面） */
+export type Mode = 'three' | 'full' | 'phone' | 'slide' | 'slide3';
 export type Tab = 'state' | 'why' | 'log' | 'matrix';
 
 /** 画面だけが持つ状態（イベントには入らない） */
@@ -42,3 +43,7 @@ export const hhmm = (min: number) => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 export const dayOf = (min: number) => Math.floor(min / MINUTES_PER_DAY);
+
+/** 3画面表示の1つの枠（①②③の見出しつき） */
+export const pane = (no: 1 | 2 | 3, title: string, body: string) =>
+  `<section class="lsp-pane p${no}"><h3 class="lsp-pane-head"><span class="no">${'①②③'[no - 1]}</span>${esc(title)}</h3>${body}</section>`;

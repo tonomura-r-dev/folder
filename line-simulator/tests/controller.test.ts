@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { reduce, sessionFromPersonas } from '../packages/engine/src/index.ts';
 import type { InputEventBody } from '../packages/engine/src/index.ts';
 import { advance, dispatch, newDemo, upcoming, worldOf, type Demo } from '../packages/player/src/controller.ts';
-import { DAY, sample } from './helpers.ts';
+import { areaBranch, DAY, sample } from './helpers.ts';
 
 const project = sample();
 const cli = reduce(project, sessionFromPersonas(project), { until: 30 * DAY });
@@ -68,8 +68,7 @@ describe('デモの進行', () => {
 
   it('壊れた条件式（編集途中）でも止まらない', () => {
     const p = structuredClone(project);
-    const n = p.flows[0]!.nodes.find((x) => x.id === 'n_w_area')!;
-    if (n.type === 'branch') n.cases[0]!.when = { op: 'xor' } as never;
+    areaBranch(p).node.cases[0]!.when = { op: 'xor' } as never;
     let d = newDemo(p, 'p_tokyo');
     d = dispatch(d, { type: 'addFriend', routeId: 'route_exit_popup' });
     d = dispatch(d, { type: 'answer', surveyId: 'sv_hope', questionId: 'q_area', choiceIds: ['c_tokyo'] });

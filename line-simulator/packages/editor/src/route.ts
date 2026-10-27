@@ -16,6 +16,7 @@ export type Section =
   | 'webPages'
   | 'personas'
   | 'narration'
+  | 'journey'
   | 'ai'
   | 'settings';
 
@@ -80,6 +81,7 @@ const COLLECTION: Record<string, Section> = {
   webPages: 'webPages',
   personas: 'personas',
   narration: 'narration',
+  journey: 'journey',
   settings: 'settings',
   brand: 'settings',
   meta: 'settings',
@@ -116,7 +118,7 @@ export function where(project: Project, path: string): string {
   const idx = Number(k[1]);
   const names: Record<string, string> = {
     flows: 'シナリオ', messages: '文面', tags: 'タグ', cvs: 'CV', routes: '経路', surveys: 'アンケート', richMenus: 'リッチメニュー',
-    autoReplies: '自動応答', webPages: 'Webページ', personas: 'ペルソナ', narration: '説明文', assets: '画像', settings: '案件設定', brand: '案件設定',
+    autoReplies: '自動応答', webPages: 'Webページ', personas: 'ペルソナ', narration: '説明文', journey: 'CVまでの道筋', assets: '画像', settings: '案件設定', brand: '案件設定',
   };
   const base = names[k[0] ?? ''] ?? k[0] ?? '';
   if (k[0] === 'flows') {

@@ -86,6 +86,7 @@ type Project = {
   flows: Flow[];
   personas: Persona[];
   narration: NarrationDef[];                     // 説明文（FR-54）
+  journey?: JourneyStep[];                       // CVまでの道筋（デモ画面の③）。表示専用・無ければ簡易表示
 
   _internal?: Internal;                          // 案件全体の社内メモ
 };
@@ -170,6 +171,16 @@ type NarrationDef = {
   on: { kind: 'node'; nodeId: Id } | { kind: 'event'; type: InputEvent['type'] };
   eyebrow?: string; title: Text; body: Text;     // 八十吉デモの説明カード
 };
+
+/** CVまでの道筋の1段。エンジンの動きには関係しない（表示だけ） */
+type JourneyStep = {
+  id: Id; label: string; purpose?: Text;         // 段の名前・営業先への説明
+  nodeIds?: Id[];                                // このノードのどれかを通ったら「済」
+  reachedWhen?: Expr;                            // または、この条件が真なら「済」
+  cvId?: Id;                                     // または、このCVをしたら「済」。最後のCV地点がゴール（★）
+  variants?: { id: Id; label: string; when: Expr; purpose?: Text }[];  // 人によって変わるルート。上から最初に真のもの
+};
+// いちばん先まで来た段が「いまここ」。それより手前で来ていない段は「通らず」（例：先に応募した人の求人紹介）
 ```
 
 ---
@@ -537,19 +548,27 @@ function applyPatch(project: Project, patch: ScenarioPatch): { project: Project;
 ## 11. 検証案件（サンプルスタッフ）を当てはめた例
 
 ```
-タグ      : area_tokyo, area_osaka, job_office, job_light, applied
+タグ      : area_tokyo, area_osaka, area_none（未選択）, area_selected（回答済み）, job_office, job_light, applied
 CV        : cv_apply（応募）
 経路      : route_exit_popup（離脱ポップアップ）, route_thanks（応募サンクス）
 アンケート : sv_hope = q_area（東京／大阪）, q_job（事務／軽作業）
-           選択肢ごとに addTags: c_tokyo→area_tokyo …
+           選択肢ごとに addTags: c_tokyo→area_tokyo・area_selected／removeTags: area_osaka・area_none …
 
 flow_welcome   trigger: friendAdd（全経路） priority:10 exclusive
-  entry → message(挨拶) → survey(sv_hope) → branch
+  entry → branch(応募済み？) → message(挨拶) → tag(add area_none) → survey(sv_hope) → end
+
+flow_area_route  trigger: tagAdded(area_selected) priority:15   ※友だち追加直後でも、後から答えても、選んだ時点で振り分ける
+  entry → branch
         ├ case:tokyo  when hasTag(area_tokyo) → jump(flow_step_tokyo)
-        ├ case:osaka  when hasTag(area_osaka) → jump(flow_step_osaka)
-        └ else                               → jump(flow_step_common)
+        └ case:osaka  when hasTag(area_osaka) → jump(flow_step_osaka)
+
+flow_step_common（エリア未選択のリマインド・再案内） trigger: tagAdded(area_none) priority:20
+  stopWhen: not hasTag(area_none) または cv(cv_apply)          ※選んだ・応募した時点で止まる
+  entry → wait(dayAt 1 12:00) → message(未回答リマインド) → wait(dayAt 3 12:00) → message(再案内)
+        → wait(dayAt 5 09:00) → message(人気求人) → end
 
 flow_step_tokyo  trigger: manual  priority:20  stopWhen: cv(cv_apply, done:true)
+  待機は from: flowStart（後から答えた人に、過去の分をまとめて送らない。直後に答えた人は Day 1 09:00 のまま）
   entry → wait(dayAt 1 09:00) → message(東京の求人) → wait(dayAt 3 09:00)
         → branch [case: answer(q_job=事務)] → message(事務求人) / else → message(軽作業求人)
         → wait(dayAt 7 09:00) → message(再応募のお誘い) → end
@@ -566,7 +585,8 @@ flow_after_apply trigger: cv(cv_apply)  priority:5
 | p_tokyo | 東京希望さん | 経路A（離脱ポップアップ） | 東京・事務 | 東京のステップ（事務向け）が届く。Day 7 のボタンから応募 → 応募後フォローへ |
 | p_osaka | 大阪希望さん | 経路A | 大阪・軽作業 | 大阪のステップが届き、東京分は「東京のタグが無い」で外れる。「求人」と送ると大阪の返信 |
 | p_applied | 応募済みさん | 経路B（応募サンクス） | 東京・事務 | 応募済みなので東京ステップは「停止条件」で止まる。Day 10 に再応募 → 応募後フォローが2回目 |
-| p_notyet | 未応募さん | 経路B 途中離脱 → 経路A | 回答しない | 24時間で回答待ちが切れて共通ステップへ。Day 3 にブロック → Day 4 の配信は「ブロック中」で届かない |
+| p_notyet | 未応募さん | 経路B 途中離脱 → 経路A | 回答しない | 「未選択」タグで管理。Day 1 にリマインド、Day 3 に再案内。Day 3 夜にブロック → Day 5 の配信は「ブロック中」で届かない |
+| p_late | 途中で回答さん | 経路A | Day 1 20:00 にリマインドのボタンで大阪 | リマインドが止まり、回答した日を起点に大阪のステップ（Day 2・4・8） |
 
 実データは `projects/sample-staff/project.json`、期待どおりかの確認は `tests/acceptance.test.ts`。
 

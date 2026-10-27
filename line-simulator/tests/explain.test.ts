@@ -5,7 +5,7 @@ import type { Expr } from '../packages/engine/src/index.ts';
 import { reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { defaultLeaf } from '../packages/editor/src/ui/ExprBuilder.tsx';
 import { describeTraceNode, explainDecision, Labels } from '../packages/player/src/describe.ts';
-import { baseProject, chain, DAY, node, sample } from './helpers.ts';
+import { areaBranch, baseProject, chain, DAY, node, sample } from './helpers.ts';
 
 const project = sample();
 const L = new Labels(project);
@@ -43,8 +43,8 @@ describe('「なぜ」の説明（営業先向け）', () => {
 
   it('判定の木の各段に、実際の値を添える', () => {
     const d = find('p_osaka', (x) => x.nodeId === 'n_w_area' && x.ref === 'tokyo');
-    expect(describeTraceNode(d.trace!, L)).toBe('タグ「希望エリア：東京」が付いている（付いているタグ：希望エリア：大阪、希望職種：軽作業）');
-    const stop = find('p_applied', (x) => x.kind === 'stopWhen');
+    expect(describeTraceNode(d.trace!, L)).toBe('タグ「希望エリア：東京」が付いている（付いているタグ：希望エリア：大阪、希望エリア：回答済み）');
+    const stop = find('p_applied', (x) => x.kind === 'stopWhen' && x.flowId === 'flow_step_tokyo');
     expect(describeTraceNode(stop.trace!, L)).toMatch(/^応募済み（応募：Day 0 10:10）$/);
   });
 });
@@ -55,9 +55,9 @@ describe('条件式ビルダー', () => {
   it('どの種類の条件も、選んだ直後の初期値が正しい条件式になる（検証で重大エラーが出ない）', () => {
     for (const k of kinds) {
       const p = structuredClone(project);
-      const n = p.flows[0]!.nodes.find((x) => x.id === 'n_w_area')!;
-      if (n.type === 'branch') n.cases[0]!.when = defaultLeaf(k, p);
-      const errors = validate(p).filter((i) => i.level === 'error' && i.path.startsWith('/flows/0/nodes/5/cases/0/when'));
+      const { node: n, path } = areaBranch(p);
+      n.cases[0]!.when = defaultLeaf(k, p);
+      const errors = validate(p).filter((i) => i.level === 'error' && i.path.startsWith(`${path}/cases/0/when`));
       // 属性（attr）の値は空のまま置くので型の問題は出ない。どれも重大エラー0件
       expect({ k, errors }).toEqual({ k, errors: [] });
     }
@@ -72,8 +72,7 @@ describe('条件式ビルダー', () => {
       ],
     };
     const p = structuredClone(project);
-    const n = p.flows[0]!.nodes.find((x) => x.id === 'n_w_area')!;
-    if (n.type === 'branch') n.cases[0]!.when = e;
+    areaBranch(p).node.cases[0]!.when = e;
     expect(validate(p).filter((i) => i.level === 'error')).toEqual([]);
   });
 });

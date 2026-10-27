@@ -57,6 +57,8 @@ export type Project = {
   flows: Flow[];
   personas: Persona[];
   narration: NarrationDef[];
+  /** CVまでの道筋（デモ画面の③）。表示だけに使い、エンジンの動きには関係しない。無い案件はシナリオ一覧から簡易表示を作る */
+  journey?: JourneyStep[];
   _internal?: Internal;
 };
 
@@ -153,6 +155,21 @@ export type NarrationDef = Tracked & {
   eyebrow?: string;
   title: Text;
   body: Text;
+};
+
+/**
+ * 道筋の1段（例：Webサイト訪問 → 友だち追加 → アンケート → 出し分け → 後押し → CV）。
+ * 到達：nodeIds のどれかを通った／reachedWhen が真／cvId をした のどれか。
+ * variants：人によって中身が変わる段。上から順に、最初に when が真になったものがその人のルート
+ */
+export type JourneyStep = Tracked & {
+  id: Id;
+  label: string;
+  purpose?: Text;
+  nodeIds?: Id[];
+  reachedWhen?: Expr;
+  cvId?: Id;
+  variants?: { id: Id; label: string; when: Expr; purpose?: Text }[];
 };
 
 // ---------- フロー ----------

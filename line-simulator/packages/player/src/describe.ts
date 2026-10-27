@@ -208,6 +208,15 @@ const BECAUSE: Record<string, string> = {
   stop_all: '別のシナリオで、この人への配信をすべて止めたため',
 };
 
+/** 真になった条件のうち、理由として見せる部分（「または」は当てはまった枝だけ） */
+const trueParts = (t: Trace): Trace[] => (t.expr.op === 'or' ? (t.children ?? []).filter((c) => c.value).flatMap(trueParts) : [t]);
+
+function becauseTrue(t: Trace, L: Labels): string {
+  const e = t.expr;
+  if (e.op === 'not' && e.child?.op === 'hasTag') return `タグ「${L.tag(e.child.tagId)}」が外れた`;
+  return `「${describeExpr(e, L)}」に当てはまった`;
+}
+
 export function explainDecision(d: Decision, L: Labels, project: Project, world?: { users: Record<string, UserState> }): Explanation {
   const flow = `「${L.flow(d.flowId)}」`;
   switch (d.kind) {
@@ -229,6 +238,8 @@ export function explainDecision(d: Decision, L: Labels, project: Project, world?
     }
     case 'stopWhen': {
       if (d.reason === 'stop_all') return { tone: 'stop', title: `${flow}を止めました`, reason: BECAUSE['stop_all'] };
+      // 「AまたはB」の停止条件は、実際に当てはまった方だけを理由にする
+      if (d.trace) return { tone: 'stop', title: `${flow}を止めました`, reason: `${trueParts(d.trace).map((t) => becauseTrue(t, L)).join('、')}ため` };
       const stopWhen = project.flows.find((f) => f.id === d.flowId)?.stopWhen;
       return { tone: 'stop', title: `${flow}を止めました`, reason: `「${stopWhen ? describeExpr(stopWhen, L) : '停止条件'}」に当てはまったため` };
     }

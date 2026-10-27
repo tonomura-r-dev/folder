@@ -28,9 +28,10 @@ import {
   type Demo,
 } from './controller.ts';
 import { fmtTime, Labels } from './describe.ts';
+import { journeyPane } from './journey.ts';
 import { phone } from './phone.ts';
-import { SLIDE_H, SLIDE_W, slide } from './slide.ts';
-import { esc, type Mode, type Tab, type Ui, type View } from './view.ts';
+import { SLIDE_H, SLIDE_W, slide, slide3 } from './slide.ts';
+import { esc, pane, type Mode, type Tab, type Ui, type View } from './view.ts';
 
 export { esc } from './view.ts';
 
@@ -58,7 +59,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   let project = opts.project;
   let demo = opts.demo ?? (opts.personaId ? newDemo(project, opts.personaId) : initialDemo(project));
   let view: View | null = null;
-  const ui: Ui = { menuOpen: true, picked: [], mode: 'full', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '' };
+  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '' };
   let timer: ReturnType<typeof setInterval> | null = null;
   /** 回答待ちで止まった再生を、答えたら続けるか */
   let resumeWhenAnswered = false;
@@ -171,7 +172,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         <span class="lsp-group">${speed(1)}${speed(2)}${speed(5)}</span>
         <span class="lsp-playstate" role="status">${esc(ui.status)}</span>
         <span class="lsp-spacer"></span>
-        <span class="lsp-group">${mode('full', '裏側あり')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9')}</span>
+        <span class="lsp-group">${mode('three', '3画面')}${mode('full', '画面＋裏側')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9')}${mode('slide3', '資料用 16:9（3画面）')}</span>
       </div>
       ${ahead ? `<div class="lsp-warn">この先に、${esc(v.world.users[active]?.name ?? '')}の操作が${ahead}件あります。いまの時点から操作すると、それより後の操作は消えます。</div>` : ''}
     </div>`;
@@ -196,6 +197,9 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     let body: string;
     if (!user) body = '<div class="lsp-empty">「＋ ユーザーを追加」から、デモのユーザーを追加してください。</div>';
     else if (ui.mode === 'slide') body = slide(view, user);
+    else if (ui.mode === 'slide3') body = slide3(view, user);
+    else if (ui.mode === 'three')
+      body = `<div class="lsp-stage three">${pane(1, 'ユーザーが見る画面', phone(view, user))}${pane(2, '裏側の処理', backstage(view, user))}${pane(3, 'CVまでの道筋', journeyPane(view, user))}</div>`;
     else body = `<div class="lsp-stage ${ui.mode}">${phone(view, user)}${ui.mode === 'full' ? backstage(view, user) : ''}</div>`;
     root.innerHTML = bar(view) + body;
 

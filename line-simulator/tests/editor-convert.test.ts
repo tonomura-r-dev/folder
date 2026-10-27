@@ -5,7 +5,7 @@ import { validate } from '../packages/engine/src/index.ts';
 import { describeIssue } from '../packages/player/src/issues.ts';
 import { defaultNode, PALETTE, toCards, toLines } from '../packages/editor/src/flow/convert.ts';
 import { locate } from '../packages/editor/src/route.ts';
-import { sample } from './helpers.ts';
+import { areaBranch, sample } from './helpers.ts';
 
 describe('フロー → カード・線', () => {
   const p = sample();
@@ -13,7 +13,8 @@ describe('フロー → カード・線', () => {
   const flow = p.flows[fi]!;
 
   it('分岐ノードには条件ごと＋「それ以外」の出口ができ、名前は案件のラベル', () => {
-    const card = toCards(flow, fi, p, validate(p)).find((c) => c.id === 'n_w_area')!;
+    const area = areaBranch(p).flow;
+    const card = toCards(area, p.flows.indexOf(area), p, validate(p)).find((c) => c.id === 'n_w_area')!;
     expect(card.data.ports.map((x) => x.label)).toEqual(['東京', '大阪', 'それ以外']);
     expect(card.data.ports.every((x) => x.connected)).toBe(true);
   });

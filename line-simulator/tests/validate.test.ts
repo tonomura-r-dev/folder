@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Project } from '../packages/engine/src/index.ts';
 import { validate } from '../packages/engine/src/index.ts';
-import { baseProject, chain, codes, edge, node, sample } from './helpers.ts';
+import { areaBranch, baseProject, chain, codes, edge, node, sample } from './helpers.ts';
 
 const broken = (mutate: (p: Project) => void) => {
   const p = sample();
@@ -33,8 +33,7 @@ describe('重大エラー', () => {
 
   it('定義していないタグを条件で使う', () => {
     const issues = broken((p) => {
-      const n = flow(p, 'flow_welcome').nodes.find((x) => x.id === 'n_w_area')!;
-      if (n.type === 'branch') n.cases[0]!.when = { op: 'hasTag', tagId: 'area_nagoya' };
+      areaBranch(p).node.cases[0]!.when = { op: 'hasTag', tagId: 'area_nagoya' };
     });
     expect(issues).toContainEqual(expect.objectContaining({ level: 'error', code: 'ref.missing', params: { kind: 'tag', id: 'area_nagoya' } }));
   });
@@ -49,7 +48,7 @@ describe('重大エラー', () => {
 
   it('分岐に「それ以外」の行き先が無い', () => {
     const issues = broken((p) => {
-      const f = flow(p, 'flow_welcome');
+      const f = areaBranch(p).flow;
       f.edges = f.edges.filter((e) => !(e.from.nodeId === 'n_w_area' && e.from.port === 'else'));
     });
     expect(codes(issues, 'error')).toContain('branch.noExit');

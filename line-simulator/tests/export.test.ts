@@ -9,7 +9,7 @@ import { initialDemo } from '../packages/player/src/controller.ts';
 import type { ExportData } from '../packages/player/src/standalone.ts';
 import { bundlePlayer } from '../tools/bundle.ts';
 import { buildExport, exportFileName, MAX_BYTES, safeJson, sanitize, scanExport, uniqueName, WARN_BYTES } from '../tools/export-lib.ts';
-import { DAY, sample } from './helpers.ts';
+import { areaBranch, DAY, sample } from './helpers.ts';
 
 const noAssets = { readAsset: () => null, confirmFictional: true };
 const dataOf = (html: string) => JSON.parse(html.match(/<script type="application\/json" id="linesim-data">([\s\S]*?)<\/script>/)![1]!) as ExportData;
@@ -34,8 +34,7 @@ describe('書き出し：検証', () => {
   it('重大エラー（存在しないノードへの線・不正な条件・無限ループ）があれば書き出さない', async () => {
     const p = sample();
     p.flows[0]!.edges[0]!.to = 'n_nowhere';
-    const n = p.flows[0]!.nodes.find((x) => x.id === 'n_w_area')!;
-    if (n.type === 'branch') n.cases[0]!.when = { op: 'and', children: [] };
+    areaBranch(p).node.cases[0]!.when = { op: 'and', children: [] };
     const t = p.flows[1]!;
     t.nodes.push({ id: 'x1', type: 'tag', add: ['applied'], position: { x: 0, y: 0 } }, { id: 'x2', type: 'tag', add: ['applied'], position: { x: 0, y: 0 } });
     t.edges.push({ id: 'ex1', from: { nodeId: 'x1', port: 'out' }, to: 'x2' }, { id: 'ex2', from: { nodeId: 'x2', port: 'out' }, to: 'x1' });
@@ -160,6 +159,6 @@ describe('デモの始まり方（案件設定）', () => {
     p.settings.demoStart = { mode: 'single', personaId: 'p_osaka' };
     expect(initialDemo(p).session.users[0]!.personaId).toBe('p_osaka');
     p.settings.demoStart = { mode: 'scripted' };
-    expect(initialDemo(p).session.users.map((u) => u.personaId)).toEqual(['p_tokyo', 'p_osaka', 'p_applied', 'p_notyet']);
+    expect(initialDemo(p).session.users.map((u) => u.personaId)).toEqual(['p_tokyo', 'p_osaka', 'p_applied', 'p_notyet', 'p_late']);
   });
 });

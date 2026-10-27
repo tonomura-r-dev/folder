@@ -1211,5 +1211,98 @@
         "rationale": "デモの説明文"
       }
     }
+  ],
+  "journey": [
+    {
+      "id": "j_friend",
+      "label": "LINE友だち追加",
+      "purpose": "店頭・予約フォームから、LINEでつながる",
+      "reachedWhen": {
+        "op": "did",
+        "event": "addFriend",
+        "cmp": "exists"
+      },
+      "variants": [
+        {
+          "id": "v_popup",
+          "label": "予約フォームの離脱ポップアップから",
+          "when": {
+            "op": "route",
+            "routeIds": [
+              "route_popup"
+            ]
+          },
+          "purpose": "予約せずに帰ろうとした人に、クーポンを受け取れるLINE登録を案内"
+        },
+        {
+          "id": "v_thanks",
+          "label": "予約完了ページから",
+          "when": {
+            "op": "route",
+            "routeIds": [
+              "route_thanks"
+            ]
+          },
+          "purpose": "予約した人に、当日の案内用としてLINEを案内"
+        },
+        {
+          "id": "v_default",
+          "label": "そのほか（店頭・検索など）",
+          "when": {
+            "op": "always"
+          }
+        }
+      ]
+    },
+    {
+      "id": "j_survey",
+      "label": "メニュー・来店回数のアンケート",
+      "purpose": "希望メニューと来店回数を聞いて、タグにする",
+      "nodeIds": [
+        "n_b_survey"
+      ]
+    },
+    {
+      "id": "j_follow",
+      "label": "来店回数で出し分け",
+      "purpose": "はじめての人と常連で、送る内容を変える",
+      "nodeIds": [
+        "n_b_visit"
+      ],
+      "variants": [
+        {
+          "id": "v_repeat",
+          "label": "2回目以上",
+          "when": {
+            "op": "hasTag",
+            "tagId": "tag_visit_repeat"
+          },
+          "purpose": "常連向けのクーポン。来店1か月後にリタッチのおすすめ"
+        },
+        {
+          "id": "v_first",
+          "label": "はじめて・未回答",
+          "when": {
+            "op": "always"
+          },
+          "purpose": "翌日にクーポンをもう一度、3日目にスタイル写真で予約を後押し"
+        }
+      ]
+    },
+    {
+      "id": "j_book",
+      "label": "予約（CV）",
+      "purpose": "予約したら初来店向けの配信を止め、お礼に切り替える",
+      "cvId": "cv_book"
+    },
+    {
+      "id": "j_return",
+      "label": "再来店のおすすめ",
+      "purpose": "約1か月後に、リタッチの時期を知らせる",
+      "nodeIds": [
+        "n_k_reminder",
+        "n_r_msg"
+      ]
+    }
   ]
 }

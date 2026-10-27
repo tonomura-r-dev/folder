@@ -57,6 +57,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
   };
   for (const key of ['assets', 'tags', 'cvs', 'routes', 'messages', 'richMenus', 'autoReplies', 'surveys', 'webPages', 'flows', 'personas', 'narration'] as const)
     unique(project[key], `/${key}`);
+  unique(project.journey ?? [], '/journey');
   project.flows.forEach((flow, fi) =>
     flow.nodes.forEach((node, ni) => {
       const path = `/flows/${fi}/nodes/${ni}`;
@@ -437,6 +438,19 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     checkText(n.title, `/narration/${i}/title`);
     checkText(n.body, `/narration/${i}/body`);
     if (!n.body.trim()) warn('optional.empty', `/narration/${i}/body`);
+  });
+
+  (project.journey ?? []).forEach((s, i) => {
+    const path = `/journey/${i}`;
+    if (!s.label?.trim()) err('node.requiredMissing', `${path}/label`);
+    (s.nodeIds ?? []).forEach((n, j) => need(allNodes.has(n), `${path}/nodeIds/${j}`, 'node', n));
+    if (s.reachedWhen) checkExpr(s.reachedWhen, `${path}/reachedWhen`);
+    if (s.cvId !== undefined) need(cvs.has(s.cvId), `${path}/cvId`, 'cv', s.cvId);
+    if (!s.nodeIds?.length && !s.reachedWhen && s.cvId === undefined) warn('optional.empty', path, { reason: 'journeyReach' });
+    (s.variants ?? []).forEach((x, j) => {
+      if (!x.label?.trim()) err('node.requiredMissing', `${path}/variants/${j}/label`);
+      checkExpr(x.when, `${path}/variants/${j}/when`);
+    });
   });
 
   function checkEvent(ev: InputEventBody, path: string) {

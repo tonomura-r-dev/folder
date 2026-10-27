@@ -37,11 +37,11 @@ function playToEnd(demo: Demo, p: Project = project): { demo: Demo; steps: numbe
 const personaOf = (demo: Demo, userId: string) => demo.session.users.find((u) => u.id === userId)!.personaId;
 
 describe('複数ユーザー', () => {
-  it('台本つきの4人を自動再生で最後まで流すと、一人ずつ CLI と同じ結果になる（状態が混ざらない）', () => {
+  it('台本つきの全員（5人）を自動再生で最後まで流すと、一人ずつ CLI と同じ結果になる（状態が混ざらない）', () => {
     const { demo, stopped } = playToEnd(allScripted(project));
     expect(stopped).toBe('end');
     const w = worldOf(project, demo);
-    expect(Object.keys(w.users)).toHaveLength(4);
+    expect(Object.keys(w.users)).toHaveLength(5);
     for (const [id, u] of Object.entries(w.users)) {
       const ref = cli.users[personaOf(demo, id)]!;
       expect(u.deliveries).toEqual(ref.deliveries);
@@ -103,8 +103,8 @@ describe('時間の巻き戻し・初期化', () => {
     d = addUser(d, project, 'p_osaka', false);
     d = dispatch(d, { type: 'addFriend', routeId: 'route_exit_popup' });
     const r = resetDemo(d, project);
-    expect(r.session.users).toHaveLength(5);
-    expect(r.session.events.some((e) => e.userId === 'u5')).toBe(false);
+    expect(r.session.users).toHaveLength(6);
+    expect(r.session.events.some((e) => e.userId === 'u6')).toBe(false);
     expect(r.session.events.filter((e) => e.userId === 'u1')).toEqual(d.session.events.filter((e) => e.userId === 'u1'));
     expect(r.now).toBe(600);
   });
@@ -165,9 +165,9 @@ describe('ペルソナで流したときの未到達チェック', () => {
     const p = structuredClone(project);
     p.flows.push({ id: 'flow_orphan', label: '孤立', trigger: { kind: 'tagAdded', tagId: 'job_light' }, priority: 50, concurrency: 'parallel', reentry: 'never', nodes: [{ id: 'n_orphan_entry', type: 'entry', position: { x: 0, y: 0 } }], edges: [] });
     // 軽作業タグが付くのは大阪希望さんだけなので、そのタグを付けないようにすると誰も入らない
-    p.personas = p.personas.filter((x) => x.id !== 'p_osaka');
+    p.personas = p.personas.filter((x) => x.id !== 'p_osaka' && x.id !== 'p_late');
     const issues = personaCoverage(p);
-    // 大阪希望さんがいないので、大阪のステップ配信にも誰も入らない
+    // 大阪を選ぶ人（大阪希望さん・途中で回答さん）がいないので、大阪のステップ配信にも誰も入らない
     expect(issues.map((i) => i.params?.['id'])).toEqual(['flow_step_osaka', 'flow_orphan']);
     expect(issues.every((i) => i.level === 'warning' && i.code === 'persona.noneMatch')).toBe(true);
   });

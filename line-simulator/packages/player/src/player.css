@@ -254,3 +254,86 @@
 .lsp-slide-why li.ok .mark { color: #0b7a3a; }
 .lsp-slide-why li.stop .mark { color: var(--lsp-warn); }
 .lsp-slide-foot { position: absolute; right: 40px; bottom: 14px; font-size: 13px; color: var(--lsp-muted); }
+
+/* ---------- 3画面（①ユーザーが見る画面 ②裏側の処理 ③CVまでの道筋） ----------
+   幅に合わせて 3列 → 2列（①の右に②③を縦に）→ 1列 と組み替える。文字は小さくしない */
+.lsp { container-type: inline-size; }
+.lsp-stage.three { display: grid; grid-template-columns: 380px minmax(300px, 1fr) minmax(300px, 1fr); gap: 16px; align-items: start; padding: 16px; }
+.lsp-pane { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.lsp-pane-head { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--lsp-ink); letter-spacing: .02em; }
+.lsp-pane-head .no { display: inline-flex; align-items: center; justify-content: center; font-size: 17px; color: var(--lsp-primary); }
+.lsp-stage.three .lsp-phone { align-self: center; }
+.lsp-stage.three .lsp-side { width: auto; flex: none; }
+@container (max-width: 1060px) {
+  .lsp-stage.three { grid-template-columns: 380px minmax(0, 1fr); }
+  .lsp-stage.three .p1 { grid-row: span 2; }
+}
+@container (max-width: 760px) {
+  .lsp-stage.three { grid-template-columns: minmax(0, 1fr); }
+  .lsp-stage.three .p1 { grid-row: auto; }
+}
+
+/* ③ CVまでの道筋 */
+.lsp-journey { background: #fff; border: 1px solid var(--lsp-line); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.lsp-jgoal { font-size: 13px; color: var(--lsp-muted); }
+.lsp-jgoal b { color: var(--lsp-ink); font-size: 14.5px; }
+.lsp-jbanner { font-size: 13px; font-weight: 700; border-radius: 8px; padding: 6px 10px; }
+.lsp-jbanner.ng { background: #fbe5e2; color: var(--lsp-err); }
+.lsp-jbanner.ok { background: #e3f4e8; color: #0b7a3a; }
+.lsp-jnext { background: #eef4ff; border: 1px solid #cfdcf5; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; }
+.lsp-jn-k { font-size: 11.5px; font-weight: 700; color: #2a6fd6; letter-spacing: .04em; }
+.lsp-jn-t { font-size: 13px; font-weight: 700; color: var(--lsp-ink); font-variant-numeric: tabular-nums; }
+.lsp-jn-w { font-size: 13.5px; color: var(--lsp-text); }
+.lsp-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lsp-steps .lsp-st { display: grid; grid-template-columns: 28px 1fr; gap: 8px; position: relative; padding-bottom: 12px; }
+.lsp-steps .lsp-st:not(:last-child)::before { content: ""; position: absolute; left: 13px; top: 28px; bottom: 0; width: 2px; background: var(--lsp-line); }
+.lsp-steps .lsp-st.done:not(:last-child)::before { background: var(--lsp-primary); }
+.lsp-steps .lsp-st-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; background: #fff; border: 2px solid var(--lsp-line); color: var(--lsp-muted); position: relative; z-index: 1; }
+.lsp-steps .lsp-st.done .lsp-st-dot { background: var(--lsp-primary); border-color: var(--lsp-primary); color: #fff; }
+.lsp-steps .lsp-st.current .lsp-st-dot { background: var(--lsp-accent); border-color: var(--lsp-accent); color: #fff; box-shadow: 0 0 0 4px rgba(6, 199, 85, .18); }
+.lsp-steps .lsp-st.goal .lsp-st-dot { border-color: #d9661f; color: #d9661f; }
+.lsp-steps .lsp-st.goal.current .lsp-st-dot, .lsp-steps .lsp-st.goal.done .lsp-st-dot { background: #d9661f; border-color: #d9661f; color: #fff; }
+.lsp-steps .lsp-st-lbl { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 14px; font-weight: 700; color: var(--lsp-ink); padding-top: 3px; }
+.lsp-steps .lsp-st.todo .lsp-st-lbl, .lsp-steps .lsp-st.skipped .lsp-st-lbl { color: var(--lsp-muted); }
+.lsp-steps .lsp-st.skipped .lsp-st-lbl > span:first-child { text-decoration: line-through; text-decoration-color: rgba(107, 114, 128, .6); }
+.lsp-steps .lsp-st-badge { flex: 0 0 auto; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 0 8px; background: var(--lsp-soft); color: var(--lsp-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lsp-steps .lsp-st.done .lsp-st-badge { background: #e8ecf8; color: var(--lsp-primary); }
+.lsp-steps .lsp-st.current .lsp-st-badge { background: var(--lsp-accent); color: #fff; }
+.lsp-steps .lsp-st-pur { font-size: 12.5px; color: var(--lsp-text); margin-top: 2px; }
+.lsp-steps .lsp-st-now { font-size: 12px; color: #00695f; margin-top: 4px; }
+.lsp-variants { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lsp-variants li { border: 1px solid var(--lsp-line); border-radius: 8px; padding: 4px 8px; color: var(--lsp-muted); }
+.lsp-variants li.mine { border-color: var(--lsp-primary); background: #f3f5fb; color: var(--lsp-text); }
+.lsp-variants .lsp-v-l { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; }
+.lsp-variants li.mine .lsp-v-l { color: var(--lsp-ink); }
+.lsp-variants .lsp-v-l b { font-size: 10.5px; background: var(--lsp-primary); color: #fff; border-radius: 999px; padding: 0 6px; }
+.lsp-variants .lsp-v-p { display: block; font-size: 12px; }
+.lsp-lanes { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.lsp-lane { font-size: 13px; border: 1px solid var(--lsp-line); border-radius: 999px; padding: 0 10px; color: var(--lsp-muted); }
+.lsp-lane.mine { border-color: var(--lsp-primary); background: var(--lsp-primary); color: #fff; font-weight: 700; }
+
+/* 資料用 16:9 の3画面版 */
+.lsp-slide.three { grid-template-columns: 380px 1fr 1fr; grid-template-rows: auto 1fr; gap: 10px 22px; padding: 18px 28px 34px; }
+.lsp-slide.three .lsp-slide-head { grid-column: 1 / -1; }
+.lsp-slide.three .lsp-slide-head .acc, .lsp-slide.three .lsp-slide-head .clock { font-size: 20px; }
+.lsp-slide.three .lsp-pane { min-height: 0; overflow: hidden; }
+.lsp-slide.three .lsp-pane-head { font-size: 16px; }
+.lsp-slide.three .lsp-screen { height: 545px; }
+.lsp-slide.three .lsp-narr-title { font-size: 19px; }
+.lsp-slide.three .lsp-narr-body { font-size: 15px; }
+.lsp-slide.three .lsp-slide-box { padding: 10px 14px; }
+.lsp-slide.three .lsp-slide-box h4 { font-size: 14px; margin-bottom: 6px; }
+.lsp-slide.three .lsp-slide-box .lsp-tag { font-size: 14px; }
+.lsp-slide.three .lsp-slide-why li { font-size: 15.5px; }
+.lsp-slide.three .lsp-slide-why li small { font-size: 14px; }
+.lsp-journey.compact { gap: 8px; padding: 10px 14px; }
+.lsp-journey.compact .lsp-jgoal { font-size: 14px; }
+.lsp-journey.compact .lsp-jgoal b { font-size: 16px; }
+.lsp-journey.compact .lsp-jn-k { font-size: 12.5px; }
+.lsp-journey.compact .lsp-jn-t, .lsp-journey.compact .lsp-jn-w { font-size: 14.5px; }
+.lsp-journey.compact .lsp-jbanner { font-size: 14px; }
+.lsp-journey.compact .lsp-steps .lsp-st { padding-bottom: 7px; }
+.lsp-journey.compact .lsp-steps .lsp-st-lbl { font-size: 15.5px; }
+.lsp-journey.compact .lsp-steps .lsp-st-badge { font-size: 12.5px; }
+.lsp-journey.compact .lsp-steps .lsp-st-pur { font-size: 14px; }
+.lsp-journey.compact .lsp-steps .lsp-st-now { font-size: 13px; }
