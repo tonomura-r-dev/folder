@@ -98,6 +98,25 @@ PHONE = {39, 40, 41, 42, 43, 44, 45, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57,
 TAGCARD = {32, 33, 34, 35, 36, 37, 38}
 
 
+RICH = ["セミナー予約", "よくある質問", "参加特典", "講師紹介", "受講生の声", "お問い合わせ"]
+
+
+def rich_menu_2x3(s):
+    """スマホ画面のリッチメニューを1×4 → 2×3（6マス）に（1×4の型はないため。殿村さん 2026-10-27）。画面を左へ寄せた後の位置で組む"""
+    bg = sid(s, 55)
+    bg.top, bg.height = Inches(6.25 - 0.93), Inches(0.84)
+    cells = [sid(s, n) for n in (56, 57, 59, 60)]
+    for _ in range(2):
+        e = copy.deepcopy(cells[-1]._element)
+        cells[-1]._element.addnext(e)
+        cells.append(next(sh for sh in s.shapes if sh._element is e))
+    for k, (sh, text) in enumerate(zip(cells, RICH)):
+        sh.left = Inches(3.575 - 2.95 + 0.88 * (k % 3))
+        sh.top = Inches(6.27 - 0.93 + 0.41 * (k // 3))
+        sh.width, sh.height = Inches(0.86), Inches(0.39)
+        set_lines(sh, [text])
+
+
 def page_shindan(prs, f13):
     s = copy_slide(prs, f13)
     remove(s, {3, 5, 7, 9, 58} | PHONE | TAGCARD)
@@ -109,7 +128,7 @@ def page_shindan(prs, f13):
     set_lines(sid(s, 7), ["診断の答えでタグを付け、配信の出し分けに使う"])
     texts = {41: "友だち追加ありがとうございます！参加特典は…", 43: "あてはまる方は？", 44: "一般", 45: "保険営業",
              49: "【8日目】受講生の声", 51: "【今月】次回セミナーのご案内", 52: "日程を教えて", 54: "次回の日程はこちらです→",
-             60: "講師", 33: "タグ・セグメント（例）", 36: "保険営業", 37: "紹介を増やしたい",
+             33: "タグ・セグメント（例）", 36: "保険営業", 37: "紹介を増やしたい",
              }
     for n, t in texts.items():
         set_lines(sid(s, n), [t])
@@ -121,6 +140,7 @@ def page_shindan(prs, f13):
     for n in PHONE:
         sh = sid(s, n)
         sh.left, sh.top = sh.left + dx, sh.top + dy
+    rich_menu_2x3(s)
     tx, ty = Inches(3.6 - 0.42), Inches(4.72 - 5.36)         # タグの図を表の下へ
     for n in TAGCARD:
         sh = sid(s, n)
