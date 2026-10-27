@@ -11,7 +11,7 @@
     注記にオプション（追加する場合 初期＋150,000円・月額＋30,000円〜、サンクスLINE誘導のみの導入も可能）を1行足す
   ・P15 運用内容：「離脱防止・サンクスLINE誘導」→「離脱防止」＋注記「サンクスLINE誘導はオプション」
   ・P17 スケジュール：構築の行から「サンクスLINE誘導」を外し、オプションと書く
-  ・最後（Appendixの後ろ）に、サンクスLINE誘導の機能・費用のページ（提案FMTのS35＝動画のQR付き）を1枚足す
+  ・運用内容（P15）の後ろ＝P16に、サンクスLINE誘導の機能・費用のページ（提案FMTのS35＝動画のQR付き）を1枚足す（本編に置く）
   ほかのページは変えない。
 """
 import copy
@@ -114,7 +114,11 @@ def main(src, fmt_path, out):
     fmt = Presentation(fmt_path)
     s35 = fmt.slides[34]
     assert any(sh.has_text_frame and sh.text_frame.text == "新規友だちの追加（サンクスLINE誘導）" for sh in s35.shapes)
-    copy_slide(prs, s35)                                    # Appendix の後ろ（最後）に足す
+    copy_slide(prs, s35)                                    # 本編の運用内容（P15）の後ろに入れる（殿村さん「Appendixではなく15と16の間に」）
+    lst = prs.slides._sldIdLst
+    new = list(lst)[-1]
+    lst.remove(new)
+    list(lst)[14].addnext(new)
     left = [t.text for sl in prs.slides for t in sl._element.iter(qn("a:t")) if t.text and "サンクスLINE誘導 150,000円" in t.text]
     assert not left, left
     assert len(prs.slides) == 32
