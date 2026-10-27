@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sim_xml import N, build_workbook, get_cell, q, set_n, set_s  # noqa: E402
 
-UNIT = 6000
+UNIT = 20000
 TITLE = "株式会社横浜シミズ御中_LINEOA施策提案【SIM】"
 
 
