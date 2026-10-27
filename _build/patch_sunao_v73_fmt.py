@@ -18,6 +18,7 @@ import sys
 from pptx import Presentation
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.oxml.ns import qn
+from pptx.dml.color import RGBColor
 from pptx.util import Inches
 
 from _build.patch_sunao_v73_haishin import note, table
@@ -71,8 +72,8 @@ def recolor(sh, old, new):
 # ── 1. 前後検索「投資セミナー」（FMT S15） ─────────────────────────
 def page_zengo(prs, f15):
     s = copy_slide(prs, f15)
-    remove(s, {4, 8, 10, 263, 264, 265, 266, 267, 268, 269, 849, 850, 851, 852, 3, 6})
-    set_lines(sid(s, 4), ["前後検索「投資セミナー」"])
+    remove(s, {4, 8, 10, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 849, 850, 851, 852, 3, 6})
+    # FMTの文字（タイトル・「長期検討へ」・札の形）は変えない（殿村さん 2026-10-27「勝手にFMTをいじる」）。変えるのはリード・キーワード・画像・札の中身だけ
     set_lines(sid(s, 10), ["セミナーを探した方は、その日にほかのセミナーと比べて不安を確かめ、",
                            "1〜4日後に始め方を調べる。関心が続く15日間をステップ配信で追う。"])
     set_lines(sid(s, 852), ["投資セミナー"])
@@ -86,10 +87,21 @@ def page_zengo(prs, f15):
     sid(s, 269).left = band.left + Inches(0.21)
     sid(s, 263).left, sid(s, 263).width = Inches(x), band.left - Inches(x) - Inches(0.05)
     sid(s, 264).left, sid(s, 264).width = band.left, Inches(x + w) - band.left
-    for k, (col, text) in enumerate(ZENGO):                 # 右の札＝色分けの3分類
-        rect(s, i(8.82), i(2.02 + 0.36 * k), i(1.85), i(0.3), col, [(text, 10.5, True, WHITE, 0)], align=PP_ALIGN.CENTER,
-             margins=(0.05, 0.0, 0.05, 0.0))
-    set_lines(sid(s, 6), ["16日以降へ", "", "（企画配信で", "再アプローチ）"])
+    for n, (col, text) in zip((270, 271, 272), ZENGO):       # 右の札（FMTの札のまま）＝色分けの3分類
+        sh = sid(s, n)
+        set_lines(sh, [text.split("：")[0]])
+        clr = sh._element.spPr.find(qn("a:solidFill")).find(qn("a:srgbClr"))   # FMTの札と同じ薄い色（透明度80%）＋黒い文字
+        if clr is None:
+            sf = sh._element.spPr.find(qn("a:solidFill"))
+            for ch in list(sf):
+                sf.remove(ch)
+            clr = sf.makeelement(qn("a:srgbClr"), {})
+            sf.append(clr)
+        clr.set("val", col)
+        if clr.find(qn("a:alpha")) is None:
+            clr.append(clr.makeelement(qn("a:alpha"), {"val": "20000"}))
+        for r in sh.text_frame.paragraphs[0].runs:
+            r.font.color.rgb = RGBColor.from_string(INK)
     return s
 
 
