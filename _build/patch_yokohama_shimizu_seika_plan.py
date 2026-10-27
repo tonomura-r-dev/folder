@@ -3,7 +3,7 @@
 
     python -m _build.patch_yokohama_shimizu_seika_plan <殿村さんのPC保存版.pptx> <出力.pptx>
 
-  コンサル版＝既にあるP15（3つのプラン）。成果報酬版＝P15を写して、プラン②・③の2列にする。
+  コンサル版＝既にあるP15（3つのプラン）。成果報酬版＝P15を写して、プラン②・③の月額運用費を成果報酬に（プラン①はコンサル版と同じ）。
   ・初期費用はコンサル版と同じ 295,000円〜
   ・月額運用費の代わりに「成果報酬（応募1件）」：プラン② 6,000円／プラン③ 10,000円
   ・月額ツール・LINE関連費 65,000円〜（SIM②_成果報酬の45行と同じ）
@@ -45,16 +45,14 @@ def main(src, out):
     tshape = next(sh for sh in s.shapes if sh.has_table)
     tb = tshape.table
     assert tb.cell(2, 0).text == "月額運用費"
-    drop_col(tshape, 1)                                       # プラン①（初期設計・構築のみ）は成果報酬にならないので外す
-    for c, w in enumerate((3.0, 3.5, 3.5)):
-        tb.columns[c].width = Inches(w)
+    # プラン①（初期設計・構築のみ）の列もコンサル版と同じ内容で残す（2026-10-27 殿村さん「コンサルと全く同じ内容でいい」）
     cell(tb, 2, 0, "成果報酬\n（応募1件）")
-    cell(tb, 2, 1, "6,000円")
-    cell(tb, 2, 2, "10,000円")
-    cell(tb, 4, 1, "65,000円〜\n＋成果報酬")
+    cell(tb, 2, 2, "6,000円")
+    cell(tb, 2, 3, "10,000円")
     cell(tb, 4, 2, "65,000円〜\n＋成果報酬")
-    assert [tb.cell(1, c).text for c in (1, 2)] == ["295,000円〜"] * 2
-    assert [tb.cell(3, c).text for c in (1, 2)] == ["65,000円〜"] * 2
+    cell(tb, 4, 3, "65,000円〜\n＋成果報酬")
+    assert [tb.cell(1, c).text for c in (1, 2, 3)] == ["295,000円〜"] * 3
+    assert [tb.cell(3, c).text for c in (1, 2, 3)] == ["65,000円〜"] * 3
     set_lines(sid(s, 642).text_frame, ["※成果報酬の対象＝LINEからの新規応募・再応募（再応募は、勤務希望をLINEで受け付ける場合）。契約期間は6か月〜"])
     prs.save(out)
     print("saved:", out)
