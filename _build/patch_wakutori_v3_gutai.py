@@ -65,16 +65,19 @@ RIGHT_Y = [2.03, 3.22, 4.43, 5.66]
 
 
 def flow(s, steps):
-    h, gap, area_top, area_bottom = 0.52, 0.2, 2.95, 6.62     # 行の高さは文字に合わせ、余りは上1/3・下2/3（CLAUDE.md 2026-10-19）
-    used = h * len(steps) + gap * (len(steps) - 1)
-    top = area_top + (area_bottom - area_top - used) / 3
+    """横幅は短く、縦は枠の中をいっぱいに使い、左の枠の中央に置く（2026-10-28 殿村さん）"""
+    box_l, box_w = 0.29, 6.44                                 # 左の大きい枠
+    w, num_w = 4.5, 0.55
+    left = box_l + (box_w - w) / 2
+    top, bottom, gap = 2.98, 6.6, 0.24
+    h = (bottom - top - gap * (len(steps) - 1)) / len(steps)
     for k, step in enumerate(steps):
         y = top + k * (h + gap)
-        rect(s, 0.5 * IN, y * IN, 0.45 * IN, h * IN, NAVY, [(str(k + 1), 13, True, "FFFFFF", 0)], align=PP_ALIGN.CENTER)
-        rect(s, 0.95 * IN, y * IN, 5.6 * IN, h * IN, LIGHT, [(step, 12.5, True, NAVY, 0)], align=PP_ALIGN.LEFT,
-             margins=(0.3, 0.05, 0.2, 0.05))
+        rect(s, left * IN, y * IN, num_w * IN, h * IN, NAVY, [(str(k + 1), 16, True, "FFFFFF", 0)], align=PP_ALIGN.CENTER)
+        rect(s, (left + num_w) * IN, y * IN, (w - num_w) * IN, h * IN, LIGHT, [(step, 15, True, NAVY, 0)],
+             align=PP_ALIGN.LEFT, margins=(0.3, 0.05, 0.2, 0.05))
         if k < len(steps) - 1:
-            rich(s, 0.5 * IN, (y + h - 0.02) * IN, 0.45 * IN, (gap + 0.04) * IN, [[("▼", 8, False, NAVY)]],
+            rich(s, left * IN, (y + h - 0.01) * IN, num_w * IN, (gap + 0.02) * IN, [[("▼", 9, False, NAVY)]],
                  align=PP_ALIGN.CENTER)
 
 
@@ -90,7 +93,7 @@ def main(src, out):
         flow(s, steps)
         for (y, label), text in zip(zip(RIGHT_Y, RIGHT), right):
             rich(s, 6.97 * IN, (y + 0.06) * IN, 3.46 * IN, 1.01 * IN,
-                 [[(label, 12, True, NAVY)], [(text, 10.5, False, INK)]], anchor=MSO_ANCHOR.TOP)
+                 [[(label, 13.5, True, NAVY)], [(text, 12, False, INK)]], anchor=MSO_ANCHOR.TOP)
     prs.save(out)
     print("saved:", out)
 
