@@ -31,7 +31,7 @@ import shutil
 from pathlib import Path
 
 from pptx import Presentation
-from pptx.util import Inches, Pt
+from pptx.util import Inches, Pt, Emu
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 from pptx.enum.dml import MSO_THEME_COLOR, MSO_LINE_DASH_STYLE
@@ -145,6 +145,104 @@ def set_text_with_breaks(shape, text):
         prev.addnext(br)
         br.addnext(r2)
         prev = r2
+
+
+# ---------- 改行の自動調整（2026-10-28 殿村さん指摘：「。」や「）」だけ次の行に落ちて見づらい） ----------
+_BREAK_AFTER = "、。，．）」』】：:／!！?？"
+_BREAK_BEFORE = "（「『【"
+
+
+def _chunks(s):
+    """改行してよい位置で文章を区切る（句読点・閉じ括弧の後、開き括弧の前、空白）。"""
+    out, cur = [], ""
+    for i, c in enumerate(s):
+        if c in _BREAK_BEFORE and cur:
+            out.append(cur)
+            cur = ""
+        cur += c
+        nxt = s[i + 1] if i + 1 < len(s) else ""
+        if c in _BREAK_AFTER and nxt not in _BREAK_AFTER:
+            out.append(cur)
+            cur = ""
+    if cur:
+        out.append(cur)
+    return out
+
+
+def _w(s, pt):
+    return sum((0.6 if ord(c) < 0x2000 else 1.0) for c in s) * pt / 72
+
+
+def _pack(chunks, pt, limit):
+    lines, cur = [], ""
+    for ch in chunks:
+        if cur and _w(cur + ch, pt) > limit:
+            lines.append(cur)
+            cur = ch
+        else:
+            cur += ch
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def balanced_lines(s, pt, width_in, safety=0.9):
+    """1行が width_in×safety に収まり、行の長さがそろうように区切った行のリストを返す。"""
+    limit = width_in * safety
+    if _w(s, pt) <= limit:
+        return [s]
+    chunks = []
+    for ch in _chunks(s):  # 区切りのない長い塊は、均等に近い位置の助詞（直前が漢字・カタカナ）の後ろで切る
+        while _w(ch, pt) > limit:
+            parts = -(-_w(ch, pt) // limit)
+            ideal = len(ch) / parts
+            cands = [k for k in range(2, len(ch) - 1)
+                     if ch[k - 1] in "はがをにでもとのへや" and not ("\u3041" <= ch[k - 2] <= "\u309f")
+                     and ch[k] not in _BREAK_AFTER
+                     and _w(ch[:k], pt) <= limit]
+            k = min(cands, key=lambda k: abs(k - ideal)) if cands else max(1, int(len(ch) * limit / _w(ch, pt)) - 1)
+            chunks.append(ch[:k])
+            ch = ch[k:]
+        chunks.append(ch)
+    n = len(_pack(chunks, pt, limit))
+    target = _w(s, pt) / n
+    while target < limit:
+        lines = _pack(chunks, pt, target)
+        if len(lines) <= n:
+            return lines
+        target += 0.05
+    return _pack(chunks, pt, limit)
+
+
+def apply_smart_breaks(shape, safety=0.9):
+    """カード・テキストボックスの各段落を、区切りのいい位置で改行し直す（手で入れた改行は残す）。"""
+    tf = shape.text_frame
+    usable = Emu(shape.width - tf.margin_left - tf.margin_right).inches
+    for p in tf.paragraphs:
+        if not p.runs:
+            continue
+        r0 = p.runs[0]
+        pt = r0.font.size.pt if r0.font.size else 12
+        segs = p.text.split("\x0b")
+        lines = [ln for seg in segs for ln in balanced_lines(seg, pt, usable, safety)]
+        if lines == segs:
+            continue
+        for r in list(p.runs[1:]):
+            r._r.getparent().remove(r._r)
+        for br in list(p._p.findall(qn("a:br"))):
+            br.getparent().remove(br)
+        r0.text = lines[0]
+        prev = r0._r
+        for ln in lines[1:]:
+            br = prev.makeelement(qn("a:br"), {})
+            rpr = r0._r.find(qn("a:rPr"))
+            if rpr is not None:
+                br.append(copy.deepcopy(rpr))
+            r2 = copy.deepcopy(r0._r)
+            r2.find(qn("a:t")).text = ln
+            prev.addnext(br)
+            br.addnext(r2)
+            prev = r2
 
 
 def set_multiline_text(shape, lines):
