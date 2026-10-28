@@ -4,6 +4,8 @@
 import type { Decision, FlowNode, Id, NarrationDef, Trace, UserState } from '../../engine/src/index.ts';
 import { upcoming } from './controller.ts';
 import { describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
+import { nextAction } from './journey.ts';
+import { flowConditions, nextOwn, userHistoryHtml } from './timeline.ts';
 import { esc, type Tab, type View } from './view.ts';
 
 // ---------- 説明カード ----------
@@ -49,30 +51,43 @@ const FLOW_STATUS = { running: '実行中', waiting: '待機中', ended: '終了
 function stateTab(v: View, user: UserState): string {
   const L = v.L;
   const tags = Object.entries(user.tags);
-  const answers = Object.entries(user.answers).flatMap(([sv, qs]) => Object.entries(qs).map(([q, ids]) => `${esc(L.questionText(sv, q))}：<b>${esc(L.choices(sv, q, ids))}</b>`));
+  const answers = Object.entries(user.answers).flatMap(([sv, qs]) => Object.entries(qs).map(([q, ids]) => `<li><span>${esc(L.questionText(sv, q))}</span><b>${esc(L.choices(sv, q, ids))}</b></li>`));
   const attrs = Object.entries(user.attrs);
-  const flows = v.project.flows
-    .map((f) => ({ f, c: user.flows[f.id] }))
-    .filter((x) => x.c)
+  const plans = upcoming(v.world, user.id);
+  const nextPlan = nextOwn(v, user) ?? nextAction(v.project, v.world, v.demo, user, L);
+  const cvs = Object.entries(user.cvs);
+  const active = v.project.flows.map((f) => ({ f, c: user.flows[f.id] })).filter((x) => x.c && (x.c.status === 'running' || x.c.status === 'waiting'));
+  const done = v.project.flows.map((f) => ({ f, c: user.flows[f.id] })).filter((x) => x.c && (x.c.status === 'ended' || x.c.status === 'stopped'));
+  const activeHtml = active
     .map(({ f, c }) => {
-      const next = upcoming(v.world, user.id).find((t) => t.flowId === f.id);
-      return `<li><span class="lsp-pill s-${c!.status}">${FLOW_STATUS[c!.status]}</span><span>${esc(f.label)}${
-        c!.status === 'waiting' || c!.status === 'running' ? `<span class="f">いま：${esc(nodeLabel(v, f.id, c!.nodeId))}${next ? `　次：${esc(fmtTime(next.fireAt))}` : ''}</span>` : ''
-      }</span></li>`;
+      const next = plans.find((t) => t.flowId === f.id);
+      const cond = flowConditions(v.project, L, f.id);
+      return `<li class="lsp-fl"><div class="lsp-fl-h"><span class="lsp-pill s-${c!.status}">${FLOW_STATUS[c!.status]}</span><b>${esc(f.label)}</b></div>
+        <dl class="lsp-fl-kv"><dt>いま</dt><dd>${esc(nodeLabel(v, f.id, c!.nodeId))}</dd>${next ? `<dt>次回</dt><dd class="strong">${esc(fmtTime(next.fireAt))}</dd>` : ''}<dt>配信条件</dt><dd>${esc(cond.trigger)}</dd>${
+          cond.stop ? `<dt>停止条件</dt><dd>${esc(cond.stop)}</dd>` : ''
+        }</dl></li>`;
+    })
+    .join('');
+  const doneHtml = done
+    .map(({ f, c }) => {
+      const stop = c!.status === 'stopped' ? [...v.world.decisions].reverse().find((d) => d.userId === user.id && d.kind === 'stopWhen' && d.flowId === f.id) : undefined;
+      const why = stop ? explainDecision(stop, L, v.project).reason : '';
+      return `<li><span class="lsp-pill s-${c!.status}">${FLOW_STATUS[c!.status]}</span><span>${esc(f.label)}${c!.endedAt !== undefined ? `<span class="f">${esc(fmtTime(c!.endedAt))}${why ? `　${esc(why)}` : ''}</span>` : ''}</span></li>`;
     })
     .join('');
   const cvButtons = v.project.cvs.map((c) => `<button type="button" data-act="cv" data-cv="${esc(c.id)}">「${esc(c.label)}」したことにする</button>`).join('');
   return `
-    <dl class="lsp-kv">
-      <dt>友だち</dt><dd>${esc(friendText(user.friendState))}</dd>
-      <dt>経路</dt><dd>${esc(L.route(user.route))}</dd>
-      <dt>CV</dt><dd>${Object.keys(user.cvs).length ? Object.entries(user.cvs).map(([id, x]) => `${esc(L.cv(id))}×${x.count}（${esc(fmtTime(x.at))}）`).join('、') : '<span class="lsp-none">なし</span>'}</dd>
-      ${attrs.length ? `<dt>属性</dt><dd>${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</dd>` : ''}
-    </dl>
-    <h4>タグ</h4>${tags.length ? `<div class="lsp-tags">${tags.map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`).join('')}</div>` : '<div class="lsp-none">なし</div>'}
-    <h4>アンケートの回答</h4>${answers.length ? `<div class="lsp-answers">${answers.join('<br>')}</div>` : '<div class="lsp-none">まだ回答していません</div>'}
-    <h4>シナリオの進み具合</h4>${flows ? `<ul class="lsp-flows">${flows}</ul>` : '<div class="lsp-none">まだどのシナリオにも入っていません</div>'}
-    <h4>出来事を起こす</h4><div class="lsp-ctrls">${cvButtons}${
+    <div class="lsp-tiles">
+      <div class="lsp-tile ${user.friendState === 'friend' ? 'ok' : user.friendState === 'blocked' ? 'ng' : ''}"><span class="k">友だち</span><b>${esc(friendText(user.friendState))}</b><small>${esc(L.route(user.route))}</small></div>
+      <div class="lsp-tile ${cvs.length ? 'ok' : ''}"><span class="k">CV</span><b>${cvs.length ? cvs.map(([id]) => esc(L.cv(id))).join('・') : 'まだ'}</b><small>${cvs.length ? esc(fmtTime(Math.max(...cvs.map(([, x]) => x.at)))) : 'CV前'}</small></div>
+      <div class="lsp-tile next"><span class="k">次回配信</span><b>${esc(nextPlan.when ?? '予定なし')}</b><small>${esc(nextPlan.what)}</small></div>
+    </div>
+    <h4>タグ（${tags.length}）</h4>${tags.length ? `<div class="lsp-tags">${tags.map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`).join('')}</div>` : '<div class="lsp-none">なし</div>'}
+    <h4>アンケートの回答</h4>${answers.length ? `<ul class="lsp-answers">${answers.join('')}</ul>` : '<div class="lsp-none">まだ回答していません</div>'}
+    ${attrs.length ? `<h4>属性</h4><div class="lsp-answers">${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</div>` : ''}
+    <h4>実行中のシナリオ（${active.length}）</h4>${activeHtml ? `<ul class="lsp-flows act">${activeHtml}</ul>` : '<div class="lsp-none">実行中のシナリオはありません</div>'}
+    ${doneHtml ? `<details class="lsp-done"><summary>終了・停止したシナリオ（${done.length}）</summary><ul class="lsp-flows">${doneHtml}</ul></details>` : ''}
+    <h4>出来事を起こす（店舗・管理画面側の操作）</h4><div class="lsp-ctrls">${cvButtons}${
       user.friendState === 'friend' ? '<button type="button" data-act="block">ブロックする</button>' : user.friendState === 'blocked' ? '<button type="button" data-act="unblock">ブロックを解除</button>' : ''
     }</div>`;
 }
@@ -196,13 +211,14 @@ function matrixTab(v: View): string {
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'state', label: 'いまの状態' },
+  { id: 'events', label: '出来事' },
   { id: 'why', label: 'なぜ' },
   { id: 'log', label: '配信履歴' },
   { id: 'matrix', label: '誰に届く？' },
 ];
 
 export function backstage(v: View, user: UserState): string {
-  const body = v.ui.tab === 'state' ? stateTab(v, user) : v.ui.tab === 'why' ? whyTab(v, user) : v.ui.tab === 'log' ? logTab(v, user) : matrixTab(v);
+  const body = v.ui.tab === 'state' ? stateTab(v, user) : v.ui.tab === 'events' ? `<div class="lsp-hint top">この人に起きたこと（新しい順）。行を押すと裏側の処理をすべて表示します。</div>${userHistoryHtml(v, user)}` : v.ui.tab === 'why' ? whyTab(v, user) : v.ui.tab === 'log' ? logTab(v, user) : matrixTab(v);
   return `<div class="lsp-side">
     ${narrationCard(v, user)}
     <div class="lsp-card-side lsp-tabs-card">

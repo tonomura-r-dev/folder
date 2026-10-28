@@ -7,7 +7,7 @@ import type { Labels } from './describe.ts';
 
 /** three = ①画面・②裏側・③CVまでの道筋／full = 画面＋裏側／phone = 画面のみ／slide・slide3 = 資料用16:9（2画面・3画面） */
 export type Mode = 'three' | 'full' | 'phone' | 'slide' | 'slide3';
-export type Tab = 'state' | 'why' | 'log' | 'matrix';
+export type Tab = 'state' | 'events' | 'why' | 'log' | 'matrix';
 
 /** 画面だけが持つ状態（イベントには入らない） */
 export type Ui = {
@@ -30,6 +30,11 @@ export type Ui = {
   fcOpen: { step: Id; variant?: Id; option?: Id } | null;
   /** はじめての人向けの「使い方」を出すか（既定は出す） */
   help?: boolean;
+  /** ③の時系列：全員かこの人だけか・開いている行・予定も出すか・細かい判定も出すか */
+  tlFilter?: 'all' | 'me';
+  tlOpen?: Set<string>;
+  tlFuture?: boolean;
+  tlMinor?: boolean;
 };
 
 export type View = {

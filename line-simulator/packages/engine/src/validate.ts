@@ -180,6 +180,10 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     need(richMenus.has(project.settings.defaultRichMenuId), '/settings/defaultRichMenuId', 'richMenu', project.settings.defaultRichMenuId);
   const endDay = project.settings.demoEndDay;
   if (endDay !== undefined && (!Number.isInteger(endDay) || endDay < 1 || endDay > 365)) err('node.requiredMissing', '/settings/demoEndDay');
+  (project.settings.demoEntries ?? []).forEach((e, i) => {
+    need(project.webPages.some((w) => w.id === e.pageId), `/settings/demoEntries/${i}/pageId`, 'page', e.pageId);
+    if (!e.label.trim()) err('node.requiredMissing', `/settings/demoEntries/${i}/label`);
+  });
   const start = project.settings.demoStart;
   if (start) {
     if (start.mode !== 'single' && start.mode !== 'scripted') err('node.requiredMissing', '/settings/demoStart/mode');

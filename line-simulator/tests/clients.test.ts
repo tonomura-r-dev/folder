@@ -9,6 +9,8 @@ import type { InputEventBody, Project, UserState, WorldState } from '../packages
 import { personaCoverage, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { allScripted, autoStep, dispatch, newDemo, seek, worldOf, type Demo } from '../packages/player/src/controller.ts';
 import { journeyOf } from '../packages/player/src/journey.ts';
+import { Labels } from '../packages/player/src/describe.ts';
+import { buildTimeline } from '../packages/player/src/timeline.ts';
 import { buildExport } from '../tools/export-lib.ts';
 import { loadProject } from '../tools/project-io.ts';
 import { DAY } from './helpers.ts';
@@ -134,6 +136,45 @@ describe.skipIf(!has('client-a-house'))('企業別デモ①（注文住宅・来
     const lines = chatLines(user(w, 'p_consider'));
     const i = lines.indexOf('公式：家づくりは、いまどの段階ですか？');
     expect(lines.slice(i, i + 4)).toEqual(['公式：家づくりは、いまどの段階ですか？', 'ユーザー：情報収集を始めた', '公式：平屋と2階建て、どちらをお考えですか？', 'ユーザー：平屋']);
+  });
+
+  it('簡易診断に全問答えた人にだけ、お礼を1回送る（来場予約済みは文面を変える／途中・期限切れ・ステップ配信には影響しない）', () => {
+    const thanks = (id: string) => ids(w, id).filter((m) => m === 'msg_diag_thanks' || m === 'msg_diag_thanks_res');
+    for (const id of ['p_consider', 'p_cost', 'p_doc', 'p_doc_wait', 'p_plan']) expect(thanks(id), id).toEqual(['msg_diag_thanks']);
+    expect(thanks('p_reserved')).toEqual(['msg_diag_thanks_res']);
+    // 答えなかった人（期限切れ）には送らない
+    expect(thanks('p_block')).toEqual([]);
+    // お礼は最後の回答の直後で、そのあとに質問は出ない
+    const lines = chatLines(user(w, 'p_consider'));
+    expect(lines[lines.indexOf('ユーザー：平屋') + 1]).toBe('公式：ご回答ありがとうございます！');
+    // 1問目だけで止めた人にも送らない
+    let d = dispatch(newDemo(p, 'p_consider'), { type: 'addFriend', routeId: 'route_popup' });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: p.surveys[0]!.questions[0]!.id, choiceIds: [p.surveys[0]!.questions[0]!.choices[0]!.id] });
+    d = seek(d, d.now + 2 * DAY);
+    expect(me(p, d).deliveries.some((x) => x.messageId === 'msg_diag_thanks')).toBe(false);
+  });
+
+  it('はじめかたの入口は3つ（Webサイト・資料請求・来場予約）。詳細ページはデータに残り、配信やCTAから開ける', () => {
+    expect(p.settings.demoEntries?.map((e) => [e.label, e.pageId])).toEqual([
+      ['Webサイトから開始', 'page_lp'],
+      ['資料請求から開始', 'page_doc'],
+      ['来場予約から開始', 'page_reserve'],
+    ]);
+    for (const id of ['page_cases', 'page_tour', 'page_loan', 'page_plans']) expect(p.webPages.some((x) => x.id === id)).toBe(true);
+  });
+
+  it('7人全員について、Day0 から最後までの出来事が③の時系列に出る（表側・裏側の両方）', () => {
+    const d = seek(allScripted(p), 35 * DAY);
+    const tl = buildTimeline(p, new Labels(p), worldOf(p, d), d.session.users.map((u) => u.id)).filter((e) => !e.minor);
+    expect(new Set(tl.map((e) => e.userId)).size).toBe(7);
+    for (const u of d.session.users) {
+      const mine = tl.filter((e) => e.userId === u.id);
+      expect(mine[0]!.at, u.personaId).toBeLessThan(DAY);
+      expect(mine.some((e) => e.back.length > 0)).toBe(true);
+    }
+    // 予約で止まる・ブロックで届かない、も出来事として出る
+    expect(tl.some((e) => e.back.some((x) => x.includes('を停止')))).toBe(true);
+    expect(tl.some((e) => e.kind === 'stop' && e.back.some((x) => x.includes('ブロックしている')))).toBe(true);
   });
 
   it('14日間・全5通は変えず、15日目以降は未予約者だけに関心別のフォロー（16日後・22日後）と29日後の案内', () => {

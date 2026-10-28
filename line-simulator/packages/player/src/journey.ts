@@ -9,6 +9,7 @@ import { bubbleTexts, renderBubble } from '../../engine/src/text.ts';
 import { pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeFailure, describeTrigger, explainDecision, fmtDuration, fmtTime, type Labels } from './describe.ts';
 import { previewBubble } from './phone.ts';
+import { guideHtml, guideOf, timelineHtml } from './timeline.ts';
 import { esc, type View } from './view.ts';
 
 export type StepStatus = 'done' | 'current' | 'skipped' | 'todo';
@@ -310,35 +311,69 @@ function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {
   return html + gap();
 }
 
-/** ③の本体。compact は資料用16:9（文面のさわりと候補の中身は出さず、枠に収まるよう縮める） */
+/** 資料用16:9の③：フローチャートを縮めず、現在地の前後とGOALだけを1行ずつ並べる */
+function stripHtml(v: View, rows: JourneyRow[]): string {
+  const cur = rows.findIndex((r) => r.status === 'current');
+  const goal = rows.findIndex((r) => r.isGoal);
+  const pick = new Set<number>([Math.max(0, cur - 1), cur, cur + 1, goal].filter((i) => i >= 0 && i < rows.length));
+  const out: string[] = [];
+  let last = -1;
+  for (const i of [...pick].sort((a, b) => a - b)) {
+    if (last >= 0 && i > last + 1) out.push(`<li class="gap">⋮ ${i - last - 1}段</li>`);
+    const r = rows[i]!;
+    const variant = r.step.variants?.find((x) => x.id === (r.variantId ?? r.traversed.at(-1)));
+    const name = variant ? `${r.step.label}：${variant.title ?? variant.label}` : r.step.label;
+    const mark = r.status === 'current' ? '●' : r.status === 'done' ? '✓' : r.status === 'skipped' ? '－' : '○';
+    out.push(`<li class="${r.status}${r.isGoal ? ' goal' : ''}${r.isStart ? ' start' : ''}"><span class="m">${mark}</span><span class="n">${esc(name)}</span>${r.status === 'current' ? '<span class="lsp-fc-here">現在ここ</span>' : r.isGoal ? '<span class="g">GOAL</span>' : ''}</li>`);
+    last = i;
+  }
+  void v;
+  return `<ol class="lsp-strip">${out.join('')}</ol>`;
+}
+
+/** ③の上：選んでいる人の現在地（いまの段階・CVの状況・次にすること・この人の次の予定） */
+function whereHtml(v: View, user: UserState, rows: JourneyRow[], compact: boolean): string {
+  const goal = rows.find((r) => r.isGoal);
+  const goalAt = goal?.step.cvId ? user.cvs[goal.step.cvId]?.at : undefined;
+  const ci = rows.findIndex((r) => r.status === 'current');
+  const stage = ci >= 0 ? `${rows[ci]!.step.label}` : user.friendState === 'not_friend' ? 'まだ友だちになっていません' : '—';
+  const cv =
+    goalAt !== undefined
+      ? `<span class="lsp-wh-cv ok">✓ ゴール「${esc(goal!.step.label)}」達成（${esc(fmtTime(goalAt))}）</span>`
+      : goal
+        ? `<span class="lsp-wh-cv">ゴール「${esc(goal.step.label)}」まで${ci >= 0 ? `あと${Math.max(0, rows.indexOf(goal) - ci)}段` : ''}</span>`
+        : '';
+  // 次の予定は「次にすること」の文に入るので、ここでは出さない（上に残るカードを低く保つ）
+  return `<div class="lsp-where">
+    <div class="lsp-wh-top"><span class="lsp-wh-who">${esc(user.name)}</span>${v.demo.scripted.includes(user.id) ? '<span class="lsp-wh-badge">台本</span>' : '<span class="lsp-wh-badge manual">手で操作</span>'}${cv}</div>
+    <div class="lsp-wh-stage"><span class="k">現在地</span><b>${esc(stage)}</b>${ci >= 0 && rows.length ? `<small>${ci + 1} / ${rows.length} 段目</small>` : ''}</div>
+    ${guideHtml(guideOf(v, user))}
+  </div>`;
+}
+
+/** ③の本体：上＝現在地と次にすること／中＝CVまでのフロー／下＝全ユーザーの時系列。compact は資料用16:9 */
 export function journeyPane(v: View, user: UserState, compact = false): string {
   const { auto } = journeySteps(v.project);
   const rows = journeyOf(v.project, v.world, user);
-  const next = nextAction(v.project, v.world, v.demo, user, v.L);
-  const goal = rows.find((r) => r.isGoal);
-  const reachedGoal = goal && (goal.status === 'current' || goal.status === 'done');
-  const banner =
-    user.friendState === 'blocked'
-      ? '<div class="lsp-jbanner ng">ブロック中：この先の配信は届きません</div>'
-      : reachedGoal
-        ? `<div class="lsp-jbanner ok">ゴール「${esc(goal!.step.label)}」に到達しました</div>`
-        : '';
   const z = v.ui.fcZoom;
   const tools = compact
     ? ''
     : `<div class="lsp-fc-tools"><span class="lsp-group"><button type="button" data-act="fcZoom" data-z="out" aria-label="縮小">−</button><span class="lsp-fc-z">${Math.round(z * 100)}%</span><button type="button" data-act="fcZoom" data-z="in" aria-label="拡大">＋</button><button type="button" data-act="fcZoom" data-z="fit">幅に合わせる</button></span><label class="lsp-check"><input type="checkbox" data-change="fcOptions"${v.ui.fcOptions ? ' checked' : ''}> 追加候補を表示</label></div>`;
-  const legend = `<div class="lsp-fc-legend"><span><b class="solid"></b>採用施策</span><span><b class="dash"></b>追加候補（未採用・表示のみ）</span>${(Object.keys(FEASIBILITY) as Feasibility[])
+  const legend = `<div class="lsp-fc-legend"><span><b class="solid on"></b>通過済み</span><span><b class="solid"></b>未通過</span><span><b class="solid off"></b>通らず・別ルート</span><span><b class="dash"></b>追加候補（未採用）</span>${(Object.keys(FEASIBILITY) as Feasibility[])
     .map((k) => `<span>${FEASIBILITY[k].mark} ${FEASIBILITY[k].text}</span>`)
     .join('')}</div>`;
+  const chart = compact && rows.length ? stripHtml(v, rows) : rows.length ? `<div class="lsp-fc-scroll"><div class="lsp-fc" style="zoom:${compact ? 1 : z}">${chartHtml(v, rows, compact)}</div></div>` : '<div class="lsp-none">シナリオがありません</div>';
   return `<div class="lsp-journey${compact ? ' compact' : ''}">
-    ${goal ? `<div class="lsp-jgoal">ゴール：<b>${esc(goal.step.label)}</b></div>` : ''}
-    ${banner}
-    <div class="lsp-jnext"><span class="lsp-jn-k">次に起きること</span>${next.when ? `<span class="lsp-jn-t">${esc(next.when)}</span>` : ''}<span class="lsp-jn-w">${esc(next.what)}</span></div>
-    ${tools}
-    ${rows.length ? `<div class="lsp-fc-scroll"><div class="lsp-fc" style="zoom:${compact ? 1 : z}">${chartHtml(v, rows, compact)}</div></div>` : '<div class="lsp-none">シナリオがありません</div>'}
-    ${user.friendState === 'not_friend' && !compact ? '<div class="lsp-hint">友だち追加すると、いまいる場所に「現在ここ」が出ます。</div>' : ''}
-    ${compact ? '' : legend}
-    ${auto && !compact ? '<div class="lsp-hint">シナリオの一覧から自動で並べた簡易表示です。案件の「CVまでの道筋」で、START・分岐・施策名・GOAL・説明を設定できます。</div>' : ''}
+    ${whereHtml(v, user, rows, compact)}
+    <div class="lsp-jsec flow">
+      ${compact ? '' : '<div class="lsp-jsec-h">CVまでのフロー<small>箱を押すと文面・タイミング・対象を表示</small></div>'}
+      ${tools}
+      ${chart}
+      ${user.friendState === 'not_friend' && !compact ? '<div class="lsp-hint">友だち追加すると、いまいる場所に「現在ここ」が出ます。</div>' : ''}
+      ${compact ? '' : legend}
+      ${auto && !compact ? '<div class="lsp-hint">シナリオの一覧から自動で並べた簡易表示です。案件の「CVまでの道筋」で、START・分岐・施策名・GOAL・説明を設定できます。</div>' : ''}
+    </div>
+    ${timelineHtml(v, compact)}
   </div>`;
 }
 

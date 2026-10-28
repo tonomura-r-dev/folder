@@ -6,7 +6,7 @@
 //   - 表示は毎回「イベント列 → reduce → 状態」から作り直す
 //   - 案件の文字は必ず esc() を通す
 
-import type { Asset, Id, InputEventBody, Project } from '../../engine/src/index.ts';
+import type { Asset, Id, InputEventBody, Project, UserState } from '../../engine/src/index.ts';
 import { MINUTES_PER_DAY } from '../../engine/src/index.ts';
 import { backstage } from './backstage.ts';
 import {
@@ -30,6 +30,7 @@ import {
 import { fmtTime, Labels } from './describe.ts';
 import { fcDialog, journeyPane } from './journey.ts';
 import { phone } from './phone.ts';
+import { guideOf, summaryAt } from './timeline.ts';
 import { SLIDE_H, SLIDE_W, slide, slide3 } from './slide.ts';
 import { esc, pane, type Mode, type Tab, type Ui, type View } from './view.ts';
 
@@ -83,13 +84,15 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     if (resumeWhenAnswered && view && pendingInputs(project, view.world, demo).length === 0) startPlay();
   };
 
-  /** 時間を動かす操作。再生中なら止める */
-  const moveTime = (to: number) => {
+  /** 時間を動かす操作。再生中なら止める。tell なら、その時刻に誰に何が起きたかを知らせる（①②の人は切り替えない） */
+  const moveTime = (to: number, tell = false) => {
     stopTimer();
     ui.playing = false;
     ui.status = '';
     resumeWhenAnswered = false;
-    commit(seek(demo, to));
+    demo = seek(demo, to);
+    if (tell) ui.status = summaryAt({ project, world: worldOf(project, demo), demo, ui, L: new Labels(project), assetUrl }, to);
+    commit(demo);
   };
 
   // ---------- 自動再生 ----------
@@ -118,11 +121,15 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   function tick() {
     const r = autoStep(project, demo);
     if (r.stopped === 'pending' && r.pending) {
+      // 回答を待っている人に①②を勝手に切り替えない。選ぶのは営業担当
       const name = view?.world.users[r.pending.userId]?.name ?? '';
-      demo = selectUser(demo, r.pending.userId);
-      opts.onChange?.(demo);
+      const what = r.pending.kind === 'survey' ? 'アンケートの回答' : 'ボタン選択';
       resumeWhenAnswered = true;
-      pause(`${name}の${r.pending.kind === 'survey' ? 'アンケートの回答' : 'ボタン選択'}を待っています。スマホで答えると再生を続けます`);
+      pause(
+        r.pending.userId === demo.activeUserId
+          ? `${name}の${what}を待っています。①で答えると再生を続けます`
+          : `${name}の${what}を待っています。上のユーザー一覧で「${name}」を選んで答えると、再生を続けます`,
+      );
       return;
     }
     commit(r.demo);
@@ -210,12 +217,53 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       body = `<div class="lsp-stage three">${pane(1, 'ユーザーが見る画面', phone(view, user))}${pane(2, '裏側の処理', backstage(view, user))}${pane(3, 'CVまでの道筋', journeyPane(view, user))}</div>`;
     else body = `<div class="lsp-stage ${ui.mode}">${phone(view, user)}${ui.mode === 'full' ? backstage(view, user) : ''}</div>`;
     root.innerHTML = bar(view) + body + (user ? fcDialog(view, user) : '');
+    root.style.setProperty('--lsp-bar-h', `${root.querySelector<HTMLElement>('.lsp-bar')?.offsetHeight ?? 0}px`);
 
     const scroller = root.querySelector<HTMLElement>('.lsp-chat');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
     fitSlide();
     fitChart();
     centerHere();
+    fitTimeline();
+    showNow(tlScroll);
+    tlScroll = null;
+    if (user) highlight(view, user);
+  }
+
+  /** 3画面の③：ページを下まで送ったとき、上に残る現在地カードの下に時系列が収まる高さにする */
+  function fitTimeline() {
+    const list = root.querySelector<HTMLElement>('.lsp-stage.three .lsp-tl-scroll');
+    const tl = list?.closest<HTMLElement>('.lsp-tl');
+    const where = root.querySelector<HTMLElement>('.lsp-stage.three .lsp-where');
+    if (!list || !tl || !where) return;
+    let sc: HTMLElement | null = root.parentElement;
+    while (sc && !(/(auto|scroll)/.test(getComputedStyle(sc).overflowY) && sc.clientHeight < sc.scrollHeight)) sc = sc.parentElement;
+    const viewH = sc ? sc.clientHeight : window.innerHeight;
+    const barH = root.querySelector<HTMLElement>('.lsp-bar')?.offsetHeight ?? 0;
+    const head = tl.offsetHeight - list.offsetHeight;
+    list.style.maxHeight = `${Math.max(240, viewH - barH - where.offsetHeight - head - 28)}px`;
+  }
+
+  /** ③の時系列を「いま」の線が見える位置へ（行を開いた・絞り込んだときは位置を保つ） */
+  let tlScroll: number | null = null;
+  function showNow(keep: number | null) {
+    const box = root.querySelector<HTMLElement>('.lsp-tl-scroll');
+    const line = box?.querySelector<HTMLElement>('#lsp-tl-now');
+    if (!box) return;
+    if (keep !== null) {
+      box.scrollTop = keep;
+      return;
+    }
+    if (!line) return;
+    const top = line.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    box.scrollTop = Math.max(0, top - box.clientHeight * 0.6);
+  }
+
+  /** 「次にすること」が指している①のボタン等を光らせる */
+  function highlight(v: View, user: UserState) {
+    const target = guideOf(v, user).target;
+    if (!target) return;
+    for (const el of root.querySelectorAll<HTMLElement>(`.lsp-phone ${target}`)) el.classList.add('lsp-hl');
   }
 
   /** 3画面の③で、「現在ここ」の箱が見える位置までスクロールする */
@@ -325,13 +373,13 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       // 時間
       case 'next': {
         const t = world ? nextStop(world, demo) : null;
-        if (t !== null) moveTime(t);
+        if (t !== null) moveTime(t, true);
         else pause('この先に起きることはありません');
         return;
       }
       case 'prev': {
         const t = world ? prevStop(world, demo) : null;
-        if (t !== null) moveTime(t);
+        if (t !== null) moveTime(t, true);
         return;
       }
       case 'adv':
@@ -382,6 +430,18 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       case 'help':
         ui.help = !ui.help;
         return render();
+      // ③の時系列
+      case 'tlOpen': {
+        const key = d['key'] ?? '';
+        const open = (ui.tlOpen ??= new Set());
+        if (open.has(key)) open.delete(key);
+        else open.add(key);
+        tlScroll = root.querySelector<HTMLElement>('.lsp-tl-scroll')?.scrollTop ?? null;
+        return render();
+      }
+      case 'tlFilter':
+        ui.tlFilter = d['filter'] === 'me' ? 'me' : 'all';
+        return render();
       case 'toggleWhy': {
         const i = Number(d['i']);
         if (ui.open.has(i)) ui.open.delete(i);
@@ -416,6 +476,10 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     }
     if (el.dataset['change'] === 'fcOptions') {
       ui.fcOptions = (el as HTMLInputElement).checked;
+      return render();
+    }
+    if (el.dataset['change'] === 'tlFuture' || el.dataset['change'] === 'tlMinor') {
+      ui[el.dataset['change']] = (el as HTMLInputElement).checked;
       return render();
     }
     if (el.dataset['change'] === 'onlyNg') {

@@ -190,13 +190,33 @@ function page(v: View, user: UserState, p: WebPage, popup: boolean): string {
 
 function start(v: View): string {
   const pages = v.project.webPages.filter((p) => p.kind !== 'thanks');
+  const entries = (v.project.settings.demoEntries ?? []).filter((e) => v.project.webPages.some((p) => p.id === e.pageId));
+  const pageBtn = (p: WebPage) => `<button type="button" data-act="visit" data-page="${esc(p.id)}">${esc(p.title)}<small>${esc(p.url ?? '')}</small></button>`;
+  const routes = v.project.routes.map((r) => `<button type="button" class="line" data-act="addFriend" data-route="${esc(r.id)}">友だち追加する<small>経路：${esc(r.label)}</small></button>`).join('');
+  if (entries.length) {
+    // 営業デモの入口は案件で決めた数個だけ。ほかのページ・経路は消さずに折りたたむ
+    const main = entries
+      .map((e, i) => `<button type="button" data-act="visit" data-page="${esc(e.pageId)}"><span class="no">${i + 1}</span>${esc(e.label)}<small>${esc(v.L.page(e.pageId))}</small></button>`)
+      .join('');
+    const rest = pages.filter((p) => !entries.some((e) => e.pageId === p.id));
+    return `<div class="lsp-start">
+    <div class="lsp-start-title">はじめかたを選ぶ</div>
+    <div class="lsp-start-sub">この人が、どこからやって来るかを選んでください。</div>
+    <div class="lsp-start-main">${main}</div>
+    <details class="lsp-start-more"><summary>ほかのページ・経路から始める（${rest.length + v.project.routes.length}件）</summary>
+      ${rest.length ? '<div class="lsp-start-group">Webサイトの各ページ</div>' : ''}${rest.map(pageBtn).join('')}
+      ${routes ? `<div class="lsp-start-group">LINEで直接友だち追加</div>${routes}` : ''}
+    </details>
+  </div>`;
+  }
   return `<div class="lsp-start">
     <div class="lsp-start-title">はじめかたを選ぶ</div>
     <div class="lsp-start-sub">この人が、どこからやって来るかを選んでください。</div>
+    <div class="lsp-start-main">
     ${pages.length ? '<div class="lsp-start-group">Webサイトから</div>' : ''}
-    ${pages.map((p) => `<button type="button" data-act="visit" data-page="${esc(p.id)}">${esc(p.title)}<small>${esc(p.url ?? '')}</small></button>`).join('')}
-    ${v.project.routes.length ? '<div class="lsp-start-group">LINEで直接友だち追加</div>' : ''}
-    ${v.project.routes.map((r) => `<button type="button" class="line" data-act="addFriend" data-route="${esc(r.id)}">友だち追加する<small>経路：${esc(r.label)}</small></button>`).join('')}
+    ${pages.map(pageBtn).join('')}
+    ${routes ? `<div class="lsp-start-group">LINEで直接友だち追加</div>${routes}` : ''}
+    </div>
   </div>`;
 }
 

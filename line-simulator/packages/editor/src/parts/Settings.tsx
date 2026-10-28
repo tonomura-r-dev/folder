@@ -87,6 +87,40 @@ export function Settings() {
         <div className="muted small" style={{ marginTop: 6 }}>
           デモ画面の「初期化」や、開き直したときもこの状態から始まります。台本つきで始めると「▶ 自動再生」ですぐに流せます。
         </div>
+        <h3 style={{ marginTop: 16 }}>はじめかたに大きく出す入口</h3>
+        <div className="muted small" style={{ marginBottom: 6 }}>
+          指定すると、スマホの「はじめかた」にはこの入口だけを大きく出し、ほかのページ・友だち追加の経路は「ほかのページ・経路から始める」に折りたたみます（ページ自体は消えません）。空なら全ページを並べます。
+        </div>
+        {(p.settings.demoEntries ?? []).map((e, i) => (
+          <div className="fields" key={i}>
+            <Field label={`入口${i + 1}の名前`} issues={issuesAt(issues, `/settings/demoEntries/${i}`)}>
+              <Text value={e.label} onChange={(v) => update((d) => (d.settings.demoEntries![i]!.label = v))} />
+            </Field>
+            <Field label="開くページ">
+              <Select
+                value={e.pageId}
+                options={p.webPages.map((w) => ({ value: w.id, label: w.title }))}
+                onChange={(pageId) => update((d) => (d.settings.demoEntries![i]!.pageId = pageId))}
+              />
+            </Field>
+            <button
+              type="button"
+              onClick={() =>
+                update((d) => {
+                  d.settings.demoEntries!.splice(i, 1);
+                  if (!d.settings.demoEntries!.length) delete d.settings.demoEntries;
+                })
+              }
+            >
+              外す
+            </button>
+          </div>
+        ))}
+        {p.webPages.length > 0 && (
+          <button type="button" onClick={() => update((d) => (d.settings.demoEntries = [...(d.settings.demoEntries ?? []), { pageId: p.webPages[0]!.id, label: 'Webサイトから開始' }]))}>
+            ＋ 入口を追加
+          </button>
+        )}
       </div>
 
       <Images />

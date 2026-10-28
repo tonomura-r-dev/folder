@@ -45,6 +45,8 @@ export type Project = {
     demoStart?: { mode: 'single' | 'scripted'; personaId?: Id };
     /** 自動再生で最後まで流す日数（既定 30）。30日より先の配信（休眠掘り起こし等）を見せたい案件で延ばす */
     demoEndDay?: number;
+    /** デモの「はじめかた」に大きく出す入口（Webページ）。無ければ全ページを並べる。ほかのページ・経路は折りたたみに残す */
+    demoEntries?: { pageId: Id; label: string }[];
     labels?: Record<string, string>;
   };
   assets: Asset[];

@@ -452,3 +452,214 @@
 .lsp-journey.compact .lsp-fc-optcount { display: none; }
 .lsp-journey.compact .lsp-fc-dia { height: 46px; }
 .lsp-journey.compact .lsp-fc-elabel { margin-bottom: 3px; }
+
+/* =====================================================================
+   2026-10-28 デザインの整理：営業先で見せる画面として、余白・カード・色の意味をそろえる
+   色の意味（③の時系列・②で共通）：操作=青／LINEメッセージ=緑／タグ・状態=紫／シナリオ=灰／CV=橙／停止=赤
+   ===================================================================== */
+.lsp {
+  --k-op: #2563c9;
+  --k-msg: #079447;
+  --k-state: #7a45b8;
+  --k-flow: #5b6577;
+  --k-cv: #d0611b;
+  --k-stop: #c0392b;
+  --lsp-bg: #f3f5f9;
+  --lsp-radius: 14px;
+  --lsp-shadow: 0 1px 2px rgba(20, 24, 40, .05), 0 4px 14px rgba(20, 24, 40, .05);
+  background: var(--lsp-bg);
+}
+.lsp-stage.three { gap: 18px; padding: 18px; }
+.lsp-pane-head { font-size: 15px; padding: 0 2px; }
+.lsp-pane-head .no { width: 26px; height: 26px; border-radius: 50%; background: var(--lsp-primary); color: #fff; font-size: 14px; }
+.lsp-card-side, .lsp-narr, .lsp-where, .lsp-jsec, .lsp-tl { box-shadow: var(--lsp-shadow); }
+.lsp-bar { box-shadow: 0 1px 0 var(--lsp-line), 0 4px 12px rgba(20, 24, 40, .04); }
+.lsp-bar button.primary { padding: 5px 14px; }
+.lsp-playstate { font-weight: 700; color: var(--lsp-ink); background: #fff7e8; border: 1px solid #f3dcb4; border-radius: 8px; padding: 3px 10px; }
+.lsp-playstate:empty { display: none; }
+
+/* ① スマホ：文字を少し大きく、押せるものをはっきり */
+.lsp-b { font-size: 14px; }
+.lsp-btns button { padding: 11px 10px; font-size: 13.5px; }
+.lsp-chips button { padding: 7px 16px; font-size: 14px; }
+.lsp-quick { box-shadow: 0 -4px 12px rgba(20, 24, 40, .06); }
+.lsp-quick-q { color: #2a6fd6; }
+.lsp-hl { position: relative; animation: lsp-pulse 1.6s ease-in-out infinite; outline: 3px solid #f5a623 !important; outline-offset: 2px; border-radius: 10px; }
+@keyframes lsp-pulse { 50% { outline-color: rgba(245, 166, 35, .25); } }
+@media (prefers-reduced-motion: reduce) { .lsp-hl { animation: none; } }
+.lsp-start-main button { padding: 14px 14px 12px; font-size: 15px; border-width: 1.5px; box-shadow: 0 1px 2px rgba(20, 24, 40, .05); }
+.lsp-start-main button .no { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--lsp-primary); color: #fff; font-size: 12px; margin-right: 8px; vertical-align: 1px; }
+.lsp-start-main button:hover { border-color: var(--lsp-primary); }
+.lsp-start-more { margin-top: 18px; font-size: 12.5px; color: var(--lsp-muted); }
+.lsp-start-more summary { cursor: pointer; padding: 6px 2px; font-weight: 700; }
+.lsp-start-more button { font-size: 13px; padding: 9px 12px; }
+
+/* ② 裏側：状態のタイル・シナリオのカード */
+.lsp-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lsp-tile { border: 1px solid var(--lsp-line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; min-width: 0; background: #fbfcfe; }
+.lsp-tile .k { font-size: 11px; font-weight: 700; color: var(--lsp-muted); letter-spacing: .04em; }
+.lsp-tile b { font-size: 14.5px; color: var(--lsp-ink); line-height: 1.35; overflow-wrap: anywhere; }
+.lsp-tile small { font-size: 11.5px; color: var(--lsp-muted); line-height: 1.4; overflow-wrap: anywhere; }
+.lsp-tile.ok { border-color: #bfe3cc; background: #f1faf4; }
+.lsp-tile.ok b { color: #0b7a3a; }
+.lsp-tile.ng { border-color: #f1c4bd; background: #fdf1ef; }
+.lsp-tile.ng b { color: var(--lsp-err); }
+.lsp-tile.next { border-color: #cfdcf5; background: #f3f7ff; }
+.lsp-answers { list-style: none; margin: 0; padding: 0; }
+.lsp-answers li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 1px solid var(--lsp-soft); font-size: 13px; }
+.lsp-answers li span { color: var(--lsp-muted); }
+.lsp-flows.act { display: flex; flex-direction: column; gap: 6px; }
+.lsp-flows.act li.lsp-fl { display: block; border: 1px solid var(--lsp-line); border-left: 4px solid var(--k-msg); border-radius: 10px; padding: 7px 10px; }
+.lsp-fl-h { display: flex; align-items: center; gap: 6px; font-size: 13.5px; }
+.lsp-fl-h b { color: var(--lsp-ink); }
+.lsp-fl-kv { display: grid; grid-template-columns: auto 1fr; gap: 1px 10px; margin: 4px 0 0; font-size: 12.5px; }
+.lsp-fl-kv dt { color: var(--lsp-muted); }
+.lsp-fl-kv dd { margin: 0; color: var(--lsp-text); }
+.lsp-fl-kv dd.strong { font-weight: 700; color: var(--lsp-ink); font-variant-numeric: tabular-nums; }
+.lsp-done { margin-top: 8px; font-size: 12.5px; }
+.lsp-done summary { cursor: pointer; color: var(--lsp-muted); font-weight: 700; padding: 4px 0; }
+.lsp-hint.top { margin: 0 0 8px; }
+.lsp-tabs button { font-size: 13px; }
+
+/* ③ 上：現在地と次にすること */
+.lsp-journey { background: none; border: 0; padding: 0; gap: 12px; }
+.lsp-where { background: #fff; border: 1px solid var(--lsp-line); border-radius: var(--lsp-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lsp-wh-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lsp-wh-who { font-size: 16px; font-weight: 700; color: var(--lsp-ink); }
+.lsp-wh-badge { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 8px; background: var(--lsp-soft); color: var(--lsp-muted); }
+.lsp-wh-badge.manual { background: #eaf1ff; color: #2563c9; }
+.lsp-wh-cv { margin-left: auto; font-size: 12.5px; font-weight: 700; color: var(--lsp-muted); }
+.lsp-wh-cv.ok { color: #0b7a3a; background: #e3f4e8; border-radius: 999px; padding: 1px 10px; }
+.lsp-wh-stage { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lsp-wh-stage .k { font-size: 11.5px; font-weight: 700; color: #fff; background: var(--lsp-accent); border-radius: 999px; padding: 1px 9px; }
+.lsp-wh-stage b { font-size: 15px; color: var(--lsp-ink); }
+.lsp-wh-stage small { font-size: 12px; color: var(--lsp-muted); }
+.lsp-guide { display: flex; flex-direction: column; gap: 3px; border-radius: 10px; padding: 9px 12px; background: #fff7e8; border: 1.5px solid #f5a623; }
+.lsp-guide-k { font-size: 12px; font-weight: 700; color: #a15c00; display: flex; align-items: center; gap: 6px; }
+.lsp-guide-k i { font-style: normal; font-size: 11px; background: #fff; border: 1px solid currentColor; border-radius: 999px; padding: 0 7px; }
+.lsp-guide-t { font-size: 14px; font-weight: 700; color: var(--lsp-ink); line-height: 1.5; }
+.lsp-guide.g-script, .lsp-guide.g-wait { background: #f3f7ff; border-color: #9db8ea; }
+.lsp-guide.g-script .lsp-guide-k, .lsp-guide.g-wait .lsp-guide-k { color: #2563c9; }
+.lsp-guide.g-done { background: #effaf3; border-color: #7cc79a; }
+.lsp-guide.g-done .lsp-guide-k { color: #0b7a3a; }
+.lsp-guide.g-stopped { background: #fdf1ef; border-color: #e7a59b; }
+.lsp-guide.g-stopped .lsp-guide-k { color: var(--lsp-err); }
+.lsp-jnext { background: #f7f8fb; border-color: var(--lsp-line); }
+.lsp-jnext .lsp-jn-k { color: var(--lsp-muted); }
+
+/* ③ 中：フロー */
+.lsp-jsec { background: #fff; border: 1px solid var(--lsp-line); border-radius: var(--lsp-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lsp-jsec-h { font-size: 14px; font-weight: 700; color: var(--lsp-ink); display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.lsp-jsec-h small { font-size: 11.5px; font-weight: 400; color: var(--lsp-muted); }
+.lsp-stage.three .lsp-fc-scroll { max-height: min(44vh, 520px); }
+.lsp-fc-legend b.on { border-color: var(--lsp-primary); background: #eef1fa; }
+.lsp-fc-legend b.off { opacity: .45; }
+
+/* ③ 下：全ユーザーの時系列 */
+.lsp-tl { background: #fff; border: 1px solid var(--lsp-line); border-radius: var(--lsp-radius); padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.lsp-tl-headbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lsp-tl-title { font-size: 14px; font-weight: 700; color: var(--lsp-ink); margin-right: auto; }
+.lsp-tl-headbar .lsp-group button { border: 1px solid var(--lsp-line); background: #fff; color: var(--lsp-ink); border-radius: 8px; padding: 2px 10px; font-size: 12.5px; font-weight: 700; }
+.lsp-tl-headbar .lsp-group button.on { background: var(--lsp-primary); border-color: var(--lsp-primary); color: #fff; }
+.lsp-tl-headbar .lsp-check { margin: 0; font-size: 12px; }
+.lsp-tl-next { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; background: #f7f8fb; border: 1px dashed #b9c1cf; border-radius: 10px; padding: 7px 10px; font-size: 13px; }
+.lsp-tl-next .k { font-size: 11.5px; font-weight: 700; color: var(--lsp-muted); }
+.lsp-tl-next b { font-variant-numeric: tabular-nums; color: var(--lsp-ink); }
+.lsp-tl-next span:not(.k) { color: var(--lsp-text); }
+.lsp-tl-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11.5px; color: var(--lsp-muted); }
+.lsp-tl-legend .k-op { color: var(--k-op); }
+.lsp-tl-legend .k-msg { color: var(--k-msg); }
+.lsp-tl-legend .k-state { color: var(--k-state); }
+.lsp-tl-legend .k-flow { color: var(--k-flow); }
+.lsp-tl-legend .k-cv { color: var(--k-cv); }
+.lsp-tl-legend .k-stop { color: var(--k-stop); }
+.lsp-tl-legend .mine { font-weight: 700; color: var(--lsp-ink); }
+.lsp-tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lsp-tl-scroll { max-height: min(56vh, 640px); overflow: auto; padding-right: 2px; }
+.lsp-tl-day { position: sticky; top: 0; z-index: 1; background: #fff; font-size: 12px; font-weight: 700; color: var(--lsp-muted); padding: 6px 2px 2px; border-bottom: 1px solid var(--lsp-soft); }
+.lsp-tl-nowline { margin: 10px 0 6px; border-top: 2px solid var(--lsp-accent); }
+.lsp-tl-nowline span { position: relative; top: -11px; background: var(--lsp-accent); color: #fff; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 1px 10px; margin-left: 8px; }
+.lsp-tl-row { border: 1px solid transparent; border-left: 4px solid var(--k-flow); border-radius: 8px; background: #fafbfc; }
+.lsp-tl-row.k-op { border-left-color: var(--k-op); }
+.lsp-tl-row.k-msg { border-left-color: var(--k-msg); }
+.lsp-tl-row.k-state { border-left-color: var(--k-state); }
+.lsp-tl-row.k-cv { border-left-color: var(--k-cv); }
+.lsp-tl-row.k-stop { border-left-color: var(--k-stop); }
+.lsp-tl-row:not(.mine) { opacity: .62; }
+.lsp-tl-row:not(.mine):hover { opacity: 1; }
+.lsp-tl-row.mine { background: #fff; border-color: var(--lsp-line); box-shadow: 0 1px 3px rgba(20, 24, 40, .07); }
+.lsp-tl-row.now { box-shadow: 0 0 0 2px rgba(6, 199, 85, .45); opacity: 1; }
+.lsp-tl-row.future { background: repeating-linear-gradient(135deg, #fff, #fff 6px, #f6f7fa 6px, #f6f7fa 12px); border-style: dashed; border-left-style: solid; }
+.lsp-tl-row.future:not(.mine) { opacity: .5; }
+.lsp-tl-head { display: grid; grid-template-columns: 50px 20px 1fr; gap: 6px; align-items: start; width: 100%; text-align: left; border: 0; background: none; padding: 6px 8px; color: var(--lsp-text); }
+.lsp-tl-time { font-size: 12.5px; font-weight: 700; color: var(--lsp-ink); font-variant-numeric: tabular-nums; display: flex; flex-direction: column; line-height: 1.3; }
+.lsp-tl-time small { font-size: 10.5px; font-weight: 700; color: var(--lsp-muted); }
+.lsp-tl-row.now .lsp-tl-time small { color: #0b7a3a; }
+.lsp-tl-kind { font-size: 13px; line-height: 1.5; text-align: center; }
+.lsp-tl-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; font-size: 12.5px; line-height: 1.5; }
+.lsp-tl-who { font-size: 11.5px; color: var(--lsp-muted); }
+.lsp-tl-row.mine .lsp-tl-who { color: var(--lsp-primary); font-weight: 700; }
+.lsp-tl-main > b { font-size: 13.5px; color: var(--lsp-ink); }
+.lsp-tl-f, .lsp-tl-b { display: block; overflow-wrap: anywhere; }
+.lsp-tl-f i, .lsp-tl-b i { font-style: normal; display: inline-block; font-size: 10.5px; font-weight: 700; border-radius: 4px; padding: 0 5px; margin-right: 6px; vertical-align: 1px; }
+.lsp-tl-f i { background: #e6f5ec; color: #0b7a3a; }
+.lsp-tl-b i { background: #eceff5; color: #4b5468; }
+.lsp-tl-b { color: #4b5468; }
+.lsp-tl-f .none { color: var(--lsp-muted); }
+.lsp-tl-main .more { margin-left: 6px; font-size: 11px; color: #2563c9; font-weight: 700; }
+.lsp-tl-items { list-style: none; margin: 0; padding: 2px 10px 8px 84px; font-size: 12px; display: flex; flex-direction: column; gap: 2px; }
+.lsp-tl-items li span { display: inline-block; width: 18px; }
+.lsp-tl-items li.minor { color: var(--lsp-muted); }
+.lsp-tl-switch { margin: 0 10px 8px 84px; border: 1px solid var(--lsp-primary); background: #fff; color: var(--lsp-primary); border-radius: 8px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+.lsp-tl-list.hist .lsp-tl-row { opacity: 1; }
+
+/* 資料用16:9の③：現在地・次にすること・フロー・直近の出来事だけ */
+.lsp-journey.compact { gap: 6px; }
+.lsp-journey.compact .lsp-where { padding: 8px 12px; gap: 5px; }
+.lsp-journey.compact .lsp-wh-who { font-size: 15px; }
+.lsp-journey.compact .lsp-guide { padding: 6px 10px; }
+.lsp-journey.compact .lsp-guide-t { font-size: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lsp-journey.compact .lsp-jsec { flex: 1; min-height: 0; padding: 6px 10px; }
+.lsp-journey.compact .lsp-tl { padding: 6px 10px; gap: 4px; }
+.lsp-journey.compact .lsp-tl-title { font-size: 13px; }
+.lsp-journey.compact .lsp-tl-row .lsp-tl-b { display: none; }
+.lsp-journey.compact .lsp-tl-head { padding: 3px 6px; grid-template-columns: 44px 18px 1fr; }
+.lsp-journey.compact .lsp-tl-main { font-size: 13px; }
+.lsp-journey.compact .lsp-tl-f { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.lsp-journey.compact .lsp-tl-next { padding: 4px 8px; font-size: 13px; }
+.lsp-journey.compact .lsp-tl-row:not(.mine) { opacity: .75; }
+
+/* 3画面の③：時系列を見ようと下へスクロールしても、現在地と次にすることは上に残す */
+.lsp-stage.three .lsp-where { position: sticky; top: calc(var(--lsp-bar-h, 0px) + 6px); z-index: 4; }
+.lsp-stage.three .lsp-fc-scroll { max-height: min(40vh, 480px); }
+/* 時系列は、上に残る現在地カードの下にちょうど収まる高さにする（ページを下まで送ったとき全部見える） */
+.lsp-tl-nowline { border-top: 0; margin: 8px 0 4px; }
+.lsp-tl-nowline span { position: static; display: block; margin: 0; border-radius: 8px; padding: 3px 10px; line-height: 1.45; }
+
+/* 資料用16:9の③：道筋は1行ずつ（縮小しない） */
+.lsp-strip { list-style: none; margin: 0; padding: 4px 0; display: flex; flex-direction: column; gap: 4px; }
+.lsp-strip li { position: relative; display: flex; align-items: center; gap: 8px; border: 1.5px solid #d5dae3; border-radius: 9px; padding: 5px 10px; font-size: 14.5px; background: #fff; color: var(--lsp-muted); }
+.lsp-strip li .m { width: 16px; text-align: center; font-weight: 900; }
+.lsp-strip li .n { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lsp-strip li.done { border-color: var(--lsp-primary); color: var(--lsp-ink); }
+.lsp-strip li.done .m { color: #0b7a3a; }
+.lsp-strip li.current { border-color: var(--lsp-accent); color: var(--lsp-ink); font-weight: 700; box-shadow: 0 0 0 3px rgba(6, 199, 85, .22); }
+.lsp-strip li.current .m { color: var(--lsp-accent); }
+.lsp-strip li.start { background: var(--lsp-primary); border-color: var(--lsp-primary); color: #fff; }
+.lsp-strip li.start .m { color: #fff; }
+.lsp-strip li.goal { border-color: #d9661f; }
+.lsp-strip li.goal .g { font-size: 11px; font-weight: 900; color: #fff; background: #d9661f; border-radius: 4px; padding: 0 6px; }
+.lsp-strip li.goal.done, .lsp-strip li.goal.current { background: #d9661f; color: #fff; }
+.lsp-strip li .lsp-fc-here { position: static; box-shadow: none; }
+.lsp-strip li.gap { border: 0; padding: 0 10px; font-size: 12.5px; color: var(--lsp-muted); background: none; }
+.lsp-journey.compact .lsp-jsec { flex: 0 0 auto; }
+/* 16:9では現在地は道筋の「現在ここ」、CVはGOALの行で分かるので、上のカードは名前と次にすることだけ */
+.lsp-journey.compact .lsp-wh-stage, .lsp-journey.compact .lsp-wh-cv { display: none; }
+.lsp-journey.compact .lsp-strip { gap: 3px; padding: 2px 0; }
+.lsp-journey.compact .lsp-strip li { padding: 3px 10px; }
+.lsp-slide.three .lsp-pane.p3 { gap: 6px; }
+/* ②：幅が狭いときも、タブの文字とタイルが縦に折れないように */
+.lsp-tabs { overflow-x: auto; }
+.lsp-tabs button { white-space: nowrap; flex: 1 0 auto; padding: 9px 8px; }
+.lsp-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lsp-tile.next { grid-column: 1 / -1; }
