@@ -59,7 +59,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   let project = opts.project;
   let demo = opts.demo ?? (opts.personaId ? newDemo(project, opts.personaId) : initialDemo(project));
   let view: View | null = null;
-  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null };
+  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: true };
   let timer: ReturnType<typeof setInterval> | null = null;
   /** 回答待ちで止まった再生を、答えたら続けるか */
   let resumeWhenAnswered = false;
@@ -152,7 +152,14 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     const ahead = active && !demo.scripted.includes(active) ? futureEvents(demo, active) : 0;
     const mode = (m: Mode, label: string) => `<button type="button" class="${ui.mode === m ? 'on' : ''}" data-act="mode" data-mode="${m}">${label}</button>`;
     const speed = (s: 1 | 2 | 5) => `<button type="button" class="${ui.speed === s ? 'on' : ''}" data-act="speed" data-speed="${s}">×${s}</button>`;
-    return `<div class="lsp-bar">
+    const help = ui.help
+      ? `<div class="lsp-help" role="note"><b>使い方</b><ol>
+          <li><b>① ユーザーを選ぶ</b>：最初は1人を手で操作します。「台本つきで全員を並べる」で、用意した全員の動きをまとめて見られます</li>
+          <li><b>② スマホを操作する</b>：ボタン・メニュー・アンケートを押すと、②裏側の処理と③CVまでの道筋が同時に変わります</li>
+          <li><b>③ 時間を進める</b>：「次の出来事 ▶」で次の配信へ、「▶ 自動再生」で最後まで流れます。時間を戻して別の答えを選ぶと、その先は計算し直されます</li>
+        </ol><button type="button" class="ghost" data-act="help">閉じる</button></div>`
+      : '';
+    return `<div class="lsp-bar">${help}
       <div class="lsp-bar-row">
         <span class="lbl">ユーザー</span>${chips || '<span class="lsp-none">いません</span>'}
         ${active ? '<button type="button" class="ghost" data-act="removeUser" title="選んでいるユーザーを外す">× 外す</button>' : ''}
@@ -172,6 +179,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         <span class="lsp-group">${speed(1)}${speed(2)}${speed(5)}</span>
         <span class="lsp-playstate" role="status">${esc(ui.status)}</span>
         <span class="lsp-spacer"></span>
+        ${ui.help ? '' : '<button type="button" class="ghost" data-act="help" title="操作のしかたを表示">？使い方</button>'}
         <span class="lsp-group">${mode('three', '3画面')}${mode('full', '画面＋裏側')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9')}${mode('slide3', '資料用 16:9（3画面）')}</span>
       </div>
       ${ahead ? `<div class="lsp-warn">この先に、${esc(v.world.users[active]?.name ?? '')}の操作が${ahead}件あります。いまの時点から操作すると、それより後の操作は消えます。</div>` : ''}
@@ -207,6 +215,16 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
     fitSlide();
     fitChart();
+    centerHere();
+  }
+
+  /** 3画面の③で、「現在ここ」の箱が見える位置までスクロールする */
+  function centerHere() {
+    const box = root.querySelector<HTMLElement>('.lsp-stage.three .lsp-fc-scroll');
+    const here = box?.querySelector<HTMLElement>('.lsp-fc-here');
+    if (!box || !here) return;
+    const top = here.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+    box.scrollTop = Math.max(0, top - box.clientHeight / 3);
   }
 
   /** ③のフローチャートを、置き場所に収まる拡大率にする（資料用は常に、通常表示は「幅に合わせる」のとき） */
@@ -361,6 +379,9 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         else ui.fcZoom = Math.min(1.5, Math.max(0.4, Math.round((ui.fcZoom + (z === 'in' ? 0.1 : -0.1)) * 10) / 10));
         return render();
       }
+      case 'help':
+        ui.help = !ui.help;
+        return render();
       case 'toggleWhy': {
         const i = Number(d['i']);
         if (ui.open.has(i)) ui.open.delete(i);

@@ -248,11 +248,11 @@ describe('③ フローチャートの表示と操作', () => {
     );
   });
 
-  it('資料用16:9で段が多いときは、START・GOAL・最後の段と「現在ここ」の前後2段だけ出し、ほかは「ほか○段」にまとめる', () => {
+  it('資料用16:9で段が多いときは、START・GOAL・最後の段と「現在ここ」の前後1段だけ出し、ほかは「ほか○段」にまとめる', () => {
     const fake = (n: number, cur: number, goal: number): JourneyRow[] =>
       Array.from({ length: n }, (_, i) => ({ step: { id: `s${i}`, label: `s${i}` }, status: i < cur ? 'done' : i === cur ? 'current' : 'todo', traversed: [], isStart: i === 0, isGoal: i === goal }));
     expect(compactVisible(fake(6, 3, 5))).toEqual([true, true, true, true, true, true]);
-    expect(compactVisible(fake(12, 5, 8))).toEqual([true, false, false, true, true, true, true, true, true, false, false, true]);
+    expect(compactVisible(fake(12, 5, 8))).toEqual([true, false, false, false, true, true, true, false, true, false, false, true]);
     const html = journeyPane(viewOf(project, allScripted(project)), u(w30, 'p_tokyo'), true);
     expect(html).not.toContain('lsp-fc-gap');
   });

@@ -257,12 +257,12 @@ function nodeHtml(v: View, b: Box, row: JourneyRow, state: string, here: boolean
 
 const STEP_STATE: Record<StepStatus, string> = { done: 'passed', current: 'passed', skipped: 'skipped', todo: 'todo' };
 
-/** 資料用16:9で、段が多いときに出す段：START・GOAL・最後の段と、「現在ここ」の前後2段。ほかは「⋮ ほか○段」にまとめる */
+/** 資料用16:9で、段が多いときに出す段：START・GOAL・最後の段と、「現在ここ」の前後1段。ほかは「⋮ ほか○段」にまとめる */
 export const COMPACT_MAX_ROWS = 7;
 export function compactVisible(rows: JourneyRow[]): boolean[] {
   if (rows.length <= COMPACT_MAX_ROWS) return rows.map(() => true);
   const cur = Math.max(0, rows.findIndex((r) => r.status === 'current'));
-  return rows.map((r, i) => i === 0 || r.isGoal || i === rows.length - 1 || Math.abs(i - cur) <= 2);
+  return rows.map((r, i) => i === 0 || r.isGoal || i === rows.length - 1 || Math.abs(i - cur) <= 1);
 }
 
 function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {

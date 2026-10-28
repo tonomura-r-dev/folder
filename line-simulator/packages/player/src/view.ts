@@ -28,6 +28,8 @@ export type Ui = {
   fcZoom: number;
   fcOptions: boolean;
   fcOpen: { step: Id; variant?: Id; option?: Id } | null;
+  /** はじめての人向けの「使い方」を出すか（既定は出す） */
+  help?: boolean;
 };
 
 export type View = {

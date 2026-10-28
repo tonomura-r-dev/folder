@@ -158,6 +158,9 @@ function fireTimer(ctx: Ctx, timer: Timer) {
   dropTimers(ctx, user.id, flow.id);
   delete cursor.awaitEvent;
   const port = timer.kind === 'wait' ? 'out' : 'timeout';
+  // アンケートの回答待ちが切れたら、回答のボタンを閉じる（質問は増やさない）
+  const node = ctx.index.nodes.get(timer.nodeId)?.node;
+  if (timer.kind === 'timeout' && node?.type === 'survey' && user.surface.kind === 'survey' && user.surface.surveyId === node.surveyId) user.surface = { kind: 'talk' };
   ctx.queue.push(() => follow(ctx, user, flow, timer.nodeId, port));
   settle(ctx, user);
 }
@@ -315,6 +318,7 @@ function exec(ctx: Ctx, user: UserState, flow: Flow, node: FlowNode): string | n
       if (user.friendState === 'friend') {
         user.surface = { kind: 'survey', surveyId: node.surveyId, questionId: next.id };
         user.talk.push({ at: now, side: 'system', code: 'surveyShown', params: { surveyId: node.surveyId } });
+        pushQuestion(user, node.surveyId, next.text, now, node.id);
       }
       if (node.timeoutMinutes !== undefined) addTimer(ctx, user, flow, node, now + node.timeoutMinutes, 'timeout');
       return null;
@@ -374,6 +378,11 @@ function exec(ctx: Ctx, user: UserState, flow: Flow, node: FlowNode): string | n
       finish(ctx, user, flow, 'ended');
       return null;
   }
+}
+
+/** アンケートの質問を、公式アカウントの吹き出しとしてトークに残す（配信ではないので通数・配信履歴には入れない） */
+function pushQuestion(user: UserState, surveyId: Id, text: string, at: Minutes, fromNodeId?: Id) {
+  user.talk.push({ at, side: 'bot', bubble: { kind: 'text', text }, messageId: `survey:${surveyId}`, ...(fromNodeId ? { fromNodeId } : {}) });
 }
 
 export function dayAt(base: Minutes, day: number, time: string): Minutes {
@@ -539,7 +548,11 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody): void {
       return;
     }
     case 'addFriend': {
-      if (user.friendState === 'friend') return;
+      // すでに友だちなら、追加の案内を押してもLINEのトークを開くだけ（無反応にしない）
+      if (user.friendState === 'friend') {
+        user.surface = { kind: 'talk' };
+        return;
+      }
       if (user.friendState === 'blocked') {
         user.friendState = 'friend';
         user.talk.push({ at: now, side: 'system', code: 'unblocked' });
@@ -675,8 +688,11 @@ function answer(ctx: Ctx, user: UserState, surveyId: Id, questionId: Id, choiceI
 
   const answers = user.answers[surveyId]!;
   const next = survey.questions.find((q) => !(q.id in answers));
-  if (user.surface.kind === 'survey' && user.surface.surveyId === surveyId)
+  if (user.surface.kind === 'survey' && user.surface.surveyId === surveyId) {
     user.surface = next ? { kind: 'survey', surveyId, questionId: next.id } : { kind: 'talk' };
+    // 次の質問を、公式アカウントの吹き出しとしてトークに残す（回答 → 次の質問 の順）
+    if (next) pushQuestion(user, surveyId, next.text, ctx.world.now);
+  }
   if (next) return;
 
   // 全問答えたら、このアンケートで待っていたフローを進める

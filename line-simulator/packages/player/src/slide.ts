@@ -30,7 +30,7 @@ export function slide(v: View, user: UserState): string {
       <div class="lsp-slide-box"><h4>${esc(user.name)}のいまの状態</h4>${tags ? `<div class="lsp-tags">${tags}</div>` : '<div class="lsp-none">タグはまだ付いていません</div>'}</div>
       <div class="lsp-slide-box"><h4>なぜ、こうなったか</h4>${whys ? `<ul class="lsp-slide-why">${whys}</ul>` : '<div class="lsp-none">まだ判定はありません</div>'}</div>
     </div>
-    <div class="lsp-slide-foot">架空のデータによるデモです</div>
+    <div class="lsp-slide-foot">ユーザーは架空の人物です／文面・日時にデモ用の仮設定を含みます</div>
   </div></div>`;
 }
 
@@ -51,6 +51,6 @@ export function slide3(v: View, user: UserState): string {
       <div class="lsp-slide-box"><h4>なぜ、こうなったか</h4>${whys ? `<ul class="lsp-slide-why">${whys}</ul>` : '<div class="lsp-none">まだ判定はありません</div>'}</div>`,
     )}
     ${pane(3, 'CVまでの道筋', journeyPane(v, user, true))}
-    <div class="lsp-slide-foot">架空のデータによるデモです</div>
+    <div class="lsp-slide-foot">ユーザーは架空の人物です／文面・日時にデモ用の仮設定を含みます</div>
   </div></div>`;
 }

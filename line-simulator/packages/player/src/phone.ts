@@ -82,6 +82,8 @@ function chat(v: View, user: UserState): string {
       prev = undefined;
     }
     if (item.side === 'system') {
+      // アンケートは質問の吹き出しで分かるので、「アンケートが届きました」の帯は出さない
+      if (item.code === 'surveyShown') continue;
       out.push(`<div class="lsp-sys">${esc(SYSTEM[item.code]?.(item.params ?? {}, v.L) ?? item.code)}</div>`);
     } else if (item.side === 'user') {
       out.push(`<div class="lsp-row me"><span class="lsp-time">${hhmm(item.at)}</span>${bubble(v, item.bubble).replace('class="lsp-b', 'class="lsp-b me')}</div>`);
@@ -115,7 +117,7 @@ function surveyPanel(v: View, user: UserState): string {
     )
     .join('');
   const multi = q.mode === 'multiple' ? `<button type="button" class="lsp-send-multi" data-act="answerMulti" ${data}${picked.length ? '' : ' disabled'}>回答する</button>` : '';
-  return `<div class="lsp-quick"><div class="lsp-quick-q">${esc(q.text)}${q.mode === 'multiple' ? '（複数選べます）' : ''}</div><div class="lsp-chips">${chips}</div>${multi}</div>`;
+  return `<div class="lsp-quick"><div class="lsp-quick-q">▼ タップして回答${q.mode === 'multiple' ? '（複数選べます）' : ''}</div><div class="lsp-chips">${chips}</div>${multi}</div>`;
 }
 
 function menu(v: View, m: RichMenu): string {
@@ -181,7 +183,7 @@ function page(v: View, user: UserState, p: WebPage, popup: boolean): string {
   const inLine = user.friendState === 'friend';
   return `<div class="lsp-browser">
     <div class="lsp-urlbar"><button type="button" data-act="back" data-page="${id}" title="${inLine ? 'LINEに戻る' : '前のページへ（離脱）'}" aria-label="戻る">‹</button><span class="lsp-url">${esc(p.url ?? p.title)}</span></div>
-    <div class="lsp-page">${blocks}${form}${cta}<div class="lsp-fake">架空のページです</div></div>
+    <div class="lsp-page">${blocks}${form}${cta}<div class="lsp-fake">デモ用のページです</div></div>
     ${pop}
   </div>`;
 }

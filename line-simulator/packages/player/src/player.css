@@ -434,3 +434,21 @@
 .lsp-journey.compact .lsp-fc-branch .lsp-fc-title { font-size: 13.5px; }
 .lsp-journey.compact .lsp-fc-optcount { margin-top: 3px; }
 .lsp-fc-gap { margin: 2px 0 6px; padding: 1px 10px; font-size: 12.5px; font-weight: 700; color: var(--lsp-muted); background: #fff; border: 1px dashed #c3c9d4; border-radius: 999px; }
+
+/* はじめての人向けの使い方 */
+.lsp-help { display: flex; align-items: flex-start; gap: 10px; background: #eef4ff; border: 1px solid #cfdcf5; border-radius: 10px; padding: 8px 12px; font-size: 12.5px; color: var(--lsp-text); }
+.lsp-help > b { flex: 0 0 auto; color: #2a6fd6; padding-top: 1px; }
+.lsp-help ol { margin: 0; padding-left: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 2px 16px; flex: 1; }
+.lsp-help li b { color: var(--lsp-ink); }
+/* 3画面の③は枠の中でスクロールし、「現在ここ」を見える位置に出す */
+.lsp-stage.three .lsp-fc-scroll { max-height: min(76vh, 900px); }
+
+/* 資料用16:9の③：段が多い案件でも読める大きさを保つ（箱は1行・分岐の行き先は1行・候補の件数は出さない） */
+.lsp-journey.compact .lsp-jgoal { display: none; }
+.lsp-journey.compact .lsp-fc-node { width: 100%; }
+.lsp-journey.compact .lsp-fc-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lsp-journey.compact .lsp-fc-branch .lsp-fc-node { padding: 3px 6px; }
+.lsp-journey.compact .lsp-fc-branch .lsp-fc-title { font-size: 12.5px; }
+.lsp-journey.compact .lsp-fc-optcount { display: none; }
+.lsp-journey.compact .lsp-fc-dia { height: 46px; }
+.lsp-journey.compact .lsp-fc-elabel { margin-bottom: 3px; }

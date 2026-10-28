@@ -132,10 +132,10 @@ function page(project: Project, data: ExportData, js: string, css: string): stri
 <style>${PAGE_CSS}${css}</style>
 </head>
 <body>
-<header class="ls-head"><b>${name}</b><span>LINE公式アカウント施策のデモ（架空のデータによるデモです）</span></header>
+<header class="ls-head"><b>${name}</b><span>LINE公式アカウント施策のデモ</span></header>
 <main id="${APP_ID}"></main>
 <noscript><p style="padding:20px">このデモを見るには、JavaScript を有効にしてください。</p></noscript>
-<footer class="ls-foot">このファイルはインターネットに接続しなくても動きます。表示されている会社名・人物・求人などはすべて架空です。</footer>
+<footer class="ls-foot">このファイルはインターネットに接続しなくても動きます。登場するユーザー（人物）は架空です。配信の文面・日時にはデモ用の仮設定を含みます。実際のLINE配信・予約・外部システムとの通信は行いません。</footer>
 <script type="application/json" id="${DATA_ID}">${safeJson(data)}</script>
 <script>${script}</script>
 </body>

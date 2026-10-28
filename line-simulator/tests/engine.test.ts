@@ -192,3 +192,39 @@ describe('自動応答と重複防止（Phase 6 で見つけた不具合の修�
     expect(w.decisions.find((d) => d.nodeId === 'b' && d.kind === 'deliver')).toMatchObject({ outcome: 'deduped' });
   });
 });
+
+describe('アンケートのトーク表示・友だち追加済みの再追加（2026-10-28 の改修）', () => {
+  const survey = {
+    id: 'sv',
+    label: 's',
+    questions: [
+      { id: 'q1', text: 'Q1 年齢は？', mode: 'single' as const, choices: [{ id: 'a', label: '3歳' }, { id: 'b', label: '4歳' }] },
+      { id: 'q2', text: 'Q2 時期は？', mode: 'single' as const, choices: [{ id: 'c', label: '春' }] },
+    ],
+  };
+  const p = () => baseProject({ surveys: [survey], flows: [chain('f', [node({ id: 'sv1', type: 'survey', surveyId: 'sv', timeoutMinutes: 60 })])] });
+  const lines = (u: UserState) => u.talk.filter((t) => t.side !== 'system').map((t) => `${t.side}:${t.bubble.kind === 'text' ? t.bubble.text : ''}`);
+
+  it('質問は公式の吹き出し、回答はユーザーの吹き出しで、回答のあとに次の質問が出る', () => {
+    const w = reduce(p(), friendAt(p(), 0, [{ at: 2, userId: 'u1', type: 'answer', surveyId: 'sv', questionId: 'q1', choiceIds: ['a'] }, { at: 3, userId: 'u1', type: 'answer', surveyId: 'sv', questionId: 'q2', choiceIds: ['c'] }]));
+    expect(lines(w.users['u1']!)).toEqual(['bot:Q1 年齢は？', 'user:3歳', 'bot:Q2 時期は？', 'user:春']);
+    // 配信ではないので、配信履歴・通数には入らない
+    expect(w.users['u1']!.deliveries).toEqual([]);
+  });
+
+  it('回答待ちが切れたら回答のボタンを閉じ、質問は増やさない。ブロック中の人には質問を出さない', () => {
+    const w = reduce(p(), friendAt(p()), { until: 200 });
+    expect(lines(w.users['u1']!)).toEqual(['bot:Q1 年齢は？']);
+    expect(w.users['u1']!.surface).toEqual({ kind: 'talk' });
+    const pr = baseProject({ surveys: [survey], flows: [chain('f', [node({ id: 'w', type: 'wait', wait: { kind: 'duration', minutes: 10 } }), node({ id: 'sv1', type: 'survey', surveyId: 'sv' })])] });
+    const blocked = reduce(pr, friendAt(pr, 0, [{ at: 5, userId: 'u1', type: 'block' }]), { until: 100 });
+    expect(lines(blocked.users['u1']!)).toEqual([]);
+  });
+
+  it('友だち追加済みの人が「LINEで受け取る」等を押すと、LINEのトークを開く（無反応にしない）', () => {
+    const pr = baseProject({ webPages: [{ id: 'lp', kind: 'lp', title: 'lp', blocks: [{ kind: 'button', label: 'LINE', action: { kind: 'addFriend', routeId: 'r1' } }] }] });
+    const w = reduce(pr, friendAt(pr, 0, [{ at: 5, userId: 'u1', type: 'visitPage', pageId: 'lp' }, { at: 6, userId: 'u1', type: 'tapPageButton', pageId: 'lp', blockIndex: 0 }]));
+    expect(w.users['u1']!.surface).toEqual({ kind: 'talk' });
+    expect(w.users['u1']!.friendAddedAt).toBe(0);
+  });
+});
