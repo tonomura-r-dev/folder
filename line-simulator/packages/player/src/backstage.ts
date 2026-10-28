@@ -6,7 +6,7 @@ import { upcoming } from './controller.ts';
 import { describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
 import { nextAction } from './journey.ts';
 import { flowConditions, nextOwn, userHistoryHtml } from './timeline.ts';
-import { esc, type Tab, type View } from './view.ts';
+import { esc, whoOf, type Tab, type View } from './view.ts';
 
 // ---------- 説明カード ----------
 
@@ -75,7 +75,14 @@ function stateTab(v: View, user: UserState): string {
       return `<li><span class="lsp-pill s-${c!.status}">${FLOW_STATUS[c!.status]}</span><span>${esc(f.label)}${c!.endedAt !== undefined ? `<span class="f">${esc(fmtTime(c!.endedAt))}${why ? `　${esc(why)}` : ''}</span>` : ''}</span></li>`;
     })
     .join('');
-  const cvButtons = v.project.cvs.map((c) => `<button type="button" data-act="cv" data-cv="${esc(c.id)}">「${esc(c.label)}」したことにする</button>`).join('');
+  // その段階を「完了した状態」に進める。済んだ段階は押せない（二重に記録しない）
+  const cvButtons = v.project.cvs
+    .map((c) =>
+      user.cvs[c.id]
+        ? `<button type="button" class="done" disabled title="${esc(fmtTime(user.cvs[c.id]!.at))}に済み">✓ ${esc(c.label)}済み</button>`
+        : `<button type="button" data-act="cv" data-cv="${esc(c.id)}">${esc(c.demoAction ?? `${c.label}へ`)}</button>`,
+    )
+    .join('');
   return `
     <div class="lsp-tiles">
       <div class="lsp-tile ${user.friendState === 'friend' ? 'ok' : user.friendState === 'blocked' ? 'ng' : ''}"><span class="k">友だち</span><b>${esc(friendText(user.friendState))}</b><small>${esc(L.route(user.route))}</small></div>
@@ -87,7 +94,7 @@ function stateTab(v: View, user: UserState): string {
     ${attrs.length ? `<h4>属性</h4><div class="lsp-answers">${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</div>` : ''}
     <h4>実行中のシナリオ（${active.length}）</h4>${activeHtml ? `<ul class="lsp-flows act">${activeHtml}</ul>` : '<div class="lsp-none">実行中のシナリオはありません</div>'}
     ${doneHtml ? `<details class="lsp-done"><summary>終了・停止したシナリオ（${done.length}）</summary><ul class="lsp-flows">${doneHtml}</ul></details>` : ''}
-    <h4>出来事を起こす（店舗・管理画面側の操作）</h4><div class="lsp-ctrls">${cvButtons}${
+    <h4>次の段階へ進める</h4><div class="lsp-hint top">各段階に進んだ際のLINE配信や、裏側の処理を確認できます。押すと、その段階を完了した状態になります（フォームは開きません）。</div><div class="lsp-ctrls">${cvButtons}${
       user.friendState === 'friend' ? '<button type="button" data-act="block">ブロックする</button>' : user.friendState === 'blocked' ? '<button type="button" data-act="unblock">ブロックを解除</button>' : ''
     }</div>`;
 }
@@ -202,7 +209,7 @@ function matrixTab(v: View): string {
     })
     .join('');
   return `<div class="lsp-matrix"><table><thead><tr><th></th>${users
-    .map((u) => `<th class="${u.id === v.demo.activeUserId ? 'active' : ''}">${esc(u.name)}</th>`)
+    .map((u) => `<th class="${u.id === v.demo.activeUserId ? 'active' : ''}">${esc(whoOf(u))}</th>`)
     .join('')}</tr></thead><tbody>${rows}</tbody></table></div>
     <div class="lsp-hint">マスにマウスを乗せると理由が出ます。押すと、その人の「なぜ」を開きます。</div>`;
 }

@@ -18,7 +18,7 @@ export function isKnownVar(key: string, project: Project): boolean {
 
 function resolve(key: string, project: Project, user: UserState): string | undefined {
   const parts = key.split('.');
-  if (key === 'user.name') return user.name;
+  if (key === 'user.name') return user.personName ?? user.name;
   if (key === 'brand.accountName') return project.brand.accountName;
   if (key === 'brand.companyName') return project.brand.companyName;
   if (parts[0] === 'user' && parts[1] === 'attr' && parts[2] !== undefined) {

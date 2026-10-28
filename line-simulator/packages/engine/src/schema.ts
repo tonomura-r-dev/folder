@@ -68,7 +68,12 @@ export type Project = {
 
 export type Asset = Tracked & { id: Id; kind: 'image'; path: string; width: number; height: number; alt: string };
 export type TagDef = Tracked & { id: Id; label: string; group?: string; color?: string; description?: string };
-export type CvDef = Tracked & { id: Id; label: string };
+export type CvDef = Tracked & {
+  id: Id;
+  label: string;
+  /** デモ画面②の「その段階へ進める」ボタンの名前（例：来場予約後へ）。無ければ「<label>へ」 */
+  demoAction?: string;
+};
 export type RouteDef = Tracked & { id: Id; label: string };
 
 export type MessageDef = Tracked & {
@@ -146,7 +151,10 @@ export type WebPage = Tracked & {
 export type ScriptStep = { atMinutes: Minutes; event: InputEventBody };
 export type Persona = Tracked & {
   id: Id;
+  /** シナリオ上の役割（例：検討中さん）。画面でユーザーを見分けるのに使う */
   name: string;
+  /** 架空の人物名（例：山田 一郎）。あれば文面の {{user.name}} はこちらになり、画面は「人物名＠役割」で出す */
+  personName?: string;
   attrs: Record<string, string | number | boolean>;
   initial?: { friendState?: FriendState; tags?: Id[]; cvs?: Id[] };
   autoAnswers?: { surveyId: Id; questionId: Id; choiceIds: Id[] }[];
@@ -363,6 +371,8 @@ export type UserState = {
   id: Id;
   personaId: Id;
   name: string;
+  /** 架空の人物名（ペルソナの personName）。文面の {{user.name}} に使う */
+  personName?: string;
   attrs: Record<string, unknown>;
   friendState: FriendState;
   friendAddedAt: Minutes | null;

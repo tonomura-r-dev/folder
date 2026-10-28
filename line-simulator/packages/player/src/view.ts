@@ -1,6 +1,6 @@
 // 画面を描く関数が共通で受け取るもの。描画は「この状態から HTML 文字列を作る」だけで、操作は player.ts が受ける。
 
-import type { Asset, Id, Project, WorldState } from '../../engine/src/index.ts';
+import type { Asset, Id, Project, UserState, WorldState } from '../../engine/src/index.ts';
 import { MINUTES_PER_DAY } from '../../engine/src/index.ts';
 import type { Demo } from './controller.ts';
 import type { Labels } from './describe.ts';
@@ -30,6 +30,8 @@ export type Ui = {
   fcOpen: { step: Id; variant?: Id; option?: Id } | null;
   /** はじめての人向けの「使い方」を出すか（既定は出す） */
   help?: boolean;
+  /** 上の帯の「細かい操作」を開いているか */
+  more?: boolean;
   /** ③の時系列：全員かこの人だけか・開いている行・予定も出すか・細かい判定も出すか */
   tlFilter?: 'all' | 'me';
   tlOpen?: Set<string>;
@@ -54,6 +56,10 @@ export const hhmm = (min: number) => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 export const dayOf = (min: number) => Math.floor(min / MINUTES_PER_DAY);
+
+/** 画面でユーザーを見分ける名前。人物名があれば「人物名＠役割」（どの画面でも同じ） */
+export const whoOf = (u: Pick<UserState, 'name' | 'personName'> | undefined): string =>
+  !u ? '' : u.personName ? `${u.personName}＠${u.name.replace(/さん$/, '')}` : u.name;
 
 /** 3画面表示の1つの枠（①②③の見出しつき） */
 export const pane = (no: 1 | 2 | 3, title: string, body: string) =>

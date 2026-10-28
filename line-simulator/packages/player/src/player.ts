@@ -32,7 +32,7 @@ import { fcDialog, journeyPane } from './journey.ts';
 import { phone } from './phone.ts';
 import { guideOf, summaryAt } from './timeline.ts';
 import { SLIDE_H, SLIDE_W, slide, slide3 } from './slide.ts';
-import { esc, pane, type Mode, type Tab, type Ui, type View } from './view.ts';
+import { esc, pane, whoOf, type Mode, type Tab, type Ui, type View } from './view.ts';
 
 export { esc } from './view.ts';
 
@@ -60,7 +60,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   let project = opts.project;
   let demo = opts.demo ?? (opts.personaId ? newDemo(project, opts.personaId) : initialDemo(project));
   let view: View | null = null;
-  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: true };
+  const ui: Ui = { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false };
   let timer: ReturnType<typeof setInterval> | null = null;
   /** 回答待ちで止まった再生を、答えたら続けるか */
   let resumeWhenAnswered = false;
@@ -122,7 +122,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     const r = autoStep(project, demo);
     if (r.stopped === 'pending' && r.pending) {
       // 回答を待っている人に①②を勝手に切り替えない。選ぶのは営業担当
-      const name = view?.world.users[r.pending.userId]?.name ?? '';
+      const name = whoOf(view?.world.users[r.pending.userId]);
       const what = r.pending.kind === 'survey' ? 'アンケートの回答' : 'ボタン選択';
       resumeWhenAnswered = true;
       pause(
@@ -144,52 +144,75 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     const chips = demo.session.users
       .map((u) => {
         const s = v.world.users[u.id];
-        return `<button type="button" class="lsp-chip${u.id === active ? ' on' : ''}" data-act="selectUser" data-user="${esc(u.id)}">${esc(s?.name ?? u.id)}${
+        return `<button type="button" class="lsp-chip${u.id === active ? ' on' : ''}" data-act="selectUser" data-user="${esc(u.id)}">${esc(s ? whoOf(s) : u.id)}${
           demo.scripted.includes(u.id) ? '<small>台本</small>' : ''
         }${pending.has(u.id) ? '<small class="wait">回答待ち</small>' : ''}</button>`;
       })
       .join('');
-    const manual = project.personas.map((p) => `<option value="m:${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    const label = (p: (typeof project.personas)[number]) => whoOf({ name: p.name, ...(p.personName ? { personName: p.personName } : {}) });
+    const manual = project.personas.map((p) => `<option value="m:${esc(p.id)}">${esc(label(p))}</option>`).join('');
     const scripted = project.personas
       .filter((p) => (p.script ?? []).length)
-      .map((p) => `<option value="s:${esc(p.id)}">${esc(p.name)}</option>`)
+      .map((p) => `<option value="s:${esc(p.id)}">${esc(label(p))}</option>`)
       .join('');
     const day = Math.floor(v.world.now / MINUTES_PER_DAY);
     const time = fmtTime(v.world.now).split(' ')[2] ?? '00:00';
     const ahead = active && !demo.scripted.includes(active) ? futureEvents(demo, active) : 0;
-    const mode = (m: Mode, label: string) => `<button type="button" class="${ui.mode === m ? 'on' : ''}" data-act="mode" data-mode="${m}">${label}</button>`;
+    const mode = (m: Mode, text: string) => `<button type="button" class="${ui.mode === m ? 'on' : ''}" data-act="mode" data-mode="${m}">${text}</button>`;
     const speed = (s: 1 | 2 | 5) => `<button type="button" class="${ui.speed === s ? 'on' : ''}" data-act="speed" data-speed="${s}">×${s}</button>`;
-    const help = ui.help
-      ? `<div class="lsp-help" role="note"><b>使い方</b><ol>
-          <li><b>① ユーザーを選ぶ</b>：最初は1人を手で操作します。「台本つきで全員を並べる」で、用意した全員の動きをまとめて見られます</li>
-          <li><b>② スマホを操作する</b>：ボタン・メニュー・アンケートを押すと、②裏側の処理と③CVまでの道筋が同時に変わります</li>
-          <li><b>③ 時間を進める</b>：「次の出来事 ▶」で次の配信へ、「▶ 自動再生」で最後まで流れます。時間を戻して別の答えを選ぶと、その先は計算し直されます</li>
-        </ol><button type="button" class="ghost" data-act="help">閉じる</button></div>`
+    const me = v.world.users[active];
+    // いま誰を見ているか・どう動くか・再生しているか（常に見える）
+    const now = me
+      ? `<span class="lsp-now-who"><span class="k">表示中</span><b>${esc(whoOf(me))}</b><span class="lsp-now-mode ${demo.scripted.includes(active) ? 'script' : 'manual'}">${demo.scripted.includes(active) ? '台本どおりに動く' : '手で操作'}</span><span class="lsp-now-mode ${ui.playing ? 'play' : ''}">${ui.playing ? `再生中 ×${ui.speed}` : '停止中'}</span></span>`
       : '';
-    return `<div class="lsp-bar">${help}
-      <div class="lsp-bar-row">
-        <span class="lbl">ユーザー</span>${chips || '<span class="lsp-none">いません</span>'}
-        ${active ? '<button type="button" class="ghost" data-act="removeUser" title="選んでいるユーザーを外す">× 外す</button>' : ''}
-        <select data-change="addUser" aria-label="ユーザーを追加"><option value="">＋ ユーザーを追加…</option>${manual ? `<optgroup label="手で操作する">${manual}</optgroup>` : ''}${
-          scripted ? `<optgroup label="台本どおりに動く">${scripted}</optgroup>` : `<option value="m:">（ペルソナなし）</option>`
-        }</select>
-        ${scripted ? '<button type="button" data-act="allScripted" title="台本のあるペルソナ全員を、台本どおりに動く設定で並べ直す">台本つきで全員を並べる</button>' : ''}
+    // 細かい操作（時刻の調整・速さ・初期化・ユーザーの追加・ほかの表示）は、開いたときだけ出す
+    const more = ui.more
+      ? `<div class="lsp-bar-more">
+        <div class="lsp-bar-row"><span class="lbl">時刻を細かく動かす</span><span class="lsp-group"><button type="button" data-act="adv" data-min="-1440">−1日</button><button type="button" data-act="adv" data-min="-60">−1時間</button><button type="button" data-act="adv" data-min="60">＋1時間</button><button type="button" data-act="adv" data-min="1440">＋1日</button></span>
+          <span class="lsp-group">Day <input type="number" min="0" max="365" value="${day}" data-jump="day" aria-label="日"><input type="text" value="${esc(time)}" data-jump="time" size="5" aria-label="時刻"><button type="button" data-act="jump">移動</button></span>
+          <span class="lbl">再生の速さ</span><span class="lsp-group">${speed(1)}${speed(2)}${speed(5)}</span>
+          <button type="button" data-act="reset" title="顔ぶれと台本は残し、手の操作を消して最初の時刻に戻す">最初に戻す</button></div>
+        <div class="lsp-bar-row"><span class="lbl">ユーザー</span>
+          <select data-change="addUser" aria-label="ユーザーを追加"><option value="">＋ ユーザーを追加…</option>${manual ? `<optgroup label="手で操作する">${manual}</optgroup>` : ''}${
+            scripted ? `<optgroup label="台本どおりに動く">${scripted}</optgroup>` : `<option value="m:">（ペルソナなし）</option>`
+          }</select>
+          ${active ? '<button type="button" data-act="removeUser" title="選んでいるユーザーを外す">表示中の人を外す</button>' : ''}
+          <span class="lbl">ほかの表示</span><span class="lsp-group">${mode('full', '画面＋裏側')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9（2画面）')}</span></div>
+      </div>`
+      : '';
+    // 資料用16:9（投影）では帯を1段に詰め、16:9の枠を大きく出す。ユーザーはプルダウンで選ぶ
+    const slideMode = ui.mode === 'slide' || ui.mode === 'slide3';
+    const picker = `<select class="lsp-userpick" data-change="selectUser" aria-label="表示するユーザー">${demo.session.users
+      .map((u) => `<option value="${esc(u.id)}"${u.id === active ? ' selected' : ''}>${esc(whoOf(v.world.users[u.id]) || u.id)}</option>`)
+      .join('')}</select>`;
+    return `<div class="lsp-bar${slideMode ? ' compact' : ''}">
+      ${
+        slideMode
+          ? ''
+          : `<div class="lsp-bar-sec">
+        <div class="lsp-cap">説明するお客様を選びます。「台本つきで全員を並べる」と、用意した全員が台本どおりに動きます。</div>
+        <div class="lsp-bar-row">${chips || '<span class="lsp-none">ユーザーがいません（細かい操作から追加できます）</span>'}
+          ${scripted ? '<button type="button" class="lsp-all" data-act="allScripted" title="台本のあるペルソナ全員を、台本どおりに動く設定で並べ直す">台本つきで全員を並べる</button>' : ''}</div>
+      </div>`
+      }
+      <div class="lsp-bar-sec">
+        <div class="lsp-cap">「次の出来事」で1つずつ進めます。「戻る」で1つ前へ、「再生」で最後まで自動で流れます。</div>
+        <div class="lsp-bar-row main">
+          <span class="lsp-clock">${esc(fmtTime(v.world.now))}</span>
+          <button type="button" class="lsp-back-btn" data-act="prev" title="前に何かが起きた時点へ戻る">◀ 戻る</button>
+          <button type="button" class="primary lsp-next-btn" data-act="next" title="次に誰かに何かが起きる時点へ進む">次の出来事 ▶</button>
+          <button type="button" class="lsp-play-btn" data-act="play">${ui.playing ? '⏸ 停止' : '▶ 再生'}</button>
+          ${slideMode && demo.session.users.length ? picker : now}
+          <span class="lsp-spacer"></span>
+          <span class="lsp-group lsp-view">${mode('three', '3画面')}${mode('slide3', '16:9（投影用）')}${
+            ui.mode === 'full' ? mode('full', '画面＋裏側') : ui.mode === 'phone' ? mode('phone', '画面のみ') : ui.mode === 'slide' ? mode('slide', '資料用 16:9（2画面）') : ''
+          }</span>
+          <button type="button" class="ghost lsp-more-btn" data-act="more" aria-expanded="${!!ui.more}">${ui.more ? '細かい操作を閉じる ▲' : '細かい操作 ▼'}</button>
+        </div>
+        ${ui.status ? `<div class="lsp-playstate" role="status">${esc(ui.status)}</div>` : ''}
       </div>
-      <div class="lsp-bar-row">
-        <span class="lsp-clock">${esc(fmtTime(v.world.now))}</span>
-        <span class="lsp-group"><button type="button" data-act="prev" title="前に何かが起きた時点へ">◀ 前の出来事</button><button type="button" data-act="adv" data-min="-1440">−1日</button><button type="button" data-act="adv" data-min="-60">−1時間</button><button type="button" data-act="adv" data-min="60">＋1時間</button><button type="button" data-act="adv" data-min="1440">＋1日</button><button type="button" class="primary" data-act="next" title="次に誰かに何かが起きる時点へ">次の出来事 ▶</button></span>
-        <span class="lsp-group">Day <input type="number" min="0" max="365" value="${day}" data-jump="day" aria-label="日"><input type="text" value="${esc(time)}" data-jump="time" size="5" aria-label="時刻"><button type="button" data-act="jump">移動</button></span>
-        <button type="button" data-act="reset" title="顔ぶれと台本は残し、手の操作を消して最初の時刻に戻す">初期化</button>
-      </div>
-      <div class="lsp-bar-row">
-        <button type="button" class="primary" data-act="play">${ui.playing ? '⏸ 一時停止' : '▶ 自動再生'}</button>
-        <span class="lsp-group">${speed(1)}${speed(2)}${speed(5)}</span>
-        <span class="lsp-playstate" role="status">${esc(ui.status)}</span>
-        <span class="lsp-spacer"></span>
-        ${ui.help ? '' : '<button type="button" class="ghost" data-act="help" title="操作のしかたを表示">？使い方</button>'}
-        <span class="lsp-group">${mode('three', '3画面')}${mode('full', '画面＋裏側')}${mode('phone', '画面のみ')}${mode('slide', '資料用 16:9')}${mode('slide3', '資料用 16:9（3画面）')}</span>
-      </div>
-      ${ahead ? `<div class="lsp-warn">この先に、${esc(v.world.users[active]?.name ?? '')}の操作が${ahead}件あります。いまの時点から操作すると、それより後の操作は消えます。</div>` : ''}
+      ${more}
+      ${ahead ? `<div class="lsp-warn">この先に、${esc(whoOf(v.world.users[active]))}の操作が${ahead}件あります。いまの時点から操作すると、それより後の操作は消えます。</div>` : ''}
     </div>`;
   }
 
@@ -222,6 +245,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     const scroller = root.querySelector<HTMLElement>('.lsp-chat');
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
     fitSlide();
+    if (ui.mode === 'slide' || ui.mode === 'slide3') showSlide();
     fitChart();
     centerHere();
     fitTimeline();
@@ -288,14 +312,39 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     return widthOnly ? Math.min(1.5, Math.max(0.4, kw)) : k;
   }
 
-  /** 資料用表示を、置き場所の幅に合わせて縮める（16:9 のまま） */
+  /** 縦にスクロールする入れ物（編集ツールの中なら作業領域、営業用HTMLならページ） */
+  function scrollerOf(): HTMLElement | null {
+    let sc: HTMLElement | null = root.parentElement;
+    while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    return sc;
+  }
+
+  /**
+   * 資料用表示（16:9）を、上の帯を除いた見える範囲に1画面で収める。幅と高さの小さい方に合わせ、
+   * 大きな画面（1920×1080 等）では拡大する（最大1.5倍）。投影したときにスクロールしなくてよいように。
+   */
   function fitSlide() {
     const wrap = root.querySelector<HTMLElement>('.lsp-slide-wrap');
     const canvas = root.querySelector<HTMLElement>('.lsp-slide');
     if (!wrap || !canvas) return;
-    const k = Math.min(1, wrap.clientWidth / SLIDE_W);
+    const sc = scrollerOf();
+    const viewH = sc ? sc.clientHeight : window.innerHeight;
+    const barH = root.querySelector<HTMLElement>('.lsp-bar')?.offsetHeight ?? 0;
+    const k = Math.max(0.3, Math.min(1.5, wrap.clientWidth / SLIDE_W, (viewH - barH - 20) / SLIDE_H));
     canvas.style.transform = `scale(${k})`;
+    canvas.style.left = `${Math.max(0, Math.round((wrap.clientWidth - SLIDE_W * k) / 2))}px`;
     wrap.style.height = `${Math.round(SLIDE_H * k)}px`;
+  }
+
+  /** 資料用表示では、上の帯のすぐ下に16:9の枠が来るようにする（編集ツールの見出しの分だけずれないように） */
+  function showSlide() {
+    const wrap = root.querySelector<HTMLElement>('.lsp-slide-wrap');
+    const sc = scrollerOf();
+    if (!wrap) return;
+    const barH = root.querySelector<HTMLElement>('.lsp-bar')?.offsetHeight ?? 0;
+    const top = wrap.getBoundingClientRect().top - (sc ? sc.getBoundingClientRect().top : 0);
+    const by = top - barH - 10;
+    if (Math.abs(by) > 2) (sc ?? document.scrollingElement ?? document.documentElement).scrollTop += by;
   }
   const resize = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => fitSlide());
   resize?.observe(root);
@@ -430,6 +479,9 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       case 'help':
         ui.help = !ui.help;
         return render();
+      case 'more':
+        ui.more = !ui.more;
+        return render();
       // ③の時系列
       case 'tlOpen': {
         const key = d['key'] ?? '';
@@ -439,6 +491,9 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         tlScroll = root.querySelector<HTMLElement>('.lsp-tl-scroll')?.scrollTop ?? null;
         return render();
       }
+      case 'tlJump':
+        root.querySelector<HTMLElement>('.lsp-tl')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
       case 'tlFilter':
         ui.tlFilter = d['filter'] === 'me' ? 'me' : 'all';
         return render();
@@ -478,6 +533,7 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       ui.fcOptions = (el as HTMLInputElement).checked;
       return render();
     }
+    if (el.dataset['change'] === 'selectUser') return commit(selectUser(demo, el.value));
     if (el.dataset['change'] === 'tlFuture' || el.dataset['change'] === 'tlMinor') {
       ui[el.dataset['change']] = (el as HTMLInputElement).checked;
       return render();

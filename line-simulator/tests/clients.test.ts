@@ -154,6 +154,37 @@ describe.skipIf(!has('client-a-house'))('企業別デモ①（注文住宅・来
     expect(me(p, d).deliveries.some((x) => x.messageId === 'msg_diag_thanks')).toBe(false);
   });
 
+  it('架空の人物名で呼びかける（画面は「人物名＠役割」）。役割名は文面に出ない', () => {
+    for (const persona of p.personas) {
+      expect(persona.personName, persona.id).toMatch(/^\S+ \S+$/);
+      const texts = user(w, persona.id).talk.flatMap((t) => (t.side === 'bot' && t.bubble.kind === 'text' ? [t.bubble.text] : []));
+      expect(texts.some((t) => t.includes(persona.name)), persona.id).toBe(false);
+    }
+    const first = user(w, 'p_consider').talk.find((t) => t.side === 'bot')!;
+    expect(first.side === 'bot' && first.bubble.kind === 'text' && first.bubble.text.startsWith(`${p.personas[0]!.personName}さん、`)).toBe(true);
+  });
+
+  it('代替画像を使うカード・ページには、デモ用の代替画像だと書いてあり、実物と断定しない', () => {
+    for (const m of p.messages)
+      for (const b of m.bubbles) {
+        const text = b.kind === 'card' ? `${b.title}${b.body ?? ''}` : b.kind === 'text' || b.kind === 'buttons' ? b.text : '';
+        expect(text, m.id).not.toMatch(/実際に建てた|実際のお住まい|実際の施工事例/);
+        if (b.kind === 'card' && b.assetId) expect(b.body, m.id).toContain('代替画像');
+      }
+    for (const page of p.webPages)
+      if (page.blocks.some((b) => b.kind === 'image')) expect(page.blocks.some((b) => b.kind === 'text' && /代替画像|貴社の資料に差し替え/.test(b.text)), page.id).toBe(true);
+  });
+
+  it('②のボタンは「資料請求へ／来場予約後へ／来場後へ／契約後へ」。押すとCVとして記録され、配信・タグが動く', () => {
+    expect(p.cvs.map((c) => c.demoAction)).toEqual(['資料請求へ', '来場予約後へ', '来場後へ', '契約後へ']);
+    let d = dispatch(newDemo(p, 'p_consider'), { type: 'addFriend', routeId: 'route_popup' });
+    d = dispatch(d, { type: 'cv', cvId: 'cv_reserve' });
+    const u = me(p, d);
+    expect(u.cvs['cv_reserve']?.count).toBe(1);
+    expect(u.flows['flow_step']?.status).toBe('stopped');
+    expect(u.flows['flow_reserve']).toBeTruthy();
+  });
+
   it('はじめかたの入口は3つ（Webサイト・資料請求・来場予約）。詳細ページはデータに残り、配信やCTAから開ける', () => {
     expect(p.settings.demoEntries?.map((e) => [e.label, e.pageId])).toEqual([
       ['Webサイトから開始', 'page_lp'],

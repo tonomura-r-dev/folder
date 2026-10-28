@@ -9,8 +9,8 @@ import { bubbleTexts, renderBubble } from '../../engine/src/text.ts';
 import { pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeFailure, describeTrigger, explainDecision, fmtDuration, fmtTime, type Labels } from './describe.ts';
 import { previewBubble } from './phone.ts';
-import { guideHtml, guideOf, timelineHtml } from './timeline.ts';
-import { esc, type View } from './view.ts';
+import { guideHtml, guideOf, nowHtml, timelineHtml } from './timeline.ts';
+import { esc, whoOf, type View } from './view.ts';
 
 export type StepStatus = 'done' | 'current' | 'skipped' | 'todo';
 export type JourneyRow = {
@@ -345,7 +345,7 @@ function whereHtml(v: View, user: UserState, rows: JourneyRow[], compact: boolea
         : '';
   // 次の予定は「次にすること」の文に入るので、ここでは出さない（上に残るカードを低く保つ）
   return `<div class="lsp-where">
-    <div class="lsp-wh-top"><span class="lsp-wh-who">${esc(user.name)}</span>${v.demo.scripted.includes(user.id) ? '<span class="lsp-wh-badge">台本</span>' : '<span class="lsp-wh-badge manual">手で操作</span>'}${cv}</div>
+    <div class="lsp-wh-top"><span class="lsp-wh-who">${esc(whoOf(user))}</span>${v.demo.scripted.includes(user.id) ? '<span class="lsp-wh-badge">台本</span>' : '<span class="lsp-wh-badge manual">手で操作</span>'}${cv}</div>
     <div class="lsp-wh-stage"><span class="k">現在地</span><b>${esc(stage)}</b>${ci >= 0 && rows.length ? `<small>${ci + 1} / ${rows.length} 段目</small>` : ''}</div>
     ${guideHtml(guideOf(v, user))}
   </div>`;
@@ -365,6 +365,7 @@ export function journeyPane(v: View, user: UserState, compact = false): string {
   const chart = compact && rows.length ? stripHtml(v, rows) : rows.length ? `<div class="lsp-fc-scroll"><div class="lsp-fc" style="zoom:${compact ? 1 : z}">${chartHtml(v, rows, compact)}</div></div>` : '<div class="lsp-none">シナリオがありません</div>';
   return `<div class="lsp-journey${compact ? ' compact' : ''}">
     ${whereHtml(v, user, rows, compact)}
+    ${compact ? '' : nowHtml(v)}
     <div class="lsp-jsec flow">
       ${compact ? '' : '<div class="lsp-jsec-h">CVまでのフロー<small>箱を押すと文面・タイミング・対象を表示</small></div>'}
       ${tools}

@@ -2,7 +2,7 @@
 
 import type { Action, Bubble, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
 import { fmtTime, type Labels } from './describe.ts';
-import { dayOf, esc, hhmm, type View } from './view.ts';
+import { dayOf, esc, hhmm, whoOf, type View } from './view.ts';
 
 const SYSTEM: Record<string, (p: Record<string, string>, L: Labels) => string> = {
   friendAdded: (p, L) => `友だち追加しました（${L.route(p['routeId'] ?? null)}）`,
@@ -224,5 +224,5 @@ export function phone(v: View, user: UserState): string {
   const s = user.surface;
   const p = s.kind === 'page' || s.kind === 'popup' ? v.project.webPages.find((x) => x.id === s.pageId) : undefined;
   const body = p ? page(v, user, p, s.kind === 'popup') : user.friendState === 'not_friend' ? start(v) : talk(v, user);
-  return `<div class="lsp-phone" aria-label="${esc(user.name)}のスマホ"><div class="lsp-status"><span>${esc(fmtTime(v.world.now))}</span><span>${esc(user.name)}</span></div><div class="lsp-screen">${body}</div></div>`;
+  return `<div class="lsp-phone" aria-label="${esc(whoOf(user))}のスマホ"><div class="lsp-status"><span>${esc(fmtTime(v.world.now))}</span><span>${esc(user.personName ?? user.name)}</span></div><div class="lsp-screen">${body}</div></div>`;
 }

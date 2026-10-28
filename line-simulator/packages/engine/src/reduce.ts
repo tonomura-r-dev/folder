@@ -83,6 +83,8 @@ function initUsers(ctx: Ctx, session: Session) {
       id: u.id,
       personaId: u.personaId,
       name: u.displayName ?? persona?.name ?? u.id,
+      // 2人目以降（表示名つき）は別人なので、人物名は引き継がない
+      ...(persona?.personName && !u.displayName ? { personName: persona.personName } : {}),
       attrs: { ...(persona?.attrs ?? {}) },
       friendState: friend,
       friendAddedAt: friend === 'not_friend' ? null : 0,

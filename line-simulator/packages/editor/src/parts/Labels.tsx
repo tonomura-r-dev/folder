@@ -25,9 +25,9 @@ export function LabelsEditor() {
 
 function Table({ k }: { k: Key }) {
   const { project, update, issues } = useEditor();
-  const items = project[k] as { id: string; label: string; group?: string }[];
+  const items = project[k] as { id: string; label: string; group?: string; demoAction?: string }[];
   const meta = TITLE[k];
-  const set = (i: number, fn: (x: { id: string; label: string; group?: string }) => void) => update((d) => fn((d[k] as typeof items)[i]!));
+  const set = (i: number, fn: (x: { id: string; label: string; group?: string; demoAction?: string }) => void) => update((d) => fn((d[k] as typeof items)[i]!));
   return (
     <div className="section">
       <h3>
@@ -51,6 +51,7 @@ function Table({ k }: { k: Key }) {
             <th style={{ width: 170 }}>ID</th>
             <th>名前</th>
             {k === 'tags' && <th style={{ width: 160 }}>グループ</th>}
+            {k === 'cvs' && <th style={{ width: 200 }} title="デモ画面②で、その段階を完了した状態へ進めるボタンの名前。空なら「名前＋へ」">デモのボタン名（例：来場予約後へ）</th>}
             <th style={{ width: 210 }}>使われている数</th>
             <th style={{ width: 60 }} />
           </tr>
@@ -71,6 +72,11 @@ function Table({ k }: { k: Key }) {
                 {k === 'tags' && (
                   <td className="field">
                     <Text value={it.group ?? ''} onChange={(v) => set(i, (x) => (v ? (x.group = v) : delete x.group))} />
+                  </td>
+                )}
+                {k === 'cvs' && (
+                  <td className="field">
+                    <Text value={it.demoAction ?? ''} onChange={(v) => set(i, (x) => (v ? (x.demoAction = v) : delete x.demoAction))} />
                   </td>
                 )}
                 <td className="muted small">{n === 0 ? '未使用' : `${n} か所`}</td>

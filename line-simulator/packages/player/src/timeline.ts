@@ -8,7 +8,7 @@ import { MINUTES_PER_DAY, reduce } from '../../engine/src/index.ts';
 import { DEMO_END_DAY, nextStop, pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeTrigger, explainDecision, fmtTime, type Labels } from './describe.ts';
 import { journeyOf, nextAction } from './journey.ts';
-import { esc, hhmm, type View } from './view.ts';
+import { esc, hhmm, whoOf, type View } from './view.ts';
 
 /** 出来事の種類：①ユーザー操作 ②LINEメッセージ ③タグ・状態 ④シナリオ ⑤CV ⑥停止・対象外 */
 export type TlKind = 'op' | 'msg' | 'state' | 'flow' | 'cv' | 'stop';
@@ -246,7 +246,7 @@ function toEvent(user: UserState, at: Minutes, items: TlItem[]): TlEvent {
   const kind = RANK.find((k) => kinds.has(k)) ?? 'flow';
   const front = main.filter((x) => x.side === 'front').map((x) => x.text);
   const back = main.filter((x) => x.side === 'back').map((x) => x.text);
-  return { key: `${user.id}@${at}`, at, userId: user.id, userName: user.name, kind, title: titleOf(main, kind), front, back, items, minor: main.length === 0 };
+  return { key: `${user.id}@${at}`, at, userId: user.id, userName: whoOf(user), kind, title: titleOf(main, kind), front, back, items, minor: main.length === 0 };
 }
 
 function titleOf(items: TlItem[], kind: TlKind): string {
@@ -308,7 +308,7 @@ export function summaryAt(v: View, at: Minutes): string {
   const mine = evs.filter((e) => e.userId === active);
   const what = (e: TlEvent) => `${e.userName}：${e.title}${e.front.length ? '' : '（裏側の処理のみ）'}`;
   if (mine.length) return `${fmtTime(at)}　${mine.map(what).join('／')}${others.length ? `　ほか ${others.map((e) => e.userName).join('・')}にも出来事` : ''}`;
-  return `${fmtTime(at)}　別のユーザーの出来事です（${others.map(what).join('／')}）。①②は表示中の${v.world.users[active]?.name ?? ''}のまま。③の時系列で確認できます`;
+  return `${fmtTime(at)}　別のユーザーの出来事です（${others.map(what).join('／')}）。①②は表示中の${whoOf(v.world.users[active])}のまま。③の時系列で確認できます`;
 }
 
 // ---------- 次にすること（選んでいる人） ----------
@@ -465,6 +465,30 @@ export function timelineHtml(v: View, compact = false): string {
     <div class="lsp-tl-legend">${(Object.keys(KIND) as TlKind[]).map((k) => `<span class="k-${k}">${KIND[k].mark} ${KIND[k].label}</span>`).join('')}<span class="mine">太字＝表示中の人</span></div>
     <ol class="lsp-tl-list lsp-tl-scroll">${rows.join('')}</ol>
   </div>`;
+}
+
+/** ③の「いま起きたこと」：いまの時刻（無ければ直前）に起きた出来事を、全員分まとめて大きく出す */
+export function nowHtml(v: View): string {
+  const all = timelineOf(v).filter((e) => !e.minor && e.at <= v.world.now);
+  const last = all.at(-1)?.at;
+  const active = v.demo.activeUserId;
+  if (last === undefined) return `<div class="lsp-nowcard empty"><div class="lsp-nowcard-h"><b>いま起きたこと</b></div><div class="lsp-none">まだ出来事はありません。「次の出来事 ▶」で進めてください。</div></div>`;
+  const evs = all.filter((e) => e.at === last).sort((a, b) => Number(b.userId === active) - Number(a.userId === active));
+  const lines = (list: string[], cls: string, mark: string) =>
+    list.length ? `<div class="lsp-nc-${cls}"><i>${mark}</i><span>${list.slice(0, 3).map(esc).join('<br>')}${list.length > 3 ? `<span class="more">ほか${list.length - 3}件</span>` : ''}</span></div>` : '';
+  const items = evs
+    .map((e) => {
+      const mine = e.userId === active;
+      return `<li class="${mine ? 'mine' : 'other'} k-${e.kind}">
+        <div class="lsp-nc-who"><span class="lsp-tl-kind">${KIND[e.kind].mark}</span><b>${esc(e.userName)}</b><span class="t">${esc(e.title)}</span>${
+          mine ? '<span class="tag">表示中の人</span>' : `<button type="button" class="lsp-tl-switch" data-act="selectUser" data-user="${esc(e.userId)}">この人を表示</button>`
+        }</div>
+        ${e.front.length ? lines(e.front, 'f', '表') : '<div class="lsp-nc-f none"><i>表</i><span>LINE画面に変化なし（裏側の処理のみ）</span></div>'}
+        ${lines(e.back, 'b', '裏')}
+      </li>`;
+    })
+    .join('');
+  return `<div class="lsp-nowcard"><div class="lsp-nowcard-h"><b>${last === v.world.now ? 'いま起きたこと' : '直前の出来事'}</b><span>${esc(fmtTime(last))}・${evs.length}人</span><button type="button" class="ghost" data-act="tlJump">全員の時系列へ ↓</button></div><ul>${items}</ul></div>`;
 }
 
 /** ②の「この人の出来事」：その人のいままでの出来事を新しい順に */

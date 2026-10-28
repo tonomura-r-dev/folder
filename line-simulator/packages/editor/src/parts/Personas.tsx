@@ -37,8 +37,11 @@ function PersonaDetail({ p, pi, path, onDeleted }: { p: Persona; pi: number; pat
       <ReadOnly>{p.id}</ReadOnly>
       <div className="section">
         <div className="fields">
-          <Field label="名前（デモ画面と文面の {{user.name}} に出ます）">
+          <Field label="役割の名前（デモ画面でユーザーを見分ける名前。例：検討中さん）">
             <Text value={p.name} onChange={(v) => set((x) => (x.name = v))} />
+          </Field>
+          <Field label="人物名（架空・任意）" hint="入れると文面の {{user.name}} はこの名前になり、画面は「人物名＠役割」で出ます。実在の人の名前は使わないでください">
+            <Text value={p.personName ?? ''} onChange={(v) => set((x) => (v ? (x.personName = v) : delete x.personName))} />
           </Field>
           <Field label="最初の状態">
             <Select

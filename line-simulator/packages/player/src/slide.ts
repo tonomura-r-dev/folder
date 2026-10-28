@@ -6,7 +6,7 @@ import { narrationCard, recentExplanations } from './backstage.ts';
 import { fmtTime } from './describe.ts';
 import { journeyPane } from './journey.ts';
 import { phone } from './phone.ts';
-import { esc, pane, type View } from './view.ts';
+import { esc, pane, whoOf, type View } from './view.ts';
 
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
@@ -15,7 +15,7 @@ export function slide(v: View, user: UserState): string {
   const users = v.demo.session.users
     .map((u) => v.world.users[u.id])
     .filter((u): u is UserState => !!u)
-    .map((u) => `<span class="lsp-chip${u.id === user.id ? ' on' : ''}">${esc(u.name)}</span>`)
+    .map((u) => `<span class="lsp-chip${u.id === user.id ? ' on' : ''}">${esc(whoOf(u))}</span>`)
     .join('');
   const tags = Object.keys(user.tags).map((t) => `<span class="lsp-tag">${esc(v.L.tag(t))}</span>`).join('');
   const whys = recentExplanations(v, user, 3)
@@ -27,7 +27,7 @@ export function slide(v: View, user: UserState): string {
       <div class="lsp-slide-head"><span class="acc">${esc(v.project.brand.accountName)}</span><span class="clock">${esc(fmtTime(v.world.now))}</span></div>
       ${users ? `<div class="lsp-slide-users">${users}</div>` : ''}
       ${narrationCard(v, user, true)}
-      <div class="lsp-slide-box"><h4>${esc(user.name)}のいまの状態</h4>${tags ? `<div class="lsp-tags">${tags}</div>` : '<div class="lsp-none">タグはまだ付いていません</div>'}</div>
+      <div class="lsp-slide-box"><h4>${esc(whoOf(user))}のいまの状態</h4>${tags ? `<div class="lsp-tags">${tags}</div>` : '<div class="lsp-none">タグはまだ付いていません</div>'}</div>
       <div class="lsp-slide-box"><h4>なぜ、こうなったか</h4>${whys ? `<ul class="lsp-slide-why">${whys}</ul>` : '<div class="lsp-none">まだ判定はありません</div>'}</div>
     </div>
     <div class="lsp-slide-foot">ユーザーは架空の人物です／文面・日時にデモ用の仮設定を含みます</div>
@@ -41,7 +41,7 @@ export function slide3(v: View, user: UserState): string {
     .map((x) => `<li class="${x.tone}"><span class="mark">${x.tone === 'ok' ? '✓' : x.tone === 'ng' ? '✗' : x.tone === 'stop' ? '■' : '→'}</span><span>${esc(x.title)}${x.reason ? `<small>${esc(x.reason)}</small>` : ''}</span></li>`)
     .join('');
   return `<div class="lsp-slide-wrap"><div class="lsp-slide three" style="width:${SLIDE_W}px;height:${SLIDE_H}px">
-    <div class="lsp-slide-head"><span class="acc">${esc(v.project.brand.accountName)}　${esc(user.name)}</span><span class="clock">${esc(fmtTime(v.world.now))}</span></div>
+    <div class="lsp-slide-head"><span class="acc">${esc(v.project.brand.accountName)}　${esc(whoOf(user))}</span><span class="clock">${esc(fmtTime(v.world.now))}</span></div>
     ${pane(1, 'ユーザーが見る画面', phone(v, user))}
     ${pane(
       2,

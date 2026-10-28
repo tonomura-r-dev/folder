@@ -183,3 +183,60 @@ describe('はじめかたの入口（settings.demoEntries）', () => {
     expect(errs).toContain('/settings/demoEntries/0/label');
   });
 });
+
+describe('人物名と役割を分ける（persona.personName）', () => {
+  const named: Project = { ...project, personas: project.personas.map((x) => (x.id === 'p_tokyo' ? { ...x, personName: '架空 一郎' } : x)) };
+
+  it('文面の {{user.name}} は人物名、画面は「人物名＠役割」。人物名が無い人はこれまでどおり', async () => {
+    const { whoOf } = await import('../packages/player/src/view.ts');
+    const d = seek(allScripted(named), 2 * DAY);
+    const w = worldOf(named, d);
+    const tokyo = Object.values(w.users).find((u) => u.personaId === 'p_tokyo')!;
+    expect(tokyo.personName).toBe('架空 一郎');
+    expect(whoOf(tokyo)).toBe('架空 一郎＠東京希望');
+    const texts = tokyo.talk.flatMap((t) => (t.side === 'bot' && t.bubble.kind === 'text' ? [t.bubble.text] : []));
+    expect(texts.some((t) => t.includes('架空 一郎'))).toBe(true);
+    expect(texts.some((t) => t.includes('東京希望さん'))).toBe(false);
+    const osaka = Object.values(w.users).find((u) => u.personaId === 'p_osaka')!;
+    expect(whoOf(osaka)).toBe(osaka.name);
+    // 時系列・①②③で同じ呼び名
+    const tl = timelineOf(viewOf(named, d));
+    expect(tl.filter((e) => e.userId === tokyo.id).every((e) => e.userName === '架空 一郎＠東京希望')).toBe(true);
+  });
+});
+
+describe('②「次の段階へ進める」のボタン', () => {
+  it('名前は「○○へ」（案件で変えられる）。済んだ段階は押せず、二重に記録しない', async () => {
+    const { backstage } = await import('../packages/player/src/backstage.ts');
+    const p: Project = { ...project, cvs: project.cvs.map((c, i) => (i === 0 ? { ...c, demoAction: '応募後へ' } : c)) };
+    let d = dispatch(newDemo(p, 'p_tokyo', 600), { type: 'addFriend', routeId: 'route_exit_popup' });
+    let v = viewOf(p, d);
+    let html = backstage(v, me(v));
+    expect(html).toContain('各段階に進んだ際のLINE配信や、裏側の処理を確認できます。');
+    expect(html).toContain('>応募後へ</button>');
+    expect(html).not.toContain('したことにする');
+    d = dispatch(d, { type: 'cv', cvId: p.cvs[0]!.id });
+    v = viewOf(p, d);
+    html = backstage(v, me(v));
+    expect(html).toMatch(/class="done" disabled[^>]*>✓ [^<]+済み<\/button>/);
+    expect(html).not.toContain(`data-cv="${p.cvs[0]!.id}"`);
+  });
+});
+
+describe('③「いま起きたこと」', () => {
+  it('いまの時刻の出来事を全員分出し、表示中の人を先頭に。ほかの人は「この人を表示」で切り替えられる', async () => {
+    const { nowHtml } = await import('../packages/player/src/timeline.ts');
+    let demo = allScripted(project);
+    const v0 = viewOf(project, demo);
+    const t = nextGlobal(v0)!.at;
+    demo = seek(demo, t);
+    const v = viewOf(project, demo);
+    const html = nowHtml(v);
+    expect(html).toContain('いま起きたこと');
+    const evs = timelineOf(v).filter((e) => e.at === t && !e.minor);
+    for (const e of evs) expect(html).toContain(e.userName);
+    if (evs.some((e) => e.userId !== demo.activeUserId)) expect(html).toContain('この人を表示');
+    // 時刻を少し進めると「直前の出来事」になる
+    expect(nowHtml(viewOf(project, seek(demo, t + 1)))).toContain('直前の出来事');
+  });
+});
