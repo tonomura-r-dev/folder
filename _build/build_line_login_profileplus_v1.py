@@ -10,6 +10,8 @@
   ・デモ動画は後から（AIのデモ化）。12・14ページに動画の差し込み枠（QRコードの位置）だけ置く
   ・費用は汎用資料の表のまま：ID連携＝DYM共通資料の成果報酬型プランの表（初期20万円〜／月額5万円〜）、LINEログイン＝0円。
     Profile+は汎用資料に金額が無いので「別途お見積もり」（佐村さんに確認中）
+  ・実例（12・13ページ）＝LINEヤフー for Businessの事例。業界名と数字だけ載せる（社名・ツール名・出典は書かない。殿村さんOK 2026-10-28）。
+    増減は％で書く（3.5倍→約250%増、4倍→約300%増）。根拠は _drafts/LINEログイン・Profile+_LINEヤフー公式の実績（2026-10-27）.md
   色は紺・白・黒・灰色。緑はLINEの機能の部分だけ。字体はメイリオ。
 """
 import sys
@@ -20,7 +22,7 @@ from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Cm, Pt
 
 from _build.pptx_parts import (GRAY, GREEN, INK, LGRAY, NAVY, WHITE, arrow_line, drop_slide, keep_header_only, label,
-                               rect, retitle, rgb, shape, style_run)
+                               rect, retitle, rgb, shape, style_run, vline)
 from _build.patch_tanaka_v5 import copy_slide
 from _build.patch_tanaka_v4_thanks_option import set_lines, sid
 
@@ -83,6 +85,22 @@ def video_frame(s, x, y, w, h, name):
           anchor=MSO_ANCHOR.MIDDLE)
 
 
+def jirei(s, y, gyokai, sesaku, nums, cond=None):
+    """実例（業界名・施策・数字だけ。社名・出典は書かない）"""
+    label(s, X0, y, W0, 0.7, [(f"実例｜{gyokai}", 12, True, NAVY, 0)])
+    label(s, X0, y + 0.65, W0, 0.6, [(sesaku, 10, False, INK, 0)])
+    top, h = y + 1.35, 2.0
+    rect(s, X0, top, W0, h, PALE)
+    w = W0 / len(nums)
+    for i, (num, cap) in enumerate(nums):
+        label(s, X0 + i * w, top + 0.1, w, 0.95, [(num, 20, True, NAVY, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+        label(s, X0 + i * w, top + 1.0, w, 0.95, [(c, 9.5, False, INK, 0) for c in cap.split("\n")], align=PP_ALIGN.CENTER)
+        if i:
+            vline(s, X0 + i * w, top + 0.3, top + h - 0.3, LGRAY, 0.75)
+    if cond:
+        label(s, X0, top + h + 0.05, W0, 0.5, [(cond, 8.5, False, GRAY, 0)])
+
+
 def flow(s, y, steps, h=1.9, gap=0.75):
     """steps = [(text, kind)]  kind: 'line'＝LINEの機能（緑）／'cv'＝紺の塗り／''＝白＋紺枠"""
     n = len(steps)
@@ -137,7 +155,7 @@ def p_zentai(s):
 
 def p_login(s):
     retitle(s, "LINEログイン｜ワンタップで登録＋友だち追加", "「LINEでログイン」から、ID・パスワードなしで登録＋友だち追加まで案内")
-    ys = [4.5, 7.3, 10.1]
+    ys = [4.3, 6.6, 8.9]
     steps = [("1", "サイトの「LINEでログイン」ボタンをタップ", "会員登録・ログインのページにボタンを設置"),
              ("2", "LINEの同意画面", "友だち追加のチェックボックスを表示（初期状態はチェックあり）"),
              ("3", "登録完了＋公式アカウントの友だちに", "チェックを外さずにログインした方が、そのまま友だちに")]
@@ -145,11 +163,13 @@ def p_login(s):
         shape(s, MSO_SHAPE.OVAL, X0, y + 0.35, 1.2, 1.2, [(num, 14, True, WHITE, 0)], fill=GREEN)
         label(s, X0 + 1.6, y, 12.6, 2.0, [(head, 13, True, NAVY, 3), (body, 11, False, INK, 0)], anchor=MSO_ANCHOR.MIDDLE)
         if num != "3":
-            arrow_line(s, X0 + 0.6, y + 1.65, X0 + 0.6, y + 2.75, GREEN, 1.5)
-    video_frame(s, 16.6, 4.6, 9.1, 7.3, "LINEログイン・友だち追加")
-    shape(s, MSO_SHAPE.RECTANGLE, X0, 12.9, W0, 1.6,
+            arrow_line(s, X0 + 0.6, y + 1.65, X0 + 0.6, y + 2.25, GREEN, 1.5)
+    video_frame(s, 16.6, 4.4, 9.1, 6.4, "LINEログイン・友だち追加")
+    shape(s, MSO_SHAPE.RECTANGLE, X0, 11.2, W0, 1.5,
           [("同意画面を介した、自然な友だち化", 12, True, NAVY, 2),
            ("LINEログインの「友だち追加オプション」を有効にして表示。チェックを外した方は友だちにならない", 10, False, INK, 0)], fill=PALE)
+    jirei(s, 13.2, "コンタクトレンズ・メガネのEC", "会員サイトのログインに「LINEでログイン」を追加し、会員情報とLINEを連携",
+          [("約70%", "新規友だちのうち、\nLINEログイン経由で追加した割合"), ("約250%増", "月間の新規友だち追加数\n（約1,000人 → 約3,500人）")])
 
 
 def p_id(s):
@@ -168,6 +188,9 @@ def p_id(s):
         ["予約のリマインド", "予約日時・来場予約の内容"],
     ], row_h=0.92)
     note(s, 13.3, "※配信には、ID連携した方が公式アカウントの友だちであることが必要")
+    jirei(s, 14.1, "通販（EC）", "LINEログインで会員IDとLINEを連携し、購入履歴に応じた配信・カゴ落ち防止のメッセージを配信",
+          [("約250%増", "LINE経由の\nECサイト新規会員登録数"), ("約300%増", "1日あたりの\n友だち追加数"), ("126%増", "LINE経由の\nECサイトの売上")],
+          cond="※導入前後の3か月平均の比較")
 
 
 def p_profile(s):
