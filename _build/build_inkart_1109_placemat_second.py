@@ -6,7 +6,7 @@
 差し替え：
   主役「紙から おもてなしを」 → 「テーブルを 心地よい雰囲気に」（赤は「心地よい雰囲気に」）
   下の1行「風合い豊かな和紙も選べます」 → 「クリスマス・忘年会・新年会の席に」
-  残す：新商品の帯／紙製ランチョンマット印刷／写真2枚／裏面印刷も可能！／札3つ／ボタン
+  残す：帯（文字は新商品→再告知）／紙製ランチョンマット印刷／写真2枚／裏面印刷も可能！／札3つ／ボタン
 
 使い方: PYTHONPATH=<pylib> python3 _build/build_inkart_1109_placemat_second.py
 出力:  _images/inkart_1109_placemat_second_v1_1040.jpg
@@ -52,6 +52,14 @@ draw_outlined((W - text_w(f_main, s2)) // 2, 272, s2, f_main, RED)
 f_sub = ImageFont.truetype(SERIF, 42, index=2)
 s3 = "クリスマス・忘年会・新年会の席に"
 draw_outlined((W - text_w(f_sub, s3)) // 2, 398, s3, f_sub, BROWN, stroke=5)
+
+# 上の帯「新商品」→「再告知」（殿村さん 10/28）。帯の赤で塗って白文字を載せ直す
+ribbon_red = tuple(int(v) for v in a[50, 385])
+d.rectangle([395, 14, 645, 97], fill=ribbon_red)
+f_rib = ImageFont.truetype(SERIF, 68, index=2)
+s4 = "再告知"
+bb = d.textbbox((0, 0), s4, font=f_rib)
+d.text(((W - (bb[2] - bb[0])) // 2 - bb[0], 56 - (bb[1] + bb[3]) // 2), s4, font=f_rib, fill=WHITE)
 
 im.save(OUT, quality=93)
 print(OUT, im.size)
