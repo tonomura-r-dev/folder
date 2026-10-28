@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ワクトリ v1（殿村さんPC保存版・56枚）→ v2：施策の考え方の3ページ（23〜25）に中身を入れる（2026-10-28 殿村さん「派遣 登録 これでいいだろ、進めろ」）。
 
-    python -m _build.patch_wakutori_v2_shisaku <PC保存版v1.pptx> <提案FMT_MAX版.pptx> <出力.pptx>
+    python -m _build.patch_wakutori_v2_shisaku <PC保存版v1.pptx> _data/fmt/提案FMT_MAX版_20261024d.pptx <出力.pptx>
 
   v1では差し込み枠にしていた3ページを、提案FMT（MAX版）の15〜17ページの形に戻して中身を入れる。
   見出し・札・リード（v1で直したもの）は v1 のまま。FMTの決まった言葉・図形の形はそのまま（CLAUDE.md 2026-10-27）。
