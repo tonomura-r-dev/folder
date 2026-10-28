@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>LINEログイン × Profile+ | 体験型デモ</title>
+<style>
+:root{--navy:#19264e;--green:#06c755;--ink:#202d41;--muted:#68768a;--border:#dce3ec;--bg:#f3f5f9;--soft:#eff3fa;--blue:#2763bd;--orange:#c57824;--purple:#7357b9;--shadow:0 9px 30px rgba(18,33,67,.055),0 2px 7px rgba(18,33,67,.035)}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Meiryo,"Hiragino Kaku Gothic ProN","Yu Gothic",system-ui,sans-serif;font-size:14px;line-height:1.6}button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:3px solid #72abfd;outline-offset:2px}button:disabled{cursor:not-allowed;opacity:.45}a{color:var(--blue)}
+.mast{background:linear-gradient(110deg,#172449,#243c71);color:white;padding:18px 28px 20px}.mast-inner{max-width:1550px;margin:auto;display:flex;gap:22px;justify-content:space-between;align-items:center}.brand-k{font-size:11px;font-weight:800;letter-spacing:.16em;opacity:.75}.mast h1{font-size:23px;margin:2px 0 3px;letter-spacing:.015em}.mast p{margin:0;color:#d4e0f7;font-size:12px}.demo-mark{border:1px solid #7892c1;padding:6px 12px;border-radius:40px;color:#dde8ff;font-size:12px;white-space:nowrap}.container{max-width:1550px;margin:0 auto;padding:20px 24px 40px}.topline{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}.tabbar{display:flex;gap:6px;background:white;padding:6px;border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow)}.tabbar button{border:0;border-radius:10px;background:transparent;color:var(--muted);padding:10px 18px;font-weight:800}.tabbar button.on{background:var(--navy);color:#fff}.secondary-btn{border:1px solid var(--border);border-radius:10px;background:white;padding:9px 13px;color:var(--navy);font-weight:800}.lead{font-size:13px;color:var(--muted);margin:8px 2px 16px}.mode-info{border-left:3px solid var(--green);padding-left:10px;color:var(--ink)}
+.modules{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 15px}.modules button{border:1px solid var(--border);background:#fff;color:var(--ink);border-radius:10px;padding:8px 13px;font-size:12.5px;font-weight:800}.modules button.on{border-color:#1b578e;background:#eef4ff;color:#164c8b;box-shadow:inset 0 0 0 1px #164c8b}.modules .num{display:inline-grid;place-items:center;background:#e9edf4;color:#627086;border-radius:50%;width:19px;height:19px;font-size:10px;margin-right:5px}.modules button.on .num{background:#1b578e;color:#fff}
+.steps{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:0 0 16px}.step{position:relative;padding:9px 7px;border:1px solid var(--border);background:white;border-radius:9px;color:#8793a2;text-align:center;font-size:11.5px;font-weight:750;white-space:nowrap}.step::before{content:'○';display:inline-block;margin-right:5px;color:#b2bdc9}.step.done{color:#186b41;background:#ebf8ef;border-color:#b9e7cc}.step.done::before{content:'✓';color:#078244}.step.now{color:#173b77;border:2px solid #2d6bcb;background:#eef5ff;padding:8px 6px}.step.now::before{content:'●';color:#2d6bcb}
+.layout{display:grid;grid-template-columns:minmax(325px,395px) minmax(315px,1fr) minmax(300px,1fr);gap:15px;align-items:start}.panel{background:white;border:1px solid var(--border);border-radius:17px;box-shadow:var(--shadow);padding:17px;min-width:0}.panel-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px;gap:8px}.panel-head h2{font-size:15px;margin:0;color:var(--navy)}.panel-head .right{font-size:11px;color:var(--muted)}.label{display:inline-flex;align-items:center;gap:5px;color:#617086;font-size:11px;font-weight:750;letter-spacing:.05em}.label .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.phone-wrap{display:flex;justify-content:center}.phone{width:345px;max-width:100%;padding:8px;background:#202632;border-radius:36px;box-shadow:0 17px 30px rgba(9,21,36,.2)}.phone-screen{height:610px;overflow:hidden;background:white;border-radius:29px;display:flex;flex-direction:column}.phone-status{height:31px;flex:0 0 auto;display:flex;justify-content:space-between;align-items:center;padding:5px 20px 2px;background:white;color:#192331;font-weight:800;font-size:11px}.screen-head{display:flex;align-items:center;gap:8px;padding:10px 15px;background:#fff;border-bottom:1px solid #e9edf2;min-height:44px;font-size:13px;font-weight:800}.screen-head .arrow{color:#5c6980;font-size:18px}.screen-head .spacer{margin-left:auto;color:#758299;font-size:11px;font-weight:500}.screen-body{flex:1;min-height:0;overflow-y:auto;background:#fff}.site{padding:17px 17px 22px}.site-eyebrow{font-size:10px;font-weight:800;color:#6b7887;letter-spacing:.11em}.site h3{font-size:21px;margin:3px 0 8px;color:#1d324d;line-height:1.42}.site p{margin:0 0 12px;font-size:12px;color:#596a7d}.product-art{height:142px;border-radius:14px;background:linear-gradient(150deg,#f2e5ce,#e3caa7 62%,#e9d2ad);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;margin:12px 0}.product-art::after{content:'';position:absolute;width:170px;height:45px;background:#a86b3f;filter:blur(21px);opacity:.23;bottom:-10px}.coffee{position:relative;background:#c99d70;width:95px;height:112px;border-radius:8px 8px 18px 18px;transform:rotate(-7deg);box-shadow:9px 9px 16px #7b522e48;border:2px solid #af8054;display:flex;flex-direction:column;align-items:center;justify-content:center}.coffee::before{content:'';height:11px;width:100%;position:absolute;top:0;background:#ad875d}.coffee strong{font-size:12px;letter-spacing:.08em;color:#fffaf0}.coffee small{font-size:8px;color:#fff4df}.price{font-size:18px;font-weight:900;color:#1c304b}.summary{border:1px solid #e5eaf0;background:#f8f9fb;border-radius:12px;padding:10px 12px;font-size:12px;color:#607085;margin:10px 0}.summary strong{display:block;color:#273a50;font-size:13px}
+.btn{width:100%;border:0;border-radius:11px;padding:12px 13px;font-weight:800;margin:6px 0;display:flex;align-items:center;justify-content:center;gap:8px;line-height:1.35}.btn.line{background:var(--green);color:white}.btn.line .line-word{background:white;color:#06a345;border-radius:5px;padding:0 5px;font-size:10px;letter-spacing:-.03em}.btn.dark{background:var(--navy);color:white}.btn.soft{background:#eef3f9;color:var(--navy);border:1px solid #dfe6ef}.btn.outline{background:white;border:1px solid #cfd9e5;color:#34465f}.btn.sm{padding:9px 10px;font-size:12px}.btn:disabled{opacity:.46}.hint{font-size:10.5px;color:#77879a;line-height:1.55;margin:8px 0}.green{color:#0c9852}.sep{border:0;border-top:1px solid #e8edf1;margin:13px 0}.checkline{display:flex;align-items:flex-start;gap:10px;border:1px solid #d6e2e5;background:#f4fbf7;border-radius:10px;padding:11px;margin:12px 0;font-size:12px}.checkline input{accent-color:#06c755;transform:scale(1.25);margin:3px 3px 0 2px;flex-shrink:0}.checkline b{display:block;color:#1e3d33}.checkline small{display:block;font-size:10.5px;color:#5d756a}.consent-brand{display:grid;justify-items:center;gap:7px;text-align:center;margin:8px 0 20px}.line-logo{background:var(--green);border-radius:15px;display:grid;place-items:center;color:white;font-size:22px;font-weight:1000;width:56px;height:56px;letter-spacing:-.1em}.consent-brand h3{margin:0;font-size:16px}.consent-brand p{margin:0;color:#657387;font-size:11px}.grant{border-top:1px solid #eaeef3;padding:11px 0;display:flex;align-items:center;gap:9px;font-size:12px}.grant-icon{font-size:18px;color:#66778e}.grant small{color:#8a97a6;display:block;font-size:10px}.badge-d{display:inline-block;color:#7c8896;background:#eef1f6;border-radius:99px;font-size:10px;padding:2px 6px}.signin-done{background:#edf9f2;border:1px solid #c4e7d1;border-radius:14px;padding:17px 13px;text-align:center}.check-symbol{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#dcf6e6;color:#0ba05a;font-size:31px;margin:4px auto 9px}.signin-done h3{font-size:18px;margin:4px 0}.signin-done p{margin:0;color:#4b6b5b;font-size:11.5px}.stat-mini{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #eff2f6;font-size:12px}.stat-mini b{font-size:11.5px}.ok{color:#078748}.no{color:#b15b49}.field{margin:9px 0}.field label{display:block;font-size:11px;font-weight:750;color:#5e6c7d;margin-bottom:3px}.field input{width:100%;border:1px solid #cbd6e4;border-radius:9px;background:white;padding:11px;font-size:12.5px;color:#1d3047}.field input:focus{border-color:#0c8e66}.prefilled{border-color:#60bf86 !important;background:#f1fbf4 !important}.field .stamp{font-size:10px;color:#16834b}.profile-top{background:#f4faf7;border-radius:11px;padding:10px;color:#1f5135;font-size:11.5px;margin:11px 0}.pitem{border-bottom:1px solid #e9eef3;padding:8px 0;display:flex;align-items:flex-start;gap:9px;font-size:12px}.pitem input{accent-color:#06c755;transform:scale(1.2);margin-top:5px}.pitem span{display:block;font-size:11px;color:#718093}.pitem strong{font-size:12px;color:#25384d}.warning{border:1px solid #ecd6a8;border-radius:9px;background:#fff9ed;color:#9a6a20;padding:8px 10px;font-size:11px;margin:9px 0}.notice{padding:9px 10px;border:1px solid #b8d6f0;color:#235888;background:#f0f6ff;border-radius:10px;font-size:11.5px}.receipt{background:#f8fafc;border:1px solid #e4eaf1;border-radius:12px;padding:12px;margin:12px 0;font-size:12px}.receipt-row{display:flex;justify-content:space-between;gap:10px;margin:7px 0}.receipt-row span:first-child{color:#718096}.chatbg{background:#91a9cc;flex:1;min-height:0;padding:14px 10px;display:flex;flex-direction:column;gap:11px;overflow-y:auto}.msg{display:flex;align-items:flex-start;gap:7px}.avatar{width:30px;height:30px;border-radius:50%;background:#1d3763;color:white;display:grid;place-items:center;font-size:12px;font-weight:900;flex:0 0 30px}.bubble{max-width:238px;padding:10px 12px;border-radius:4px 13px 13px 13px;background:white;color:#22313e;font-size:12px;white-space:pre-line}.chatfooter{padding:9px 12px;background:#fff;display:flex;align-items:center;gap:6px}.chatfooter .bar{flex:1;border-radius:99px;background:#f4f6f7;border:1px solid #e6ebef;height:29px}.chatfooter span{color:#84909c;font-size:17px}
+.tag{display:inline-flex;align-items:center;padding:3px 8px;border-radius:50px;background:#edf2f9;color:#4b6280;font-size:11px;font-weight:750}.tag.good{background:#e4f8ea;color:#158348}.tag.warn{background:#fff3e7;color:#9c661e}.tag.gray{background:#eff0f4;color:#788194}.tag.purple{background:#f0eafb;color:#7250aa}.title2{font-size:12px;letter-spacing:.03em;color:#6b7a8c;font-weight:850;margin:12px 0 5px}.guide{background:#f0f5ff;border:1px solid #cadaf4;border-radius:13px;padding:14px;margin:0 0 13px}.guide .g-k{color:#2b5fa3;font-size:11px;font-weight:850}.guide h3{font-size:16px;line-height:1.5;margin:3px 0;color:#1b3459}.guide p{font-size:12px;color:#60748a;margin:0}.guide .point{margin-top:10px;padding-top:9px;border-top:1px solid #d5e2f6;font-size:11.5px}.guide .point b{color:#1f528b}
+.visual-flow{display:flex;flex-direction:column;gap:4px;margin-top:9px}.flow-item{display:flex;align-items:center;gap:10px;border:1px solid #e2e7ef;background:#fbfcfe;color:#76869a;padding:9px 10px;border-radius:10px;font-size:12px}.flow-item .n{width:24px;height:24px;background:#e9edf3;color:#7d8a9b;border-radius:50%;display:grid;place-items:center;flex-shrink:0;font-size:11px;font-weight:900}.flow-item.done{background:#f0f9f4;border-color:#bfe3cd;color:#315f43}.flow-item.done .n{background:#d3f3df;color:#11864e}.flow-item.active{border:1.5px solid #2f69c0;color:#1c437c;background:#f1f6ff;font-weight:800}.flow-item.active .n{background:#255eb5;color:white}.flow-item span.sub{display:block;font-size:10.5px;font-weight:400;color:#8895a4}.flow-arrow{height:8px;display:grid;place-items:center;color:#bbc6d0;font-size:11px;line-height:1}
+.compare{display:flex;gap:6px}.compare>div{flex:1;background:#f7f8fa;padding:9px;border:1px solid #e3e7ed;border-radius:10px;font-size:11px;color:#57677a}.compare strong{display:block;color:#29405d;margin-bottom:3px}.compare>div.greenbox{background:#f1faf4;border-color:#bce3c8}.compare>div.greenbox strong{color:#167a47}.metric{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metric>div{background:#f8fafc;border:1px solid #e6ebf1;border-radius:11px;padding:10px}.metric .k{font-size:10px;color:#8391a0}.metric .v{font-size:15px;font-weight:900;color:#243657;word-break:break-word}.metric .v.good{color:#148247}.metric .v.purple{color:#6d49ab}.datamap{border:1px solid #e4e9ef;background:#fbfcfe;border-radius:12px;padding:11px;margin:10px 0;font-size:11.5px;color:#6b7d92}.datamap .chain{display:flex;align-items:center;justify-content:space-between;gap:6px;font-weight:800}.datamap .node{background:white;border:1px solid #cfd9e5;border-radius:8px;padding:6px 7px;text-align:center;flex:1;min-width:0;color:#43556d;overflow-wrap:anywhere}.datamap .node.active{border-color:#4bba77;background:#edf9f1;color:#17814c}.datamap .arrow{font-weight:900;color:#a0b0c0}.timeline{max-height:355px;overflow-y:auto;padding:0 3px 1px 0}.event{display:grid;grid-template-columns:53px 1fr;gap:8px;padding:9px 0;border-bottom:1px solid #edf0f4}.event .when{font-size:10px;color:#9aa5b2;font-variant-numeric:tabular-nums}.event .ev-body{display:flex;flex-direction:column;gap:3px}.event .ev-head{font-size:11.5px;font-weight:850;color:#2c3c53}.event .ev-tag{font-size:9px;font-weight:850;padding:0 5px;border-radius:4px;margin-right:5px}.ev-tag.front{background:#e4f7ea;color:#147b45}.ev-tag.back{background:#ede7f9;color:#654b9c}.event .ev-desc{font-size:11px;color:#69798c}.empty{font-size:12px;color:#8b99a8;padding:22px 0;text-align:center}.note-box{font-size:10.5px;color:#708095;border-top:1px solid #edf0f3;padding-top:12px;margin-top:15px}.foot{max-width:1550px;padding:0 24px 26px;margin:auto;font-size:11px;color:#83909d}.foot a{color:#627da5}.error-msg{color:#b74332;font-size:11px;margin:5px 0;font-weight:700}.section-split{height:1px;background:#edf1f5;margin:12px 0}
+@media (max-width:1240px){.layout{grid-template-columns:minmax(335px,390px) minmax(320px,1fr)}.back-panel{grid-column:2;grid-row:2}.middle-panel{grid-column:2;grid-row:1}.phone-panel{grid-row:1/span 2}.steps{font-size:11px}}
+@media (max-width:850px){.container{padding:15px 12px 24px}.layout{grid-template-columns:1fr}.back-panel,.middle-panel,.phone-panel{grid-column:auto;grid-row:auto}.phone-screen{height:595px}.mast{padding:16px}.mast-inner{align-items:flex-start}.demo-mark{display:none}.steps{display:flex;overflow:auto}.step{flex:0 0 112px}.tabbar{width:100%}.tabbar button{flex:1;padding:8px}.panel{padding:13px}.phone{width:350px}}
+.step-actions{display:flex;align-items:center;gap:8px}.step-actions button{min-height:41px;padding:9px 17px;font-size:13px}.step-actions .step-next{background:var(--navy);border-color:var(--navy);color:#fff;box-shadow:0 2px 8px rgba(25,38,78,.17)}.step-actions button:disabled{opacity:.42;cursor:default;box-shadow:none}@media (max-width:500px){.step-actions{width:100%}.step-actions button{flex:1}}
+/* Bのデモ条件・手入力比較は①の端末内で操作する。②③に操作ボタンを置かない */
+.demo-choices{display:grid;gap:7px;margin:12px 0}
+.demo-choices .btn{margin:0}
+.demo-select{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#f4f7fb;border:1px solid #dfe7ef;border-radius:10px;margin:9px 0;font-size:11px}
+.demo-select span{color:#68768a}
+.demo-select button{border:1px solid #cbd6e4;background:#fff;color:#19264e;font-weight:800;padding:5px 9px;border-radius:8px;font-size:11px}
+.module-finish{border:1px solid #b8e1c9;background:#f0faf4;color:#17643b;border-radius:10px;padding:10px 12px;font-size:11.5px;font-weight:750;margin:13px 0}.module-instruct{border:1px dashed #b5c4d8;background:#f7f9fc;color:#425872;border-radius:10px;padding:10px 12px;font-size:11.5px;margin:13px 0}
+</style>
+</head>
+<body>
+<header class="mast"><div class="mast-inner"><div><div class="brand-k">FUNCTION EXPERIENCE / OFFLINE DEMO</div><h1>LINEログイン × Profile+ 体験デモ</h1><p>会員登録・友だち追加・フォーム入力・CV後の配信を、操作しながら理解する</p></div><div class="demo-mark">架空サイト / ダミーデータ / 外部通信なし</div></div></header>
+<div class="container">
+  <div class="topline"><div class="tabbar" role="tablist" aria-label="体験モード"><button id="mode-a" class="on" role="tab" aria-selected="true" data-action="mode" data-value="A">A｜一連の体験</button><button id="mode-b" role="tab" aria-selected="false" data-action="mode" data-value="B">B｜機能別に体験</button></div><div class="step-actions" aria-label="デモ進行"><button id="stepBack" type="button" class="secondary-btn" data-action="stepBack" disabled>戻る</button><button id="stepNext" type="button" class="secondary-btn step-next" data-action="stepNext">次の出来事</button></div></div>
+  <div class="lead" id="lead"></div>
+  <div id="moduleBar"></div><div id="progress"></div>
+  <main class="layout">
+    <section class="panel phone-panel"><div class="panel-head"><h2>① ユーザーが見る画面</h2><span class="right">スマホ操作の再現</span></div><div class="phone-wrap"><div class="phone"><div class="phone-screen"><div class="phone-status"><span>9:41</span><span>●●●　▰</span></div><div id="phoneView" style="display:flex;flex-direction:column;flex:1;min-height:0"></div></div></div></div><div class="note-box">画面は挙動を説明するための簡略化した再現です。実際のLINEアプリ・認証画面とは見た目や細部が異なります。</div></section>
+    <section class="panel middle-panel"><div class="panel-head"><h2>② どんな仕組みか</h2><span class="right">操作案内・導線（表示のみ）</span></div><div id="guide"></div><div id="journey"></div></section>
+    <section class="panel back-panel"><div class="panel-head"><h2>③ 裏側で起こる処理</h2><span class="right">状態・ID連携・イベント（表示のみ）</span></div><div id="backend"></div></section>
+  </main>
+</div>
+<footer class="foot">本デモはLINE公式APIや実ユーザーのアカウントには接続しません。友だち追加オプションの初期選択は認証プロバイダーなどの条件によります。Profile+の利用には所定の申請・承認、必要な権限取得と本人同意が必要です。<br>仕様の参考：<a href="https://developers.line.biz/ja/docs/line-login/link-a-bot/" target="_blank" rel="noreferrer">LINEログインの友だち追加オプション</a> ・ <a href="https://developers.line.biz/ja/docs/partner-docs/line-profile-plus/" target="_blank" rel="noreferrer">LINE Profile+ 開発者ドキュメント</a> ・ <a href="https://help.line.me/line/?contentId=20000134&lang=ja" target="_blank" rel="noreferrer">Profile+利用案内</a></footer>
+<script>
+(()=>{'use strict';
+const profile={name:'佐藤 花子',phone:'090-1234-5678',postal:'150-0001',address:'東京都渋谷区神宮前1-2-3'};
+const flowNames=['サイト訪問','LINEログイン','友だち追加・ID連携','フォーム入力','内容確認','購入CV','LINEで継続接点'];
+const moduleDefs=[['login','LINEログイン / 友だち追加'],['link','ID連携'],['profile','Profile+'],['delivery','CV後のLINE配信']];
+// Bは各機能の独立デモ。Aの購入導線や他機能へ勝手に遷移しない。
+const moduleFlows={
+ login:['LINEでログイン','同意・友だち追加を選択','ログイン・友だち追加の結果','あいさつを受け取る'],
+ link:['連携前の状態','ID連携を実行','連携結果を確認'],
+ profile:['入力前のフォーム','利用情報への同意','自動入力後のフォーム'],
+ delivery:['購入済みの状態を確認','友だちの有無を比較','LINE配信結果を確認']
+};
+const defaultForm=()=>({name:'',phone:'',postal:'',address:''});
+let seq=0;let s;let actionHistory=[];
+const $=id=>document.getElementById(id);
+const esc=(v)=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function init(mode='A',module='login'){
+  actionHistory=[];s={mode,module,view:'home',greetingSent:false,auth:false,friend:false,friendChoice:true,linked:false,member:false,purchased:false,profileUsed:false,profileMode:'auto',form:defaultForm(),autofilled:[],selectFields:{name:true,phone:true,postal:true,address:true},logs:[],lineMessages:[],deliverySent:false,error:'',frontHint:'',memberId:'MEM-2026-0084'};seq=0;
+  if(mode==='B') prepareModule(module);
+  event('デモ開始',mode==='A'?'一連の体験を開始':'機能別：'+moduleDefs.find(x=>x[0]===module)[1],'back');
+  render();
+}
+function event(title,desc,side='back') {s.logs.push({id:++seq,title,desc,side,time:'STEP '+String(seq).padStart(2,'0')});}
+function prepareModule(m){
+  s.module=m;
+  if(m==='login'){s.view='home';return;}
+  s.auth=true;s.member=true;s.friend=true;s.friendChoice=true;
+  if(m==='link'){s.linked=false;s.view='idlink';return;}
+  s.linked=true;
+  if(m==='profile'){s.view='checkout';return;}
+  if(m==='delivery'){s.purchased=true;s.view='deliverySetup';s.form={...profile};s.profileUsed=false;s.lineMessages=['佐藤 花子さん、ご注文ありがとうございます。\nご注文内容：おうちブレンド 1袋\n発送のご案内もLINEでお届けします。（デモ）'];return;}
+}
+function currentStep(){if(s.view==='home')return 0;if(s.view==='consent')return 1;if(s.view==='account'||s.view==='idlink')return 2;if(s.view==='checkout'||s.view==='profileConsent')return 3;if(s.view==='confirm')return 4;if(s.view==='complete')return 5;return 6;}
+function frame(title,html,right=''){return `<div class="screen-head"><span>${title.startsWith('LINE')?'':'‹'}</span><span>${esc(title)}</span><span class="spacer">${esc(right)}</span></div><div class="screen-body">${html}</div>`;}
+function page(title,inside){return frame(title,`<div class="site">${inside}</div>`,'デモ');}
+function btn(txt,act,cl='dark',attr=''){return `<button class="btn ${cl}" data-action="${act}" ${attr}>${txt}</button>`;}
+function renderPhone(){
+let h='';
+switch(s.view){
+ case 'home':h=page('くらし日和 ストア',`<div class="site-eyebrow">KURASHI BIYORI / SAMPLE SHOP</div><h3>暮らしに、小さな<br>お気に入りを。</h3><p>毎日のひと息に。おうちブレンドをお届けする架空のECストアです。</p><div class="product-art"><div class="coffee"><strong>KURASHI</strong><small>HOUSE BLEND</small><strong>COFFEE</strong></div></div><div style="display:flex;justify-content:space-between;align-items:baseline"><b>おうちブレンド</b><span class="price">¥2,980</span></div><p>デモ用商品・価格です。実際の注文や決済は発生しません。</p><div class="summary"><strong>会員登録・ログイン</strong>LINEでログインすると、メールアドレスやパスワードの新規入力を省けます。</div>${btn('<span class="line-word">LINE</span> LINEでログイン','startLogin','line')}${s.mode==='B'?'<div class="hint">このデモのゴール：友だち追加後、LINEであいさつメッセージを受け取ること。</div>':'<div class="hint">ログイン後、そのまま購入手続きに進めます。</div>'}`);break;
+ case 'consent':h=frame('LINE 認証・同意',`<div class="site"><div class="consent-brand"><div class="line-logo">LINE</div><h3>くらし日和 ストア</h3><p>以下の情報へのアクセスを許可しますか？</p></div><div class="grant"><span class="grant-icon">◉</span><div>プロフィール情報<small>表示名など、許可された範囲</small></div><span style="margin-left:auto;color:#16a25c">✓</span></div><div class="grant"><span class="grant-icon">▣</span><div>ログイン認証<small>サイトの会員アカウントと連携</small></div><span style="margin-left:auto;color:#16a25c">✓</span></div><label class="checkline"><input type="checkbox" id="friendCheck" ${s.friendChoice?'checked':''}><span><b>公式アカウントを友だち追加する</b><small>ログイン時に「くらし日和」を友だち追加</small></span></label><div class="hint">※チェック初期ONは認証プロバイダーの場合の例。OFFでもログインは可能です。</div>${btn('許可してログイン','consent','line')}${btn('許可せず戻る','cancelLogin','outline sm')}</div>`,'同意画面の再現');break;
+ case 'account':h=page('ログイン完了',`<div class="signin-done"><div class="check-symbol">✓</div><h3>ログイン完了</h3><p>LINEアカウントでサイトにログインしました</p></div>${s.mode==='B'&&s.module==='login'?`<div class="stat-mini"><span>LINEログイン</span><b class="ok">完了</b></div><div class="stat-mini"><span>公式アカウント</span><b class="${s.friend?'ok':'no'}">${s.friend?'友だち追加済み':'友だち未追加'}</b></div><div class="summary">${s.friend?'公式アカウントの友だちになりました。LINEのトークであいさつメッセージを確認しましょう。':'友だち追加をOFFにしたため、ログインはできますが、あいさつメッセージは届きません。'}</div>${s.friend?btn('LINEを開く','showWelcome','line'):'<div class="module-instruct">友だち追加OFFの結果はここまで。ONの場合は友だち追加とあいさつメッセージの受信を体験できます。</div>'}`:`<div class="title2">会員情報</div><div class="stat-mini"><span>会員ID</span><b>${s.memberId}</b></div><div class="stat-mini"><span>LINEログイン</span><b class="ok">完了</b></div><div class="stat-mini"><span>ID連携</span><b class="ok">連携済み</b></div><div class="stat-mini"><span>公式アカウント</span><b class="${s.friend?'ok':'no'}">${s.friend?'友だち追加済み':'友だち未追加'}</b></div><div class="summary">${s.friend?'友だち追加済みなので、購入後のご案内をLINEで送れます。':'ログインとID連携は完了しています。友だち未追加のため、このデモでは公式アカウントからの追客はできません。'}</div>${btn('購入手続きへ','goCheckout')}`}`);break;
+ case 'idlink':h=page('ID連携の仕組み',`<div class="site-eyebrow">MODULE / ID LINK</div><h3>会員とLINEを<br>同じ人として紐づける</h3><p>自社の会員IDとLINEのユーザー識別子を、安全なサーバー処理で関連付ける想定です。</p><div class="receipt"><div class="receipt-row"><span>自社会員ID</span><b>${s.memberId}</b></div><div class="receipt-row"><span>LINEユーザー</span><b>U••••••••84</b></div><div class="receipt-row"><span>現在の状態</span><b class="${s.linked?'ok':'no'}">${s.linked?'連携済み':'未連携'}</b></div></div>${s.linked?`<div class="signin-done"><div class="check-symbol">✓</div><h3>ID連携が完了</h3><p>会員情報とLINEユーザーを関連付けました</p></div>`:btn('会員IDとLINEを連携','linkId','line')}<div class="hint">※実際は、ログイン認証とサーバーでの本人確認・ID管理が必要です。ここでは処理を可視化しています。</div></div>`);break;
+ case 'checkout':{
+   const fields=[['name','お名前'],['phone','電話番号'],['postal','郵便番号'],['address','住所']];
+   let inputs=fields.map(([k,label])=>`<div class="field"><label for="f-${k}">${label} ${s.autofilled.includes(k)?'<span class="stamp">✓ Profile+から反映</span>':''}</label><input id="f-${k}" data-field="${k}" value="${esc(s.form[k])}" placeholder="${label}を入力" class="${s.autofilled.includes(k)?'prefilled':''}" autocomplete="off"></div>`).join('');
+   h=page('購入情報の入力',`<div class="site-eyebrow">CHECKOUT / DEMO</div><h3>ご注文のお手続き</h3><div class="summary"><strong>おうちブレンド　¥2,980</strong>配送先情報をご確認ください。</div>${s.profileMode==='manual'?`<div class="warning">通常入力：お客様自身が各項目を入力します。</div>${s.mode==='B'?btn('Profile+入力を試す','profileMode','outline sm','data-value="auto"'):''}`:`<div class="profile-top">Profile+に登録された情報を使えば、入力の手間を減らせます。</div>${btn('Profile+で自動入力','openProfile','line sm')}${s.mode==='B'?`<div class="demo-select"><span>従来の入力と比べる</span><button data-action="profileMode" data-value="manual">手入力を試す</button></div>`:''}`}<div class="title2">お届け先</div>${inputs}${s.error?`<div class="error-msg">${esc(s.error)}</div>`:''}${s.mode==='B'?(s.profileUsed?'<div class="module-finish">✓ Profile+の体験は完了です。選択した情報がフォームに反映されました。購入確定には進みません。</div>':`<div class="module-instruct">${s.profileMode==='manual'?'手入力の手間を比較できます。通常フォームでは各項目をお客様自身が入力します。':'「Profile+で自動入力」から同意して、入力欄が埋まる変化を確認してください。'}</div>`):btn('内容を確認する','confirmOrder','dark')}<div class="hint">フォームはデモ用です。入力内容は外部へ送信されません。</div>`);break;}
+ case 'profileConsent':h=frame('Profile+ 情報の利用',`<div class="site"><div class="consent-brand"><div class="line-logo">LINE</div><h3>Profile+ の登録情報</h3><p>フォームへの入力に使う情報を選択してください</p></div><div class="profile-top">LINEに登録した情報を、今回の購入フォームに反映します。<br>利用する情報を選んでください。</div>${[['name','氏名',profile.name],['phone','電話番号',profile.phone],['postal','郵便番号',profile.postal],['address','住所',profile.address]].map(([key,lab,v])=>`<label class="pitem"><input type="checkbox" data-profile="${key}" ${s.selectFields[key]?'checked':''}><div><strong>${lab}</strong><span>${esc(v)}</span></div></label>`).join('')}<div class="hint">デモ用架空情報。実際のProfile+利用には対象権限の審査・承認とユーザーの同意が必要です。</div>${btn('選んだ情報をフォームに入力','doAutofill','line')}${btn('使わずフォームに戻る','closeProfile','outline sm')}</div>`,'本人が選択');break;
+ case 'confirm':h=page('注文内容の確認',`<div class="site-eyebrow">ORDER CONFIRMATION</div><h3>この内容でよろしいですか？</h3><div class="receipt"><b>おうちブレンド</b><div class="receipt-row"><span>商品代金</span><b>¥2,980</b></div><hr class="sep">${[['name','お名前'],['phone','電話番号'],['postal','郵便番号'],['address','住所']].map(([k,lab])=>`<div class="receipt-row"><span>${lab}</span><b style="text-align:right;max-width:62%;overflow-wrap:anywhere">${esc(s.form[k])}</b></div>`).join('')}</div>${s.profileUsed?'<div class="notice">✓ 一部の情報はProfile+から入力されました。</div>':'<div class="summary">お客様がフォームに情報を入力しました。</div>'}${btn('注文を確定する（デモ）','purchase','line')}${btn('入力内容を修正','goCheckout','outline sm')}<div class="hint">実際の購入・決済は行われません。</div>`);break;
+ case 'complete':h=page('ご注文完了',`<div class="signin-done"><div class="check-symbol">✓</div><h3>ご注文ありがとうございます</h3><p>ご注文が完了しました（デモ）</p></div><div class="receipt"><div class="receipt-row"><span>注文番号</span><b>DEMO-1028</b></div><div class="receipt-row"><span>商品</span><b>おうちブレンド</b></div><div class="receipt-row"><span>注文金額</span><b>¥2,980</b></div></div>${s.friend?`<div class="profile-top">公式アカウントの友だちなので、LINEで購入後のご案内を受け取れます。</div>${btn('LINEで届いた案内を見る','openChat','line')}`:`<div class="warning">ログイン時に公式アカウントを友だち追加していません。このデモではLINEメッセージを送れません。</div>${btn('LINEでの案内を確認','openChat','outline')}`}<div class="hint">会員IDと注文情報はデモ内で紐づいています。</div>`);break;
+ case 'deliverySetup':h=page('配信を比較する',`<div class="site-eyebrow">AFTER PURCHASE / DEMO</div><h3>購入後のご案内を<br>LINEで受け取る</h3><div class="signin-done"><div class="check-symbol">✓</div><h3>ご購入完了</h3><p>デモ注文番号：DEMO-1028</p></div><div class="summary"><strong>配信条件を選択</strong>公式アカウントの友だちになっているかどうかで、届くメッセージを比べます。<br>※ここは比較用の設定画面です。</div><div class="demo-choices">${btn('友だち追加済みで確認','setFriend','line','data-value="yes"')}${btn('友だち未追加で確認','setFriend','outline','data-value="no"')}</div><div class="hint">購入完了はデモ用の前提状態です。実際の注文・決済は行いません。</div>`);break;
+ case 'chat':{
+   let messages=s.lineMessages.map(t=>`<div class="msg"><div class="avatar">く</div><div class="bubble">${esc(t)}</div></div>`).join('');
+   let body=s.friend?`<div class="chatbg"><div style="text-align:center;color:white;font-size:11px;background:#778caa77;padding:3px;border-radius:20px;align-self:center">本日</div>${messages||'<div class="msg"><div class="avatar">く</div><div class="bubble">くらし日和 公式LINEへようこそ。（デモ）</div></div>'}</div><div class="chatfooter"><span>＋</span><div class="bar"></div><span>☺</span></div>`:`<div class="site"><div class="signin-done"><div class="check-symbol" style="background:#fff3e5;color:#b47718">!</div><h3>友だち未追加</h3><p>LINEログインとID連携は完了していますが、公式アカウントの友だちではありません。</p></div><div class="warning">このデモでは、友だちでない人に公式アカウントからのメッセージを配信しません。</div></div>`;
+   h=`<div class="screen-head"><span class="arrow">‹</span><span>くらし日和 公式LINE</span><span class="spacer">≡</span></div>${body}`;
+   break;}
+}
+$('phoneView').innerHTML=h;
+}
+function guideData(){
+if(s.view==='home')return ['まずは「LINEでログイン」を押す','サイトでLINEログインを選ぶと、認証・同意の画面に進みます。','LINEログインは、サイト側が会員アカウントの作成・ログインに使う仕組み。'];
+if(s.view==='consent')return ['友だち追加のチェックを切り替えてみる','チェックを外してもログインできます。チェック状態によって、その後の友だち・配信状態が変わります。','友だち追加はLINEログインに付けられるオプション。LINEログイン自体とは別です。'];
+if(s.view==='account')return s.mode==='B'&&s.module==='login'?(s.friend?['「LINEを開く」を押す','友だち追加されたことで、公式アカウントからあいさつメッセージが届きます。','ログインだけでなく、友だち追加後の最初の接点を体験するのが、この機能のゴールです。']:['友だち追加OFFの結果を確認','ログインは完了しましたが、公式アカウントの友だちではないため、あいさつは届きません。ONを試す場合は「戻る」で同意画面に戻ってください。','LINEログインと友だち追加は別の処理です。']):['「購入手続きへ」を押す','ログイン・会員作成・ID連携が完了。公式アカウントの友だち追加結果も見比べてください。','サイトの会員IDとLINE側の識別子を関連付け、会員に合った配信の基盤を作ります。'];
+if(s.view==='deliverySetup')return ['①で友だち状態を選ぶ','友だち追加済みかどうかを選択し、購入後のLINE配信の違いを見比べます。','デモ用の前提状態を①で切り替えます。実際のユーザー操作によって配信可否が切り替わるわけではありません。'];
+if(s.view==='idlink')return [s.linked?'ID連携の結果を確認して終了':'「会員IDとLINEを連携」を押す','自社の会員データとLINEユーザーの識別情報を紐づける処理だけを体験します。','本人確認・権限・サーバー側での安全な連携が必要です。'];
+if(s.view==='checkout')return s.mode==='B'&&s.profileUsed?['自動入力の結果を確認して終了','選んだ情報だけがフォームに反映されました。ここでは購入手続きには進みません。','Profile+は、ユーザーが利用に同意した情報をフォーム入力に活用する機能です。']: [s.profileMode==='manual'?'通常フォームに手入力してみる':'「Profile+で自動入力」を押す',s.profileMode==='manual'?'氏名・電話番号・住所などを手入力する手間を比較します。':'何も入力されていないフォームが、同意後にどのように変わるか注目してください。','Profile+は一般的なLINEログインの表示名とは異なる、申請・承認を要する情報取得機能です。'];
+if(s.view==='profileConsent')return ['使う情報を選び、「フォームに入力」を押す','氏名・電話番号・住所など、本人が選んだ情報だけを入力欄に反映します。','同意した情報を、申請・承認された権限の範囲で利用します。'];
+if(s.view==='confirm')return ['「注文を確定する」を押す','必要事項が揃えば、フォーム入力後のCVへ進めます。','購入後の会員情報や履歴を、連携済みの会員IDに結びつける想定です。'];
+if(s.view==='complete')return ['「LINEで届いた案内を見る」を押す','購入した人にLINEで連絡が届く場合と、友だち未追加で届かない場合を比較します。','ID連携だけでは公式アカウントからのメッセージ配信を保証しません。'];
+if(s.mode==='B'&&s.module==='login')return ['ゴール：あいさつメッセージを受信','LINEログイン時に友だちになり、公式アカウントのあいさつがトークに届いた状態です。ここで終了します。','Profile+や購入・CVは別の機能デモで確認できます。'];
+return s.deliverySent?['発送案内の受信を確認して終了','購入履歴を参照した発送案内がLINEのトークに届きました。','上部の「戻る」で配信前の状態を確認できます。']:s.friend?['上部の「次の出来事」で自動配信を再現','このメッセージはユーザーが押すものではなく、購入後の条件に応じて届く想定です。','配信には、友だち関係と適切な配信基盤・送信条件が必要です。']:['友だち未追加の結果を確認','公式アカウントからのメッセージは届きません。上部の「戻る」で別の条件を試せます。','ID連携だけでは公式アカウントからの配信を保証しません。'];
+}
+function renderGuide(){
+ let [a,b,c]=guideData();
+ let flow;
+ if(s.mode==='A'){
+  const idx=currentStep();
+  flow=flowNames.map((lab,i)=>`<div class="flow-item ${i<idx?'done':i===idx?'active':''}"><div class="n">${i<idx?'✓':i+1}</div><div>${esc(lab)}${i===idx?'<span class="sub">いまここ</span>':''}</div></div>${i<flowNames.length-1?'<div class="flow-arrow">↓</div>':''}`).join('');
+ }else{
+  let idx=0;
+  if(s.module==='login')idx=s.view==='home'?0:s.view==='consent'?1:s.view==='chat'&&s.greetingSent?4:2;
+  if(s.module==='link')idx=s.linked?2:0;
+  if(s.module==='profile')idx=s.profileUsed?2:s.view==='profileConsent'?1:0;
+  if(s.module==='delivery')idx=s.view==='deliverySetup'?0:s.deliverySent?2:1;
+  flow=moduleFlows[s.module].map((lab,i)=>`<div class="flow-item ${i<idx?'done':i===idx?'active':''}"><div class="n">${i<idx?'✓':i+1}</div><div>${esc(lab)}${i===idx?'<span class="sub">いまここ</span>':''}</div></div>${i<moduleFlows[s.module].length-1?'<div class="flow-arrow">↓</div>':''}`).join('');
+ }
+ let context='';
+ if(s.mode==='B'&&s.module==='profile')context=`<div class="title2">フォームの比較</div><div class="compare"><div class="${s.profileMode==='manual'?'greenbox':''}"><strong>従来の入力</strong>氏名・住所などを手入力</div><div class="${s.profileMode==='auto'?'greenbox':''}"><strong>Profile+</strong>本人の同意で自動入力</div></div><div class="hint">入力方法は①のフォーム画面から変更できます。</div>`;
+ if(s.mode==='B'&&s.module==='delivery')context=`<div class="title2">友だち状態と配信可否</div><div class="compare"><div class="${!s.friend?'greenbox':''}"><strong>友だち未追加</strong>公式アカウントからは送らない</div><div class="${s.friend?'greenbox':''}"><strong>友だち追加済み</strong>適切な配信条件で送信できる</div></div><div class="hint">①で配信条件を選び、通知は「次の出来事」で再現します。</div>`;
+ let comparison='';
+ if(s.mode==='A')comparison=`<div class="section-split"></div><div class="title2">導入前との比較</div><div class="compare"><div><strong>従来</strong>ID・パスワードやフォーム入力を個別に行う</div><div class="greenbox"><strong>導入後の想定</strong>LINEログイン＋必要情報の自動入力＋継続接点</div></div>`;
+ else {
+  const pair={login:['メールアドレスやパスワードで登録','LINEでログイン＋友だち追加後、あいさつを受信'],link:['会員データとLINEが別管理','会員IDとLINEのユーザーを関連付け'],profile:['氏名・住所などを手入力','許可した情報をフォームに反映'],delivery:['友だちでない場合は配信不可','友だちで連携済みなら配信できる場合がある']}[s.module];
+  comparison=`<div class="section-split"></div><div class="title2">この機能だけの比較</div><div class="compare"><div><strong>比較前</strong>${pair[0]}</div><div class="greenbox"><strong>比較後</strong>${pair[1]}</div></div>`;
+ }
+ $('guide').innerHTML=`<div class="guide"><div class="g-k">${s.mode==='A'?'次の操作':'この機能で試す操作'}</div><h3>${esc(a)}</h3><p>${esc(b)}</p><div class="point"><b>解説ポイント：</b> ${esc(c)}</div></div>${context}<div class="title2">${s.mode==='A'?'一連の導線':'この機能の体験範囲'}</div><div class="visual-flow">${flow}</div>${comparison}`;
+}
+function statusTag(val,good='済み',bad='未完了'){return `<span class="tag ${val?'good':'gray'}">${val?good:bad}</span>`}
+function renderBackend(){
+ const all=[['会員ログイン',s.auth,'完了','未ログイン'],['サイト会員ID',s.member,s.memberId,'未作成'],['公式アカウント',s.friend,'友だち追加済み','未追加'],['ID連携',s.linked,'連携済み','未連携'],['Profile+反映',s.profileUsed,'利用済み','未利用'],['購入CV',s.purchased,'購入完了','未購入']];
+ const subsets={login:[0,2],link:[1,3],profile:[4],delivery:[1,2,3,5]};
+ const list=s.mode==='A'?all:subsets[s.module].map(i=>all[i]);
+ const mapping=`<div class="datamap"><div style="font-weight:850;margin-bottom:9px;color:#374a60">会員情報とLINEの紐づき</div><div class="chain"><div class="node ${s.member?'active':''}">自社会員<br><small>${s.member?s.memberId:'未作成'}</small></div><span class="arrow">⇄</span><div class="node ${s.linked?'active':''}">${s.linked?'ID連携済み':'未連携'}</div><span class="arrow">⇄</span><div class="node ${s.auth?'active':''}">LINE<br><small>U••••84</small></div></div><div style="margin-top:8px;font-size:10px;color:#7b8a9c">※実際のユーザーIDではなく、デモ用の識別子です。</div></div>`;
+ const timeline=s.logs.slice().reverse().map(e=>`<div class="event"><div class="when">${e.time}</div><div class="ev-body"><div class="ev-head"><span class="ev-tag ${e.side}">${e.side==='front'?'表側':'裏側'}</span>${esc(e.title)}</div><div class="ev-desc">${esc(e.desc)}</div></div></div>`).join('');
+ let metrics;
+ if(s.mode==='B'&&s.module==='profile')metrics=`<div class="metric"><div><div class="k">自動反映した項目</div><div class="v">${s.autofilled.length} / 4</div></div><div><div class="k">Profile+利用</div><div class="v ${s.profileUsed?'good':''}">${s.profileUsed?'利用済み':'未利用'}</div></div></div>`;
+ else if(s.mode==='B'&&s.module==='login')metrics=`<div class="metric"><div><div class="k">友だち追加</div><div class="v ${s.friend?'good':''}">${s.friend?'追加済み':'未追加'}</div></div><div><div class="k">あいさつ受信</div><div class="v ${s.greetingSent?'good':''}">${s.greetingSent?'受信済み':'未受信'}</div></div></div>`;
+ else if(s.mode==='B'&&s.module==='link')metrics=`<div class="metric"><div><div class="k">会員ID</div><div class="v" style="font-size:13px">${s.memberId}</div></div><div><div class="k">ID連携</div><div class="v ${s.linked?'good':''}">${s.linked?'連携済み':'未連携'}</div></div></div>`;
+ else metrics=`<div class="metric"><div><div class="k">会員ID</div><div class="v" style="font-size:13px">${s.member?s.memberId:'未作成'}</div></div><div><div class="k">メッセージ配信</div><div class="v ${s.friend&&s.linked?'good':''}" style="font-size:13px">${s.friend&&s.linked?'送信可能（デモ）':'送信できない'}</div></div></div>`;
+ const body=s.mode==='B'&&s.module==='profile'?`<div class="datamap">フォームに選択した情報だけが反映されます。Bでは購入・決済やCVを実行しません。</div>`:(s.mode==='B'&&s.module==='login'?`<div class="datamap">友だち追加ONならあいさつを受信。OFFでもログインは完了しますが、あいさつは届きません。B①は購入画面に進みません。</div>`:mapping);
+ $('backend').innerHTML=`${metrics}<div class="title2">${s.mode==='A'?'現在の状態':'この機能に関係する状態'}</div>${list.map(([name,v,yes,no])=>`<div class="stat-mini"><span>${name}</span>${statusTag(v,yes,no)}</div>`).join('')}${body}<div class="title2">この体験で起きたこと <span class="tag">${s.logs.length}件</span></div><div class="timeline" aria-live="polite">${timeline||'<div class="empty">操作すると履歴が表示されます</div>'}</div><div class="note-box">「表側」はユーザーに見える変化、「裏側」はサイト・LINE・会員データの想定処理。これは仕組みの説明であり、実際のAPI通信ログではありません。</div>`;
+}
+function renderTop(){
+ $('mode-a').classList.toggle('on',s.mode==='A');$('mode-b').classList.toggle('on',s.mode==='B');$('mode-a').setAttribute('aria-selected',String(s.mode==='A'));$('mode-b').setAttribute('aria-selected',String(s.mode==='B'));
+ $('lead').innerHTML=s.mode==='A'?`<span class="mode-info">サイト訪問からCV後のLINE通知までを、「次の出来事」で順番に進み、「戻る」で直前の状態に戻せます。スマホ内の操作も可能です。</span>`:`<span class="mode-info">機能を選び、「次の出来事」「戻る」で独立して体験。B①は友だち追加とあいさつ受信までで終了します。</span>`;
+ $('moduleBar').innerHTML=s.mode==='B'?`<nav class="modules" aria-label="機能選択">${moduleDefs.map(([v,l],i)=>`<button class="${s.module===v?'on':''}" data-action="module" data-value="${v}"><span class="num">${i+1}</span>${l}</button>`).join('')}</nav>`:'';
+ $('progress').innerHTML=s.mode==='A'?`<div class="steps">${flowNames.map((name,i)=>`<div class="step ${i<currentStep()?'done':i===currentStep()?'now':''}">${esc(name)}</div>`).join('')}</div>`:'';
+}
+// デモ進行は「次の出来事」と「戻る」だけ。画面内CTAはそのまま操作できる。
+// 遷移先は実際の操作と共通の commitAction に渡すので、①②③が同じ状態になる。
+function nextAction(){
+ if(s.mode==='B'){
+  if(s.module==='login'){
+   if(s.view==='home')return 'startLogin';
+   if(s.view==='consent')return 'consent';
+   if(s.view==='account'&&s.friend&&s.greetingSent)return 'showWelcome';
+   return null;
+  }
+  if(s.module==='link')return s.linked?null:'linkId';
+  if(s.module==='profile'){
+   if(s.profileUsed||s.profileMode==='manual')return null;
+   if(s.view==='checkout')return 'openProfile';
+   if(s.view==='profileConsent'&&Object.values(s.selectFields).some(Boolean))return 'doAutofill';
+   return null;
+  }
+  if(s.module==='delivery')return s.view==='deliverySetup'?'setFriend':(s.view==='chat'&&s.friend&&s.linked&&!s.deliverySent)?'deliver':null;
+  return null;
+ }
+ if(s.view==='home')return 'startLogin';
+ if(s.view==='consent')return 'consent';
+ if(s.view==='account')return 'goCheckout';
+ if(s.view==='checkout'){
+   if(s.profileMode!=='manual'&&!s.profileUsed)return 'openProfile';
+   return Object.values(s.form).every(v=>String(v).trim())?'confirmOrder':null;
+ }
+ if(s.view==='profileConsent')return Object.values(s.selectFields).some(Boolean)?'doAutofill':null;
+ if(s.view==='confirm')return 'purchase';
+ if(s.view==='complete')return 'openChat';
+ if(s.view==='chat')return (s.friend&&s.linked&&!s.deliverySent)?'deliver':null;
+ return null;
+}
+function updateStepButtons(){
+ $('stepBack').disabled=actionHistory.length===0;
+ $('stepNext').disabled=!nextAction();
+}
+function render(){renderTop();renderPhone();renderGuide();renderBackend();updateStepButtons();}
+function stateSnapshot(){return {state:JSON.parse(JSON.stringify(s)),seq};}
+function restoreSnapshot(snapshot){s=snapshot.state;seq=snapshot.seq;render();}
+
+function commitAction(action,value){
+ if(action==='stepBack'){
+  if(actionHistory.length)restoreSnapshot(actionHistory.pop());
+  return;
+ }
+ if(action==='stepNext'){
+  const next=nextAction();
+  if(next)commitAction(next);
+  return;
+ }
+ if(action==='mode'){init(value,'login');return;}
+ if(action==='module'){init('B',value);return;}
+ // 履歴は「画面が進む」イベント単位で保存し、裏側の状態・配信履歴も戻す。
+ const previous=stateSnapshot();
+ s.error='';
+ switch(action){
+ case 'startLogin':s.view='consent';event('LINEログインを選択','サイトのLINEログインボタンをタップ','front');break;
+ case 'cancelLogin':s.view='home';event('同意せず戻る','ログインは成立していません','front');break;
+ case 'consent':
+   s.auth=true;s.member=true;s.linked=!(s.mode==='B'&&s.module==='login');s.friend=s.friendChoice;s.view='account';
+   event('ログイン認証・同意','サイトへのログインを許可','front');
+   event(s.linked?'会員登録・ID連携':'会員ログイン完了',s.linked?`会員ID ${s.memberId} と LINEユーザーを紐づけ`:'LINEでサイトへのログインが完了。ID連携の詳細はB②で確認','back');
+   event('友だち追加の判定',s.friend?'公式アカウントを友だち追加した':'チェックOFFのため友だち追加なし','back');
+   if(s.friend){s.lineMessages=['佐藤 花子さん、はじめまして！\nくらし日和 公式LINEです。\n友だち追加ありがとうございます。\n新商品やお得なお知らせをLINEでお届けします。（デモ）'];s.greetingSent=true;event('あいさつメッセージを送信','友だち追加をきっかけに、公式アカウントからあいさつを送信（デモ）','back');}
+   break;
+ case 'showWelcome':if(!(s.mode==='B'&&s.module==='login'&&s.friend&&s.greetingSent))return;s.view='chat';event('あいさつメッセージを確認','公式アカウントのトークにあいさつメッセージを表示','front');break;
+ case 'goCheckout':if(s.mode==='B')return;s.view='checkout';event('購入フォームへ','配送先入力画面を開く','front');break;
+ case 'openProfile':s.view='profileConsent';event('Profile+を選択','情報利用の画面へ','front');break;
+ case 'closeProfile':s.view='checkout';event('Profile+を使わず戻る','フォームは自動入力されていない','front');break;
+ case 'doAutofill':{
+  let ks=Object.keys(s.selectFields).filter(k=>s.selectFields[k]);if(!ks.length){s.error='利用する情報を1つ以上選んでください。';alert('自動入力する項目を1つ以上選んでください。');return;}
+  for(let k of ks)s.form[k]=profile[k];s.autofilled=Array.from(new Set([...s.autofilled,...ks]));s.profileUsed=true;s.view='checkout';event('Profile+利用に同意',ks.map(k=>({name:'氏名',phone:'電話番号',postal:'郵便番号',address:'住所'}[k])).join('・')+' の利用を選択','front');event('フォーム自動入力',ks.length+'項目をフォームへ反映。対象範囲は本人が選択','back');break;}
+ case 'confirmOrder':{if(s.mode==='B')return;
+   for(let k of Object.keys(s.form)){const input=document.querySelector(`[data-field="${k}"]`);if(input)s.form[k]=input.value.trim();}
+   const missing=Object.keys(s.form).filter(k=>!s.form[k].trim());if(missing.length){s.error='未入力の項目があります。入力してから進んでください。';renderPhone();return;}
+   s.view='confirm';event('入力内容を確認','入力内容を確認画面に表示','front');break;}
+ case 'purchase':if(s.mode==='B')return;s.purchased=true;s.view='complete';event('購入完了（CV）','デモ注文番号 DEMO-1028 を発行','front');event('購入履歴を会員IDへ紐づけ',`${s.memberId} に購入情報を保存（デモ）`,'back');if(s.friend&&s.linked){s.lineMessages.push('佐藤 花子さん、ご注文ありがとうございます。\n商品：おうちブレンド\n発送準備が整い次第、LINEでお知らせします。（デモ）');event('LINE購入通知を準備','友だち追加済み・ID連携済みのため送信可能','back');}else{event('LINE購入通知は対象外','友だち未追加、またはID未連携のため配信しない','back');}break;
+ case 'openChat':if(s.mode==='B')return;s.view='chat';event('LINE通知を確認',s.friend?'公式アカウントのトーク画面を開く':'友だち未追加のため配信なし','front');break;
+ case 'linkId':s.linked=true;event('自社会員とLINEをID連携',`${s.memberId} と U••••84 を紐づけ`,'back');break;
+ case 'deliver':if(s.mode==='B'&&s.module!=='delivery')return;if(!s.friend||!s.linked||s.deliverySent)return;s.deliverySent=true;s.lineMessages.push('佐藤 花子さん、商品の発送準備が整いました。\n配送状況は会員ページからご確認いただけます。（デモ）');event('発送通知を受信','注文した商品の発送案内がLINEに届く','front');event('会員情報に応じた配信','購入履歴・会員IDを参照して対象者に配信（デモ）','back');break;
+ case 'profileMode':s.profileMode=value;s.view='checkout';s.form=defaultForm();s.autofilled=[];s.profileUsed=false;event('入力方法を変更',value==='manual'?'従来の手入力で比較':'Profile+での自動入力で比較','back');break;
+ case 'setFriend':if(!(s.mode==='B'&&s.module==='delivery'&&s.view==='deliverySetup'))return;s.friend=value!=='no';s.view='chat';if(s.friend){s.lineMessages=['佐藤 花子さん、ご注文ありがとうございます。\n発送のご案内もLINEでお届けします。（デモ）'];}else{s.lineMessages=[];}s.deliverySent=false;event('友だち状態を切り替え',s.friend?'友だち追加済み：配信可能':'友だち未追加：配信不可','back');break;
+ default:return;
+ }
+ // 無効な操作は履歴に追加しない。
+ if(JSON.stringify(s)!==JSON.stringify(previous.state))actionHistory.push(previous);
+ render();
+}
+document.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;commitAction(el.dataset.action,el.dataset.value);});
+document.addEventListener('change',e=>{if(e.target.id==='friendCheck'){s.friendChoice=e.target.checked;}if(e.target.dataset.profile){s.selectFields[e.target.dataset.profile]=e.target.checked;}updateStepButtons();});
+document.addEventListener('input',e=>{if(e.target.dataset.field){s.form[e.target.dataset.field]=e.target.value; if(s.autofilled.includes(e.target.dataset.field)&&e.target.value!==profile[e.target.dataset.field])s.autofilled=s.autofilled.filter(x=>x!==e.target.dataset.field);updateStepButtons();}});
+init();
+})();
+</script>
+</body>
+</html>

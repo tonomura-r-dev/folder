@@ -7,7 +7,7 @@
   ・1〜9ページ（表紙・会社概要・弊社の強み・受賞・ポジショニング・アジェンダ）はそのまま使い、表紙とアジェンダの資料名だけ差し替える
   ・10〜16ページ（サンクスLINEの本編）は外し、本編8ページを新しく組む（13ページ「ターゲット業界別」の見出しの形を使う）
     10 課題／11 全体の導線／12 LINEログイン＆友だち追加／13 ID連携／14 Profile+／15 期待効果／16 費用／17 導入の流れ
-  ・デモ動画は後から（AIのデモ化）。12・14ページに動画の差し込み枠（QRコードの位置）だけ置く
+  ・12・14ページに体験デモ（HTML）を開くボタン。HTMLはDYMのサーバーに置き、ボタンにリンクを付ける（QRは使わない。商談はPC想定。殿村さん 2026-10-28）
   ・費用は汎用資料の表のまま：ID連携＝DYM共通資料の成果報酬型プランの表（初期20万円〜／月額5万円〜）、LINEログイン＝0円。
     Profile+は汎用資料に金額が無いので「別途お見積もり」（佐村さんに確認中）
   ・実例（12・13ページ）＝LINEヤフー for Businessの事例。業界名と数字だけ載せる（社名・ツール名・出典は書かない。殿村さんOK 2026-10-28）。
@@ -29,6 +29,7 @@ from _build.patch_tanaka_v4_thanks_option import set_lines, sid
 DOC = "LINEログイン・Profile+のご提案"
 PALE = "F2F2F2"          # 示唆・注記の枠（薄い灰色の塗りだけ。左の縦線は付けない）
 X0, W0 = 1.8, 23.9       # 本文の左端と幅（cm）
+DEMO_URL = ""            # 体験デモ（_demo/line_login_profile_demo.html）をDYMのサーバーに置いたURL。決まったら入れて再ビルド
 
 
 def box(s, x, y, w, h, text, size=12, fill=WHITE, line=NAVY, color=INK, bold=True, kind=MSO_SHAPE.ROUNDED_RECTANGLE):
@@ -75,14 +76,15 @@ def table(s, x, y, w, col_w, rows, head_size=11, body_size=11, row_h=0.95):
 
 
 def video_frame(s, x, y, w, h, name):
-    """デモ動画の差し込み枠（QRコードと「動画を見る」の位置だけ押さえる）"""
-    fr = shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h, None, fill=WHITE, line=GRAY, lw=1.0, adj=0.06)
-    fr.line.dash_style = 4
-    q = min(h - 1.0, 2.6)
-    shape(s, MSO_SHAPE.RECTANGLE, x + 0.4, y + (h - q) / 2, q, q, [("QRコード", 9, False, GRAY, 0)], fill=PALE, line=LGRAY, lw=0.75)
-    label(s, x + q + 0.7, y + h / 2 - 1.1, w - q - 1.0, 2.2,
-          [(f"デモ動画（{name}）", 11, True, NAVY, 2), ("QRコードを読み取って", 10, False, INK, 0), ("動画を見る", 10, False, INK, 0)],
-          anchor=MSO_ANCHOR.MIDDLE)
+    """体験デモの枠。ボタンにHTMLデモ（DYMのサーバーに置く）へのリンクを付ける。商談はPCで見る想定なのでQRは使わない"""
+    shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, x, y, w, h, None, fill=WHITE, line=LGRAY, lw=1.0, adj=0.06)
+    label(s, x + 0.5, y + h / 2 - 2.0, w - 1.0, 2.0,
+          [(f"体験デモ（{name}）", 12, True, NAVY, 4), ("画面を操作しながら、", 10.5, False, INK, 0),
+           ("仕組みを確認できる", 10.5, False, INK, 0)], align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.BOTTOM)
+    b = shape(s, MSO_SHAPE.ROUNDED_RECTANGLE, x + 1.2, y + h / 2 + 0.4, w - 2.4, 1.3, [("体験デモを開く　▶", 12, True, WHITE, 0)],
+              fill=NAVY, adj=0.3)
+    if DEMO_URL:
+        b.click_action.hyperlink.address = DEMO_URL
 
 
 def jirei(s, y, gyokai, sesaku, nums, cond=None):
@@ -164,7 +166,7 @@ def p_login(s):
         label(s, X0 + 1.6, y, 12.6, 2.0, [(head, 13, True, NAVY, 3), (body, 11, False, INK, 0)], anchor=MSO_ANCHOR.MIDDLE)
         if num != "3":
             arrow_line(s, X0 + 0.6, y + 1.65, X0 + 0.6, y + 2.25, GREEN, 1.5)
-    video_frame(s, 16.6, 4.4, 9.1, 6.4, "LINEログイン・友だち追加")
+    video_frame(s, 16.6, 4.4, 9.1, 6.4, "LINEログイン")
     shape(s, MSO_SHAPE.RECTANGLE, X0, 11.2, W0, 1.5,
           [("同意画面を介した、自然な友だち化", 12, True, NAVY, 2),
            ("LINEログインの「友だち追加オプション」を有効にして表示。チェックを外した方は友だちにならない", 10, False, INK, 0)], fill=PALE)
