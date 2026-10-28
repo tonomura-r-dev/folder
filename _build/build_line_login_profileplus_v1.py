@@ -29,7 +29,7 @@ from _build.patch_tanaka_v4_thanks_option import set_lines, sid
 DOC = "LINEログイン・Profile+のご提案"
 PALE = "F2F2F2"          # 示唆・注記の枠（薄い灰色の塗りだけ。左の縦線は付けない）
 X0, W0 = 1.8, 23.9       # 本文の左端と幅（cm）
-DEMO_URL = ""            # 体験デモ（_demo/line_login_profile_demo.html）をDYMのサーバーに置いたURL。決まったら入れて再ビルド
+DEMO_URL = "line_login_profile_demo.html"  # 体験デモ。PPTXと同じフォルダに置いたHTMLを開く（相対リンク。URLは決めない・殿村さん 2026-10-28）
 
 
 def box(s, x, y, w, h, text, size=12, fill=WHITE, line=NAVY, color=INK, bold=True, kind=MSO_SHAPE.ROUNDED_RECTANGLE):
