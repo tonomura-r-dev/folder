@@ -32,11 +32,16 @@ const TABS = [
   { sheet: 'GA_流入元別',          dimA: 'sessionMedium',       dimB: 'landingPage' },   // landingPage＝クエリ無し
 ];
 
+// メニュー。oa_report_import.gs と同じプロジェクトに入れた場合は、どちらの onOpen が動いても両方のメニューが出る
 function onOpen() {
-  SpreadsheetApp.getUi().createMenu('GA4')
+  const ui = SpreadsheetApp.getUi();
+  ui.createMenu('GA4')
     .addItem('先月分を取り込む', 'importLastMonth')
     .addItem('今月分（1日〜昨日）を取り込む', 'importThisMonth')
     .addToUi();
+  if (typeof importOaFromFolder === 'function') {
+    ui.createMenu('OA').addItem('フォルダから取り込む', 'importOaFromFolder').addToUi();
+  }
 }
 
 function importLastMonth() {
