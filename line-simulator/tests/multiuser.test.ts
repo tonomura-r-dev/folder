@@ -163,7 +163,11 @@ describe('ペルソナで流したときの未到達チェック', () => {
 
   it('誰も入らないシナリオは警告になる', () => {
     const p = structuredClone(project);
-    p.flows.push({ id: 'flow_orphan', label: '孤立', trigger: { kind: 'tagAdded', tagId: 'job_light' }, priority: 50, concurrency: 'parallel', reentry: 'never', nodes: [{ id: 'n_orphan_entry', type: 'entry', position: { x: 0, y: 0 } }], edges: [] });
+    p.flows.push({
+      id: 'flow_orphan', label: '孤立', trigger: { kind: 'tagAdded', tagId: 'job_light' }, priority: 50, concurrency: 'parallel', reentry: 'never',
+      nodes: [{ id: 'n_orphan_entry', type: 'entry', position: { x: 0, y: 0 } }, { id: 'n_orphan_msg', type: 'message', messageId: p.messages[0]!.id, position: { x: 0, y: 150 } }],
+      edges: [{ id: 'e_orphan', from: { nodeId: 'n_orphan_entry', port: 'out' }, to: 'n_orphan_msg' }],
+    });
     // 軽作業タグが付くのは大阪希望さんだけなので、そのタグを付けないようにすると誰も入らない
     p.personas = p.personas.filter((x) => x.id !== 'p_osaka' && x.id !== 'p_late');
     const issues = personaCoverage(p);

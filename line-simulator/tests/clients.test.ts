@@ -11,6 +11,7 @@ import { allScripted, autoStep, dispatch, newDemo, seek, worldOf, type Demo } fr
 import { journeyOf } from '../packages/player/src/journey.ts';
 import { Labels } from '../packages/player/src/describe.ts';
 import { buildTimeline } from '../packages/player/src/timeline.ts';
+import { phone } from '../packages/player/src/phone.ts';
 import { buildExport } from '../tools/export-lib.ts';
 import { loadProject } from '../tools/project-io.ts';
 import { DAY } from './helpers.ts';
@@ -620,6 +621,173 @@ describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバ�
   it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
     const d = playToEnd(p);
     expect(d.now).toBe(190 * DAY);
+    const ww = worldOf(p, d);
+    for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
+    await exportChecks(p);
+  }, 30_000);
+});
+
+describe.skipIf(!has('client-d-event'))('企業別デモ④（イベント運営・新規応募／勤務／再応募の循環）', () => {
+  const p = has('client-d-event') ? loadProject('client-d-event') : (null as unknown as Project);
+  const w = has('client-d-event') ? run(p, 22 * DAY) : (null as unknown as WorldState);
+  const tags = (id: string) => Object.keys(user(w, id).tags);
+  const cardTitles = (messageId: string) => p.messages.find((m) => m.id === messageId)!.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.title) : []));
+  const evTitle = (k: string) => p.webPages.find((x) => x.id === `page_ev_${k}`)!.title.replace('（デモ用サンプル）', '');
+  const list = () => {
+    const b = p.webPages.find((x) => x.id === 'page_jobs')!.blocks[2]!;
+    if (b.kind !== 'list') throw new Error('list');
+    return b;
+  };
+  /** 友だち追加して希望条件に答えたところ（はじめての人） */
+  const newcomer = (area: string, venue: string, job: string, day: string) => {
+    let d = dispatch(newDemo(p, 'p_a'), { type: 'addFriend', routeId: 'route_site' });
+    for (const [q, c] of [['q_area', area], ['q_venue', venue], ['q_job', job], ['q_day', day]] as const) d = dispatch(d, { type: 'answer', surveyId: 'sv_pref', questionId: q, choiceIds: [`c_${q.slice(2)}_${c}`] });
+    return d;
+  };
+
+  it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
+    expect(validate(p)).toEqual([]);
+    expect(personaCoverage(p)).toEqual([]);
+  });
+
+  it('全CTA・カルーセルのボタン・リッチメニュー・ページのボタンが、押すと反応する。メニューは資料どおり6マスで「仕事を探す」が左上', () => {
+    expect(deadButtons(p, 'p_a', 'route_site')).toEqual([]);
+    const m = p.richMenus[0]!;
+    expect(m.cells.map((c) => c.label).slice(0, 5)).toEqual(['仕事を探す', '勤務の案内', '希望条件を変える', 'よくある質問', 'お問い合わせ']);
+    expect(m.cells[5]!.label).toBe(`${p.brand.companyName.replace(/^株式会社/, '')}とは`);
+    expect(m.cells[0]!.area).toEqual({ col: 0, row: 0 });
+    expect(m.cells[0]!.emphasis).toBe(true);
+  });
+
+  it('LINEへの入口は3つ（サイトのボタン・離脱防止・サンクスLINE誘導）が別々の人の行動として流れる', () => {
+    expect(user(w, 'p_a').route).toBe('route_site');
+    expect(user(w, 'p_b').route).toBe('route_popup');
+    expect(user(w, 'p_c').route).toBe('route_thanks');
+    // サンクスLINE誘導：先に応募してから友だちに。応募フォームの内容が入力欄に入り、本人が送ってから面接の案内が届く
+    const c = user(w, 'p_c');
+    expect(c.cvs['cv_apply']!.at).toBeLessThan(c.friendAddedAt!);
+    expect(c.talk.find((t) => t.side === 'user')?.bubble).toEqual({ kind: 'text', text: expect.stringContaining('【応募しました】') });
+    // 追加済みの人がサンクスLINE誘導を押すと、友だち追加ではなくトークを開くだけ（2回目の友だち追加にならない）
+    let d = dispatch(newDemo(p, 'p_a'), { type: 'addFriend', routeId: 'route_site' });
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_apply_thanks_e1' });
+    d = dispatch(d, { type: 'tapLineCta', pageId: 'page_apply_thanks_e1' });
+    expect(me(p, d).surface).toEqual({ kind: 'talk' });
+    expect(me(p, d).route).toBe('route_site');
+  });
+
+  it('求人一覧：LINEから開くと希望条件で絞り込んだ状態。エリア・会場・業務・勤務日で絞れ、締切を過ぎた募集は出ない', () => {
+    expect(list().facets.map((f) => f.label)).toEqual(['エリア', '会場', '業務', '勤務日']);
+    let d = newcomer('yokohama', 'any', 'guide', 'weekend');
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_main', cellId: 'cell_search' });
+    const v = { project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' } as never;
+    const html = (phone as (v: never, u: UserState) => string)(v, me(p, d));
+    for (const k of ['e1', 'e3', 'e6']) expect(html).toContain(evTitle(k));
+    expect(html).not.toContain(evTitle('e4'));
+    // 締切（前日18:00）を過ぎた e1 は、あとで開くと出ない
+    d = seek(d, at(6, 9));
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_main', cellId: 'cell_search' });
+    const later = (phone as (v: never, u: UserState) => string)({ ...(v as object), world: worldOf(p, d), demo: d } as never, me(p, d));
+    expect(later).not.toContain(evTitle('e1'));
+  });
+
+  it('はじめての人は応募フォーム、登録済みの人は勤務希望フォームへ。応募完了・登録完了・勤務希望・勤務確定は別の状態で、送信だけでは確定しない', () => {
+    let d = newcomer('yokohama', 'any', 'guide', 'weekend');
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_ev_e3' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_ev_e3', blockIndex: 4 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_apply_e3' });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_apply_e3', values: { f_event: 'x' } });
+    let u = me(p, d);
+    expect(Object.keys(u.cvs)).toEqual(['cv_apply']);
+    expect('ap_e3' in u.tags && !('fx_e3' in u.tags) && !('st_staff' in u.tags)).toBe(true);
+    // 登録の前に別のイベントを押すと、応募フォームは出さずに案内だけ
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_ev_e4' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_ev_e4', blockIndex: 4 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_pending' });
+    d = dispatch(d, { type: 'cv', cvId: 'st_register' });
+    expect('st_staff' in me(p, d).tags && !('fx_e3' in me(p, d).tags)).toBe(true);
+    // 登録済みになると、同じボタンから勤務希望フォームへ。送っても勤務は確定しない
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_ev_e6' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_ev_e6', blockIndex: 4 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_wish_e6' });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_wish_e6', values: { f_event: 'x' } });
+    u = me(p, d);
+    expect(u.cvs['cv_reapply']!.count).toBe(1);
+    expect(['wi_e6', 'fx_e3', 'fx_e6'].map((t) => t in u.tags)).toEqual([true, false, false]);
+    // 運営側が勤務確定を登録したときだけ確定（開催の早い e3 から）
+    d = dispatch(d, { type: 'cv', cvId: 'st_fix' });
+    expect(['fx_e3', 'fx_e6'].map((t) => t in me(p, d).tags)).toEqual([true, false]);
+    // 確定ずみのイベントをもう一度押しても、二重に応募しない
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_ev_e3' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_ev_e3', blockIndex: 4 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_already_fixed' });
+  });
+
+  it('勤務前の案内は、そのイベントの勤務が確定した人にだけ届く', () => {
+    const got = (k: string) => Object.values(w.users).filter((u) => u.deliveries.some((d) => d.messageId === `msg_rm_${k}`)).map((u) => u.id).sort();
+    expect(got('e3')).toEqual(['p_d', 'p_f']);
+    expect(got('e1')).toEqual(['p_a']);
+    expect(got('e4')).toEqual(['p_c']);
+    for (const u of Object.values(w.users))
+      for (const d of u.deliveries.filter((x) => x.messageId.startsWith('msg_rm_') || x.messageId.startsWith('msg_day_'))) {
+        const k = d.messageId.replace(/^msg_(rm|day)_/, '');
+        expect(`fx_${k}` in u.tags).toBe(true);
+      }
+  });
+
+  it('「前回のご勤務、ありがとう」は、勤務完了を登録した人にだけ。勤務の案内を送っただけの人（岡田）には送らず、勤務ありにもしない', () => {
+    const thanks = new Set(p.messages.filter((m) => m.bubbles.some((b) => (b.kind === 'text' || b.kind === 'buttons') && /ご勤務、ありがとう/.test(b.text))).map((m) => m.id));
+    for (const u of Object.values(w.users))
+      for (const d of u.deliveries.filter((x) => thanks.has(x.messageId))) expect(u.behaviors.some((b) => b.type === 'cv' && b.detail['cvId'] === 'st_done' && b.at < d.at)).toBe(true);
+    expect(tags('p_b')).toContain('fx_e7');
+    expect(tags('p_b')).not.toContain('st_worked');
+    expect(ids(w, 'p_b').some((m) => thanks.has(m))).toBe(false);
+  });
+
+  it('次回の募集は希望条件で出し分け：静岡・平日の人に横浜の土日の募集は届かない／気になる会場を選んだ人には、その会場の募集', () => {
+    const e = ids(w, 'p_e').filter((m) => m.startsWith('msg_bc') || m.startsWith('msg_aw'));
+    expect(e).toEqual(['msg_bc1_a_shizuoka_weekday', 'msg_aw_e2_a_shizuoka_weekday']);
+    expect(cardTitles('msg_bc1_a_shizuoka_weekday')).toEqual([evTitle('e2'), evTitle('e8')]);
+    const skipped = w.decisions.filter((d) => d.userId === 'p_e' && d.kind === 'branch' && d.outcome === 'skipped' && d.ref === 'c_bc1_a_yokohama_weekend');
+    expect(skipped).toHaveLength(1);
+    expect(ids(w, 'p_d')).toContain('msg_bc0_v_nissan_weekend');
+    // 希望条件を変えた人は、変えた後の希望で届く（湘南 → Kアリーナ横浜）
+    expect(ids(w, 'p_g')).toContain('msg_bc1_v_karena_weekend');
+    expect(tags('p_g')).not.toContain('area_shonan');
+    // 配信日時のあとで友だちになった人には、その回の配信を送らない
+    expect(user(w, 'p_e').trail.some((t) => t.nodeId === 'n_bc0_late')).toBe(true);
+  });
+
+  it('ブロックした人には配信しない（企画配信・ステップ配信が止まる）', () => {
+    const g = user(w, 'p_g');
+    expect(g.friendState).toBe('blocked');
+    expect(g.deliveries.every((d) => d.at < at(9, 20))).toBe(true);
+    expect(['flow_bc2', 'flow_bc3', 'flow_step'].map((f) => g.flows[f]!.status)).toEqual(['stopped', 'stopped', 'stopped']);
+  });
+
+  it('カルーセル → 詳細 → 勤務希望フォーム → CVの記録まで、同じイベント。新規応募と再応募は別のCV', () => {
+    const a = user(w, 'p_a');
+    const sent = a.behaviors.filter((b) => b.type === 'submitForm' && /^page_(apply|wish)_/.test(b.detail['pageId'] ?? ''));
+    expect(sent.map((b) => b.detail['pageId'])).toEqual(['page_apply_e1', 'page_wish_e6']);
+    expect(sent[1]!.detail['values.f_event']).toBe(p.webPages.find((x) => x.id === 'page_wish_e6')!.form!.fields[0]!.options![0]);
+    expect(a.cvs['cv_apply']!.count).toBe(1);
+    expect(a.cvs['cv_reapply']!.count).toBe(1);
+    const back = buildTimeline(p, new Labels(p), w, ['p_a']).flatMap((e) => e.back);
+    expect(back.some((t) => t.startsWith('CV「再応募（勤務希望）」を記録（勤務希望を出すイベント：11月21日（土） 横浜アリーナ'))).toBe(true);
+    // 勤務 → 次回の募集 → 再応募 → 勤務確定 → 勤務前の案内 の循環（2周目）
+    expect(ids(w, 'p_a').filter((m) => /^msg_(fix|rm|day|aw)_/.test(m))).toEqual(['msg_fix_e1', 'msg_rm_e1', 'msg_day_e1', 'msg_aw_e1_a_yokohama_weekend', 'msg_fix_e6', 'msg_rm_e6', 'msg_day_e6', 'msg_aw_e6_a_yokohama_weekend']);
+  });
+
+  it('③：GOALは再応募で、勤務確定へ戻るくり返しがある', () => {
+    const rows = journeyOf(p, w, user(w, 'p_a'));
+    const goal = rows.find((r) => r.isGoal)!;
+    expect(goal.step.id).toBe('j_reapply');
+    expect(goal.step.loopTo).toBe('j_fix');
+    expect(rows.filter((r) => r.status === 'done' || r.status === 'current').map((r) => r.step.id)).toEqual(p.journey!.map((s) => s.id));
+  });
+
+  it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
+    const d = playToEnd(p);
+    expect(d.now).toBe(22 * DAY);
     const ww = worldOf(p, d);
     for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
     await exportChecks(p);

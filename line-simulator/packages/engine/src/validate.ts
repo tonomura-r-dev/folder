@@ -1,7 +1,7 @@
 // 案件の検証。重大エラー（error）が1つでもあれば営業用HTMLは書き出さない。
 // path は JSON Pointer。画面側はこれで該当箇所へ飛び、code から日本語の説明を作る。
 
-import type { Action, Expr, Flow, FlowNode, Id, InputEventBody, Issue, Project, Wait } from './schema.ts';
+import type { Action, Expr, Flow, FlowNode, Id, InputEventBody, Issue, Project, Wait, WebBlock } from './schema.ts';
 import { choiceButtons, portsOf } from './ports.ts';
 import { bubbleTexts, isKnownVar, TEXT_VAR } from './text.ts';
 
@@ -18,7 +18,7 @@ const CMPS = new Set(['eq', 'neq', 'in', 'gte', 'lte']);
 const FEASIBILITY = new Set(['lstep', 'conditional', 'external', 'unknown']);
 const EVENT_TYPES = new Set([
   'visitPage', 'exitIntent', 'dismissPopup', 'submitForm', 'addFriend', 'block', 'unblock', 'tapMenu', 'tapButton', 'sendText', 'answer', 'cv',
-  'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta', 'viewCard',
+  'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta', 'viewCard', 'filterList',
 ]);
 const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
@@ -278,6 +278,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       const bp = `${path}/blocks/${bi}`;
       if (b.kind === 'image') need(assets.has(b.assetId), `${bp}/assetId`, 'asset', b.assetId);
       else if (b.kind === 'button') checkAction(b.action, `${bp}/action`);
+      else if (b.kind === 'list') checkList(b, bp);
       else checkText(b.text, `${bp}/text`);
     });
     if (p.form) {
@@ -293,7 +294,39 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       checkAction(p.exitPopup.cta.action, `${path}/exitPopup/cta/action`);
     }
     if (p.lineCta) need(routes.has(p.lineCta.routeId), `${path}/lineCta/routeId`, 'route', p.lineCta.routeId);
+    checkText(p.lineCta?.prefill, `${path}/lineCta/prefill`);
   });
+
+  /** 絞り込みつきの一覧：軸・選択肢・項目のID、項目が指す軸と選択肢、押したときの動作 */
+  function checkList(b: Extract<WebBlock, { kind: 'list' }>, path: string) {
+    unique(b.facets, `${path}/facets`);
+    unique(b.items, `${path}/items`);
+    if (b.items.length === 0) err('node.requiredMissing', `${path}/items`);
+    checkText(b.emptyText, `${path}/emptyText`);
+    b.facets.forEach((f, fi) => {
+      if (f.options.length === 0) err('node.requiredMissing', `${path}/facets/${fi}/options`);
+      unique(f.options, `${path}/facets/${fi}/options`);
+      f.options.forEach((o, oi) => {
+        if (o.tagId === undefined) return;
+        tagsRead.add(o.tagId);
+        need(tags.has(o.tagId), `${path}/facets/${fi}/options/${oi}/tagId`, 'tag', o.tagId);
+      });
+    });
+    b.items.forEach((it, ii) => {
+      const ip = `${path}/items/${ii}`;
+      if (!it.title.trim()) err('node.requiredMissing', `${ip}/title`);
+      checkText(it.title, `${ip}/title`);
+      checkText(it.body, `${ip}/body`);
+      if (it.assetId) need(assets.has(it.assetId), `${ip}/assetId`, 'asset', it.assetId);
+      if (it.closesAt !== undefined && !(Number.isInteger(it.closesAt) && it.closesAt >= 0)) err('node.requiredMissing', `${ip}/closesAt`);
+      for (const [facetId, optionIds] of Object.entries(it.values)) {
+        const f = b.facets.find((x) => x.id === facetId);
+        need(!!f, `${ip}/values/${facetId}`, 'facet', facetId);
+        if (f) optionIds.forEach((o, oi) => need(f.options.some((x) => x.id === o), `${ip}/values/${facetId}/${oi}`, 'option', o));
+      }
+      checkAction(it.action, `${ip}/action`);
+    });
+  }
 
   // ---------- フロー ----------
   project.flows.forEach((flow, fi) => {
@@ -393,6 +426,10 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
 
   function checkWait(w: Wait, path: string) {
     if (w.kind === 'duration' && (!Number.isInteger(w.minutes) || w.minutes < 0)) err('node.requiredMissing', `${path}/minutes`);
+    if (w.kind === 'at') {
+      if (!Number.isInteger(w.day) || w.day < 0) err('node.requiredMissing', `${path}/day`);
+      if (!TIME.test(w.time)) err('node.requiredMissing', `${path}/time`);
+    }
     if (w.kind === 'dayAt') {
       if (!Number.isInteger(w.day) || w.day < 0) err('node.requiredMissing', `${path}/day`);
       if (!TIME.test(w.time)) err('node.requiredMissing', `${path}/time`);
@@ -469,6 +506,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     (s.nodeIds ?? []).forEach((n, j) => need(allNodes.has(n), `${path}/nodeIds/${j}`, 'node', n));
     if (s.reachedWhen) checkExpr(s.reachedWhen, `${path}/reachedWhen`);
     if (s.cvId !== undefined) need(cvs.has(s.cvId), `${path}/cvId`, 'cv', s.cvId);
+    if (s.loopTo !== undefined) need((project.journey ?? []).some((x) => x.id === s.loopTo), `${path}/loopTo`, 'journey', s.loopTo);
     if (!s.nodeIds?.length && !s.reachedWhen && s.cvId === undefined && !(s.variants ?? []).some((x) => x.nodeIds?.length)) warn('optional.empty', path, { reason: 'journeyReach' });
     const refs = (p: string, nodeIds?: Id[], messageIds?: Id[], feasibility?: string, options?: { id: Id; label: string; feasibility?: string }[]) => {
       (nodeIds ?? []).forEach((n, j) => need(allNodes.has(n), `${p}/nodeIds/${j}`, 'node', n));
@@ -502,7 +540,19 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       case 'tapPageButton': {
         const page = project.webPages.find((w) => w.id === ev.pageId);
         need(!!page, `${path}/pageId`, 'page', ev.pageId);
-        if (page) need(page.blocks[ev.blockIndex]?.kind === 'button', `${path}/blockIndex`, 'button', ev.blockIndex);
+        const block = page?.blocks[ev.blockIndex];
+        if (page && block?.kind === 'list') need(block.items.some((x) => x.id === ev.itemId), `${path}/itemId`, 'item', ev.itemId);
+        else if (page) need(block?.kind === 'button', `${path}/blockIndex`, 'button', ev.blockIndex);
+        return;
+      }
+      case 'filterList': {
+        const block = project.webPages.find((w) => w.id === ev.pageId)?.blocks[ev.blockIndex];
+        need(block?.kind === 'list', `${path}/blockIndex`, 'list', ev.blockIndex);
+        if (block?.kind === 'list') {
+          const f = block.facets.find((x) => x.id === ev.facetId);
+          need(!!f, `${path}/facetId`, 'facet', ev.facetId);
+          if (f && ev.optionId !== '') need(f.options.some((x) => x.id === ev.optionId), `${path}/optionId`, 'option', ev.optionId);
+        }
         return;
       }
       case 'addFriend':

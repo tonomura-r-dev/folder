@@ -24,6 +24,10 @@ export class Labels {
 
   tag = (id: Id) => this.p.tags.find((t) => t.id === id)?.label ?? id;
   cv = (id: Id) => this.p.cvs.find((c) => c.id === id)?.label ?? id;
+  /** 運営側が登録する段階（勤務確定など）か。ユーザーの成果（CV）と分けて見せる */
+  isStage = (id: Id) => this.p.cvs.find((c) => c.id === id)?.kind === 'stage';
+  /** 段階の記録の言い方：CVなら「CV「応募」」、運営側の段階なら「〇〇が「勤務確定」を登録」 */
+  cvDone = (id: Id) => (this.isStage(id) ? `${this.p.brand.companyName.replace(/^株式会社|株式会社$/g, '')}が「${this.cv(id)}」を登録` : `CV「${this.cv(id)}」`);
   route = (id: Id | null) => (id === null ? '—' : (this.p.routes.find((r) => r.id === id)?.label ?? id));
   flow = (id: Id | null) => (id === null ? '自動応答' : (this.p.flows.find((f) => f.id === id)?.label ?? id));
   page = (id: Id) => this.p.webPages.find((w) => w.id === id)?.title ?? id;
@@ -90,7 +94,7 @@ export function describeTrigger(t: Trigger, project: Project): string {
       return `メニュー「${m?.cells.find((c) => c.id === t.cellId)?.label ?? t.cellId}」を押した`;
     }
     case 'cv':
-      return `${L.cv(t.cvId)}した`;
+      return L.isStage(t.cvId) ? `${L.cvDone(t.cvId)}した` : `${L.cv(t.cvId)}した`;
     case 'pageExit':
       return `「${L.page(t.pageId)}」から離脱しようとした`;
     case 'formSubmit':
@@ -121,6 +125,7 @@ const EVENT = {
   tapPageButton: 'ページのボタンを押した',
   tapLineCta: 'LINE誘導のボタンを押した',
   viewCard: 'カルーセルのカードを見た',
+  filterList: '一覧を絞り込んだ',
 } as const;
 
 export const friendText = (s: UserState['friendState']) => FRIEND[s];

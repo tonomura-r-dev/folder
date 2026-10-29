@@ -45,6 +45,7 @@ export function portLabel(node: FlowNode, port: string, project: Project): strin
   if (port === 'out') return '次へ';
   if (port === 'done') return '回答した';
   if (port === 'timeout') return '時間切れ';
+  if (port === 'passed') return '日時を過ぎていた';
   if (port === 'else') return 'それ以外';
   if (port.startsWith('case:') && node.type === 'branch') return node.cases.find((c) => `case:${c.id}` === port)?.label || port.slice(5);
   if (port.startsWith('btn:')) {
@@ -98,7 +99,9 @@ export function summarize(node: FlowNode, flow: Flow, project: Project): { title
           ? `${fmtDuration(w.minutes)}待つ`
           : w.kind === 'dayAt'
             ? `${w.from === 'flowStart' ? 'シナリオ開始' : '友だち追加'}から ${w.day}日目 ${w.time}`
-            : `操作を待つ（最大${fmtDuration(w.timeoutMinutes)}）`;
+            : w.kind === 'at'
+              ? `全員共通の日時 Day ${w.day} ${w.time}`
+              : `操作を待つ（最大${fmtDuration(w.timeoutMinutes)}）`;
       return { title, body, missing: false };
     }
     case 'page':

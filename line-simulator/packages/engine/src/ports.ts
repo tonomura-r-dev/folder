@@ -16,7 +16,7 @@ export function portsOf(node: FlowNode, project: Project): string[] {
     case 'survey':
       return ['done', ...(node.timeoutMinutes !== undefined ? ['timeout'] : [])];
     case 'wait':
-      return node.wait.kind === 'untilEvent' ? ['out', 'timeout'] : ['out'];
+      return node.wait.kind === 'untilEvent' ? ['out', 'timeout'] : node.wait.kind === 'at' ? ['out', 'passed'] : ['out'];
     case 'branch':
       return [...node.cases.map((c) => `case:${c.id}`), 'else'];
     case 'jump':

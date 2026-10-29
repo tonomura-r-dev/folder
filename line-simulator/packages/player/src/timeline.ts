@@ -10,8 +10,8 @@ import { describeExpr, describeTrigger, explainDecision, fmtTime, type Labels } 
 import { journeyOf, nextAction } from './journey.ts';
 import { esc, hhmm, whoOf, type View } from './view.ts';
 
-/** 出来事の種類：①ユーザー操作 ②LINEメッセージ ③タグ・状態 ④シナリオ ⑤CV ⑥停止・対象外 */
-export type TlKind = 'op' | 'msg' | 'state' | 'flow' | 'cv' | 'stop';
+/** 出来事の種類：①ユーザー操作 ②LINEメッセージ ③タグ・状態 ④シナリオ ⑤CV ⑥運営側の登録（勤務確定など） ⑦停止・対象外 */
+export type TlKind = 'op' | 'msg' | 'state' | 'flow' | 'cv' | 'stage' | 'stop';
 export type TlItem = { kind: TlKind; side: 'front' | 'back'; text: string; minor?: boolean; op?: string };
 export type TlEvent = {
   key: string;
@@ -36,9 +36,10 @@ export const KIND: Record<TlKind, { mark: string; label: string }> = {
   state: { mark: '🏷', label: 'タグ・状態' },
   flow: { mark: '⚙', label: 'シナリオ' },
   cv: { mark: '★', label: 'CV' },
+  stage: { mark: '◆', label: '運営側の登録' },
   stop: { mark: '■', label: '停止・対象外' },
 };
-const RANK: TlKind[] = ['cv', 'op', 'msg', 'stop', 'state', 'flow'];
+const RANK: TlKind[] = ['cv', 'stage', 'op', 'msg', 'stop', 'state', 'flow'];
 
 // ---------- 操作を言葉にする ----------
 
@@ -74,7 +75,14 @@ export function describeOp(project: Project, L: Labels, type: string, d: Record<
       return `ポップアップの「${page?.exitPopup?.cta.label ?? 'ボタン'}」を押す`;
     case 'tapPageButton': {
       const b = page?.blocks[Number(d['blockIndex'])];
+      if (b?.kind === 'list') return `一覧の「${b.items.find((x) => x.id === d['itemId'])?.title ?? d['itemId'] ?? ''}」を開く`;
       return `ページのボタン「${b?.kind === 'button' ? b.label : 'ボタン'}」を押す`;
+    }
+    case 'filterList': {
+      const b = page?.blocks[Number(d['blockIndex'])];
+      const f = b?.kind === 'list' ? b.facets.find((x) => x.id === d['facetId']) : undefined;
+      const o = f?.options.find((x) => x.id === d['optionId']);
+      return `一覧を「${f?.label ?? d['facetId'] ?? ''}：${o?.label ?? 'すべて'}」で絞り込む`;
     }
     case 'tapLineCta':
       return `「${page?.lineCta?.label ?? 'LINEで受け取る'}」を押す`;
@@ -98,7 +106,7 @@ export function describeOp(project: Project, L: Labels, type: string, d: Record<
       return `アンケート「${L.questionText(sv, q)}」に「${L.choices(sv, q, (d['choiceIds'] ?? '').split(',').filter(Boolean))}」と回答`;
     }
     case 'cv':
-      return `「${L.cv(d['cvId'] ?? '')}」を記録する（店舗・管理画面側の操作）`;
+      return L.isStage(d['cvId'] ?? '') ? `${L.cvDone(d['cvId'] ?? '')}する（管理画面での手作業・デモ用の想定）` : `「${L.cv(d['cvId'] ?? '')}」を記録する（店舗・管理画面側の操作）`;
     case 'viewCard':
       return `カルーセルのカード「${L.card(d['messageId'] ?? '', d['cardId'] ?? '')}」を見る`;
     case 'block':
@@ -141,6 +149,7 @@ const OP_TITLE: Record<string, string> = {
   block: 'ブロック',
   unblock: 'ブロック解除',
   viewCard: 'カルーセルのカードを見る',
+  filterList: '一覧の絞り込み',
 };
 
 // ---------- 時系列を作る ----------
@@ -159,7 +168,11 @@ function eventsOfUser(project: Project, L: Labels, world: WorldState, user: User
   };
 
   // ① ユーザーの操作（Web・LINE）
-  for (const b of user.behaviors) add(b.at, { kind: b.type === 'cv' ? 'cv' : 'op', side: 'front', text: describeOp(project, L, b.type, b.detail), op: b.type });
+  for (const b of user.behaviors) {
+    // 運営側の登録（勤務確定など）は、ユーザーの操作でもCVでもない。裏側の「運営側の登録」として出す
+    if (b.type === 'cv' && L.isStage(b.detail['cvId'] ?? '')) add(b.at, { kind: 'stage', side: 'back', text: describeOp(project, L, b.type, b.detail), op: b.type });
+    else add(b.at, { kind: b.type === 'cv' ? 'cv' : 'op', side: 'front', text: describeOp(project, L, b.type, b.detail), op: b.type });
+  }
   // 友だち追加・ブロック（トークの帯）
   for (const t of user.talk) {
     if (t.side !== 'system') continue;
@@ -247,7 +260,7 @@ function eventsOfUser(project: Project, L: Labels, world: WorldState, user: User
   for (const b of user.behaviors) {
     const cvId = b.type === 'cv' ? b.detail['cvId'] : b.type === 'submitForm' ? project.webPages.find((p) => p.id === b.detail['pageId'])?.form?.onSubmit.cvId : undefined;
     const picked = b.type === 'submitForm' ? formChoices(project, b.detail) : '';
-    if (cvId) add(b.at, { kind: 'cv', side: 'back', text: `CV「${L.cv(cvId)}」を記録${picked ? `（${picked}）` : ''}` });
+    if (cvId && !L.isStage(cvId)) add(b.at, { kind: 'cv', side: 'back', text: `CV「${L.cv(cvId)}」を記録${picked ? `（${picked}）` : ''}` });
   }
 
   return [...groups.entries()]
@@ -267,6 +280,7 @@ function toEvent(user: UserState, at: Minutes, items: TlItem[]): TlEvent {
 function titleOf(items: TlItem[], kind: TlKind): string {
   const has = (s: string) => items.some((x) => x.text.includes(s));
   if (kind === 'cv') return items.find((x) => x.kind === 'cv' && x.side === 'back')?.text.replace(/^CV「(.+)」を記録$/, 'CV：$1') ?? 'CV';
+  if (kind === 'stage') return items.find((x) => x.kind === 'stage')?.text.replace(/する（.+）$/, '') ?? KIND.stage.label;
   if (has('友だちになる')) return '友だち追加';
   if (has('ブロック：')) return 'ブロック';
   if (kind === 'op') return OP_TITLE[items.find((x) => x.op && x.kind === 'op')?.op ?? ''] ?? 'ユーザー操作';
@@ -394,7 +408,14 @@ export function guideOf(v: View, user: UserState): Guide {
     }
   }
   if (plan.when) return { kind: 'wait', text: `「次の出来事 ▶」で、この人の次の出来事（${plan.when}：${plan.what}）まで進めてください。${goalDone ? '' : '①のメニューやボタンを押して反応を確かめることもできます。'}` };
-  if (goalDone) return { kind: 'done', text: `ゴール「${goal!.step.label}」に到達しました（${fmtTime(user.cvs[goal!.step.cvId!]!.at)}）。この人の主要な配信は完了です。` };
+  if (goalDone) {
+    const cv = user.cvs[goal!.step.cvId!]!;
+    // くり返す流れ（再応募 → 勤務確定へ戻る 等）では「完了」と言い切らない
+    const back = goal!.step.loopTo ? project.journey?.find((x) => x.id === goal!.step.loopTo) : undefined;
+    if (back)
+      return { kind: 'done', text: `ゴール「${goal!.step.label}」に到達しました（${cv.count}回・最新 ${fmtTime(cv.at)}）。デモの期間内の配信は以上です。次のイベントの「${back.label}」から、またくり返します。` };
+    return { kind: 'done', text: `ゴール「${goal!.step.label}」に到達しました（${fmtTime(cv.at)}）。この人の主要な配信は完了です。` };
+  }
   const stopDecision = [...world.decisions].reverse().find((d) => d.userId === user.id && d.kind === 'stopWhen');
   if (stopDecision) {
     const x = explainDecision(stopDecision, L, project);
@@ -477,7 +498,7 @@ export function timelineHtml(v: View, compact = false): string {
       <label class="lsp-check"><input type="checkbox" data-change="tlFuture"${ui.tlFuture !== false ? ' checked' : ''}> 予定も表示</label>
       <label class="lsp-check"><input type="checkbox" data-change="tlMinor"${ui.tlMinor ? ' checked' : ''}> 細かい判定も表示</label></div>
     ${nextHtml}
-    <div class="lsp-tl-legend">${(Object.keys(KIND) as TlKind[]).map((k) => `<span class="k-${k}">${KIND[k].mark} ${KIND[k].label}</span>`).join('')}<span class="mine">太字＝表示中の人</span></div>
+    <div class="lsp-tl-legend">${(Object.keys(KIND) as TlKind[]).filter((k) => k !== 'stage' || v.project.cvs.some((c) => c.kind === 'stage')).map((k) => `<span class="k-${k}">${KIND[k].mark} ${KIND[k].label}</span>`).join('')}<span class="mine">太字＝表示中の人</span></div>
     <ol class="lsp-tl-list lsp-tl-scroll">${rows.join('')}</ol>
   </div>`;
 }

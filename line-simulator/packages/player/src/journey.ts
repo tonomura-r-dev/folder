@@ -136,6 +136,7 @@ export type Content = {
 function waitText(w: Extract<FlowNode, { type: 'wait' }>['wait']): string {
   if (w.kind === 'dayAt') return `${w.from === 'flowStart' ? 'シナリオ開始' : '友だち追加'}の${w.day === 0 ? '当日' : `${w.day}日後`} ${w.time}`;
   if (w.kind === 'duration') return `${fmtDuration(w.minutes)}後`;
+  if (w.kind === 'at') return `Day ${w.day} ${w.time}（全員共通の日時）`;
   return `操作を待って（最長${fmtDuration(w.timeoutMinutes)}）`;
 }
 
@@ -283,9 +284,15 @@ function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {
       const skippedBefore = hidden > 0;
       const arrow = (skippedBefore ? gap() : '') + (i === 0 ? '' : `<div class="lsp-fc-arrow${row.status === 'done' || row.status === 'current' ? ' on' : ''}"></div>`);
       const vs = row.step.variants ?? [];
+      // くり返しの流れ（例：再応募 → 勤務確定へ戻る）。この人が何回くり返したかも添える
+      const back = rows.find((r) => r.step.id === row.step.loopTo);
+      const times = row.step.cvId ? (v.world.users[v.demo.activeUserId]?.cvs[row.step.cvId]?.count ?? 0) : 0;
+      const loop = back
+        ? `<div class="lsp-fc-loop${row.status === 'done' || row.status === 'current' ? ' on' : ''}">↺ 「${esc(back.step.label)}」へ戻る${row.step.loopLabel ? `：${esc(row.step.loopLabel)}` : ''}${times ? `<b>この人 ${times}回</b>` : ''}</div>`
+        : '';
       if (!vs.length) {
         const here = row.status === 'current';
-        return `${arrow}<div class="lsp-fc-row">${nodeHtml(v, { step: row.step }, row, STEP_STATE[row.status], here, compact)}${optionsHtml(v, { step: row.step }, compact)}</div>`;
+        return `${arrow}<div class="lsp-fc-row">${nodeHtml(v, { step: row.step }, row, STEP_STATE[row.status], here, compact)}${optionsHtml(v, { step: row.step }, compact)}</div>${loop}`;
       }
       // 分岐：いまの行き先は「当てはまっている行き先」、無ければ最後に通った行き先
       const currentVariant = row.status === 'current' ? (row.variantId ?? row.traversed.at(-1)) : undefined;

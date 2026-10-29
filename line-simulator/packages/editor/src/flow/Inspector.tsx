@@ -361,16 +361,34 @@ function WaitEditor({ node, path, set }: { node: Extract<FlowNode, { type: 'wait
           value={w.kind}
           options={[
             { value: 'dayAt', label: '◯日目の◯時に送る（ステップ配信）' },
+            { value: 'at', label: '全員共通の日時に送る（企画配信・イベント前日など）' },
             { value: 'duration', label: '一定の時間を待つ' },
             { value: 'untilEvent', label: 'ユーザーの操作を待つ' },
           ]}
           onChange={(k) =>
             setWait((n) => {
-              n.wait = k === 'duration' ? { kind: 'duration', minutes: 60 } : k === 'untilEvent' ? { kind: 'untilEvent', event: 'tapButton', timeoutMinutes: 1440 } : { kind: 'dayAt', day: 1, time: '09:00' };
+              n.wait =
+                k === 'duration'
+                  ? { kind: 'duration', minutes: 60 }
+                  : k === 'untilEvent'
+                    ? { kind: 'untilEvent', event: 'tapButton', timeoutMinutes: 1440 }
+                    : k === 'at'
+                      ? { kind: 'at', day: 7, time: '12:00' }
+                      : { kind: 'dayAt', day: 1, time: '09:00' };
             })
           }
         />
       </Field>
+      {w.kind === 'at' && (
+        <>
+          <Field label="Day（デモの何日目）" issues={at('day')} hint="過ぎてから来た人は待たずに「過ぎていた」の出口へ（無ければ終了）">
+            <NumberInput value={w.day} min={0} onChange={(v) => setWait((n) => n.wait.kind === 'at' && (n.wait.day = v ?? 0))} />
+          </Field>
+          <Field label="時刻（HH:MM）" issues={at('time')}>
+            <Text value={w.time} onChange={(v) => setWait((n) => n.wait.kind === 'at' && (n.wait.time = v))} placeholder="12:00" />
+          </Field>
+        </>
+      )}
       {w.kind === 'dayAt' && (
         <>
           <Field label="起点" hint="友だち追加前に始まるシナリオでは、自動的にシナリオ開始が起点になります">

@@ -11,13 +11,20 @@ import { esc, pane, whoOf, type View } from './view.ts';
 export const SLIDE_W = 1280;
 export const SLIDE_H = 720;
 
+/** 16:9の枠に収めるため、タグは新しく付いた順に n 件まで。残りは「ほか○件」 */
+function recentTags(v: View, user: UserState, n: number): string {
+  const all = Object.entries(user.tags).sort((a, b) => b[1].at - a[1].at);
+  const shown = all.slice(0, n).map(([t]) => `<span class="lsp-tag">${esc(v.L.tag(t))}</span>`).join('');
+  return all.length > n ? `${shown}<span class="lsp-tag more">ほか${all.length - n}件</span>` : shown;
+}
+
 export function slide(v: View, user: UserState): string {
   const users = v.demo.session.users
     .map((u) => v.world.users[u.id])
     .filter((u): u is UserState => !!u)
     .map((u) => `<span class="lsp-chip${u.id === user.id ? ' on' : ''}">${esc(whoOf(u))}</span>`)
     .join('');
-  const tags = Object.keys(user.tags).map((t) => `<span class="lsp-tag">${esc(v.L.tag(t))}</span>`).join('');
+  const tags = recentTags(v, user, 12);
   const whys = recentExplanations(v, user, 3)
     .map((x) => `<li class="${x.tone}"><span class="mark">${x.tone === 'ok' ? '✓' : x.tone === 'ng' ? '✗' : x.tone === 'stop' ? '■' : '→'}</span><span>${esc(x.title)}${x.reason ? `<small>${esc(x.reason)}</small>` : ''}</span></li>`)
     .join('');
@@ -36,7 +43,7 @@ export function slide(v: View, user: UserState): string {
 
 /** 資料用 16:9 の3画面版：①スマホ ②裏側（説明・タグ・なぜ）③CVまでの道筋 */
 export function slide3(v: View, user: UserState): string {
-  const tags = Object.keys(user.tags).map((t) => `<span class="lsp-tag">${esc(v.L.tag(t))}</span>`).join('');
+  const tags = recentTags(v, user, 4);
   const whys = recentExplanations(v, user, 2)
     .map((x) => `<li class="${x.tone}"><span class="mark">${x.tone === 'ok' ? '✓' : x.tone === 'ng' ? '✗' : x.tone === 'stop' ? '■' : '→'}</span><span>${esc(x.title)}${x.reason ? `<small>${esc(x.reason)}</small>` : ''}</span></li>`)
     .join('');

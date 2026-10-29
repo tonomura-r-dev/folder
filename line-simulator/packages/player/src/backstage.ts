@@ -97,7 +97,8 @@ function stateTab(v: View, user: UserState): string {
   const attrs = Object.entries(user.attrs);
   const plans = upcoming(v.world, user.id);
   const nextPlan = nextOwn(v, user) ?? nextAction(v.project, v.world, v.demo, user, L);
-  const cvs = Object.entries(user.cvs);
+  // ユーザーの成果（CV）と、運営側が登録する段階（勤務確定など）は分けて出す
+  const cvs = Object.entries(user.cvs).filter(([id]) => !L.isStage(id));
   const active = v.project.flows.map((f) => ({ f, c: user.flows[f.id] })).filter((x) => x.c && (x.c.status === 'running' || x.c.status === 'waiting'));
   const done = v.project.flows.map((f) => ({ f, c: user.flows[f.id] })).filter((x) => x.c && (x.c.status === 'ended' || x.c.status === 'stopped'));
   const activeHtml = active
@@ -118,20 +119,40 @@ function stateTab(v: View, user: UserState): string {
     })
     .join('');
   // その段階を「完了した状態」に進める。済んだ段階は押せない（二重に記録しない）
+  // 何度でも記録できる段階（再応募・イベントごとの勤務確定など）は、済みにしない
   const cvButtons = v.project.cvs
     .map((c) =>
-      user.cvs[c.id]
+      user.cvs[c.id] && !c.repeatable
         ? `<button type="button" class="done" disabled title="${esc(fmtTime(user.cvs[c.id]!.at))}に済み">✓ ${esc(c.label)}済み</button>`
-        : `<button type="button" data-act="cv" data-cv="${esc(c.id)}">${esc(c.demoAction ?? `${c.label}へ`)}</button>`,
+        : `<button type="button" data-act="cv" data-cv="${esc(c.id)}"${c.kind === 'stage' ? ' class="stage"' : ''}>${esc(c.demoAction ?? `${c.label}へ`)}${c.repeatable && user.cvs[c.id] ? `（${user.cvs[c.id]!.count + 1}回目）` : ''}</button>`,
     )
     .join('');
-  // CVの記録（何回目でも出す。フォームで選んだ求人などの選択項目も添える）
-  const cvLog = user.behaviors.flatMap((b) => {
-    const cvId = b.type === 'cv' ? b.detail['cvId'] : b.type === 'submitForm' ? v.project.webPages.find((p) => p.id === b.detail['pageId'])?.form?.onSubmit.cvId : undefined;
-    if (!cvId) return [];
-    const picked = b.type === 'submitForm' ? formChoices(v.project, b.detail) : '';
-    return [`<li><span class="t">${esc(fmtTime(b.at))}</span><b>${esc(L.cv(cvId))}</b>${picked ? `<span>${esc(picked)}</span>` : ''}</li>`];
-  });
+  // CVの記録・運営側の登録（何回目でも出す。フォームで選んだ求人などの選択項目も添える）
+  const logOf = (stage: boolean) =>
+    user.behaviors.flatMap((b) => {
+      const cvId = b.type === 'cv' ? b.detail['cvId'] : b.type === 'submitForm' ? v.project.webPages.find((p) => p.id === b.detail['pageId'])?.form?.onSubmit.cvId : undefined;
+      if (!cvId || L.isStage(cvId) !== stage) return [];
+      const picked = b.type === 'submitForm' ? formChoices(v.project, b.detail) : '';
+      return [`<li><span class="t">${esc(fmtTime(b.at))}</span><b>${esc(L.cv(cvId))}</b>${picked ? `<span>${esc(picked)}</span>` : ''}</li>`];
+    });
+  const cvLog = logOf(false);
+  const stageLog = logOf(true);
+  // タグは種類（グループ）ごとにまとめる（希望エリア・応募したイベント・勤務確定 など）
+  const groups = new Map<string, string[]>();
+  for (const t of v.project.tags) {
+    const got = user.tags[t.id];
+    if (!got) continue;
+    const g = t.group ?? 'そのほか';
+    (groups.get(g) ?? groups.set(g, []).get(g)!).push(`<span class="lsp-tag" title="${esc(fmtTime(got.at))}に付いた">${esc(L.tag(t.id))}</span>`);
+  }
+  const unknown = tags.filter(([t]) => !v.project.tags.some((x) => x.id === t)).map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`);
+  if (unknown.length) (groups.get('そのほか') ?? groups.set('そのほか', []).get('そのほか')!).push(...unknown);
+  const grouped = groups.size > 1 || (groups.size === 1 && !groups.has('そのほか'));
+  const tagsHtml = !tags.length
+    ? '<div class="lsp-none">なし</div>'
+    : grouped
+      ? `<dl class="lsp-taggrp">${[...groups].map(([g, list]) => `<dt>${esc(g)}</dt><dd>${list.join('')}</dd>`).join('')}</dl>`
+      : `<div class="lsp-tags">${[...groups.values()].flat().join('')}</div>`;
   return `
     <div class="lsp-tiles">
       <div class="lsp-tile ${user.friendState === 'friend' ? 'ok' : user.friendState === 'blocked' ? 'ng' : ''}"><span class="k">友だち</span><b>${esc(friendText(user.friendState))}</b><small>${esc(L.route(user.route))}</small></div>
@@ -139,7 +160,8 @@ function stateTab(v: View, user: UserState): string {
       <div class="lsp-tile next"><span class="k">次回配信</span><b>${esc(nextPlan.when ?? '予定なし')}</b><small>${esc(nextPlan.what)}</small></div>
     </div>
     ${cvLog.length ? `<h4>CVの記録（${cvLog.length}）</h4><ul class="lsp-cvlog">${cvLog.join('')}</ul>` : ''}
-    <h4>タグ（${tags.length}）</h4>${tags.length ? `<div class="lsp-tags">${tags.map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`).join('')}</div>` : '<div class="lsp-none">なし</div>'}
+    ${stageLog.length ? `<h4>${esc(v.project.brand.companyName.replace(/^株式会社|株式会社$/g, ''))}側の登録（${stageLog.length}）</h4><ul class="lsp-cvlog stage">${stageLog.join('')}</ul>` : ''}
+    <h4>タグ（${tags.length}）</h4>${tagsHtml}
     <h4>アンケートの回答</h4>${answers.length ? `<ul class="lsp-answers">${answers.join('')}</ul>` : '<div class="lsp-none">まだ回答していません</div>'}
     ${attrs.length ? `<h4>属性</h4><div class="lsp-answers">${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</div>` : ''}
     ${carouselReasons(v, user)}

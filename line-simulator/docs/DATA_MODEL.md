@@ -99,7 +99,10 @@ type Project = {
 type Asset = { id: Id; kind: 'image'; path: string; width: number; height: number; alt: string };
 
 type TagDef   = { id: Id; label: string; group?: string; color?: string; description?: string };
-type CvDef    = { id: Id; label: string };                      // { id:"cv_apply", label:"応募" }
+type CvDef    = { id: Id; label: string;                        // { id:"cv_apply", label:"応募" }
+                 demoAction?: string;                           // ②の「次の段階へ進める」ボタンの名前
+                 kind?: 'cv' | 'stage';                         // stage＝運営側が登録する段階（勤務確定など）。CVの数に入れず、②・③で別に出す
+                 repeatable?: boolean };                        // 何度でも記録できる（再応募・イベントごとの勤務確定など）。②のボタンが済みにならない
 type RouteDef = { id: Id; label: string };                      // { id:"route_exit_popup", label:"離脱ポップアップ" }
 
 type MessageDef = {
@@ -132,8 +135,11 @@ type RichMenu = {
   id: Id; label: string;
   layout: { cols: number; rows: number };       // 2x3 等
   imageAssetId?: Id;                             // 無ければセルのラベルで描画
-  cells: { id: Id; label: string; area: { col: number; row: number; colSpan?: number; rowSpan?: number }; action: Action }[];
+  cells: { id: Id; label: string; area: { col: number; row: number; colSpan?: number; rowSpan?: number }; action: Action;
+           emphasis?: boolean }[];                       // emphasis＝いちばん押してほしい項目（色付きで出す）
 };
+// タブのあるメニュー（switchMenu のセルがある）だけ、「動作なし」のセルを「いま開いているタブ」として出す。
+// タブの無いメニューの「動作なし」は、menuTap のシナリオを始めるだけの項目
 
 type AutoReply = {
   id: Id; priority: number;                      // 小さいほど先に判定
@@ -154,12 +160,20 @@ type WebPage = {
   id: Id; kind: 'lp' | 'form' | 'thanks';
   title: string; url?: string;                   // url は表示用の飾り。開かない
   blocks: ({ kind: 'heading' | 'text'; text: Text } | { kind: 'image'; assetId: Id }
-           | { kind: 'button'; label: string; action: Action })[];
+           | { kind: 'button'; label: string; action: Action }
+           | { kind: 'list'; facets: ListFacet[]; items: ListItem[]; emptyText?: Text })[];  // 絞り込みつきの一覧（求人一覧など）
   form?: { fields: { id: Id; label: string; type: 'text' | 'select' | 'tel' | 'email'; options?: string[] }[];
            onSubmit: { cvId?: Id; nextPageId?: Id } };
   exitPopup?: { title: Text; body: Text; assetId?: Id; cta: { label: string; action: Action }; dismissLabel: string };
-  lineCta?: { label: string; routeId: Id };      // サンクスページの「LINEで受け取る」等
+  lineCta?: { label: string; routeId: Id;        // サンクスページの「LINEで受け取る」等
+              prefill?: string };                // 押した直後、トークの入力欄に入れておく文（フォームの内容の引き継ぎ）。送るかは本人
 };
+/** 絞り込みの軸。tagId のある選択肢は、そのタグを持つ人には最初から選ばれた状態で開く（LINEから開くと希望条件で絞り込み済み） */
+type ListFacet = { id: Id; label: string; options: { id: Id; label: string; tagId?: Id }[] };
+/** 一覧の1件。values は軸ごとに当てはまる選択肢。closesAt（デモの分）を過ぎたら出さない */
+type ListItem = { id: Id; title: Text; body?: Text; assetId?: Id; badge?: string; facts?: { label: string; value: Text }[];
+                  values: Record<Id, Id[]>; action: Action; closesAt?: Minutes };
+// 絞り込みの今の値＝そのページを最後に開いてからの filterList。項目を押すと tapPageButton（itemId つき）
 
 type Persona = {
   id: Id; name: string;
@@ -187,6 +201,7 @@ type JourneyStep = {
   variants?: JourneyVariant[];                   // 分岐の行き先。上から最初に when が真のものが「この人のルート」
   feasibility?: Feasibility; feasibilityNote?: Text;
   options?: JourneyOption[];                     // 追加候補（表示だけ・配信しない）
+  loopTo?: Id; loopLabel?: string;               // くり返しで戻る段（例：再応募 → 勤務確定）。③に「↺ 戻る」とこの人の回数を出す
 };
 type JourneyVariant = {
   id: Id; label: string;                         // 矢印の名前（例：東京）
@@ -243,7 +258,7 @@ type Node = NodeBase & (
   | { type: 'image'; assetId: Id }                               // ポート: out
   | { type: 'richMenu'; richMenuId: Id }                         // ポート: out
   | { type: 'choice'; messageId: Id; timeoutMinutes?: Minutes }  // ボタン選択。ポート: btn:<buttonId> / timeout
-  | { type: 'survey'; surveyId: Id; introMessageId?: Id; timeoutMinutes?: Minutes } // ポート: done / timeout。全問回答済みなら待たずに done
+  | { type: 'survey'; surveyId: Id; introMessageId?: Id; timeoutMinutes?: Minutes; reask?: boolean } // ポート: done / timeout。全問回答済みなら待たずに done。reask＝前の回答を消して聞き直す（希望条件の変更）
   | { type: 'tag'; add?: Id[]; remove?: Id[] }                   // ポート: out
   | { type: 'branch'; cases: { id: Id; label: string; when: Expr }[] } // ポート: case:<id> / else
   | { type: 'wait'; wait: Wait }                                 // ポート: out
@@ -257,6 +272,8 @@ type Wait =
   | { kind: 'duration'; minutes: Minutes }                       // N分後
   | { kind: 'dayAt'; day: number; time: string;                  // 起点から N日目の HH:MM（G-2）
       from?: 'friendAdd' | 'flowStart' }                         // 起点。既定は友だち追加（未追加ならフロー開始）。過ぎていれば即時
+  | { kind: 'at'; day: number; time: string }                    // 全員共通の日時（デモの Day N の HH:MM）。企画配信・イベント前日のリマインド等
+                                                                 // ポート: out / passed（着いた時点で日時を過ぎていたら待たずに passed。線が無ければ終了）
   | { kind: 'untilEvent'; event: InputEvent['type']; timeoutMinutes: Minutes }; // ポート: out / timeout
 ```
 
@@ -351,9 +368,10 @@ type InputEvent = { at: Minutes; userId: Id } & (
   // Phase 3 で追加：Webページ上の操作。押したときの動作は案件JSONにあるので、エンジンが解釈する
   | { type: 'closePage'; pageId: Id }                        // ページを閉じてトークへ戻る
   | { type: 'tapPopupCta'; pageId: Id }                      // 離脱防止ポップアップのボタン
-  | { type: 'tapPageButton'; pageId: Id; blockIndex: number } // ページ内のボタン
+  | { type: 'tapPageButton'; pageId: Id; blockIndex: number; itemId?: Id } // ページ内のボタン（itemId は一覧の項目）
   | { type: 'tapLineCta'; pageId: Id }                       // サンクスページのLINE誘導
   | { type: 'viewCard'; messageId: Id; cardId: Id }          // カルーセルのカードを見た（左右に送った）。行動履歴に残るだけ
+  | { type: 'filterList'; pageId: Id; blockIndex: number; facetId: Id; optionId: Id } // 一覧の絞り込み（optionId が空＝すべて）。行動履歴に残るだけ
 );
 
 type ClockEvent = { at: Minutes; userId: '*'; type: 'advanceTo' };  // 時間を進める（全員共通）

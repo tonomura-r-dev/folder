@@ -134,6 +134,7 @@
 .lsp-kv dd { margin: 0; font-weight: 700; color: var(--lsp-ink); }
 .lsp-tags { display: flex; flex-wrap: wrap; gap: 4px; }
 .lsp-tag { font-size: 12px; background: #f2eafb; color: #6b3fa0; padding: 1px 8px; border-radius: 999px; font-weight: 700; }
+.lsp-tag.more { background: #eef0f4; color: #5b6577; }
 .lsp-none { color: var(--lsp-muted); font-size: 12.5px; }
 .lsp-log { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
 .lsp-log li { display: grid; grid-template-columns: 86px 1fr; gap: 6px; padding: 5px 0; border-bottom: 1px solid var(--lsp-soft); font-size: 12.5px; }
@@ -296,6 +297,10 @@
 .lsp-fc-arrow::after { content: ""; position: absolute; left: -5px; bottom: -7px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 7px solid #b3bac8; }
 .lsp-fc-arrow.on { background: var(--lsp-primary); }
 .lsp-fc-arrow.on::after { border-top-color: var(--lsp-primary); }
+/* くり返しの流れ（GOAL のあと前の段へ戻る） */
+.lsp-fc-loop { margin-top: 8px; padding: 6px 12px; border: 2px dashed #b3bac8; border-radius: 999px; font-size: 12.5px; font-weight: 700; color: #5b6577; background: #fff; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 340px; text-align: center; }
+.lsp-fc-loop.on { border-color: var(--lsp-primary); color: var(--lsp-primary); }
+.lsp-fc-loop b { font-size: 11.5px; background: var(--lsp-primary); color: #fff; border-radius: 999px; padding: 1px 8px; }
 .lsp-fc-line { width: 2px; height: 10px; background: #b3bac8; }
 .lsp-fc-line.on { background: var(--lsp-primary); }
 
@@ -455,7 +460,7 @@
 
 /* =====================================================================
    2026-10-28 デザインの整理：営業先で見せる画面として、余白・カード・色の意味をそろえる
-   色の意味（③の時系列・②で共通）：操作=青／LINEメッセージ=緑／タグ・状態=紫／シナリオ=灰／CV=橙／停止=赤
+   色の意味（③の時系列・②で共通）：操作=青／LINEメッセージ=緑／タグ・状態=紫／シナリオ=灰／CV=橙／運営側の登録=青緑／停止=赤
    ===================================================================== */
 .lsp {
   --k-op: #2563c9;
@@ -463,6 +468,7 @@
   --k-state: #7a45b8;
   --k-flow: #5b6577;
   --k-cv: #d0611b;
+  --k-stage: #0f7a72;
   --k-stop: #c0392b;
   --lsp-bg: #f3f5f9;
   --lsp-radius: 14px;
@@ -572,6 +578,7 @@
 .lsp-tl-legend .k-state { color: var(--k-state); }
 .lsp-tl-legend .k-flow { color: var(--k-flow); }
 .lsp-tl-legend .k-cv { color: var(--k-cv); }
+.lsp-tl-legend .k-stage { color: var(--k-stage); }
 .lsp-tl-legend .k-stop { color: var(--k-stop); }
 .lsp-tl-legend .mine { font-weight: 700; color: var(--lsp-ink); }
 .lsp-tl-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
@@ -584,6 +591,7 @@
 .lsp-tl-row.k-msg { border-left-color: var(--k-msg); }
 .lsp-tl-row.k-state { border-left-color: var(--k-state); }
 .lsp-tl-row.k-cv { border-left-color: var(--k-cv); }
+.lsp-tl-row.k-stage { border-left-color: var(--k-stage); }
 .lsp-tl-row.k-stop { border-left-color: var(--k-stop); }
 .lsp-tl-row:not(.mine) { opacity: .62; }
 .lsp-tl-row:not(.mine):hover { opacity: 1; }
@@ -699,6 +707,7 @@
 .lsp-nowcard li.k-msg { border-left-color: var(--k-msg); }
 .lsp-nowcard li.k-state { border-left-color: var(--k-state); }
 .lsp-nowcard li.k-cv { border-left-color: var(--k-cv); }
+.lsp-nowcard li.k-stage { border-left-color: var(--k-stage); }
 .lsp-nowcard li.k-stop { border-left-color: var(--k-stop); }
 .lsp-nowcard li.mine { background: #fff; box-shadow: 0 1px 4px rgba(20, 24, 40, .08); }
 .lsp-nowcard li.other { opacity: .78; }
@@ -772,3 +781,35 @@
 .lsp-cvlog { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .lsp-cvlog li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; background: #fff7ec; border: 1px solid #f3d9b5; border-radius: 8px; padding: 5px 9px; }
 .lsp-cvlog .t { color: var(--lsp-muted); font-size: 12px; }
+/* ②：運営側の登録（勤務確定など。CVとは色を分ける） */
+.lsp-cvlog.stage li { background: #ecf7f6; border-color: #b9e0dc; }
+.lsp-ctrls button.stage { border-color: var(--k-stage); color: var(--k-stage); }
+/* ②：タグを種類ごとに */
+.lsp-taggrp { display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; margin: 0; font-size: 12.5px; align-items: baseline; }
+.lsp-taggrp dt { color: var(--lsp-muted); font-size: 12px; white-space: nowrap; }
+.lsp-taggrp dd { margin: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+/* リッチメニューのいちばん押してほしい項目 */
+.lsp-menu-grid button.em { background: var(--lsp-primary); color: #fff; }
+.lsp-menu-grid button.em:hover { background: var(--lsp-primary); filter: brightness(1.12); }
+/* サンクスLINE誘導：フォームの内容が入力欄に入っている */
+.lsp-prefill-note { font-size: 11.5px; color: #0b6b3a; background: #e8f7ee; padding: 5px 10px; border-top: 1px solid #cfead9; }
+.lsp-input.prefilled input { border-color: var(--lsp-line-green); background: #fff; }
+/* 絞り込みつきの一覧（求人一覧など） */
+.lsp-list { margin: 4px 0 10px; }
+.lsp-list-fs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #f3f5f9; border-radius: 10px; padding: 8px; }
+.lsp-list-f { display: grid; gap: 2px; font-size: 11px; color: var(--lsp-muted); }
+.lsp-list-f select { font: inherit; font-size: 12.5px; color: var(--lsp-ink); padding: 5px 6px; border: 1px solid #d5dae3; border-radius: 8px; background: #fff; min-width: 0; }
+.lsp-list-f.on select { border-color: var(--lsp-primary); box-shadow: 0 0 0 1px var(--lsp-primary); font-weight: 700; }
+.lsp-list-count { font-size: 12px; color: var(--lsp-muted); margin: 8px 2px 6px; }
+.lsp-list-count b { color: var(--lsp-ink); font-size: 14px; }
+.lsp-list-item { display: flex; gap: 8px; width: 100%; text-align: left; border: 1px solid var(--lsp-line); background: #fff; border-radius: 12px; padding: 8px; margin: 0 0 8px; cursor: pointer; font: inherit; color: var(--lsp-ink); }
+.lsp-list-item:hover { border-color: var(--lsp-primary); }
+.lsp-list-img { flex: 0 0 84px; }
+.lsp-list-img img { width: 84px; height: 56px; object-fit: cover; border-radius: 8px; display: block; }
+.lsp-list-main { display: grid; gap: 3px; min-width: 0; }
+.lsp-list-main b { font-size: 13.5px; line-height: 1.35; }
+.lsp-list-badge { justify-self: start; font-size: 10.5px; font-weight: 700; color: #fff; background: #5b6577; border-radius: 999px; padding: 1px 7px; }
+.lsp-list-facts { display: grid; gap: 1px; font-size: 11.5px; color: #3b4350; }
+.lsp-list-facts i { font-style: normal; color: var(--lsp-muted); margin-right: 5px; }
+.lsp-list-body { font-size: 11.5px; color: var(--lsp-muted); }
+.lsp-list-empty { font-size: 13px; color: var(--lsp-muted); background: #f8f9fb; border: 1px dashed #d5dae3; border-radius: 10px; padding: 14px; text-align: center; }

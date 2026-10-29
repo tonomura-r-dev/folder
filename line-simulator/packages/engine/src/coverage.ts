@@ -12,8 +12,8 @@ export function personaCoverage(project: Project, untilDay = 30): Issue[] {
   const world = reduce(project, sessionFromPersonas(project, scripted.map((p) => p.id)), { until: untilDay * MINUTES_PER_DAY });
   const issues: Issue[] = [];
   project.flows.forEach((flow, fi) => {
-    // ボタンから呼ぶだけの補助（タグを付けてページを開く等で、何も配信しない）は、デモで見せるシナリオではないので数えない
-    const helper = flow.trigger.kind === 'manual' && !flow.nodes.some((n) => n.type === 'message' || n.type === 'image' || n.type === 'choice' || n.type === 'survey' || n.type === 'jump');
+    // 何も配信しない補助（タグを付けてページを開く等）は、デモで見せるシナリオではないので数えない
+    const helper = !flow.nodes.some((n) => n.type === 'message' || n.type === 'image' || n.type === 'choice' || n.type === 'survey' || n.type === 'jump');
     if (helper) return;
     const started = Object.values(world.users).some((u) => u.flows[flow.id]);
     if (!started) issues.push({ level: 'warning', code: 'persona.noneMatch', path: `/flows/${fi}`, params: { id: flow.id, days: untilDay } });

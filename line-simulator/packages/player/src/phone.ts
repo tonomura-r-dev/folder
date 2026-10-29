@@ -1,6 +1,6 @@
 // スマホ枠の中（はじめかた・Webページ・ポップアップ・LINEトーク）。選んでいるユーザー1人分を描く。
 
-import type { Action, Bubble, CarouselCard, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
+import type { Action, Bubble, CarouselCard, Id, RichMenu, TalkItem, UserState, WebBlock, WebPage } from '../../engine/src/index.ts';
 import { fmtTime, type Labels } from './describe.ts';
 import { dayOf, esc, hhmm, whoOf, type View } from './view.ts';
 
@@ -169,11 +169,13 @@ function surveyPanel(v: View, user: UserState): string {
 
 function menu(v: View, m: RichMenu): string {
   const bg = m.imageAssetId ? v.project.assets.find((a) => a.id === m.imageAssetId) : undefined;
+  // タブのあるメニューだけ、「動作なし」の項目を「いま開いているタブ」として出す（タブの無いメニューの動作なし＝シナリオを始めるだけの項目）
+  const tabbed = m.cells.some((c) => c.action.kind === 'switchMenu');
   const cells = m.cells
     .map(
       (c) =>
         // タブ（メニューの切り替え・いま開いているタブ）は低く出し、ほかの項目と見分ける
-        `<button type="button"${c.action.kind === 'switchMenu' ? ' class="tab"' : c.action.kind === 'none' ? ' class="tab on"' : ''} data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
+        `<button type="button"${c.action.kind === 'switchMenu' ? ' class="tab"' : tabbed && c.action.kind === 'none' ? ' class="tab on"' : c.emphasis ? ' class="em"' : ''} data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
           c.area.colSpan ?? 1
         };grid-row:${c.area.row + 1} / span ${c.area.rowSpan ?? 1}">${esc(c.label)}</button>`,
     )
@@ -185,8 +187,24 @@ function menu(v: View, m: RichMenu): string {
   return `<div class="lsp-menu"><button type="button" class="lsp-menu-bar" data-act="toggleMenu" aria-expanded="${open}">${esc(m.label)} ${open ? '▼' : '▲'}</button>${open ? grid : ''}</div>`;
 }
 
+/**
+ * トークの入力欄に入っている文。LINE誘導のボタン（フォームの内容を引き継ぐ設定）を押した直後だけ。
+ * 送る・ほかの操作をしたら消える（イベント列から決めるので、戻る・人の切り替えでもずれない）
+ */
+function prefillOf(v: View, user: UserState): string {
+  if (user.friendState !== 'friend') return '';
+  for (let i = user.behaviors.length - 1; i >= 0; i--) {
+    const b = user.behaviors[i]!;
+    if (b.type === 'tapLineCta') return v.project.webPages.find((p) => p.id === b.detail['pageId'])?.lineCta?.prefill ?? '';
+    // 友だち追加・あいさつのアンケートに答えている間は残す
+    if (b.type !== 'answer' && b.type !== 'addFriend' && b.type !== 'viewCard') return '';
+  }
+  return '';
+}
+
 function talk(v: View, user: UserState): string {
   const blocked = user.friendState === 'blocked';
+  const pre = prefillOf(v, user);
   const m = user.richMenuId ? v.project.richMenus.find((r) => r.id === user.richMenuId) : undefined;
   return `<div class="lsp-talk">
     <div class="lsp-talkbar"><span class="lsp-back">‹</span>${esc(v.project.brand.accountName)}</div>
@@ -194,8 +212,55 @@ function talk(v: View, user: UserState): string {
     <div class="lsp-chat" aria-live="polite">${chat(v, user)}</div>
     ${blocked ? '' : surveyPanel(v, user)}
     ${m && !blocked ? menu(v, m) : ''}
-    <form class="lsp-input" data-form="send"><input name="text" placeholder="メッセージを入力" autocomplete="off" aria-label="メッセージ"${blocked ? ' disabled' : ''}><button type="submit"${blocked ? ' disabled' : ''}>送信</button></form>
+    ${pre ? '<div class="lsp-prefill-note">フォームの内容が入力欄に入っています。「送信」を押すと送ります</div>' : ''}
+    <form class="lsp-input${pre ? ' prefilled' : ''}" data-form="send"><input name="text" placeholder="メッセージを入力" autocomplete="off" aria-label="メッセージ"${blocked ? ' disabled' : ''}${
+      pre ? ` value="${esc(pre)}"` : ''
+    }><button type="submit"${blocked ? ' disabled' : ''}>送信</button></form>
   </div>`;
+}
+
+/**
+ * 一覧の絞り込みのいまの値（軸ごと）。このページを最後に開いてからの filterList が優先。
+ * 無ければ、その人のタグに合う選択肢（希望条件）で開く。空文字は「すべて」
+ */
+export function listFilter(user: UserState, pageId: Id, blockIndex: number, b: Extract<WebBlock, { kind: 'list' }>): Record<Id, Id> {
+  const out: Record<Id, Id> = {};
+  for (const f of b.facets) out[f.id] = f.options.find((o) => o.tagId && o.tagId in user.tags)?.id ?? '';
+  let opened = -1;
+  user.behaviors.forEach((x, i) => {
+    if (x.type === 'visitPage' && x.detail['pageId'] === pageId) opened = i;
+  });
+  user.behaviors.forEach((x, i) => {
+    if (i > opened && x.type === 'filterList' && x.detail['pageId'] === pageId && Number(x.detail['blockIndex']) === blockIndex) out[x.detail['facetId'] ?? ''] = x.detail['optionId'] ?? '';
+  });
+  return out;
+}
+
+function listBlock(v: View, user: UserState, p: WebPage, i: number, b: Extract<WebBlock, { kind: 'list' }>): string {
+  const sel = listFilter(user, p.id, i, b);
+  // 締切を過ぎた項目は出さない（いま募集中のものだけ）
+  const open = b.items.filter((it) => it.closesAt === undefined || v.world.now < it.closesAt);
+  const hit = open.filter((it) => b.facets.every((f) => !sel[f.id] || (it.values[f.id] ?? []).includes(sel[f.id]!)));
+  const data = `data-page="${esc(p.id)}" data-i="${i}"`;
+  const facets = b.facets
+    .map(
+      (f) =>
+        `<label class="lsp-list-f${sel[f.id] ? ' on' : ''}"><span>${esc(f.label)}</span><select data-change="filterList" ${data} data-facet="${esc(f.id)}"><option value="">すべて</option>${f.options
+          .map((o) => `<option value="${esc(o.id)}"${sel[f.id] === o.id ? ' selected' : ''}>${esc(o.label)}</option>`)
+          .join('')}</select></label>`,
+    )
+    .join('');
+  const items = hit
+    .map(
+      (it) =>
+        `<button type="button" class="lsp-list-item" data-act="listItem" ${data} data-item="${esc(it.id)}">${it.assetId ? `<span class="lsp-list-img">${img(v, it.assetId)}</span>` : ''}<span class="lsp-list-main">${
+          it.badge ? `<span class="lsp-list-badge">${esc(it.badge)}</span>` : ''
+        }<b>${esc(it.title)}</b>${it.facts?.length ? `<span class="lsp-list-facts">${it.facts.map((x) => `<span><i>${esc(x.label)}</i>${esc(x.value)}</span>`).join('')}</span>` : ''}${it.body ? `<span class="lsp-list-body">${esc(it.body)}</span>` : ''}</span></button>`,
+    )
+    .join('');
+  return `<div class="lsp-list"><div class="lsp-list-fs">${facets}</div><div class="lsp-list-count">該当 <b>${hit.length}</b>件／募集中 ${open.length}件</div>${
+    items || `<div class="lsp-list-empty">${esc(b.emptyText ?? '条件に合うものがありません。条件を変えてみてください。')}</div>`
+  }</div>`;
 }
 
 function page(v: View, user: UserState, p: WebPage, popup: boolean): string {
@@ -204,6 +269,7 @@ function page(v: View, user: UserState, p: WebPage, popup: boolean): string {
     .map((b, i) => {
       if (b.kind === 'button') return `<button type="button" class="lsp-pbtn" data-act="pageBtn" data-page="${id}" data-i="${i}">${esc(b.label)}</button>`;
       if (b.kind === 'image') return img(v, b.assetId);
+      if (b.kind === 'list') return listBlock(v, user, p, i, b);
       return b.kind === 'heading' ? `<h2>${esc(b.text)}</h2>` : `<p>${esc(b.text)}</p>`;
     })
     .join('');

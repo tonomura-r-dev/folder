@@ -381,6 +381,8 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         return send({ type: 'tapPopupCta', pageId });
       case 'pageBtn':
         return send({ type: 'tapPageButton', pageId, blockIndex: Number(d['i']) });
+      case 'listItem':
+        return send({ type: 'tapPageButton', pageId, blockIndex: Number(d['i']), itemId: d['item'] ?? '' });
       case 'lineCta':
         return send({ type: 'tapLineCta', pageId });
       case 'tapButton':
@@ -540,6 +542,8 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       return render();
     }
     if (el.dataset['change'] === 'selectUser') return commit(selectUser(demo, el.value));
+    if (el.dataset['change'] === 'filterList')
+      return send({ type: 'filterList', pageId: el.dataset['page'] ?? '', blockIndex: Number(el.dataset['i']), facetId: el.dataset['facet'] ?? '', optionId: el.value });
     if (el.dataset['change'] === 'tlFuture' || el.dataset['change'] === 'tlMinor') {
       ui[el.dataset['change']] = (el as HTMLInputElement).checked;
       return render();

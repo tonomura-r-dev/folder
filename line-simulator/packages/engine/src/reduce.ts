@@ -312,6 +312,8 @@ function exec(ctx: Ctx, user: UserState, flow: Flow, node: FlowNode): string | n
       return null;
     case 'survey': {
       const survey = ctx.index.surveys.get(node.surveyId);
+      // 聞き直し：前の回答を消す（タグは選び直した選択肢の付け外しで入れ替わる）
+      if (node.reask) delete user.answers[node.surveyId];
       const answers = user.answers[node.surveyId] ?? {};
       const next = survey?.questions.find((q) => !(q.id in answers));
       if (!next) return 'done';
@@ -348,8 +350,11 @@ function exec(ctx: Ctx, user: UserState, flow: Flow, node: FlowNode): string | n
     }
     case 'wait': {
       const w = node.wait;
+      // 全員共通の日時がもう過ぎていたら待たない（例：配信日のあとで友だちになった人には、その企画配信を送らない）
+      if (w.kind === 'at' && dayAt(0, w.day, w.time) < now) return 'passed';
       cursor.status = 'waiting';
       if (w.kind === 'duration') addTimer(ctx, user, flow, node, now + w.minutes, 'wait');
+      else if (w.kind === 'at') addTimer(ctx, user, flow, node, dayAt(0, w.day, w.time), 'wait');
       else if (w.kind === 'dayAt') {
         const base = w.from === 'flowStart' || user.friendAddedAt === null ? cursor.startedAt : user.friendAddedAt;
         addTimer(ctx, user, flow, node, dayAt(base, w.day, w.time), 'wait');
@@ -535,6 +540,10 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody): void {
     case 'tapPageButton': {
       const block = index.pages.get(ev.pageId)?.blocks[ev.blockIndex];
       if (block?.kind === 'button') act(ctx, user, block.action);
+      if (block?.kind === 'list') {
+        const item = block.items.find((x) => x.id === ev.itemId);
+        if (item) act(ctx, user, item.action);
+      }
       return;
     }
     case 'tapLineCta': {
@@ -615,7 +624,8 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody): void {
       doCv(ctx, user, ev.cvId);
       return;
     case 'viewCard':
-      // 見たカードは行動履歴に残るだけ（条件式の did で使える）
+    case 'filterList':
+      // 見たカード・一覧の絞り込みは行動履歴に残るだけ（条件式の did で使える）
       return;
   }
 }

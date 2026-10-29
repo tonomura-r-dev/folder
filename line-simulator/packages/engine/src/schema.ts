@@ -73,6 +73,13 @@ export type CvDef = Tracked & {
   label: string;
   /** デモ画面②の「その段階へ進める」ボタンの名前（例：来場予約後へ）。無ければ「<label>へ」 */
   demoAction?: string;
+  /**
+   * cv = ユーザーの成果（既定）／stage = 運営側が登録する段階（例：勤務確定）。
+   * stage はCVの数に入れず、デモ画面では「運営側の登録」として別に出す
+   */
+  kind?: 'cv' | 'stage';
+  /** 何度でも記録できる（例：再応募・イベントごとの勤務確定）。デモ画面②のボタンが済みにならない */
+  repeatable?: boolean;
 };
 export type RouteDef = Tracked & { id: Id; label: string };
 
@@ -116,6 +123,8 @@ export type RichMenuCell = {
   label: string;
   area: { col: number; row: number; colSpan?: number; rowSpan?: number };
   action: Action;
+  /** いちばん押してほしい項目として目立たせる */
+  emphasis?: boolean;
 };
 export type RichMenu = Tracked & {
   id: Id;
@@ -140,7 +149,24 @@ export type Survey = Tracked & { id: Id; label: string; questions: SurveyQuestio
 export type WebBlock =
   | { kind: 'heading' | 'text'; text: Text }
   | { kind: 'image'; assetId: Id }
-  | { kind: 'button'; label: string; action: Action };
+  | { kind: 'button'; label: string; action: Action }
+  /** 絞り込みつきの一覧（求人一覧など）。絞り込みは filterList、項目を押すと tapPageButton（itemId つき）として記録する */
+  | { kind: 'list'; facets: ListFacet[]; items: ListItem[]; emptyText?: Text };
+/** 絞り込みの軸（例：エリア）。tagId のある選択肢は、そのタグを持つ人には最初から選ばれた状態で開く */
+export type ListFacet = { id: Id; label: string; options: { id: Id; label: string; tagId?: Id }[] };
+/** 一覧の1件。values は軸ごとに当てはまる選択肢（例：{ area: ['yokohama'] }） */
+export type ListItem = {
+  id: Id;
+  title: Text;
+  body?: Text;
+  assetId?: Id;
+  badge?: string;
+  facts?: { label: string; value: Text }[];
+  values: Record<Id, Id[]>;
+  action: Action;
+  /** 募集の締切（デモの時刻・分）。過ぎたら一覧に出さない */
+  closesAt?: Minutes;
+};
 export type WebPage = Tracked & {
   id: Id;
   kind: 'lp' | 'form' | 'thanks';
@@ -158,7 +184,8 @@ export type WebPage = Tracked & {
     cta: { label: string; action: Action };
     dismissLabel: string;
   };
-  lineCta?: { label: string; routeId: Id };
+  /** prefill はLINEのトーク入力欄に入れておく文（サンクスLINE誘導でフォームの内容を引き継ぐ等）。送るかはユーザーが決める */
+  lineCta?: { label: string; routeId: Id; prefill?: string };
 };
 
 export type ScriptStep = { atMinutes: Minutes; event: InputEventBody };
@@ -228,6 +255,9 @@ export type JourneyStep = Tracked & {
   feasibility?: Feasibility;
   feasibilityNote?: Text;
   options?: JourneyOption[];
+  /** この段のあと、くり返しで戻る段（例：再応募 → 勤務確定）。③に「↺ 戻る」として出す */
+  loopTo?: Id;
+  loopLabel?: string;
 };
 
 // ---------- フロー ----------
@@ -259,6 +289,8 @@ export type Wait =
   | { kind: 'duration'; minutes: Minutes }
   /** 起点の日から day 日後の time（HH:MM）。起点の既定は friendAdd（無ければ flowStart） */
   | { kind: 'dayAt'; day: number; time: string; from?: 'friendAdd' | 'flowStart' }
+  /** 全員共通の日時（シミュレーションの Day day の time）。企画配信・イベント前日のリマインド等。過ぎていたら passed へ（無ければ終了） */
+  | { kind: 'at'; day: number; time: string }
   | { kind: 'untilEvent'; event: InputEventType; timeoutMinutes: Minutes };
 
 type NodeBase = Tracked & { id: Id; label?: string; position: { x: number; y: number } };
@@ -269,7 +301,8 @@ export type FlowNode = NodeBase &
     | { type: 'image'; assetId: Id }
     | { type: 'richMenu'; richMenuId: Id }
     | { type: 'choice'; messageId: Id; timeoutMinutes?: Minutes }
-    | { type: 'survey'; surveyId: Id; introMessageId?: Id; timeoutMinutes?: Minutes }
+    /** reask = 前の回答を消して、はじめから聞き直す（希望条件の変更など） */
+    | { type: 'survey'; surveyId: Id; introMessageId?: Id; timeoutMinutes?: Minutes; reask?: boolean }
     | { type: 'tag'; add?: Id[]; remove?: Id[] }
     | { type: 'branch'; cases: { id: Id; label: string; when: Expr }[] }
     | { type: 'wait'; wait: Wait }
@@ -338,8 +371,11 @@ export type InputEventBody =
   // Webページ上の操作。押したときの動作は案件JSONにあるので、エンジンが解釈する
   | { type: 'closePage'; pageId: Id }
   | { type: 'tapPopupCta'; pageId: Id }
-  | { type: 'tapPageButton'; pageId: Id; blockIndex: number }
-  | { type: 'tapLineCta'; pageId: Id };
+  /** itemId は一覧（list）の項目を押したとき */
+  | { type: 'tapPageButton'; pageId: Id; blockIndex: number; itemId?: Id }
+  | { type: 'tapLineCta'; pageId: Id }
+  /** 一覧の絞り込みを変えた（optionId が空なら「すべて」）。行動履歴に残るだけ */
+  | { type: 'filterList'; pageId: Id; blockIndex: number; facetId: Id; optionId: Id };
 export type InputEventType = InputEventBody['type'];
 export type InputEvent = { at: Minutes; userId: Id } & InputEventBody;
 /** 時間だけを進める（全員共通） */

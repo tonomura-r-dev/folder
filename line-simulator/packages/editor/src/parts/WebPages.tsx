@@ -73,6 +73,7 @@ function PageDetail({ w, wi, path, onDeleted }: { w: WebPage; wi: number; path: 
                 <option value="text">文章</option>
                 <option value="image">画像</option>
                 <option value="button">ボタン</option>
+                {b.kind === 'list' && <option value="list">一覧（絞り込みつき）</option>}
               </select>
               <span className="spacer" />
               <ItemTools index={bi} length={w.blocks.length} onMove={(to) => set((x) => (x.blocks = move(x.blocks, bi, to)))} onRemove={() => set((x) => x.blocks.splice(bi, 1))} />
@@ -100,6 +101,11 @@ function PageDetail({ w, wi, path, onDeleted }: { w: WebPage; wi: number; path: 
                 </div>
                 <ActionEditor value={b.action} path={`${path}/blocks/${bi}/action`} onChange={(a) => set((x) => ((x.blocks[bi] as typeof b).action = a))} />
               </>
+            )}
+            {b.kind === 'list' && (
+              <div className="hint">
+                絞り込み {b.facets.map((f) => f.label).join('・')}／項目 {b.items.length}件（{b.items.map((it) => it.title).join('、')}）。一覧の中身は案件データ（project.json）で編集します。
+              </div>
             )}
           </div>
         ))}
