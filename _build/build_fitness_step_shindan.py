@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """ジム・フィットネス業界：ステップ配信（追加から14日）に診断を足して厚くした版を、1枚の試作で作る（2026-10-29 殿村さん）。
 
-    python -m _build.build_fitness_step_shindan <ジム・フィットネス業界_LINEOA施策提案ver3.pptx> <出力.pptx>
+    python -m _build.build_fitness_step_shindan <ジム・フィットネス業界_LINEOA施策提案ver3.pptx> <出力.pptx> [--full]
+    （--full を付けると、元の資料の該当3ページを直した全体版を出す。付けないと3枚の試作）
 
   ver3の25ページ「ステップ配信｜追加から14日で体験予約を取り切る」だけを残し、表に診断の配信を3行足す
   （Day3 性格タイプ診断／Day5 ダイエットタイプ診断／Day10 続けられるか診断）。Day8 の会員の声は診断のタイプ別に変える。
@@ -23,6 +24,7 @@ from pptx.util import Inches, Pt
 from _build.pptx_parts import drop_slide
 
 NEW_FILL = "DCE3F2"
+ROW_FILL = ["FFFFFF", "EFF1F7"]
 ROWS = [  # (元の行（写す書式）, 追加か, Day, 目的, 配信コンテンツ, CTA, 通知プレビュー冒頭)。\n は改行
     (1, False, "Day0", "体験の案内\n＋属性取得", "あいさつ＋無料体験（期限つき）のバナー＋\n30秒 体づくりタイプ診断", "体験予約／\n診断回答", "【〇月〇日まで】無料体験のご案内"),
     (2, False, "Day2", "初心者の不安", "タイプ別「最初の1ヶ月はこれだけ」\n＋マシンの使い方動画", "動画視聴", "【初めての方へ】まずはマシン3種類"),
@@ -44,6 +46,8 @@ CARDS = [
 ]
 NOTE = ["※ 薄い紺の行が、今回足した診断の配信。Day5は目的に「ダイエット」を選んだ方だけ（他の目的の方は送らない）。",
         "※ 性格タイプ診断・ダイエットタイプ診断は、リッチメニュー「② 診断・シミュレーター」からも押せる（次の2ページ）。"]
+NOTE_FULL = ["※ Day5は、目的に「ダイエット」を選んだ方だけに送る。",
+             "※ 性格タイプ診断・ダイエットタイプ診断は、リッチメニュー「② 診断・シミュレーター」からも押せる。"]
 ROOT = Path(__file__).resolve().parent.parent
 IMG27 = ROOT / "_images/fitness/richmenu_sekkei_v2.png"
 IMG28 = ROOT / "_images/fitness/richmenu_tab2_v2.png"
@@ -124,14 +128,15 @@ def set_card(sh, head, body):
         txb.append(p)
 
 
-def main(src, out):
+def main(src, out, full=False):
     prs = Presentation(src)
     def find(head):
         return next(s for s in prs.slides if any(sh.has_text_frame and sh.text_frame.text.startswith(head) for sh in sh_list(s)))
     keep = [find("ステップ配信｜追加から14日"), find("リッチメニュー設計案"), find("リッチメニュー実装イメージ")]
     ids = {k.slide_id for k in keep}
-    for s in [s for s in prs.slides if s.slide_id not in ids]:
-        drop_slide(prs, s)
+    if not full:                                              # 試作は3枚だけ。full＝元の資料に入れる（ほかのページは触らない）
+        for s in [s for s in prs.slides if s.slide_id not in ids]:
+            drop_slide(prs, s)
     for sh in [sh for sh in keep[1].shapes if 4 <= sh.shape_id <= 27]:   # 画像の裏に隠れていた古い枠（新しい画像は背が低く、はみ出して見える）
         sh._element.getparent().remove(sh._element)
     swap_image(keep[1], 33, IMG27)
@@ -157,7 +162,12 @@ def main(src, out):
         tcs = tr.findall(qn("a:tc"))
         for tc, t in zip(tcs, texts):
             set_cell_text(tc, t)
-        if new:
+        if full:                                              # 元の資料：塗り分けはせず、白と灰色の交互にそろえる
+            for tc in tcs:
+                v = tc.find(qn("a:tcPr")).find(qn("a:solidFill")).find(qn("a:srgbClr"))
+                if v.get("val") != "1F2A5C":
+                    v.set("val", ROW_FILL[k % 2])
+        elif new:
             for tc in tcs:
                 set_fill(tc, NEW_FILL)
         tbl.append(tr)
@@ -170,7 +180,7 @@ def main(src, out):
     for sid, (head, body) in zip((5, 6, 7), CARDS):
         set_card(by[sid], head, body)
         by[sid].top, by[sid].height = top, Inches(0.52)
-    set_paras(by[8], NOTE)
+    set_paras(by[8], NOTE_FULL if full else NOTE)
     by[8].top, by[8].height = top + Inches(0.6), Inches(0.36)
     prs.save(out)
     print("saved:", out)
@@ -181,4 +191,4 @@ def sh_list(s):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], "--full" in sys.argv)
