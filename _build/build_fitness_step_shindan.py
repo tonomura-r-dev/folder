@@ -136,6 +136,11 @@ def main(src, out):
         sh._element.getparent().remove(sh._element)
     swap_image(keep[1], 33, IMG27)
     swap_image(keep[2], 33, IMG28)
+    for k in (keep[1], keep[2]):                               # 画像サイズ（2500×1686px など）の表示は外す（殿村さん）
+        set_paras(next(sh for sh in k.shapes if sh.shape_id == 30), ["入会タグで①→③に自動切替。"])
+    box, txt = (next(sh for sh in keep[1].shapes if sh.shape_id == i) for i in (29, 30))   # 27は1行になったので枠を28と同じ高さに
+    box.height = Inches(0.52)
+    txt.top, txt.height = box.top + Inches(0.11), Inches(0.3)
     s = keep[0]
     by = {sh.shape_id: sh for sh in s.shapes}
 
