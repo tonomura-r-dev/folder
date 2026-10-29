@@ -1,6 +1,7 @@
-// 文面の編集：吹き出し（文字・画像・ボタン・カード）を並べる。
+// 文面の編集：吹き出し（文字・画像・ボタン・カード・カルーセル）を並べる。
 
-import type { Bubble, Button, MessageDef, Project } from '../../../engine/src/index.ts';
+import type { Bubble, Button, CarouselCard, MessageDef, Project } from '../../../engine/src/index.ts';
+import { bubbleButtons } from '../../../engine/src/index.ts';
 import { Labels } from '../../../player/src/describe.ts';
 import { issuesAt, useEditor } from '../ctx.ts';
 import { replace } from '../route.ts';
@@ -13,10 +14,29 @@ const KIND = [
   { value: 'buttons', label: 'ボタン付き' },
   { value: 'card', label: 'カード（見出し＋ボタン）' },
   { value: 'image', label: '画像' },
+  { value: 'carousel', label: 'カルーセル（横に並ぶカード）' },
 ];
 
 export const buttonIds = (p: Project) =>
-  p.messages.flatMap((m) => m.bubbles.flatMap((b) => (b.kind === 'buttons' || b.kind === 'card' ? b.buttons.map((x) => x.id) : [])));
+  p.messages.flatMap((m) => m.bubbles.flatMap((b) => bubbleButtons(b).map((x) => x.id)));
+
+const cardIds = (p: Project) => p.messages.flatMap((m) => m.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.id) : [])));
+const newCard = (p: Project): CarouselCard => ({
+  id: newId('card', cardIds(p)),
+  title: '',
+  buttons: [{ id: newId('btn', buttonIds(p)), label: '詳しく見る', action: { kind: 'none' } }],
+});
+/** 「ラベル：値」の行 ⇔ カードの項目 */
+const factsText = (c: CarouselCard) => (c.facts ?? []).map((f) => `${f.label}：${f.value}`).join('\n');
+const parseFacts = (t: string) =>
+  t
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      const i = l.search(/[：:]/);
+      return i < 0 ? { label: l, value: '' } : { label: l.slice(0, i).trim(), value: l.slice(i + 1).trim() };
+    });
 
 export function usedBy(p: Project, messageId: string): string[] {
   const out: string[] = [];
@@ -38,6 +58,8 @@ function emptyBubble(kind: string, p: Project): Bubble {
       return { kind: 'card', title: '', buttons: [btn()] };
     case 'image':
       return { kind: 'image', assetId: '' };
+    case 'carousel':
+      return { kind: 'carousel', cards: [newCard(p)] };
     default:
       return { kind: 'text', text: '' };
   }
@@ -120,6 +142,86 @@ function MessageDetail({ m, mi, path, onDeleted }: { m: MessageDef; mi: number; 
                   <Text value={b.body ?? ''} onChange={(v) => setB((x) => x.kind === 'card' && (v ? (x.body = v) : delete x.body))} />
                 </Field>
               </div>
+            )}
+            {b.kind === 'carousel' && (
+              <>
+                {b.cards.map((c, ci) => {
+                  const cp = `${bp}/cards/${ci}`;
+                  const setC = (fn: (x: CarouselCard) => void) => setB((x) => x.kind === 'carousel' && fn(x.cards[ci]!));
+                  return (
+                    <div className="sub" key={c.id}>
+                      <div className="sub-head">
+                        <span className="t">カード {ci + 1}</span>
+                        <span className="muted small mono">{c.id}</span>
+                        <span className="spacer" />
+                        <ItemTools
+                          index={ci}
+                          length={b.cards.length}
+                          onMove={(to) => setB((x) => x.kind === 'carousel' && (x.cards = move(x.cards, ci, to)))}
+                          onRemove={() => setB((x) => x.kind === 'carousel' && x.cards.splice(ci, 1))}
+                        />
+                      </div>
+                      <div className="fields">
+                        <Field label="見出し" issues={issuesAt(issues, `${cp}/title`)}>
+                          <Text value={c.title} onChange={(v) => setC((x) => (x.title = v))} />
+                        </Field>
+                        <Field label="画像（任意）" issues={issuesAt(issues, `${cp}/assetId`)}>
+                          <Select value={c.assetId ?? ''} empty="なし" options={options.assets(project)} onChange={(v) => setC((x) => (v ? (x.assetId = v) : delete x.assetId))} />
+                        </Field>
+                        <Field label="画像の札（任意）" hint="例：デモ用サンプル">
+                          <Text value={c.badge ?? ''} onChange={(v) => setC((x) => (v ? (x.badge = v) : delete x.badge))} />
+                        </Field>
+                        <Field label="説明（任意）">
+                          <Text value={c.body ?? ''} onChange={(v) => setC((x) => (v ? (x.body = v) : delete x.body))} />
+                        </Field>
+                      </div>
+                      <Field label="項目（1行に「ラベル：値」）" wide hint="例：勤務地：長野県（スキー場）">
+                        <TextArea rows={4} value={factsText(c)} onChange={(v) => setC((x) => (v.trim() ? (x.facts = parseFacts(v)) : delete x.facts))} />
+                      </Field>
+                      {c.buttons.map((btn, k) => (
+                        <div className="sub" key={btn.id}>
+                          <div className="sub-head">
+                            <span className="t">ボタン {k + 1}</span>
+                            <span className="muted small mono">{btn.id}</span>
+                            <span className="spacer" />
+                            <ItemTools index={k} length={c.buttons.length} onMove={(to) => setC((x) => (x.buttons = move(x.buttons, k, to)))} onRemove={() => setC((x) => x.buttons.splice(k, 1))} />
+                          </div>
+                          <div className="fields">
+                            <Field label="ボタンの文字">
+                              <Text value={btn.label} onChange={(v) => setC((x) => (x.buttons[k]!.label = v))} />
+                            </Field>
+                          </div>
+                          <ActionEditor value={btn.action} path={`${cp}/buttons/${k}/action`} onChange={(a) => setC((x) => (x.buttons[k]!.action = a))} />
+                        </div>
+                      ))}
+                      <button
+                        className="btn small"
+                        style={{ marginTop: 8 }}
+                        onClick={() =>
+                          update((d) => {
+                            const x = d.messages[mi]!.bubbles[bi]!;
+                            if (x.kind === 'carousel') x.cards[ci]!.buttons.push({ id: newId('btn', buttonIds(d)), label: 'ボタン', action: { kind: 'none' } });
+                          })
+                        }
+                      >
+                        ＋ ボタン
+                      </button>
+                    </div>
+                  );
+                })}
+                <button
+                  className="btn small"
+                  style={{ marginTop: 8 }}
+                  onClick={() =>
+                    update((d) => {
+                      const x = d.messages[mi]!.bubbles[bi]!;
+                      if (x.kind === 'carousel') x.cards.push(newCard(d));
+                    })
+                  }
+                >
+                  ＋ カード
+                </button>
+              </>
             )}
             {(b.kind === 'buttons' || b.kind === 'card') && (
               <>

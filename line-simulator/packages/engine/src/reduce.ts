@@ -612,6 +612,9 @@ function handle(ctx: Ctx, user: UserState, ev: InputEventBody): void {
     case 'cv':
       doCv(ctx, user, ev.cvId);
       return;
+    case 'viewCard':
+      // 見たカードは行動履歴に残るだけ（条件式の did で使える）
+      return;
   }
 }
 

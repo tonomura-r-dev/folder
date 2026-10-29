@@ -2,8 +2,9 @@
 // すべて「選んでいるユーザー」の分だけを出す（誰に届くかの表だけは全員を並べる）。
 
 import type { Decision, FlowNode, Id, NarrationDef, Trace, UserState } from '../../engine/src/index.ts';
+import { bubbleButtons } from '../../engine/src/index.ts';
 import { upcoming } from './controller.ts';
-import { describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
+import { describeExpr, describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
 import { nextAction } from './journey.ts';
 import { flowConditions, nextOwn, userHistoryHtml } from './timeline.ts';
 import { esc, whoOf, type Tab, type View } from './view.ts';
@@ -47,6 +48,47 @@ function nodeLabel(v: View, flowId: Id, nodeId: Id | null): string {
 }
 
 const FLOW_STATUS = { running: '実行中', waiting: '待機中', ended: '終了', stopped: '停止' } as const;
+
+/** 届いたカルーセルごとに「なぜこの中身か」（直前の分岐の条件）と、見た・押した回数 */
+function carouselReasons(v: View, user: UserState): string {
+  const L = v.L;
+  const msgOf = (id: Id) => v.project.messages.find((m) => m.id === id);
+  const rows = user.deliveries.filter((d) => msgOf(d.messageId)?.bubbles.some((b) => b.kind === 'carousel'));
+  if (!rows.length) return '';
+  const items = [...rows]
+    .reverse()
+    .map((d) => {
+      const m = msgOf(d.messageId)!;
+      const titles = m.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.title) : []));
+      // 同じ配信の判定（deliver）から遡って、同じシナリオで直前に通った分岐を探す
+      const decisions = v.world.decisions;
+      const di = decisions.findIndex((x) => x.userId === user.id && x.kind === 'deliver' && x.outcome === 'taken' && x.ref === d.messageId && x.at === d.at);
+      let br: Decision | undefined;
+      for (let i = di - 1; i >= 0 && d.flowId !== null; i--) {
+        const x = decisions[i]!;
+        if (x.at !== d.at) break;
+        if (x.userId === user.id && x.flowId === d.flowId && x.kind === 'branch' && x.outcome === 'taken') {
+          br = x;
+          break;
+        }
+      }
+      let why: string;
+      if (d.flowId === null) why = '自動応答（メニュー・メッセージへの返信）';
+      else if (br) {
+        const node = v.project.flows.find((f) => f.id === br!.flowId)?.nodes.find((n) => n.id === br!.nodeId);
+        const c = node?.type === 'branch' ? node.cases.find((x) => x.id === br!.ref) : undefined;
+        why = c ? `「${node!.label ?? '分岐'}」で「${c.label}」：${describeExpr(c.when, L)}` : `「${node?.label ?? '分岐'}」で「それ以外」（ほかの条件に当てはまらない）`;
+      } else why = `「${L.flow(d.flowId)}」の配信（この配信は全員に同じ内容）`;
+      const ids = new Set(m.bubbles.flatMap((b) => bubbleButtons(b).map((x) => x.id)));
+      // 1枚目は届いた時点で見えている
+      const first = m.bubbles.find((b) => b.kind === 'carousel');
+      const seen = new Set([first?.kind === 'carousel' ? first.cards[0]?.id : undefined, ...user.behaviors.filter((b) => b.type === 'viewCard' && b.detail['messageId'] === d.messageId && b.at >= d.at).map((b) => b.detail['cardId'])].filter(Boolean));
+      const taps = user.behaviors.filter((b) => b.type === 'tapButton' && ids.has(b.detail['buttonId'] ?? '') && b.at >= d.at).length;
+      return `<li><div class="lsp-carw-h"><span class="t">${esc(fmtTime(d.at))}</span><b>${esc(titles.join('／'))}</b></div><div class="lsp-carw-why">${esc(why)}</div><div class="lsp-carw-f">見たカード ${seen.size}/${titles.length}枚・ボタン ${taps}回</div></li>`;
+    })
+    .join('');
+  return `<h4>届いたカルーセルと、その中身になった理由（${rows.length}）</h4><ul class="lsp-carw">${items}</ul>`;
+}
 
 function stateTab(v: View, user: UserState): string {
   const L = v.L;
@@ -92,6 +134,7 @@ function stateTab(v: View, user: UserState): string {
     <h4>タグ（${tags.length}）</h4>${tags.length ? `<div class="lsp-tags">${tags.map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`).join('')}</div>` : '<div class="lsp-none">なし</div>'}
     <h4>アンケートの回答</h4>${answers.length ? `<ul class="lsp-answers">${answers.join('')}</ul>` : '<div class="lsp-none">まだ回答していません</div>'}
     ${attrs.length ? `<h4>属性</h4><div class="lsp-answers">${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</div>` : ''}
+    ${carouselReasons(v, user)}
     <h4>実行中のシナリオ（${active.length}）</h4>${activeHtml ? `<ul class="lsp-flows act">${activeHtml}</ul>` : '<div class="lsp-none">実行中のシナリオはありません</div>'}
     ${doneHtml ? `<details class="lsp-done"><summary>終了・停止したシナリオ（${done.length}）</summary><ul class="lsp-flows">${doneHtml}</ul></details>` : ''}
     <h4>次の段階へ進める</h4><div class="lsp-hint top">各段階に進んだ際のLINE配信や、裏側の処理を確認できます。押すと、その段階を完了した状態になります（フォームは開きません）。</div><div class="lsp-ctrls">${cvButtons}${
@@ -239,8 +282,11 @@ export function backstage(v: View, user: UserState): string {
 
 /** 資料用表示に出す「なぜ」の直近（届かなかった・止めたを優先） */
 export function recentExplanations(v: View, user: UserState, n: number): Explanation[] {
-  const mine = v.world.decisions.filter((d) => d.userId === user.id && d.kind !== 'trigger' && d.kind !== 'autoReply');
-  const ng = mine.filter((d) => d.outcome !== 'taken');
+  // 分岐で選ばれなかった行き先は出さない（選ばれた行き先の方が、なぜこうなったかを表す）
+  const mine = v.world.decisions.filter((d) => d.userId === user.id && d.kind !== 'trigger' && d.kind !== 'autoReply' && !(d.kind === 'branch' && d.outcome === 'skipped'));
+  // 届かなかった・止まった判定を優先するのは、直近1日のものだけ（古い理由が出続けないように）
+  const last = mine.at(-1)?.at ?? 0;
+  const ng = mine.filter((d) => d.outcome !== 'taken' && d.at >= last - 1440);
   const pick = (ng.length ? ng : mine).slice(-n).reverse();
   return pick.map((d) => explainDecision(d, v.L, v.project, v.world));
 }

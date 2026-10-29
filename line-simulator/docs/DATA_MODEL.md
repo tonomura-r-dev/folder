@@ -111,9 +111,12 @@ type Bubble =
   | { kind: 'text'; text: Text }
   | { kind: 'image'; assetId: Id }
   | { kind: 'buttons'; text: Text; buttons: Button[] }   // ボタン付きメッセージ
-  | { kind: 'card'; title: Text; body?: Text; assetId?: Id; buttons: Button[] };
+  | { kind: 'card'; title: Text; body?: Text; assetId?: Id; buttons: Button[] }
+  | { kind: 'carousel'; cards: CarouselCard[] };          // 横に並ぶカード（1〜10枚）。左右に送って見る
 
 type Button = { id: Id; label: string; action: Action };
+/** カルーセルの1枚。facts はカードに並べる項目（例：勤務地・開始時期）。badge は画像に重ねる札（例：デモ用サンプル） */
+type CarouselCard = { id: Id; title: Text; body?: Text; assetId?: Id; badge?: string; facts?: { label: string; value: Text }[]; buttons: Button[] };
 
 /** ボタン・メニューセル・ポップアップ等が押されたときの動作 */
 type Action =
@@ -350,6 +353,7 @@ type InputEvent = { at: Minutes; userId: Id } & (
   | { type: 'tapPopupCta'; pageId: Id }                      // 離脱防止ポップアップのボタン
   | { type: 'tapPageButton'; pageId: Id; blockIndex: number } // ページ内のボタン
   | { type: 'tapLineCta'; pageId: Id }                       // サンクスページのLINE誘導
+  | { type: 'viewCard'; messageId: Id; cardId: Id }          // カルーセルのカードを見た（左右に送った）。行動履歴に残るだけ
 );
 
 type ClockEvent = { at: Minutes; userId: '*'; type: 'advanceTo' };  // 時間を進める（全員共通）

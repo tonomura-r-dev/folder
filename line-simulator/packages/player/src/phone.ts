@@ -1,6 +1,6 @@
 // スマホ枠の中（はじめかた・Webページ・ポップアップ・LINEトーク）。選んでいるユーザー1人分を描く。
 
-import type { Action, Bubble, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
+import type { Action, Bubble, CarouselCard, Id, RichMenu, TalkItem, UserState, WebPage } from '../../engine/src/index.ts';
 import { fmtTime, type Labels } from './describe.ts';
 import { dayOf, esc, hhmm, whoOf, type View } from './view.ts';
 
@@ -17,12 +17,49 @@ function img(v: View, id: Id | undefined, alt = ''): string {
   return a ? `<img src="${esc(v.assetUrl(a))}" alt="${esc(a.alt || alt)}">` : `<div class="lsp-noimg">画像（未登録）</div>`;
 }
 
-function bubble(v: View, b: Bubble, nodeId?: Id): string {
+/** カルーセルのいま表示しているカード。届いた後に見たカード（viewCard）の最後のもの。無ければ1枚目 */
+function cardIndex(cards: CarouselCard[], user: UserState | undefined, messageId: Id | undefined, at: number): number {
+  if (!user || !messageId) return 0;
+  for (let i = user.behaviors.length - 1; i >= 0; i--) {
+    const b = user.behaviors[i]!;
+    if (b.at < at) break;
+    if (b.type === 'viewCard' && b.detail['messageId'] === messageId) return Math.max(0, cards.findIndex((c) => c.id === b.detail['cardId']));
+  }
+  return 0;
+}
+
+function facts(c: CarouselCard): string {
+  return c.facts?.length ? `<dl class="lsp-car-facts">${c.facts.map((f) => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join('')}</dl>` : '';
+}
+
+/** 横に送れるカード。左右のボタン・点・ドラッグ（スワイプ）で切り替える。切り替えると viewCard を送る */
+function carousel(v: View, cards: CarouselCard[], btns: (list: { id: Id; label: string }[]) => string, at?: { user: UserState; messageId: Id; at: number }): string {
+  const i = cardIndex(cards, at?.user, at?.messageId, at?.at ?? 0);
+  const data = at ? ` data-msg="${esc(at.messageId)}"` : '';
+  const go = (k: number, label: string, cls: string, aria: string) =>
+    at && k >= 0 && k < cards.length && k !== i
+      ? `<button type="button" class="${cls}" data-act="carGo"${data} data-card="${esc(cards[k]!.id)}" aria-label="${esc(aria)}">${label}</button>`
+      : `<button type="button" class="${cls}" disabled aria-label="${esc(aria)}">${label}</button>`;
+  const card = (c: CarouselCard, k: number) =>
+    `<div class="lsp-car-card${k === i ? ' on' : ''}" aria-hidden="${k !== i}"><div class="lsp-car-img">${c.assetId ? img(v, c.assetId) : ''}${
+      c.badge ? `<span class="lsp-car-badge">${esc(c.badge)}</span>` : ''
+    }</div><div class="lsp-car-title">${esc(c.title)}</div>${facts(c)}${c.body ? `<div class="lsp-car-body">${esc(c.body)}</div>` : ''}${btns(c.buttons)}</div>`;
+  const dots = cards.map((c, k) => (at ? `<button type="button" class="lsp-car-dot${k === i ? ' on' : ''}" data-act="carGo"${data} data-card="${esc(c.id)}" aria-label="${k + 1}枚目"></button>` : '')).join('');
+  return `<div class="lsp-b lsp-car"${data}><div class="lsp-car-view"${at ? ' data-drag="car"' : ''}><div class="lsp-car-track" style="--i:${i}">${cards.map(card).join('')}</div></div>${
+    at
+      ? `<div class="lsp-car-nav">${go(i - 1, '‹', 'lsp-car-prev', '前のカード')}<span class="lsp-car-dots">${dots}</span><span class="lsp-car-count">${i + 1} / ${cards.length}</span>${go(i + 1, '›', 'lsp-car-next', '次のカード')}</div>`
+      : ''
+  }</div>`;
+}
+
+function bubble(v: View, b: Bubble, nodeId?: Id, at?: { user: UserState; messageId: Id; at: number }): string {
   const btns = (list: { id: Id; label: string }[]) =>
     `<div class="lsp-btns">${list
       .map((x) => `<button type="button" data-act="tapButton" data-button="${esc(x.id)}"${nodeId ? ` data-node="${esc(nodeId)}"` : ''}>${esc(x.label)}</button>`)
       .join('')}</div>`;
   switch (b.kind) {
+    case 'carousel':
+      return carousel(v, b.cards, btns, at);
     case 'text':
       return `<div class="lsp-b">${esc(b.text)}</div>`;
     case 'image':
@@ -56,6 +93,16 @@ export function previewBubble(v: View, b: Bubble): string {
   const btns = (list: { label: string; action: Action }[]) =>
     `<div class="lsp-btns">${list.map((x) => `<span class="lsp-btn-ro">${esc(x.label)}${what(x.action) ? `<small>→ ${esc(what(x.action))}</small>` : ''}</span>`).join('')}</div>`;
   switch (b.kind) {
+    case 'carousel':
+      // 文面確認では全カードを横に並べ、スクロールで見る
+      return `<div class="lsp-b lsp-car ro"><div class="lsp-car-ro">${b.cards
+        .map(
+          (c) =>
+            `<div class="lsp-car-card"><div class="lsp-car-img">${c.assetId ? img(v, c.assetId) : ''}${c.badge ? `<span class="lsp-car-badge">${esc(c.badge)}</span>` : ''}</div><div class="lsp-car-title">${esc(
+              c.title,
+            )}</div>${facts(c)}${c.body ? `<div class="lsp-car-body">${esc(c.body)}</div>` : ''}${btns(c.buttons)}</div>`,
+        )
+        .join('')}</div></div>`;
     case 'text':
       return `<div class="lsp-b">${esc(b.text)}</div>`;
     case 'image':
@@ -93,7 +140,7 @@ function chat(v: View, user: UserState): string {
       out.push(
         `<div class="lsp-row bot"><div class="lsp-avatar${cont ? ' ghost' : ''}">${initial}</div><div class="lsp-col">${
           cont ? '' : `<div class="lsp-name">${esc(v.project.brand.accountName)}</div>`
-        }${bubble(v, item.bubble, item.fromNodeId)}</div><span class="lsp-time">${hhmm(item.at)}</span></div>`,
+        }${bubble(v, item.bubble, item.fromNodeId, { user, messageId: item.messageId, at: item.at })}</div><span class="lsp-time">${hhmm(item.at)}</span></div>`,
       );
     }
     prev = item;
@@ -125,7 +172,8 @@ function menu(v: View, m: RichMenu): string {
   const cells = m.cells
     .map(
       (c) =>
-        `<button type="button" data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
+        // タブ（メニューの切り替え・いま開いているタブ）は低く出し、ほかの項目と見分ける
+        `<button type="button"${c.action.kind === 'switchMenu' ? ' class="tab"' : c.action.kind === 'none' ? ' class="tab on"' : ''} data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
           c.area.colSpan ?? 1
         };grid-row:${c.area.row + 1} / span ${c.area.rowSpan ?? 1}">${esc(c.label)}</button>`,
     )

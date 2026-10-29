@@ -9,3 +9,4 @@ export { renderText, isKnownVar } from './text.ts';
 export { projectHash } from './hash.ts';
 export { portsOf, choiceButtons, acceptsInput } from './ports.ts';
 export { personaCoverage } from './coverage.ts';
+export { bubbleButtons } from './indexing.ts';

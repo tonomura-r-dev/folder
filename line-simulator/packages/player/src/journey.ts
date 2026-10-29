@@ -4,7 +4,7 @@
 // 施策の文面は journey に持たず、シナリオのノード・文面を参照する（①と同じ文面が出る）。
 
 import type { Expr, Feasibility, Flow, FlowNode, Id, JourneyOption, JourneyStep, JourneyVariant, Minutes, Project, UserState, WorldState } from '../../engine/src/index.ts';
-import { evaluate } from '../../engine/src/index.ts';
+import { bubbleButtons, evaluate } from '../../engine/src/index.ts';
 import { bubbleTexts, renderBubble } from '../../engine/src/text.ts';
 import { pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeFailure, describeTrigger, explainDecision, fmtDuration, fmtTime, type Labels } from './describe.ts';
@@ -169,7 +169,7 @@ function timingOf(project: Project, L: Labels, flow: Flow, nodeId: Id, depth = 0
 }
 
 function buttonLabel(project: Project, id: Id): string {
-  for (const m of project.messages) for (const b of m.bubbles) if (b.kind === 'buttons' || b.kind === 'card') for (const x of b.buttons) if (x.id === id) return x.label;
+  for (const m of project.messages) for (const b of m.bubbles) for (const x of bubbleButtons(b)) if (x.id === id) return x.label;
   return id;
 }
 

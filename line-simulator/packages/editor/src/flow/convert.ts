@@ -3,7 +3,7 @@
 import type { Edge as RFEdge, Node as RFNode } from '@xyflow/react';
 import { MarkerType } from '@xyflow/react';
 import type { Flow, FlowNode, Id, Issue, NodeType, Project, Trigger } from '../../../engine/src/index.ts';
-import { acceptsInput, portsOf } from '../../../engine/src/index.ts';
+import { acceptsInput, bubbleButtons, portsOf } from '../../../engine/src/index.ts';
 import { describeExpr, describeTrigger, fmtDuration, Labels } from '../../../player/src/describe.ts';
 
 export { describeTrigger };
@@ -50,7 +50,7 @@ export function portLabel(node: FlowNode, port: string, project: Project): strin
   if (port.startsWith('btn:')) {
     const id = port.slice(4);
     for (const m of project.messages)
-      for (const b of m.bubbles) if (b.kind === 'buttons' || b.kind === 'card') for (const btn of b.buttons) if (btn.id === id) return btn.label;
+      for (const b of m.bubbles) for (const btn of bubbleButtons(b)) if (btn.id === id) return btn.label;
     return id;
   }
   return port;

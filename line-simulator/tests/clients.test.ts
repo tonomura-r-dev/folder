@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { InputEventBody, Project, UserState, WorldState } from '../packages/engine/src/index.ts';
-import { personaCoverage, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
+import { bubbleButtons, personaCoverage, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { allScripted, autoStep, dispatch, newDemo, seek, worldOf, type Demo } from '../packages/player/src/controller.ts';
 import { journeyOf } from '../packages/player/src/journey.ts';
 import { Labels } from '../packages/player/src/describe.ts';
@@ -53,7 +53,7 @@ function deadButtons(p: Project, personaId: string, routeId: string) {
   const base = dispatch(newDemo(p, personaId), { type: 'addFriend', routeId });
   const snap = (d: Demo) => {
     const u = me(p, d);
-    return JSON.stringify([u.talk.length, u.surface, u.deliveries.length, Object.keys(u.tags).sort()]);
+    return JSON.stringify([u.talk.length, u.surface, u.deliveries.length, Object.keys(u.tags).sort(), u.richMenuId]);
   };
   const dead: string[] = [];
   const tryIt = (label: string, ...events: InputEventBody[]) => {
@@ -63,8 +63,14 @@ function deadButtons(p: Project, personaId: string, routeId: string) {
     const after = snap(dispatch(d, events.at(-1)!));
     if (before === after) dead.push(label);
   };
-  for (const m of p.messages) for (const b of m.bubbles) if (b.kind === 'buttons' || b.kind === 'card') for (const x of b.buttons) tryIt(`button:${x.id}`, { type: 'tapButton', buttonId: x.id });
-  for (const r of p.richMenus) for (const c of r.cells) tryIt(`menu:${c.id}`, { type: 'tapMenu', richMenuId: r.id, cellId: c.id });
+  for (const m of p.messages) for (const b of m.bubbles) for (const x of bubbleButtons(b)) tryIt(`button:${x.id}`, { type: 'tapButton', buttonId: x.id });
+  // いま開いているタブ（動作なし）は押しても変わらないのが正しい
+  for (const r of p.richMenus) {
+    // 既定でないメニュー（2つ目のタブ等）は、そのタブに切り替えてから押す
+    const open = p.richMenus.flatMap((m) => m.cells.filter((c) => c.action.kind === 'switchMenu' && c.action.richMenuId === r.id).map((c): InputEventBody => ({ type: 'tapMenu', richMenuId: m.id, cellId: c.id })));
+    const pre = r.id !== p.settings.defaultRichMenuId && open[0] ? [open[0]] : [];
+    for (const c of r.cells) if (c.action.kind !== 'none') tryIt(`menu:${c.id}`, ...pre, { type: 'tapMenu', richMenuId: r.id, cellId: c.id });
+  }
   for (const pg of p.webPages) {
     pg.blocks.forEach((b, i) => b.kind === 'button' && tryIt(`page:${pg.id}#${i}`, { type: 'visitPage', pageId: pg.id }, { type: 'tapPageButton', pageId: pg.id, blockIndex: i }));
     if (pg.lineCta) tryIt(`lineCta:${pg.id}`, { type: 'visitPage', pageId: pg.id }, { type: 'tapLineCta', pageId: pg.id });
@@ -411,6 +417,164 @@ describe.skipIf(!has('client-b-kids'))('企業別デモ②（保育・見学予�
   it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
     const d = playToEnd(p);
     expect(d.now).toBe(95 * DAY);
+    const ww = worldOf(p, d);
+    for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
+    await exportChecks(p);
+  }, 30_000);
+});
+
+describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバイト・ENTRY／応募）', () => {
+  const p = has('client-c-resort') ? loadProject('client-c-resort') : (null as unknown as Project);
+  const w = has('client-c-resort') ? run(p, 190 * DAY) : (null as unknown as WorldState);
+  /** 届いたカルーセルの求人カードID（メッセージ単位） */
+  const cardsOf = (messageId: string) => p.messages.find((m) => m.id === messageId)!.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.title) : []));
+
+  it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
+    expect(validate(p)).toEqual([]);
+    expect(personaCoverage(p)).toEqual([]);
+  });
+
+  it('全CTA・カルーセルのボタン・リッチメニュー（2タブ）・ページのボタンが、押すと反応する', () => {
+    expect(deadButtons(p, 'p_ski', 'route_popup')).toEqual([]);
+    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
+    expect(me(p, d).richMenuId).toBe('rm_jobs');
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_jobs', cellId: 'cell_tab_support' });
+    expect(me(p, d).richMenuId).toBe('rm_support');
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_support', cellId: 'cell_tab_jobs2' });
+    expect(me(p, d).richMenuId).toBe('rm_jobs');
+  });
+
+  it('アンケートは今の3問（エントリー状況・開始時期・エリア）で、質問と回答が交互にトークへ残る', () => {
+    const lines = chatLines(user(w, 'p_ski'));
+    const i = lines.indexOf('公式：エントリーはされましたか？');
+    expect(lines.slice(i, i + 6)).toEqual(['公式：エントリーはされましたか？', 'ユーザー：これから', '公式：お仕事の開始時期は？', 'ユーザー：1〜2ヶ月先', '公式：希望のエリアは？', 'ユーザー：山・高原（スキー場など）']);
+  });
+
+  it('診断の答えで、届く求人カルーセルの中身が変わる（スキー場／海・離島／人気／未回答は回答のお願い）', () => {
+    expect(ids(w, 'p_ski')).toContain('msg_car_ski');
+    expect(ids(w, 'p_summer')).toContain('msg_car_sea');
+    expect(ids(w, 'p_menu')).toContain('msg_car_pop');
+    expect(ids(w, 'p_noanswer')).toContain('msg_diag_remind');
+    expect(ids(w, 'p_noanswer').filter((m) => m.startsWith('msg_car_'))).toEqual([]);
+    expect(cardsOf('msg_car_ski')).not.toEqual(cardsOf('msg_car_sea'));
+    // カードには勤務地・開始時期・仕事内容・条件と、詳細ページへのボタン。デモ用サンプルの札が付く
+    const car = p.messages.find((m) => m.id === 'msg_car_ski')!.bubbles.find((b) => b.kind === 'carousel')!;
+    if (car.kind !== 'carousel') throw new Error('carousel');
+    for (const c of car.cards) {
+      expect(c.facts!.map((f) => f.label)).toEqual(['勤務地', '開始時期', '仕事内容', '条件']);
+      expect(c.badge).toBe('デモ用サンプル求人');
+      expect(c.buttons[0]!.action.kind).toBe('openPage');
+    }
+  });
+
+  it('カードを送る → 詳細 → ENTRY が記録され、③の時系列で追える', () => {
+    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
+    for (const [q, c] of [['q_entry', 'c_ent_yet'], ['q_start', 'c_st_1_2'], ['q_area', 'c_ar_mt']] as const) d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [c] });
+    d = dispatch(d, { type: 'viewCard', messageId: 'msg_car_ski', cardId: 'card_car_ski_w3' });
+    d = dispatch(d, { type: 'tapButton', buttonId: 'b_car_ski_w3' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_job_w3' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_job_w3', blockIndex: 4 });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_entry', values: {} });
+    const u = me(p, d);
+    expect(Object.keys(u.cvs)).toEqual(['cv_entry']);
+    const titles = buildTimeline(p, new Labels(p), worldOf(p, d), [u.id]).flatMap((e) => e.front);
+    const pos = (re: RegExp) => titles.findIndex((t) => re.test(t));
+    expect(pos(/カルーセルのカード「スキーレンタルショップ」を見る/)).toBeGreaterThan(-1);
+    expect(pos(/ボタン「求人の詳細を見る」を押す/)).toBeGreaterThan(pos(/カードを見る/));
+    expect(pos(/かんたん1分 ENTRY/)).toBeGreaterThan(pos(/求人の詳細を見る/));
+  });
+
+  it('開始時期・エリア別の配信は、合う人にだけ届く（3ヶ月以上先・未回答・こだわらないには送らない）', () => {
+    expect(ids(w, 'p_entered')).toContain('msg_k_onsen');
+    expect(ids(w, 'p_later')).toContain('msg_k_sea');
+    for (const id of ['p_summer', 'p_noanswer', 'p_menu']) expect(ids(w, id).filter((m) => m.startsWith('msg_k_'))).toEqual([]);
+    const skip = w.decisions.find((x) => x.userId === 'p_summer' && x.nodeId === 'n_k_b' && x.ref === 'else');
+    expect(skip).toBeTruthy();
+  });
+
+  it('Day10 は、ENTRYまだの方にENTRYの案内、ENTRY済みの方に応募の案内を送る（重ねない）', () => {
+    expect(ids(w, 'p_noanswer')).toContain('msg_s4_pop');
+    expect(ids(w, 'p_summer')).toContain('msg_s4_sea');
+    for (const id of ['p_entered', 'p_menu']) {
+      expect(ids(w, id)).toContain('msg_s4_apply');
+      expect(ids(w, id).filter((m) => /^msg_s4_(ski|sea|onsen|pop)$/.test(m))).toEqual([]);
+    }
+  });
+
+  it('ENTRY（会員登録）と応募は別のCV。応募したら求人の案内（ステップ・特集・ENTRY後のフォロー）は止まる', () => {
+    expect(Object.keys(user(w, 'p_ski').cvs).sort()).toEqual(['cv_apply', 'cv_entry']);
+    expect(Object.keys(user(w, 'p_menu').cvs)).toEqual(['cv_entry']);
+    expect(ids(w, 'p_ski')).toEqual(expect.arrayContaining(['msg_entry_thanks', 'msg_agent_ski', 'msg_apply_thanks']));
+    expect(ids(w, 'p_ski')).not.toContain('msg_s2_money');
+    expect(ids(w, 'p_ski')).not.toContain('msg_entry_follow');
+    // ENTRY完了画面から友だちになった人には、ENTRYの受付を重ねない（あいさつが受付を兼ねる）
+    expect(ids(w, 'p_entered')).toContain('msg_welcome_thanks');
+    expect(ids(w, 'p_entered')).not.toContain('msg_entry_thanks');
+    expect(ids(w, 'p_entered')).toContain('msg_agent_onsen');
+  });
+
+  it('季節で中長期の配信が切り替わる（10月下旬は冬・2月は春・4月は夏の海・離島）', () => {
+    expect(flowMsgs(w, 'p_summer', 'flow_long')).toEqual([['msg_l_sea_winter', 18], ['msg_l_spring', 120], ['msg_l_summer_sea', 180]]);
+    expect(flowMsgs(w, 'p_noanswer', 'flow_long')).toEqual([['msg_l_ski', 18], ['msg_l_spring', 120], ['msg_l_summer_other', 180]]);
+    expect(flowMsgs(w, 'p_ski', 'flow_long')).toEqual([['msg_l_next', 120], ['msg_l_summer_other', 180]]);
+    expect(ids(w, 'p_summer')).toContain('msg_agent_summer');
+  });
+
+  it('ブロックした人には、その後の配信が届かない（理由はブロック中）', () => {
+    const u = user(w, 'p_block');
+    expect(u.friendState).toBe('blocked');
+    const blockAt = u.behaviors.find((b) => b.type === 'block')!.at;
+    expect(u.deliveries.every((d) => d.at < blockAt)).toBe(true);
+    expect(w.decisions.filter((x) => x.userId === 'p_block' && x.kind === 'deliver' && x.reason === 'blocked').length).toBeGreaterThan(0);
+  });
+
+  it('ポップアップを閉じた人は、後からサイトのLINEボタンで友だちになる', () => {
+    const u = user(w, 'p_later');
+    expect(u.behaviors.map((b) => b.type).slice(0, 3)).toEqual(['visitPage', 'exitIntent', 'dismissPopup']);
+    expect(u.route).toBe('route_button');
+    expect(Math.floor(u.friendAddedAt! / DAY)).toBe(2);
+  });
+
+  it('過去に戻ってエリアの答えを変えると、カルーセル・タグ・トークが計算し直される', () => {
+    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_entry', choiceIds: ['c_ent_yet'] });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_start', choiceIds: ['c_st_1_2'] });
+    const before = d.now;
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_area', choiceIds: ['c_ar_mt'] });
+    d = dispatch(d, { type: 'viewCard', messageId: 'msg_car_ski', cardId: 'card_car_ski_w2' });
+    d = seek(d, at(8));
+    expect(me(p, d).deliveries.map((x) => x.messageId)).toEqual(expect.arrayContaining(['msg_car_ski', 'msg_k_ski']));
+    d = seek(d, before);
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_area', choiceIds: ['c_ar_sea'] });
+    d = seek(d, at(8));
+    const now = me(p, d);
+    expect(now.deliveries.map((x) => x.messageId)).toEqual(expect.arrayContaining(['msg_car_sea', 'msg_k_sea']));
+    expect(now.deliveries.map((x) => x.messageId)).not.toContain('msg_car_ski');
+    expect('area_mountain' in now.tags).toBe(false);
+    expect(now.behaviors.some((b) => b.type === 'viewCard')).toBe(false);
+  });
+
+  it('②のボタンは「ENTRY後へ／応募後へ」。③は応募が GOAL、入口・カルーセルのルートは②のタグと一致する', () => {
+    expect(p.cvs.map((c) => c.demoAction)).toEqual(['ENTRY後へ', '応募後へ']);
+    const rows = (id: string) => journeyOf(p, w, user(w, id));
+    expect(rows('p_ski').find((r) => r.isGoal)!.step.id).toBe('j_apply');
+    expect(rows('p_ski').find((r) => r.step.id === 'j_match')!.traversed).toEqual(['v_m_ski']);
+    expect(rows('p_noanswer').find((r) => r.step.id === 'j_match')!.traversed).toEqual(['v_m_none']);
+    expect(rows('p_entered').find((r) => r.step.id === 'j_friend')!.traversed).toEqual(['v_thanks']);
+  });
+
+  it('7人全員の出来事が③の時系列に出る。人物名は架空で、役割名は文面に出ない', () => {
+    const tl = buildTimeline(p, new Labels(p), w, p.personas.map((x) => x.id));
+    for (const x of p.personas) expect(tl.some((e) => e.userId === x.id)).toBe(true);
+    expect(tl.filter((e) => !e.minor).length).toBeGreaterThan(120);
+    const bot = Object.values(w.users).flatMap((u) => u.talk.flatMap((t) => (t.side === 'bot' && t.bubble.kind === 'text' ? [t.bubble.text] : [])));
+    for (const x of p.personas) expect(bot.some((t) => t.includes(x.name))).toBe(false);
+    expect(bot.some((t) => t.includes('中村 陽菜さん'))).toBe(true);
+  });
+
+  it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
+    const d = playToEnd(p);
+    expect(d.now).toBe(190 * DAY);
     const ww = worldOf(p, d);
     for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
     await exportChecks(p);

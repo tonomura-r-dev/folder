@@ -726,3 +726,45 @@
 .lsp-bar.compact .lsp-cap { display: none; }
 .lsp-bar.compact .lsp-playstate { font-size: 12px; padding: 1px 8px; }
 .lsp-userpick { font-weight: 700; max-width: 320px; }
+
+/* カルーセル（横に並ぶカード）。1枚ずつ送り、次のカードの端を見せる */
+.lsp-row.bot .lsp-col:has(> .lsp-car) { flex: 1 1 auto; max-width: calc(100% - 40px); min-width: 0; }
+.lsp-b.lsp-car { background: transparent; padding: 0; border-radius: 0; white-space: normal; }
+.lsp-car-view { overflow: hidden; touch-action: pan-y; cursor: grab; user-select: none; border-radius: 14px; }
+.lsp-car-view:active { cursor: grabbing; }
+.lsp-car-track { --cw: 214px; display: flex; gap: 8px; transform: translateX(calc(var(--i, 0) * (var(--cw) + 8px) * -1 + var(--dx, 0px))); transition: transform .28s ease; }
+.lsp-car-card { flex: 0 0 var(--cw); background: #fff; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 2px rgba(0, 0, 0, .08); opacity: .72; transition: opacity .2s; }
+.lsp-car-card.on { opacity: 1; }
+.lsp-car-img { position: relative; background: #e9eef3; }
+.lsp-car-img img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; pointer-events: none; }
+.lsp-car-badge { position: absolute; left: 6px; top: 6px; background: rgba(0, 0, 0, .62); color: #fff; font-size: 10.5px; font-weight: 700; padding: 2px 7px; border-radius: 999px; }
+.lsp-car-title { padding: 8px 10px 2px; font-weight: 700; font-size: 13.5px; line-height: 1.4; }
+.lsp-car-facts { margin: 4px 10px 6px; display: grid; gap: 2px; font-size: 12px; line-height: 1.45; }
+.lsp-car-facts div { display: grid; grid-template-columns: 4.6em 1fr; gap: 4px; }
+.lsp-car-facts dt { color: #6b7380; }
+.lsp-car-facts dd { margin: 0; color: #1d232c; }
+.lsp-car-body { padding: 0 10px 8px; font-size: 12px; color: #444; }
+.lsp-car-card .lsp-btns { margin-top: auto; }
+.lsp-car-card .lsp-btns button { padding: 9px 8px; font-size: 13px; }
+.lsp-car-nav { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.lsp-car-nav .lsp-car-prev, .lsp-car-nav .lsp-car-next { width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); color: #1d232c; font-size: 18px; font-weight: 700; line-height: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, .18); cursor: pointer; }
+.lsp-car-nav button:disabled { opacity: .35; cursor: default; }
+.lsp-car-dots { display: flex; gap: 5px; flex: 1; justify-content: center; }
+.lsp-car-dot { width: 8px; height: 8px; padding: 0; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .7); cursor: pointer; }
+.lsp-car-dot.on { background: #fff; box-shadow: 0 0 0 2px var(--lsp-primary); }
+.lsp-car-count { font-size: 11.5px; font-weight: 700; color: #fff; background: rgba(0, 0, 0, .35); border-radius: 999px; padding: 1px 8px; }
+/* 文面確認（③の詳細）では横スクロールで全カードを見せる */
+.lsp-car-ro { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; }
+.lsp-car-ro .lsp-car-card { --cw: 200px; flex: 0 0 200px; opacity: 1; border: 1px solid var(--lsp-line); }
+@media (prefers-reduced-motion: reduce) { .lsp-car-track { transition: none; } }
+/* リッチメニューのタブ（2タブ構成など） */
+.lsp-menu-grid button.tab { min-height: 34px; font-size: 12px; background: #fff; color: #5b6472; }
+.lsp-menu-grid button.tab.on { background: var(--lsp-primary); color: #fff; cursor: default; }
+.lsp-menu-grid:has(button.tab) button:not(.tab) { min-height: 52px; }
+/* ②：届いたカルーセルと理由 */
+.lsp-carw { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lsp-carw li { border: 1px solid var(--lsp-line); border-left: 4px solid var(--lsp-primary); border-radius: 10px; padding: 7px 10px; background: #fff; }
+.lsp-carw-h { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; font-size: 13px; }
+.lsp-carw-h .t { color: var(--lsp-muted); font-size: 12px; white-space: nowrap; }
+.lsp-carw-why { font-size: 12.5px; margin-top: 3px; color: #1d232c; }
+.lsp-carw-f { font-size: 12px; color: var(--lsp-muted); margin-top: 2px; }

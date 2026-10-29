@@ -27,6 +27,15 @@ export class Labels {
   route = (id: Id | null) => (id === null ? '—' : (this.p.routes.find((r) => r.id === id)?.label ?? id));
   flow = (id: Id | null) => (id === null ? '自動応答' : (this.p.flows.find((f) => f.id === id)?.label ?? id));
   page = (id: Id) => this.p.webPages.find((w) => w.id === id)?.title ?? id;
+  /** カルーセルのカードの見出し */
+  card = (messageId: Id, cardId: Id) => {
+    for (const b of this.p.messages.find((m) => m.id === messageId)?.bubbles ?? [])
+      if (b.kind === 'carousel') {
+        const c = b.cards.find((x) => x.id === cardId);
+        if (c) return c.title;
+      }
+    return cardId;
+  };
   question(surveyId: Id, questionId: Id) {
     return this.p.surveys.find((s) => s.id === surveyId)?.questions.find((q) => q.id === questionId);
   }
@@ -37,8 +46,16 @@ export class Labels {
   message(id: Id): string {
     if (id.startsWith('image:')) return '（画像）';
     const m = this.p.messages.find((x) => x.id === id);
-    const b = m?.bubbles.find((x) => x.kind === 'text' || x.kind === 'buttons' || x.kind === 'card');
-    const text = !b ? id : b.kind === 'card' ? b.title : b.kind === 'text' || b.kind === 'buttons' ? b.text : id;
+    const b = m?.bubbles.find((x) => x.kind === 'text' || x.kind === 'buttons' || x.kind === 'card' || x.kind === 'carousel');
+    const text = !b
+      ? id
+      : b.kind === 'card'
+        ? b.title
+        : b.kind === 'carousel'
+          ? `カルーセル：${b.cards.map((c) => c.title).join('／')}`
+          : b.kind === 'text' || b.kind === 'buttons'
+            ? b.text
+            : id;
     const line = text.replace(/\{\{[^}]+\}\}/g, '〇〇').split('\n').find((l) => l.trim()) ?? id;
     return line.length > 28 ? `${line.slice(0, 28)}…` : line;
   }
@@ -103,6 +120,7 @@ const EVENT = {
   tapPopupCta: 'ポップアップのボタンを押した',
   tapPageButton: 'ページのボタンを押した',
   tapLineCta: 'LINE誘導のボタンを押した',
+  viewCard: 'カルーセルのカードを見た',
 } as const;
 
 export const friendText = (s: UserState['friendState']) => FRIEND[s];

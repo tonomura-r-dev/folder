@@ -4,7 +4,7 @@
 // （操作がない場合・台本どおりに進んだ場合の予定。手で操作すると作り直される）。
 
 import type { FlowNode, Id, InputEvent, Minutes, Project, UserState, WorldState } from '../../engine/src/index.ts';
-import { MINUTES_PER_DAY, reduce } from '../../engine/src/index.ts';
+import { bubbleButtons, MINUTES_PER_DAY, reduce } from '../../engine/src/index.ts';
 import { DEMO_END_DAY, nextStop, pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeTrigger, explainDecision, fmtTime, type Labels } from './describe.ts';
 import { journeyOf, nextAction } from './journey.ts';
@@ -43,7 +43,7 @@ const RANK: TlKind[] = ['cv', 'op', 'msg', 'stop', 'state', 'flow'];
 // ---------- 操作を言葉にする ----------
 
 function buttonLabel(project: Project, id: Id): string {
-  for (const m of project.messages) for (const b of m.bubbles) if (b.kind === 'buttons' || b.kind === 'card') for (const x of b.buttons) if (x.id === id) return x.label;
+  for (const m of project.messages) for (const b of m.bubbles) for (const x of bubbleButtons(b)) if (x.id === id) return x.label;
   return id;
 }
 function cellLabel(project: Project, menuId: Id, cellId: Id): string {
@@ -89,6 +89,8 @@ export function describeOp(project: Project, L: Labels, type: string, d: Record<
     }
     case 'cv':
       return `「${L.cv(d['cvId'] ?? '')}」を記録する（店舗・管理画面側の操作）`;
+    case 'viewCard':
+      return `カルーセルのカード「${L.card(d['messageId'] ?? '', d['cardId'] ?? '')}」を見る`;
     case 'block':
       return 'ブロックする';
     case 'unblock':
@@ -127,6 +129,7 @@ const OP_TITLE: Record<string, string> = {
   cv: 'CVの記録',
   block: 'ブロック',
   unblock: 'ブロック解除',
+  viewCard: 'カルーセルのカードを見る',
 };
 
 // ---------- 時系列を作る ----------

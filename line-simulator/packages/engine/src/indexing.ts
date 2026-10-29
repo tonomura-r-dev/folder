@@ -1,6 +1,13 @@
 // 案件JSONを ID で引けるようにする索引。ノードID・ボタンIDは案件全体で一意（validate が保証）。
 
-import type { Button, Flow, FlowNode, Id, MessageDef, Project, RichMenu, Survey, WebPage, Edge } from './schema.ts';
+import type { Bubble, Button, Flow, FlowNode, Id, MessageDef, Project, RichMenu, Survey, WebPage, Edge } from './schema.ts';
+
+/** 吹き出しにあるボタン（カルーセルは全カードの分） */
+export function bubbleButtons(b: Bubble): Button[] {
+  if (b.kind === 'buttons' || b.kind === 'card') return b.buttons;
+  if (b.kind === 'carousel') return b.cards.flatMap((c) => c.buttons);
+  return [];
+}
 
 export type ProjectIndex = {
   flows: Map<Id, Flow>;
@@ -28,8 +35,7 @@ export function buildIndex(project: Project): ProjectIndex {
     for (const edge of flow.edges) edges.set(edgeKey(flow.id, edge.from.nodeId, edge.from.port), edge);
   }
   const buttons = new Map<Id, Button>();
-  for (const m of project.messages)
-    for (const b of m.bubbles) if (b.kind === 'buttons' || b.kind === 'card') for (const btn of b.buttons) buttons.set(btn.id, btn);
+  for (const m of project.messages) for (const b of m.bubbles) for (const btn of bubbleButtons(b)) buttons.set(btn.id, btn);
   const flowOrder = [...project.flows].sort((a, b) => a.priority - b.priority || byId(a.id, b.id));
   return {
     flows,

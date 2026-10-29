@@ -86,8 +86,21 @@ export type Bubble =
   | { kind: 'text'; text: Text }
   | { kind: 'image'; assetId: Id }
   | { kind: 'buttons'; text: Text; buttons: Button[] }
-  | { kind: 'card'; title: Text; body?: Text; assetId?: Id; buttons: Button[] };
+  | { kind: 'card'; title: Text; body?: Text; assetId?: Id; buttons: Button[] }
+  /** 横に並ぶカード（LINEのカルーセル）。左右に送って見る。見たカードは viewCard として記録する */
+  | { kind: 'carousel'; cards: CarouselCard[] };
 export type Button = { id: Id; label: string; action: Action };
+/** カルーセルの1枚。facts はカードに並べる項目（例：勤務地・開始時期） */
+export type CarouselCard = {
+  id: Id;
+  title: Text;
+  body?: Text;
+  assetId?: Id;
+  /** 画像の上に重ねる小さな札（例：デモ用サンプル） */
+  badge?: string;
+  facts?: { label: string; value: Text }[];
+  buttons: Button[];
+};
 
 export type Action =
   | { kind: 'sendText'; text: string }
@@ -317,6 +330,8 @@ export type InputEventBody =
   | { type: 'unblock' }
   | { type: 'tapMenu'; richMenuId: Id; cellId: Id }
   | { type: 'tapButton'; buttonId: Id; nodeId?: Id }
+  /** カルーセルのカードを見た（左右に送って表示した） */
+  | { type: 'viewCard'; messageId: Id; cardId: Id }
   | { type: 'sendText'; text: string }
   | { type: 'answer'; surveyId: Id; questionId: Id; choiceIds: Id[] }
   | { type: 'cv'; cvId: Id }

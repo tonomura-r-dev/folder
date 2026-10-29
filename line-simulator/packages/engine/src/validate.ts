@@ -11,14 +11,14 @@ export type ValidateOptions = {
 };
 
 /** LINE側の上限（警告に使う）。変わったらここだけ直す */
-export const LINE_LIMITS = { bubblesPerMessage: 5, buttonsPerBubble: 4, textLength: 5000, stepDays: 365, menuCells: 20 };
+export const LINE_LIMITS = { bubblesPerMessage: 5, buttonsPerBubble: 4, textLength: 5000, stepDays: 365, menuCells: 20, carouselCards: 10 };
 
 const EXPR_OPS = new Set(['and', 'or', 'not', 'always', 'hasTag', 'answer', 'answered', 'attr', 'route', 'friend', 'cv', 'did', 'elapsed', 'delivered']);
 const CMPS = new Set(['eq', 'neq', 'in', 'gte', 'lte']);
 const FEASIBILITY = new Set(['lstep', 'conditional', 'external', 'unknown']);
 const EVENT_TYPES = new Set([
   'visitPage', 'exitIntent', 'dismissPopup', 'submitForm', 'addFriend', 'block', 'unblock', 'tapMenu', 'tapButton', 'sendText', 'answer', 'cv',
-  'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta',
+  'closePage', 'tapPopupCta', 'tapPageButton', 'tapLineCta', 'viewCard',
 ]);
 const TIME = /^([01]?\d|2[0-3]):[0-5]\d$/;
 
@@ -66,13 +66,17 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       else allNodes.set(node.id, { flow, node, path });
     }),
   );
+  const seeButton = (id: Id, path: string) => {
+    if (buttons.has(id)) err('id.duplicate', path, { id });
+    buttons.add(id);
+  };
   project.messages.forEach((m, mi) =>
     m.bubbles.forEach((b, bi) => {
-      if (b.kind !== 'buttons' && b.kind !== 'card') return;
-      b.buttons.forEach((btn, i) => {
-        if (buttons.has(btn.id)) err('id.duplicate', `/messages/${mi}/bubbles/${bi}/buttons/${i}`, { id: btn.id });
-        buttons.add(btn.id);
-      });
+      if (b.kind === 'buttons' || b.kind === 'card') b.buttons.forEach((btn, i) => seeButton(btn.id, `/messages/${mi}/bubbles/${bi}/buttons/${i}`));
+      if (b.kind === 'carousel') {
+        unique(b.cards, `/messages/${mi}/bubbles/${bi}/cards`);
+        b.cards.forEach((c, ci) => c.buttons.forEach((btn, i) => seeButton(btn.id, `/messages/${mi}/bubbles/${bi}/cards/${ci}/buttons/${i}`)));
+      }
     }),
   );
 
@@ -211,6 +215,18 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
         if (b.buttons.length === 0) err('node.requiredMissing', `${bp}/buttons`);
         if (b.buttons.length > LINE_LIMITS.buttonsPerBubble) warn('line.limit', `${bp}/buttons`, { limit: 'buttonsPerBubble', value: b.buttons.length });
         b.buttons.forEach((btn, i) => checkAction(btn.action, `${bp}/buttons/${i}/action`));
+      }
+      if (b.kind === 'carousel') {
+        if (b.cards.length === 0) err('node.requiredMissing', `${bp}/cards`);
+        if (b.cards.length > LINE_LIMITS.carouselCards) warn('line.limit', `${bp}/cards`, { limit: 'carouselCards', value: b.cards.length });
+        b.cards.forEach((c, ci) => {
+          const cp = `${bp}/cards/${ci}`;
+          if (!c.title.trim()) err('node.requiredMissing', `${cp}/title`);
+          if (c.assetId) need(assets.has(c.assetId), `${cp}/assetId`, 'asset', c.assetId);
+          if (c.buttons.length === 0) err('node.requiredMissing', `${cp}/buttons`);
+          if (c.buttons.length > LINE_LIMITS.buttonsPerBubble) warn('line.limit', `${cp}/buttons`, { limit: 'buttonsPerBubble', value: c.buttons.length });
+          c.buttons.forEach((btn, i) => checkAction(btn.action, `${cp}/buttons/${i}/action`));
+        });
       }
     });
   });
@@ -509,6 +525,12 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       }
       case 'cv':
         return need(cvs.has(ev.cvId), `${path}/cvId`, 'cv', ev.cvId);
+      case 'viewCard': {
+        const m = messages.get(ev.messageId);
+        need(!!m, `${path}/messageId`, 'message', ev.messageId);
+        if (m) need(m.bubbles.some((b) => b.kind === 'carousel' && b.cards.some((c) => c.id === ev.cardId)), `${path}/cardId`, 'card', ev.cardId);
+        return;
+      }
       default:
         return;
     }

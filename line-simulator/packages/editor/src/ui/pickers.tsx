@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Action, Id, InputEventType, Minutes, Project, Trigger } from '../../../engine/src/index.ts';
+import { bubbleButtons } from '../../../engine/src/index.ts';
 import { Labels } from '../../../player/src/describe.ts';
 import { issuesAt, useEditor } from '../ctx.ts';
 import { Checks, Field, InlineIssues, NumberInput, Select, Text, type Option } from './form.tsx';
@@ -10,7 +11,7 @@ export const options = {
   messages: (p: Project, onlyButtons = false): Option[] => {
     const L = new Labels(p);
     return p.messages
-      .filter((m) => !onlyButtons || m.bubbles.some((b) => b.kind === 'buttons' || b.kind === 'card'))
+      .filter((m) => !onlyButtons || m.bubbles.some((b) => bubbleButtons(b).length > 0))
       .map((m) => ({ value: m.id, label: `${L.message(m.id)}（${m.id}）` }));
   },
   tags: (p: Project): Option[] => p.tags.map((t) => ({ value: t.id, label: t.label })),
@@ -27,6 +28,7 @@ export const options = {
 export const EVENT_OPTIONS: Option[] = [
   { value: 'tapButton', label: 'ボタンを押す' },
   { value: 'tapMenu', label: 'メニューを押す' },
+  { value: 'viewCard', label: 'カルーセルのカードを見る' },
   { value: 'sendText', label: 'メッセージを送る' },
   { value: 'answer', label: 'アンケートに答える' },
   { value: 'visitPage', label: 'ページを見る' },

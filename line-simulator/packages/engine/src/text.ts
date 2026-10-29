@@ -51,6 +51,16 @@ export function renderBubble(bubble: Bubble, project: Project, user: UserState):
       return bubble.body === undefined
         ? { ...bubble, title: r(bubble.title) }
         : { ...bubble, title: r(bubble.title), body: r(bubble.body) };
+    case 'carousel':
+      return {
+        kind: 'carousel',
+        cards: bubble.cards.map((c) => ({
+          ...c,
+          title: r(c.title),
+          ...(c.body === undefined ? {} : { body: r(c.body) }),
+          ...(c.facts ? { facts: c.facts.map((f) => ({ label: f.label, value: r(f.value) })) } : {}),
+        })),
+      };
   }
 }
 
@@ -65,5 +75,7 @@ export function bubbleTexts(bubble: Bubble): string[] {
       return [bubble.text];
     case 'card':
       return bubble.body === undefined ? [bubble.title] : [bubble.title, bubble.body];
+    case 'carousel':
+      return bubble.cards.flatMap((c) => [c.title, ...(c.body === undefined ? [] : [c.body]), ...(c.facts ?? []).map((f) => f.value)]);
   }
 }

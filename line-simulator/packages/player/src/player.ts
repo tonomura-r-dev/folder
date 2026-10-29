@@ -243,7 +243,8 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     root.style.setProperty('--lsp-bar-h', `${root.querySelector<HTMLElement>('.lsp-bar')?.offsetHeight ?? 0}px`);
 
     const scroller = root.querySelector<HTMLElement>('.lsp-chat');
-    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    if (scroller) scroller.scrollTop = keepChat ?? scroller.scrollHeight;
+    keepChat = null;
     fitSlide();
     if (ui.mode === 'slide' || ui.mode === 'slide3') showSlide();
     fitChart();
@@ -253,6 +254,9 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     tlScroll = null;
     if (user) highlight(view, user);
   }
+
+  /** カルーセルを送ったときは、トークを一番下まで送らずに元の位置のままにする */
+  let keepChat: number | null = null;
 
   /** 3画面の③：ページを下まで送ったとき、上に残る現在地カードの下に時系列が収まる高さにする */
   function fitTimeline() {
@@ -383,6 +387,8 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         return send({ type: 'tapButton', buttonId: d['button'] ?? '', ...(d['node'] ? { nodeId: d['node'] } : {}) });
       case 'tapMenu':
         return send({ type: 'tapMenu', richMenuId: d['menu'] ?? '', cellId: d['cell'] ?? '' });
+      case 'carGo':
+        return viewCard(d['msg'] ?? '', d['card'] ?? '');
       case 'toggleMenu':
         ui.menuOpen = !ui.menuOpen;
         return render();
@@ -544,6 +550,37 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     }
   }
 
+  /** カルーセルのカードを切り替える。トークの位置は動かさない */
+  function viewCard(messageId: string, cardId: string) {
+    if (!messageId || !cardId) return;
+    keepChat = root.querySelector<HTMLElement>('.lsp-chat')?.scrollTop ?? null;
+    send({ type: 'viewCard', messageId, cardId });
+  }
+
+  /** カルーセルを指・マウスで左右に送る（40px 以上動かしたら1枚送る） */
+  let drag: { x: number; el: HTMLElement; track: HTMLElement } | null = null;
+  function onPointerDown(e: PointerEvent) {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-drag="car"]');
+    const track = el?.querySelector<HTMLElement>('.lsp-car-track');
+    if (!el || !track || !root.contains(el) || (e.target as HTMLElement).closest('button')) return;
+    drag = { x: e.clientX, el, track };
+    el.setPointerCapture?.(e.pointerId);
+  }
+  function onPointerMove(e: PointerEvent) {
+    if (!drag) return;
+    drag.track.style.setProperty('--dx', `${e.clientX - drag.x}px`);
+  }
+  function onPointerUp(e: PointerEvent) {
+    if (!drag) return;
+    const { el, track, x } = drag;
+    drag = null;
+    track.style.removeProperty('--dx');
+    const dx = e.clientX - x;
+    if (Math.abs(dx) < 40) return;
+    const btn = el.parentElement?.querySelector<HTMLButtonElement>(dx < 0 ? '.lsp-car-next' : '.lsp-car-prev');
+    if (btn && !btn.disabled) viewCard(btn.dataset['msg'] ?? '', btn.dataset['card'] ?? '');
+  }
+
   /** Esc で③の詳細を閉じる */
   function onKey(e: KeyboardEvent) {
     if (e.key === 'Escape' && ui.fcOpen) {
@@ -555,6 +592,10 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   root.addEventListener('click', onClick);
   root.addEventListener('submit', onSubmit);
   root.addEventListener('change', onChange);
+  root.addEventListener('pointerdown', onPointerDown);
+  root.addEventListener('pointermove', onPointerMove);
+  root.addEventListener('pointerup', onPointerUp);
+  root.addEventListener('pointercancel', onPointerUp);
   document.addEventListener('keydown', onKey);
 
   const handle: PlayerHandle = {
@@ -577,6 +618,10 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
       root.removeEventListener('click', onClick);
       root.removeEventListener('submit', onSubmit);
       root.removeEventListener('change', onChange);
+      root.removeEventListener('pointerdown', onPointerDown);
+      root.removeEventListener('pointermove', onPointerMove);
+      root.removeEventListener('pointerup', onPointerUp);
+      root.removeEventListener('pointercancel', onPointerUp);
       document.removeEventListener('keydown', onKey);
       root.classList.remove('lsp');
       root.innerHTML = '';
