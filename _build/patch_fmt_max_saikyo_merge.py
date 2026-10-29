@@ -7,6 +7,7 @@
   ・P21 具体施策のイメージ：札の「露出の強化」（P22と重複）→「LINEの友だちへ」
   ・P41〜P43 提案に向けて明確化したいポイント①〜③：最強資料の記入欄の列（度合い・目標／数値・内容）を足す
   ・P45（④その他の古い1行版。P44の表と重複）を外す
+  並びは最強資料の順（P17 アジェンダ03 → 具体施策8枚 → ステップ配信・企画配信3枚）。
   名前は「ポップアップ」にそろえる（MAX版は元からポップアップ）。
 """
 import copy
@@ -65,6 +66,15 @@ def main(max_path, sk_path, out):
     m.part.drop_rel(sid.rId)
     lst.remove(sid)
     assert len(m.slides) == 53
+    # 並びは最強資料の順（03 施策詳細の具体施策8枚の後ろに、ステップ配信・企画配信）
+    ids = list(lst)
+    blk = ids[16:19]
+    for e in blk:
+        lst.remove(e)
+    anchor = ids[27]
+    for e in blk:
+        anchor.addnext(e)
+        anchor = e
     m.save(out)
     print("saved:", out)
 
