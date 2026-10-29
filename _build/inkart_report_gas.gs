@@ -227,7 +227,7 @@ function importOaFromFolder() {
   if (all.length === 0) { ui.alert('「' + OA_FOLDER_NAME + '」にCSVがありません。'); return; }
 
   all.forEach(function (f) {
-    const text = f.getBlob().getDataAsString('UTF-8').replace(/^﻿/, '');
+    const text = f.getBlob().getDataAsString('UTF-8').replace(/^\uFEFF/, '');
     const rows = Utilities.parseCsv(text).filter(function (r) { return r.join('').trim() !== ''; });
     if (rows.length === 0) return;
     const header = rows[0].map(function (h) { return String(h).trim(); });
