@@ -5,7 +5,7 @@
 
   FMTの枠（左の大きい枠・右の4つの枠）・上の8フェーズの矢印・札はそのまま。
   左＝施策の流れ（入口 → LINE → 配信 → ゴール）、右＝目的／対象／中身／見る数字。業界を問わない書き方。
-  左の4段の文字は中央寄せ（殿村さん）。右の文は「|」で改行（言葉の途中で切れないように）。形はワクトリv3の施策詳細（_build/patch_wakutori_v3_gutai.py）と同じ。色は紺・白・灰色。
+  左の4段は余白を詰めて大きい枠の中央に置く（殿村さん）。右の文は「|」で改行（言葉の途中で切れないように）。形はワクトリv3の施策詳細（_build/patch_wakutori_v3_gutai.py）と同じ。色は紺・白・灰色。
 """
 import sys
 
@@ -21,7 +21,7 @@ RIGHT = ["目的", "対象", "中身", "見る数字"]
 
 PAGES = [  # 札, [入口, LINE, 配信, ゴール]（(本文, 補足) も可）, (目的, 対象, 中身, 見る数字)
     ("LINEの友だちへ",
-     [("サイト来訪・広告・店頭・既存顧客", "ポップアップ／サンクスLINE誘導／通知メッセージ／店頭のQR"),
+     [("サイト来訪・広告・店頭・既存顧客", "ポップアップ／サンクスLINE誘導／|通知メッセージ／店頭のQR"),
       "友だち追加", "あいさつメッセージ・アンケート", "友だちとしてつながり続ける"],
      ("サイトを離れる方、申込み済みの方、|既存顧客を、LINEの友だちとして残す",
       "サイト来訪者／申込み完了の方／|保有リストの顧客／店頭の来店客",
@@ -79,17 +79,18 @@ RIGHT_Y = [2.03, 3.22, 4.43, 5.66]
 
 def flow(s, steps):
     box_l, box_w = 0.29, 6.44                                 # 左の大きい枠
-    w, lab_w = 5.9, 1.05
+    box_t, box_h = 2.03, 4.77
+    w, lab_w = 5.15, 0.85                                     # 中身の文字に合わせて幅・高さを詰め、枠の中央に置く
+    h, gap = 0.66, 0.18
     left = box_l + (box_w - w) / 2
-    top, bottom, gap = 2.25, 6.6, 0.24
-    h = (bottom - top - gap * (len(steps) - 1)) / len(steps)
+    top = box_t + (box_h - (h * len(steps) + gap * (len(steps) - 1))) / 2
     for k, (lab, step) in enumerate(zip(STEPS, steps)):
         y = top + k * (h + gap)
         rect(s, left * IN, y * IN, lab_w * IN, h * IN, NAVY, [(lab, 14, True, "FFFFFF", 0)], align=PP_ALIGN.CENTER)
         main, sub = step if isinstance(step, tuple) else (step, None)
-        paras = [(main, 14, True, NAVY, 0)] + ([(sub, 11, False, INK, 0)] if sub else [])
+        paras = [(main, 14, True, NAVY, 0)] + ([(x, 10.5, False, INK, 0) for x in sub.split("|")] if sub else [])
         rect(s, (left + lab_w) * IN, y * IN, (w - lab_w) * IN, h * IN, LIGHT, paras,
-             align=PP_ALIGN.CENTER, margins=(0.2, 0.05, 0.2, 0.05))
+             align=PP_ALIGN.LEFT, margins=(0.18, 0.03, 0.12, 0.03))
         if k < len(steps) - 1:
             rich(s, left * IN, (y + h - 0.01) * IN, lab_w * IN, (gap + 0.02) * IN, [[("▼", 9, False, NAVY)]],
                  align=PP_ALIGN.CENTER)
