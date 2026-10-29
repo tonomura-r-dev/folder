@@ -202,6 +202,7 @@ type JourneyStep = {
   feasibility?: Feasibility; feasibilityNote?: Text;
   options?: JourneyOption[];                     // 追加候補（表示だけ・配信しない）
   loopTo?: Id; loopLabel?: string;               // くり返しで戻る段（例：再応募 → 勤務確定）。③に「↺ 戻る」とこの人の回数を出す
+  key?: boolean;                                 // 主要な工程。資料用16:9の③でも「⋮ ○段」にまとめず、いつも出す
 };
 type JourneyVariant = {
   id: Id; label: string;                         // 矢印の名前（例：東京）

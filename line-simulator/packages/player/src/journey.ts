@@ -322,7 +322,10 @@ function chartHtml(v: View, rows: JourneyRow[], compact: boolean): string {
 function stripHtml(v: View, rows: JourneyRow[]): string {
   const cur = rows.findIndex((r) => r.status === 'current');
   const goal = rows.findIndex((r) => r.isGoal);
-  const pick = new Set<number>([Math.max(0, cur - 1), cur, cur + 1, goal].filter((i) => i >= 0 && i < rows.length));
+  // 主要な工程（key）がある案件：主要な工程・現在地・GOALを出す（前後の段は「⋮」にまとめ、枠に収める）。
+  // 無い案件：現在地の前後とGOALだけ
+  const keys = rows.flatMap((r, i) => (r.step.key ? [i] : []));
+  const pick = new Set<number>((keys.length ? [cur, goal, ...keys] : [Math.max(0, cur - 1), cur, cur + 1, goal]).filter((i) => i >= 0 && i < rows.length));
   const out: string[] = [];
   let last = -1;
   for (const i of [...pick].sort((a, b) => a - b)) {
@@ -332,10 +335,15 @@ function stripHtml(v: View, rows: JourneyRow[]): string {
     const name = variant ? `${r.step.label}：${variant.title ?? variant.label}` : r.step.label;
     const mark = r.status === 'current' ? '●' : r.status === 'done' ? '✓' : r.status === 'skipped' ? '－' : '○';
     out.push(`<li class="${r.status}${r.isGoal ? ' goal' : ''}${r.isStart ? ' start' : ''}"><span class="m">${mark}</span><span class="n">${esc(name)}</span>${r.status === 'current' ? '<span class="lsp-fc-here">現在ここ</span>' : r.isGoal ? '<span class="g">GOAL</span>' : ''}</li>`);
+    // くり返しで戻る段があれば、GOALのすぐ下に1行で出す
+    const back = rows.find((x) => x.step.id === r.step.loopTo);
+    if (back) {
+      const times = r.step.cvId ? (v.world.users[v.demo.activeUserId]?.cvs[r.step.cvId]?.count ?? 0) : 0;
+      out.push(`<li class="gap loop">↺ 「${esc(back.step.label)}」へ戻る${times ? `（この人 ${times}回）` : ''}</li>`);
+    }
     last = i;
   }
-  void v;
-  return `<ol class="lsp-strip">${out.join('')}</ol>`;
+  return `<ol class="lsp-strip${keys.length ? ' keyed' : ''}">${out.join('')}</ol>`;
 }
 
 /** ③の上：選んでいる人の現在地（いまの段階・CVの状況・次にすること・この人の次の予定） */

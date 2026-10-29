@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import type { InputEventBody, Project, UserState, WorldState } from '../packages/engine/src/index.ts';
 import { bubbleButtons, personaCoverage, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { allScripted, autoStep, dispatch, newDemo, seek, worldOf, type Demo } from '../packages/player/src/controller.ts';
-import { journeyOf } from '../packages/player/src/journey.ts';
+import { journeyOf, journeyPane } from '../packages/player/src/journey.ts';
 import { Labels } from '../packages/player/src/describe.ts';
 import { buildTimeline } from '../packages/player/src/timeline.ts';
 import { phone } from '../packages/player/src/phone.ts';
@@ -745,16 +745,61 @@ describe.skipIf(!has('client-d-event'))('企業別デモ④（イベント運営
 
   it('次回の募集は希望条件で出し分け：静岡・平日の人に横浜の土日の募集は届かない／気になる会場を選んだ人には、その会場の募集', () => {
     const e = ids(w, 'p_e').filter((m) => m.startsWith('msg_bc') || m.startsWith('msg_aw'));
-    expect(e).toEqual(['msg_bc1_a_shizuoka_weekday', 'msg_aw_e2_a_shizuoka_weekday']);
-    expect(cardTitles('msg_bc1_a_shizuoka_weekday')).toEqual([evTitle('e2'), evTitle('e8')]);
-    const skipped = w.decisions.filter((d) => d.userId === 'p_e' && d.kind === 'branch' && d.outcome === 'skipped' && d.ref === 'c_bc1_a_yokohama_weekend');
+    expect(e).toEqual(['msg_bc1_a_shizuoka_weekday_guide', 'msg_aw_e2_a_shizuoka_weekday_guide']);
+    expect(cardTitles('msg_bc1_a_shizuoka_weekday_guide')).toEqual([evTitle('e2'), evTitle('e8')]);
+    const skipped = w.decisions.filter((d) => d.userId === 'p_e' && d.kind === 'branch' && d.outcome === 'skipped' && d.ref === 'c_bc1_a_yokohama_weekend_guide');
     expect(skipped).toHaveLength(1);
-    expect(ids(w, 'p_d')).toContain('msg_bc0_v_nissan_weekend');
+    expect(ids(w, 'p_d')).toContain('msg_bc0_v_nissan_weekend_security');
     // 希望条件を変えた人は、変えた後の希望で届く（湘南 → Kアリーナ横浜）
-    expect(ids(w, 'p_g')).toContain('msg_bc1_v_karena_weekend');
+    expect(ids(w, 'p_g')).toContain('msg_bc1_v_karena_weekend_sales');
     expect(tags('p_g')).not.toContain('area_shonan');
     // 配信日時のあとで友だちになった人には、その回の配信を送らない
     expect(user(w, 'p_e').trail.some((t) => t.nodeId === 'n_bc0_late')).toBe(true);
+  });
+
+  it('企画配信・勤務後の先行案内は、エリア（または気になる会場）・曜日に加えて、希望の業務も条件にする', () => {
+    const jobs = ['guide', 'sales', 'security', 'setup'];
+    const cases = p.flows
+      .filter((f) => f.id.startsWith('flow_bc') || f.id === 'flow_done')
+      .flatMap((f) => f.nodes.flatMap((n) => (n.type === 'branch' && /^n_(bc\d|aw_e\d)_b[va]$/.test(n.id) ? n.cases : [])));
+    expect(cases.length).toBeGreaterThan(0);
+    for (const c of cases) {
+      const tagsIn = JSON.stringify(c.when);
+      expect(jobs.filter((j) => tagsIn.includes(`"job_${j}"`))).toHaveLength(1);
+      expect(/"(area|venue)_/.test(tagsIn) && /"day_/.test(tagsIn)).toBe(true);
+    }
+    // 届いた募集のイベントは、受け取った人の希望の業務を必ず含む（業務を変えていない6人）
+    const jobOf = (k: string) => p.webPages.find((x) => x.id === `page_ev_${k}`)!.blocks.flatMap((b) => (b.kind === 'text' ? [b.text] : [])).join('').match(/業務：(.+)/)![1]!;
+    const label: Record<string, string> = { guide: '案内・誘導', sales: '販売', security: '警備', setup: '設営・撤去' };
+    for (const id of ['p_a', 'p_b', 'p_c', 'p_d', 'p_e', 'p_f']) {
+      const job = Object.keys(user(w, id).tags).find((t) => t.startsWith('job_'))!.replace('job_', '');
+      for (const m of ids(w, id).filter((x) => /^msg_(bc|aw)/.test(x)))
+        for (const b of p.messages.find((x) => x.id === m)!.bubbles)
+          if (b.kind === 'carousel') for (const c of b.cards) expect(jobOf(c.id.slice(-2))).toContain(label[job]!);
+    }
+    // 販売希望の人（前田）に、案内・誘導だけのイベントは届かない
+    const c = ids(w, 'p_c').filter((x) => /^msg_(bc|aw)/.test(x));
+    expect(c.flatMap((m) => cardTitles(m)).every((t) => t.includes('販売'))).toBe(true);
+  });
+
+  it('資料用16:9の③：応募→登録→勤務確定→勤務前の案内→勤務→次回募集→再応募は「⋮ ○段」にまとめず、いつも出す', () => {
+    const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
+    expect(keys).toEqual(['新規応募', '面接・スタッフ登録', '勤務確定', '勤務前の案内（前日・当日）', '勤務完了（勤務履歴）', '次回イベントの募集（勤務した方へ）', '再応募（次のイベントへ）']);
+    for (const [id, when] of [['p_a', at(0, 10, 3)], ['p_b', at(3, 20)], ['p_a', at(21, 23)], ['p_g', at(12)]] as const) {
+      let d = seek(allScripted(p), when);
+      d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === id)!.id };
+      const v = { project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'slide3', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' } as never;
+      const html = journeyPane(v, me(p, d), true);
+      const from = html.indexOf('<ol class="lsp-strip');
+      expect(from).toBeGreaterThan(-1);
+      const strip = html.slice(from, html.indexOf('</ol>', from));
+      const names = [...strip.matchAll(/<li class="([^"]*)">(.*?)<\/li>/g)].map((m) => (m[1]!.includes('gap') ? '⋮' : m[2]!.replace(/<[^>]+>/g, '')));
+      // 主要な工程は全部、並び順のまま、間に「⋮」を挟まずに出る
+      const at0 = names.findIndex((n) => n.includes('新規応募'));
+      const seq = names.slice(at0, at0 + keys.length).map((n) => keys.find((k) => n.includes(k)) ?? n);
+      expect(seq).toEqual(keys);
+      expect(strip).toContain('「勤務確定」へ戻る');
+    }
   });
 
   it('ブロックした人には配信しない（企画配信・ステップ配信が止まる）', () => {
@@ -774,7 +819,7 @@ describe.skipIf(!has('client-d-event'))('企業別デモ④（イベント運営
     const back = buildTimeline(p, new Labels(p), w, ['p_a']).flatMap((e) => e.back);
     expect(back.some((t) => t.startsWith('CV「再応募（勤務希望）」を記録（勤務希望を出すイベント：11月21日（土） 横浜アリーナ'))).toBe(true);
     // 勤務 → 次回の募集 → 再応募 → 勤務確定 → 勤務前の案内 の循環（2周目）
-    expect(ids(w, 'p_a').filter((m) => /^msg_(fix|rm|day|aw)_/.test(m))).toEqual(['msg_fix_e1', 'msg_rm_e1', 'msg_day_e1', 'msg_aw_e1_a_yokohama_weekend', 'msg_fix_e6', 'msg_rm_e6', 'msg_day_e6', 'msg_aw_e6_a_yokohama_weekend']);
+    expect(ids(w, 'p_a').filter((m) => /^msg_(fix|rm|day|aw)_/.test(m))).toEqual(['msg_fix_e1', 'msg_rm_e1', 'msg_day_e1', 'msg_aw_e1_a_yokohama_weekend_guide', 'msg_fix_e6', 'msg_rm_e6', 'msg_day_e6', 'msg_aw_e6_a_yokohama_weekend_guide']);
   });
 
   it('③：GOALは再応募で、勤務確定へ戻るくり返しがある', () => {

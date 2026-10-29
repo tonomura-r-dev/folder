@@ -660,6 +660,13 @@
 .lsp-strip li.goal.done, .lsp-strip li.goal.current { background: #d9661f; color: #fff; }
 .lsp-strip li .lsp-fc-here { position: static; box-shadow: none; }
 .lsp-strip li.gap { border: 0; padding: 0 10px; font-size: 12.5px; color: var(--lsp-muted); background: none; }
+.lsp-strip li.gap.loop { color: var(--lsp-primary); font-weight: 700; }
+/* 主要な工程をいつも出す案件（段が多い）は、1段を低くして16:9の枠に収める */
+.lsp-journey.compact .lsp-strip.keyed { gap: 2px; }
+.lsp-journey.compact .lsp-strip.keyed li { padding: 1px 9px; font-size: 13px; border-radius: 7px; }
+.lsp-journey.compact .lsp-strip.keyed li.gap { padding: 0 9px; font-size: 12px; line-height: 1.35; }
+/* そのときは、下の「出来事」の枠を残りの高さに合わせて縮める（主要な工程の並びを優先して見せる） */
+.lsp-journey.compact:has(.lsp-strip.keyed) .lsp-tl { flex: 1 1 auto; min-height: 64px; overflow: hidden; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); }
 .lsp-journey.compact .lsp-jsec { flex: 0 0 auto; }
 /* 16:9では現在地は道筋の「現在ここ」、CVはGOALの行で分かるので、上のカードは名前と次にすることだけ */
 .lsp-journey.compact .lsp-wh-stage, .lsp-journey.compact .lsp-wh-cv { display: none; }

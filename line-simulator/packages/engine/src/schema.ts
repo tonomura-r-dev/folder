@@ -258,6 +258,8 @@ export type JourneyStep = Tracked & {
   /** この段のあと、くり返しで戻る段（例：再応募 → 勤務確定）。③に「↺ 戻る」として出す */
   loopTo?: Id;
   loopLabel?: string;
+  /** 主要な工程。資料用16:9の③でも「⋮ ○段」にまとめず、いつも出す */
+  key?: boolean;
 };
 
 // ---------- フロー ----------
