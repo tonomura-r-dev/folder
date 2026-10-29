@@ -5,7 +5,7 @@
 
   FMTの枠（左の大きい枠・右の4つの枠）・上の8フェーズの矢印・札はそのまま。
   左＝施策の流れ（入口 → LINE → 配信 → ゴール）、右＝目的／対象／中身／見る数字。業界を問わない書き方。
-  右の文は「|」で改行（言葉の途中で切れないように）。形はワクトリv3の施策詳細（_build/patch_wakutori_v3_gutai.py）と同じ。色は紺・白・灰色。
+  左の4段の文字は中央寄せ（殿村さん）。右の文は「|」で改行（言葉の途中で切れないように）。形はワクトリv3の施策詳細（_build/patch_wakutori_v3_gutai.py）と同じ。色は紺・白・灰色。
 """
 import sys
 
@@ -89,7 +89,7 @@ def flow(s, steps):
         main, sub = step if isinstance(step, tuple) else (step, None)
         paras = [(main, 14, True, NAVY, 0)] + ([(sub, 11, False, INK, 0)] if sub else [])
         rect(s, (left + lab_w) * IN, y * IN, (w - lab_w) * IN, h * IN, LIGHT, paras,
-             align=PP_ALIGN.LEFT, margins=(0.3, 0.05, 0.2, 0.05))
+             align=PP_ALIGN.CENTER, margins=(0.2, 0.05, 0.2, 0.05))
         if k < len(steps) - 1:
             rich(s, left * IN, (y + h - 0.01) * IN, lab_w * IN, (gap + 0.02) * IN, [[("▼", 9, False, NAVY)]],
                  align=PP_ALIGN.CENTER)
