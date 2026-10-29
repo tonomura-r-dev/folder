@@ -46,6 +46,14 @@ function buttonLabel(project: Project, id: Id): string {
   for (const m of project.messages) for (const b of m.bubbles) for (const x of bubbleButtons(b)) if (x.id === id) return x.label;
   return id;
 }
+/** フォームで選んだ項目（選択式だけ。名前などの自由入力は出さない）を「項目：値」で */
+export function formChoices(project: Project, d: Record<string, string>): string {
+  const page = project.webPages.find((p) => p.id === d['pageId']);
+  return (page?.form?.fields ?? [])
+    .filter((f) => f.type === 'select' && d[`values.${f.id}`])
+    .map((f) => `${f.label}：${d[`values.${f.id}`]}`)
+    .join('／');
+}
 function cellLabel(project: Project, menuId: Id, cellId: Id): string {
   const menus = project.richMenus.filter((m) => !menuId || m.id === menuId);
   for (const m of menus) for (const c of m.cells) if (c.id === cellId) return c.label;
@@ -70,8 +78,10 @@ export function describeOp(project: Project, L: Labels, type: string, d: Record<
     }
     case 'tapLineCta':
       return `「${page?.lineCta?.label ?? 'LINEで受け取る'}」を押す`;
-    case 'submitForm':
-      return `「${L.page(d['pageId'] ?? '')}」を送信する`;
+    case 'submitForm': {
+      const picked = formChoices(project, d);
+      return `「${L.page(d['pageId'] ?? '')}」を送信する${picked ? `（${picked}）` : ''}`;
+    }
     case 'closePage':
       return 'ページを閉じてLINEに戻る';
     case 'addFriend':
@@ -108,6 +118,7 @@ export function detailOfEvent(ev: InputEvent): Record<string, string> {
     if (typeof v === 'string') out[k] = v;
     else if (typeof v === 'number') out[k] = String(v);
     else if (Array.isArray(v)) out[k] = v.join(',');
+    else if (v && typeof v === 'object') for (const [fk, fv] of Object.entries(v)) if (typeof fv === 'string') out[`${k}.${fk}`] = fv;
   }
   return out;
 }
@@ -235,7 +246,8 @@ function eventsOfUser(project: Project, L: Labels, world: WorldState, user: User
   // 状態には最後の1回しか残らないので、2回目以降も出るよう操作（フォーム送信・記録）から拾う
   for (const b of user.behaviors) {
     const cvId = b.type === 'cv' ? b.detail['cvId'] : b.type === 'submitForm' ? project.webPages.find((p) => p.id === b.detail['pageId'])?.form?.onSubmit.cvId : undefined;
-    if (cvId) add(b.at, { kind: 'cv', side: 'back', text: `CV「${L.cv(cvId)}」を記録` });
+    const picked = b.type === 'submitForm' ? formChoices(project, b.detail) : '';
+    if (cvId) add(b.at, { kind: 'cv', side: 'back', text: `CV「${L.cv(cvId)}」を記録${picked ? `（${picked}）` : ''}` });
   }
 
   return [...groups.entries()]

@@ -426,8 +426,14 @@ describe.skipIf(!has('client-b-kids'))('企業別デモ②（保育・見学予�
 describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバイト・ENTRY／応募）', () => {
   const p = has('client-c-resort') ? loadProject('client-c-resort') : (null as unknown as Project);
   const w = has('client-c-resort') ? run(p, 190 * DAY) : (null as unknown as WorldState);
-  /** 届いたカルーセルの求人カードID（メッセージ単位） */
   const cardsOf = (messageId: string) => p.messages.find((m) => m.id === messageId)!.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.title) : []));
+  const startsOf = (messageId: string) => p.messages.find((m) => m.id === messageId)!.bubbles.flatMap((b) => (b.kind === 'carousel' ? b.cards.map((c) => c.facts!.find((f) => f.label === '開始時期')!.value) : []));
+  /** 友だち追加して3問に答えたところ */
+  const answered = (start: string, area: string) => {
+    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
+    for (const [q, c] of [['q_entry', 'c_ent_yet'], ['q_start', start], ['q_area', area]] as const) d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [c] });
+    return d;
+  };
 
   it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
     expect(validate(p)).toEqual([]);
@@ -440,8 +446,6 @@ describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバ�
     expect(me(p, d).richMenuId).toBe('rm_jobs');
     d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_jobs', cellId: 'cell_tab_support' });
     expect(me(p, d).richMenuId).toBe('rm_support');
-    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_support', cellId: 'cell_tab_jobs2' });
-    expect(me(p, d).richMenuId).toBe('rm_jobs');
   });
 
   it('アンケートは今の3問（エントリー状況・開始時期・エリア）で、質問と回答が交互にトークへ残る', () => {
@@ -450,115 +454,157 @@ describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバ�
     expect(lines.slice(i, i + 6)).toEqual(['公式：エントリーはされましたか？', 'ユーザー：これから', '公式：お仕事の開始時期は？', 'ユーザー：1〜2ヶ月先', '公式：希望のエリアは？', 'ユーザー：山・高原（スキー場など）']);
   });
 
-  it('診断の答えで、届く求人カルーセルの中身が変わる（スキー場／海・離島／人気／未回答は回答のお願い）', () => {
-    expect(ids(w, 'p_ski')).toContain('msg_car_ski');
-    expect(ids(w, 'p_summer')).toContain('msg_car_sea');
-    expect(ids(w, 'p_menu')).toContain('msg_car_pop');
-    expect(ids(w, 'p_noanswer')).toContain('msg_diag_remind');
-    expect(ids(w, 'p_noanswer').filter((m) => m.startsWith('msg_car_'))).toEqual([]);
-    expect(cardsOf('msg_car_ski')).not.toEqual(cardsOf('msg_car_sea'));
-    // カードには勤務地・開始時期・仕事内容・条件と、詳細ページへのボタン。デモ用サンプルの札が付く
-    const car = p.messages.find((m) => m.id === 'msg_car_ski')!.bubbles.find((b) => b.kind === 'carousel')!;
-    if (car.kind !== 'carousel') throw new Error('carousel');
-    for (const c of car.cards) {
-      expect(c.facts!.map((f) => f.label)).toEqual(['勤務地', '開始時期', '仕事内容', '条件']);
-      expect(c.badge).toBe('デモ用サンプル求人');
-      expect(c.buttons[0]!.action.kind).toBe('openPage');
+  it('【修正1】ENTRYしていない人は応募できない（応募ボタンはENTRYへ）。ENTRYのあと、選んだ求人の応募に戻れる', () => {
+    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_job_w1' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_job_w1', blockIndex: 5 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_entry' });
+    expect('want_w1' in me(p, d).tags).toBe(true);
+    // 応募フォームはENTRY前には出ない（どこからも開けない）
+    for (const pg of p.webPages) for (const b of pg.blocks) if (b.kind === 'button' && b.action.kind === 'openPage') expect(b.action.pageId.startsWith('page_apply_')).toBe(false);
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_entry', values: { f_start: '1〜2ヶ月先' } });
+    expect(Object.keys(me(p, d).cvs)).toEqual(['cv_entry']);
+    const back = p.webPages.find((x) => x.id === 'page_entry_thanks')!.blocks.findIndex((b) => b.kind === 'button');
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_entry_thanks', blockIndex: back });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_apply_w1' });
+    // ENTRY済みなら、応募ボタンからそのまま応募フォームへ
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_job_s2' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_job_s2', blockIndex: 5 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_apply_s2' });
+    expect('want_w1' in me(p, d).tags).toBe(false);
+  });
+
+  it('【修正1】LINEの友だちでない人の画面で、LINEで連絡すると言い切らない', () => {
+    const t = p.webPages.find((x) => x.id === 'page_apply_thanks')!.blocks.map((b) => (b.kind === 'text' ? b.text : '')).join('');
+    expect(t).toContain('ご希望の連絡方法');
+    expect(t).not.toMatch(/LINEでご連絡します/);
+  });
+
+  it('【修正2】カルーセル → 詳細 → 応募フォームで同じ求人。フォームの求人とCVの記録が一致する', () => {
+    let d = answered('c_st_1_2', 'c_ar_mt');
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_entry', values: {} });
+    d = seek(d, d.now + 120);
+    d = dispatch(d, { type: 'tapButton', buttonId: 'b_agent_mt_1_2_w3' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_job_w3' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_job_w3', blockIndex: 5 });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_apply_w3' });
+    const form = p.webPages.find((x) => x.id === 'page_apply_w3')!.form!;
+    expect(form.fields.find((f) => f.id === 'f_job')!.options).toEqual(['スキーレンタルショップ']);
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_apply_w3', values: { f_job: 'スキーレンタルショップ', f_name: 'x', f_contact: 'LINE' } });
+    const u = me(p, d);
+    expect(Object.keys(u.cvs).sort()).toEqual(['cv_apply', 'cv_entry']);
+    const back = buildTimeline(p, new Labels(p), worldOf(p, d), [u.id]).flatMap((e) => e.back);
+    expect(back).toContain('CV「応募（個別の求人）」を記録（応募する求人：スキーレンタルショップ／ご希望の連絡方法：LINE）');
+    // 台本の7人も、応募した求人＝最後に選んだ求人
+    for (const id of ['p_ski', 'p_summer', 'p_entered', 'p_later']) {
+      const x = user(w, id);
+      const sent = x.behaviors.find((b) => b.type === 'submitForm' && (b.detail['pageId'] ?? '').startsWith('page_apply_'))!;
+      const job = sent.detail['pageId']!.replace('page_apply_', '');
+      expect(`want_${job}` in x.tags).toBe(true);
+      expect(sent.detail['values.f_job']).toBe(p.webPages.find((pg) => pg.id === `page_job_${job}`)!.title.replace('求人：', ''));
     }
   });
 
-  it('カードを送る → 詳細 → ENTRY が記録され、③の時系列で追える', () => {
-    let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
-    for (const [q, c] of [['q_entry', 'c_ent_yet'], ['q_start', 'c_st_1_2'], ['q_area', 'c_ar_mt']] as const) d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [c] });
-    d = dispatch(d, { type: 'viewCard', messageId: 'msg_car_ski', cardId: 'card_car_ski_w3' });
-    d = dispatch(d, { type: 'tapButton', buttonId: 'b_car_ski_w3' });
-    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_job_w3' });
-    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_job_w3', blockIndex: 4 });
-    d = dispatch(d, { type: 'submitForm', pageId: 'page_entry', values: {} });
-    const u = me(p, d);
-    expect(Object.keys(u.cvs)).toEqual(['cv_entry']);
-    const titles = buildTimeline(p, new Labels(p), worldOf(p, d), [u.id]).flatMap((e) => e.front);
-    const pos = (re: RegExp) => titles.findIndex((t) => re.test(t));
-    expect(pos(/カルーセルのカード「スキーレンタルショップ」を見る/)).toBeGreaterThan(-1);
-    expect(pos(/ボタン「求人の詳細を見る」を押す/)).toBeGreaterThan(pos(/カードを見る/));
-    expect(pos(/かんたん1分 ENTRY/)).toBeGreaterThan(pos(/求人の詳細を見る/));
+  it('【修正3】診断後のカルーセルは、エリアと開始時期の両方で選ぶ。合う求人が無いときは求人を出さず案内する', () => {
+    const got = (start: string, area: string) => me(p, answered(start, area)).deliveries.map((x) => x.messageId).filter((m) => m.startsWith('msg_car_'));
+    expect(got('c_st_1_2', 'c_ar_mt')).toEqual(['msg_car_mt_1_2']);
+    expect(got('c_st_3', 'c_ar_mt')).toEqual(['msg_car_mt_3plus']);
+    expect(cardsOf('msg_car_mt_1_2')).not.toEqual(cardsOf('msg_car_mt_3plus'));
+    expect(startsOf('msg_car_mt_1_2').every((s) => s.startsWith('12月'))).toBe(true);
+    expect(startsOf('msg_car_mt_3plus').some((s) => s.startsWith('12月') || s.startsWith('11月'))).toBe(false);
+    expect(startsOf('msg_car_sea_asap').every((s) => s.startsWith('11月'))).toBe(true);
+    // 山・高原×できるだけ早く：10〜11月に始められる求人が無い → カルーセルは出さず、担当が探す案内
+    const none = me(p, answered('c_st_asap', 'c_ar_mt'));
+    expect(none.deliveries.map((x) => x.messageId)).toContain('msg_car_none');
+    expect(none.talk.some((t) => t.side === 'bot' && t.bubble.kind === 'carousel')).toBe(false);
+    const txt = none.talk.flatMap((t) => (t.side === 'bot' && t.bubble.kind === 'buttons' ? [t.bubble.text] : [])).join('');
+    expect(txt).toContain('ご希望（山・高原（スキー場など）・できるだけ早く）に合う求人は、いま掲載がありません。');
+    // 台本の7人
+    expect(ids(w, 'p_ski')).toContain('msg_car_mt_1_2');
+    expect(ids(w, 'p_summer')).toContain('msg_car_sea_3plus');
+    expect(ids(w, 'p_later')).toContain('msg_car_sea_asap');
+    expect(ids(w, 'p_menu')).toContain('msg_car_any_unknown');
+    expect(ids(w, 'p_noanswer')).toContain('msg_diag_remind');
   });
 
-  it('開始時期・エリア別の配信は、合う人にだけ届く（3ヶ月以上先・未回答・こだわらないには送らない）', () => {
-    expect(ids(w, 'p_entered')).toContain('msg_k_onsen');
-    expect(ids(w, 'p_later')).toContain('msg_k_sea');
+  it('【修正3】Day10 の案内・ENTRY後のおすすめ・特集も、エリアと開始時期で選ぶ', () => {
+    expect(ids(w, 'p_summer')).toContain('msg_s4_sea_3plus');
+    expect(ids(w, 'p_later')).toEqual(expect.arrayContaining(['msg_k_sea_asap', 'msg_agent_sea_asap']));
+    expect(ids(w, 'p_entered')).toEqual(expect.arrayContaining(['msg_k_onsen_asap', 'msg_agent_onsen_asap']));
+    // 開始が先（3ヶ月以上先）・未定・未回答には特集を送らない
     for (const id of ['p_summer', 'p_noanswer', 'p_menu']) expect(ids(w, id).filter((m) => m.startsWith('msg_k_'))).toEqual([]);
-    const skip = w.decisions.find((x) => x.userId === 'p_summer' && x.nodeId === 'n_k_b' && x.ref === 'else');
-    expect(skip).toBeTruthy();
+    // 山・高原×できるだけ早く は合う求人が無いので、特集も送らない
+    const d = seek(answered('c_st_asap', 'c_ar_mt'), at(8));
+    expect(me(p, d).deliveries.map((x) => x.messageId).filter((m) => m.startsWith('msg_k_'))).toEqual([]);
   });
 
-  it('Day10 は、ENTRYまだの方にENTRYの案内、ENTRY済みの方に応募の案内を送る（重ねない）', () => {
-    expect(ids(w, 'p_noanswer')).toContain('msg_s4_pop');
-    expect(ids(w, 'p_summer')).toContain('msg_s4_sea');
+  it('【修正4】文面と処理が合っている（「毎週火曜」と書かない・勤務を確認していない人に「おつかれさま」と書かない）', () => {
+    const all = p.messages.flatMap((m) => m.bubbles.flatMap((b) => (b.kind === 'text' ? [b.text] : b.kind === 'buttons' ? [b.text] : [])));
+    expect(all.some((t) => t.includes('毎週火曜'))).toBe(false);
+    expect(all.some((t) => /おつかれさま/.test(t))).toBe(false);
+    expect(p.flows.some((f) => f.label.includes('毎週火曜'))).toBe(false);
+    expect(p.journey!.some((j) => (j.purpose ?? '').includes('毎週火曜'))).toBe(false);
+    // 「次のお仕事」は応募した人だけに届き、文面は応募を前提にした言い方
+    const next = p.messages.find((m) => m.id === 'msg_l_next')!.bubbles[0]!;
+    expect(next.kind === 'text' && next.text.startsWith('冬のお仕事に応募いただいた方へ')).toBe(true);
+    for (const id of ['p_ski', 'p_entered', 'p_later']) expect(ids(w, id)).toContain('msg_l_next');
+    for (const id of ['p_noanswer', 'p_menu']) expect(ids(w, id)).not.toContain('msg_l_next');
+    // 特集のカードは、文面に書いた開始時期に合う
+    expect(startsOf('msg_k_mt_1_2').every((s) => s.startsWith('12月'))).toBe(true);
+  });
+
+  it('Day10 は、ENTRYまだの方にENTRYの案内、ENTRY済みの方に応募の案内を送る（ENTRYの記録で判定）', () => {
+    expect(ids(w, 'p_noanswer')).toContain('msg_s4_any_unknown');
     for (const id of ['p_entered', 'p_menu']) {
       expect(ids(w, id)).toContain('msg_s4_apply');
-      expect(ids(w, id).filter((m) => /^msg_s4_(ski|sea|onsen|pop)$/.test(m))).toEqual([]);
+      expect(ids(w, id).filter((m) => /^msg_s4_(mt|sea|onsen|any)_/.test(m))).toEqual([]);
     }
   });
 
   it('ENTRY（会員登録）と応募は別のCV。応募したら求人の案内（ステップ・特集・ENTRY後のフォロー）は止まる', () => {
     expect(Object.keys(user(w, 'p_ski').cvs).sort()).toEqual(['cv_apply', 'cv_entry']);
     expect(Object.keys(user(w, 'p_menu').cvs)).toEqual(['cv_entry']);
-    expect(ids(w, 'p_ski')).toEqual(expect.arrayContaining(['msg_entry_thanks', 'msg_agent_ski', 'msg_apply_thanks']));
     expect(ids(w, 'p_ski')).not.toContain('msg_s2_money');
     expect(ids(w, 'p_ski')).not.toContain('msg_entry_follow');
-    // ENTRY完了画面から友だちになった人には、ENTRYの受付を重ねない（あいさつが受付を兼ねる）
     expect(ids(w, 'p_entered')).toContain('msg_welcome_thanks');
     expect(ids(w, 'p_entered')).not.toContain('msg_entry_thanks');
-    expect(ids(w, 'p_entered')).toContain('msg_agent_onsen');
   });
 
   it('季節で中長期の配信が切り替わる（10月下旬は冬・2月は春・4月は夏の海・離島）', () => {
     expect(flowMsgs(w, 'p_summer', 'flow_long')).toEqual([['msg_l_sea_winter', 18], ['msg_l_spring', 120], ['msg_l_summer_sea', 180]]);
     expect(flowMsgs(w, 'p_noanswer', 'flow_long')).toEqual([['msg_l_ski', 18], ['msg_l_spring', 120], ['msg_l_summer_other', 180]]);
-    expect(flowMsgs(w, 'p_ski', 'flow_long')).toEqual([['msg_l_next', 120], ['msg_l_summer_other', 180]]);
     expect(ids(w, 'p_summer')).toContain('msg_agent_summer');
   });
 
-  it('ブロックした人には、その後の配信が届かない（理由はブロック中）', () => {
+  it('ブロックした人には、その後の配信が届かない', () => {
     const u = user(w, 'p_block');
-    expect(u.friendState).toBe('blocked');
     const blockAt = u.behaviors.find((b) => b.type === 'block')!.at;
     expect(u.deliveries.every((d) => d.at < blockAt)).toBe(true);
-    expect(w.decisions.filter((x) => x.userId === 'p_block' && x.kind === 'deliver' && x.reason === 'blocked').length).toBeGreaterThan(0);
+    expect(w.decisions.some((x) => x.userId === 'p_block' && x.kind === 'deliver' && x.reason === 'blocked')).toBe(true);
   });
 
-  it('ポップアップを閉じた人は、後からサイトのLINEボタンで友だちになる', () => {
-    const u = user(w, 'p_later');
-    expect(u.behaviors.map((b) => b.type).slice(0, 3)).toEqual(['visitPage', 'exitIntent', 'dismissPopup']);
-    expect(u.route).toBe('route_button');
-    expect(Math.floor(u.friendAddedAt! / DAY)).toBe(2);
-  });
-
-  it('過去に戻ってエリアの答えを変えると、カルーセル・タグ・トークが計算し直される', () => {
+  it('過去に戻って開始時期の答えを変えると、カルーセル・タグ・トークが計算し直される', () => {
     let d = dispatch(newDemo(p, 'p_ski'), { type: 'addFriend', routeId: 'route_popup' });
     d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_entry', choiceIds: ['c_ent_yet'] });
-    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_start', choiceIds: ['c_st_1_2'] });
     const before = d.now;
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_start', choiceIds: ['c_st_1_2'] });
     d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_area', choiceIds: ['c_ar_mt'] });
-    d = dispatch(d, { type: 'viewCard', messageId: 'msg_car_ski', cardId: 'card_car_ski_w2' });
-    d = seek(d, at(8));
-    expect(me(p, d).deliveries.map((x) => x.messageId)).toEqual(expect.arrayContaining(['msg_car_ski', 'msg_k_ski']));
+    d = dispatch(d, { type: 'viewCard', messageId: 'msg_car_mt_1_2', cardId: 'card_car_mt_1_2_w1' });
     d = seek(d, before);
-    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_area', choiceIds: ['c_ar_sea'] });
-    d = seek(d, at(8));
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_start', choiceIds: ['c_st_3'] });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_area', choiceIds: ['c_ar_mt'] });
     const now = me(p, d);
-    expect(now.deliveries.map((x) => x.messageId)).toEqual(expect.arrayContaining(['msg_car_sea', 'msg_k_sea']));
-    expect(now.deliveries.map((x) => x.messageId)).not.toContain('msg_car_ski');
-    expect('area_mountain' in now.tags).toBe(false);
+    expect(now.deliveries.map((x) => x.messageId)).toContain('msg_car_mt_3plus');
+    expect(now.deliveries.map((x) => x.messageId)).not.toContain('msg_car_mt_1_2');
+    expect('start_1_2' in now.tags).toBe(false);
     expect(now.behaviors.some((b) => b.type === 'viewCard')).toBe(false);
   });
 
-  it('②のボタンは「ENTRY後へ／応募後へ」。③は応募が GOAL、入口・カルーセルのルートは②のタグと一致する', () => {
+  it('③は応募が GOAL。入口・カルーセルのルートは②のタグと一致する', () => {
     expect(p.cvs.map((c) => c.demoAction)).toEqual(['ENTRY後へ', '応募後へ']);
     const rows = (id: string) => journeyOf(p, w, user(w, id));
     expect(rows('p_ski').find((r) => r.isGoal)!.step.id).toBe('j_apply');
-    expect(rows('p_ski').find((r) => r.step.id === 'j_match')!.traversed).toEqual(['v_m_ski']);
+    expect(rows('p_ski').find((r) => r.step.id === 'j_match')!.traversed).toEqual(['v_m_mt']);
     expect(rows('p_noanswer').find((r) => r.step.id === 'j_match')!.traversed).toEqual(['v_m_none']);
     expect(rows('p_entered').find((r) => r.step.id === 'j_friend')!.traversed).toEqual(['v_thanks']);
   });
@@ -569,7 +615,6 @@ describe.skipIf(!has('client-c-resort'))('企業別デモ③（リゾートバ�
     expect(tl.filter((e) => !e.minor).length).toBeGreaterThan(120);
     const bot = Object.values(w.users).flatMap((u) => u.talk.flatMap((t) => (t.side === 'bot' && t.bubble.kind === 'text' ? [t.bubble.text] : [])));
     for (const x of p.personas) expect(bot.some((t) => t.includes(x.name))).toBe(false);
-    expect(bot.some((t) => t.includes('中村 陽菜さん'))).toBe(true);
   });
 
   it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {

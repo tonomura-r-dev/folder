@@ -476,6 +476,8 @@ function detailOf(ev: InputEventBody): Record<string, string> {
     if (typeof v === 'string') out[k] = v;
     else if (typeof v === 'number') out[k] = String(v);
     else if (Array.isArray(v)) out[k] = v.join(',');
+    // フォームの入力値（values.<項目ID>）。何を選んで送信したかを、CVの記録で見られるように残す
+    else if (v && typeof v === 'object') for (const [fk, fv] of Object.entries(v)) if (typeof fv === 'string') out[`${k}.${fk}`] = fv;
   }
   return out;
 }

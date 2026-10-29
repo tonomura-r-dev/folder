@@ -768,3 +768,7 @@
 .lsp-carw-h .t { color: var(--lsp-muted); font-size: 12px; white-space: nowrap; }
 .lsp-carw-why { font-size: 12.5px; margin-top: 3px; color: #1d232c; }
 .lsp-carw-f { font-size: 12px; color: var(--lsp-muted); margin-top: 2px; }
+/* ②：CVの記録 */
+.lsp-cvlog { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
+.lsp-cvlog li { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; background: #fff7ec; border: 1px solid #f3d9b5; border-radius: 8px; padding: 5px 9px; }
+.lsp-cvlog .t { color: var(--lsp-muted); font-size: 12px; }

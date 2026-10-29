@@ -6,7 +6,7 @@ import { bubbleButtons } from '../../engine/src/index.ts';
 import { upcoming } from './controller.ts';
 import { describeExpr, describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
 import { nextAction } from './journey.ts';
-import { flowConditions, nextOwn, userHistoryHtml } from './timeline.ts';
+import { flowConditions, formChoices, nextOwn, userHistoryHtml } from './timeline.ts';
 import { esc, whoOf, type Tab, type View } from './view.ts';
 
 // ---------- 説明カード ----------
@@ -125,12 +125,20 @@ function stateTab(v: View, user: UserState): string {
         : `<button type="button" data-act="cv" data-cv="${esc(c.id)}">${esc(c.demoAction ?? `${c.label}へ`)}</button>`,
     )
     .join('');
+  // CVの記録（何回目でも出す。フォームで選んだ求人などの選択項目も添える）
+  const cvLog = user.behaviors.flatMap((b) => {
+    const cvId = b.type === 'cv' ? b.detail['cvId'] : b.type === 'submitForm' ? v.project.webPages.find((p) => p.id === b.detail['pageId'])?.form?.onSubmit.cvId : undefined;
+    if (!cvId) return [];
+    const picked = b.type === 'submitForm' ? formChoices(v.project, b.detail) : '';
+    return [`<li><span class="t">${esc(fmtTime(b.at))}</span><b>${esc(L.cv(cvId))}</b>${picked ? `<span>${esc(picked)}</span>` : ''}</li>`];
+  });
   return `
     <div class="lsp-tiles">
       <div class="lsp-tile ${user.friendState === 'friend' ? 'ok' : user.friendState === 'blocked' ? 'ng' : ''}"><span class="k">友だち</span><b>${esc(friendText(user.friendState))}</b><small>${esc(L.route(user.route))}</small></div>
       <div class="lsp-tile ${cvs.length ? 'ok' : ''}"><span class="k">CV</span><b>${cvs.length ? cvs.map(([id]) => esc(L.cv(id))).join('・') : 'まだ'}</b><small>${cvs.length ? esc(fmtTime(Math.max(...cvs.map(([, x]) => x.at)))) : 'CV前'}</small></div>
       <div class="lsp-tile next"><span class="k">次回配信</span><b>${esc(nextPlan.when ?? '予定なし')}</b><small>${esc(nextPlan.what)}</small></div>
     </div>
+    ${cvLog.length ? `<h4>CVの記録（${cvLog.length}）</h4><ul class="lsp-cvlog">${cvLog.join('')}</ul>` : ''}
     <h4>タグ（${tags.length}）</h4>${tags.length ? `<div class="lsp-tags">${tags.map(([t, x]) => `<span class="lsp-tag" title="${esc(fmtTime(x.at))}に付いた">${esc(L.tag(t))}</span>`).join('')}</div>` : '<div class="lsp-none">なし</div>'}
     <h4>アンケートの回答</h4>${answers.length ? `<ul class="lsp-answers">${answers.join('')}</ul>` : '<div class="lsp-none">まだ回答していません</div>'}
     ${attrs.length ? `<h4>属性</h4><div class="lsp-answers">${attrs.map(([k, a]) => `${esc(k)}=${esc(a)}`).join('、')}</div>` : ''}
