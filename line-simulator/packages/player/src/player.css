@@ -117,7 +117,7 @@
 .lsp-menu-grid button { border: 0; background: var(--lsp-soft); color: var(--lsp-ink); font-weight: 700; font-size: 12.5px; padding: 6px 4px; min-height: 64px; }
 .lsp-menu-grid button:hover { background: #e3e8f4; }
 .lsp-menu-grid.has-img { background-size: 100% 100%; gap: 0; }
-.lsp-menu-grid.has-img button { background: transparent; color: transparent; }
+.lsp-menu-grid.has-img button { background: transparent; color: transparent; min-height: 0; padding: 0; }
 .lsp-menu-grid.has-img button:hover { background: rgba(255, 255, 255, .18); }
 
 .lsp-input { display: flex; gap: 6px; padding: 8px; background: #fff; border-top: 1px solid #e5e7eb; }

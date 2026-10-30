@@ -136,7 +136,7 @@ type Action =
 type RichMenu = {
   id: Id; label: string;
   layout: { cols: number; rows: number };       // 2x3 等
-  imageAssetId?: Id;                             // 無ければセルのラベルで描画
+  imageAssetId?: Id;                             // 無ければセルのラベルで描画。あれば項目名・タブ・目立たせる項目は画像に描き、押せる区画を画像に重ねるだけ（行の高さは均等＝layout の行どおりに画像を割る）
   cells: { id: Id; label: string; area: { col: number; row: number; colSpan?: number; rowSpan?: number }; action: Action;
            emphasis?: boolean }[];                       // emphasis＝いちばん押してほしい項目（色付きで出す）
 };

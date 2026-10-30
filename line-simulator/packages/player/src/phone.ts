@@ -174,16 +174,18 @@ function menu(v: View, m: RichMenu): string {
   const bg = m.imageAssetId ? v.project.assets.find((a) => a.id === m.imageAssetId) : undefined;
   // タブのあるメニューだけ、「動作なし」の項目を「いま開いているタブ」として出す（タブの無いメニューの動作なし＝シナリオを始めるだけの項目）
   const tabbed = m.cells.some((c) => c.action.kind === 'switchMenu');
+  // 画像のメニューは、項目名・タブ・目立たせる項目を画像に描いてある。押せる区画を画像に重ねるだけにする（行の高さは均等）
+  const cls = (c: RichMenu['cells'][number]) => (bg ? '' : c.action.kind === 'switchMenu' ? ' class="tab"' : tabbed && c.action.kind === 'none' ? ' class="tab on"' : c.emphasis ? ' class="em"' : '');
   const cells = m.cells
     .map(
       (c) =>
         // タブ（メニューの切り替え・いま開いているタブ）は低く出し、ほかの項目と見分ける
-        `<button type="button"${c.action.kind === 'switchMenu' ? ' class="tab"' : tabbed && c.action.kind === 'none' ? ' class="tab on"' : c.emphasis ? ' class="em"' : ''} data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
+        `<button type="button"${cls(c)} data-act="tapMenu" data-menu="${esc(m.id)}" data-cell="${esc(c.id)}" aria-label="${esc(c.label)}" style="grid-column:${c.area.col + 1} / span ${
           c.area.colSpan ?? 1
         };grid-row:${c.area.row + 1} / span ${c.area.rowSpan ?? 1}">${esc(c.label)}</button>`,
     )
     .join('');
-  const grid = `<div class="lsp-menu-grid${bg ? ' has-img' : ''}" style="grid-template-columns:repeat(${m.layout.cols},1fr);grid-template-rows:repeat(${m.layout.rows},auto)${
+  const grid = `<div class="lsp-menu-grid${bg ? ' has-img' : ''}" style="grid-template-columns:repeat(${m.layout.cols},1fr);grid-template-rows:repeat(${m.layout.rows},${bg ? '1fr' : 'auto'})${
     bg ? `;background-image:url('${esc(v.assetUrl(bg))}');aspect-ratio:${bg.width}/${bg.height}` : ''
   }">${cells}</div>`;
   const open = v.ui.menuOpen;

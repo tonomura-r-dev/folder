@@ -1132,3 +1132,304 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
     await exportChecks(p);
   }, 30_000);
 });
+
+describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィットネス・業界汎用：診断→体験予約→来店→入会→入会後14日間→CV③）', () => {
+  const p = has('client-f-gym') ? loadProject('client-f-gym') : (null as unknown as Project);
+  const w = has('client-f-gym') ? run(p, 37 * DAY) : (null as unknown as WorldState);
+  const tags = (id: string) => Object.keys(user(w, id).tags);
+  const slot = (n: number) => p.webPages.find((x) => x.id === 'page_rsv')!.form!.fields.find((f) => f.id === 'f_slot')!.options![n - 1]!;
+  /** 枠の表示（例：12月5日（土）10:00〜）から、デモの時刻へ（Day 0 = 12月1日） */
+  const startOf = (label: string) => {
+    const m = /(\d+)月(\d+)日.*?(\d{2}):(\d{2})/.exec(label)!;
+    return at(Number(m[1]) === 12 ? Number(m[2]) - 1 : 30 + Number(m[2]), Number(m[3]), Number(m[4]));
+  };
+  const bot = (u: UserState) => u.talk.flatMap((t) => (t.side === 'bot' && (t.bubble.kind === 'text' || t.bubble.kind === 'buttons') ? [t.bubble.text] : []));
+  const remind = (id: string) => user(w, id).deliveries.filter((d) => d.flowId === 'flow_rsv_remind').map((d) => [d.messageId, d.at] as const);
+  /** 友だち追加の日から何日後か（暦の日で数える） */
+  const step = (u: UserState) => u.deliveries.filter((d) => d.flowId === 'flow_step').map((d) => [d.messageId, Math.floor(d.at / DAY) - Math.floor(u.friendAddedAt! / DAY)] as const);
+  const got = (m: string) => Object.values(w.users).filter((u) => u.deliveries.some((x) => x.messageId === m)).map((u) => u.id).sort();
+  /** 手で操作する人：ポップアップから友だち追加して、30秒診断の4問に答える（null なら答えない） */
+  const visitor = (ans: [string, string, string, string] | null) => {
+    let d = dispatch(newDemo(p, 'p1'), { type: 'addFriend', routeId: 'route_popup' });
+    if (!ans) return d;
+    d = dispatch(d, { type: 'tapButton', buttonId: 'btn_w_popup_diag' });
+    ['q_when', 'q_goal', 'q_exp', 'q_freq'].forEach((q, i) => (d = dispatch(d, { type: 'answer', surveyId: 'sv_body', questionId: q, choiceIds: [`c_${q.slice(2)}_${ans[i]}`] })));
+    return d;
+  };
+  const book = (d: Demo, n: number) =>
+    dispatch(d, { type: 'submitForm', pageId: 'page_rsv', values: { f_kind: '新しく予約', f_type: '無料体験', f_store: '○○フィットネス △△店', f_slot: slot(n), f_plan: 'いつでも通えるプラン', f_name: 'デモ', f_contact: 'LINE' } });
+  const answer = (d: Demo, sv: string, picks: [string, string][]) => picks.reduce((x, [q, c]) => dispatch(x, { type: 'answer', surveyId: sv, questionId: q, choiceIds: [c] }), d);
+  const textOf = (id: string) => {
+    const b = p.messages.find((m) => m.id === id)!.bubbles.find((x) => x.kind === 'buttons' || x.kind === 'text')!;
+    return b.kind === 'buttons' || b.kind === 'text' ? b.text : '';
+  };
+
+  it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
+    expect(validate(p)).toEqual([]);
+    expect(personaCoverage(p)).toEqual([]);
+  });
+
+  it('リッチメニューは資料P27・P28どおり3タブ×6枠（画像）。全ボタンが反応し、未入会の人は③（会員の方へ）を使えない', () => {
+    // ③のメニューは未入会の人には開かない（③のタブ①は、入会した人で下で確かめる）
+    expect(deadButtons(p, 'p1', 'route_popup')).toEqual(['menu:cell_t3_tab1']);
+    const body = (m: (typeof p.richMenus)[number]) => m.cells.filter((c) => c.area.row > 0).map((c) => c.label);
+    expect(p.richMenus.map((m) => [m.label, m.imageAssetId, body(m)])).toEqual([
+      ['① 見学・体験', 'img_rm1', ['無料体験を予約', '店舗を探す', '設備・マシン', '料金プラン', '24時間の使い方', 'アクセス・駐車場']],
+      ['② 診断・シミュレーター', 'img_rm2', ['30秒体づくり診断', '性格タイプ診断', 'ダイエットタイプ診断', '続けられるか診断', '1分料金診断', 'よくある質問・相談']],
+      ['③ 会員の方へ', 'img_rm3', ['会員コード', 'レッスン予約', 'トレーニング記録', '混雑状況', 'お友だち紹介', '休会・退会']],
+    ]);
+    expect(p.richMenus[0]!.cells.filter((c) => c.emphasis).map((c) => c.label)).toEqual(['無料体験を予約']);
+    // 未入会：タブ③も会員の機能も「会員の方専用」の案内だけ（メニューは切り替わらない・ページも開かない）
+    let d = dispatch(visitor(null), { type: 'tapMenu', richMenuId: 'rm_t1', cellId: 'cell_t1_tab3' });
+    expect([me(p, d).richMenuId, me(p, d).deliveries.at(-1)!.messageId]).toEqual(['rm_t1', 'msg_mo_tab3']);
+    for (const cell of ['cell_code', 'cell_lesson', 'cell_log', 'cell_crowd', 'cell_ref', 'cell_quit']) {
+      const x = me(p, dispatch(visitor(null), { type: 'tapMenu', richMenuId: 'rm_t3', cellId: cell }));
+      expect([x.surface.kind, x.deliveries.at(-1)!.messageId.startsWith('msg_mo_')]).toEqual(['talk', true]);
+    }
+    // 入会の登録（店舗）で③に自動で切り替わり、会員の機能が使える
+    d = dispatch(d, { type: 'cv', cvId: 'st_enroll' });
+    expect(me(p, d).richMenuId).toBe('rm_t3');
+    expect(me(p, dispatch(d, { type: 'tapMenu', richMenuId: 'rm_t3', cellId: 'cell_code' })).surface).toEqual({ kind: 'page', pageId: 'page_code' });
+    // 会員は①②のタブにも行き来できる（③のタブで③に戻る）
+    const m1 = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_t3', cellId: 'cell_t3_tab1' });
+    expect([me(p, m1).richMenuId, me(p, dispatch(m1, { type: 'tapMenu', richMenuId: 'rm_t1', cellId: 'cell_t1_tab3' })).richMenuId]).toEqual(['rm_t1', 'rm_t3']);
+    for (const id of ['p2', 'p3', 'p4', 'p6', 'p7']) expect(user(w, id).richMenuId).not.toBe('rm_t3');
+  });
+
+  it('入口：ポップアップ・サイトのLINEボタン・Web予約のあと・LINE広告・店頭QR・紹介。あいさつは資料P29（無料体験・見学OK・営業電話なし・時間）＋期限のバナー', () => {
+    const pop = p.webPages.find((x) => x.id === 'page_facility_web')!.exitPopup!;
+    expect([pop.title, pop.cta.label]).toEqual(['LINEで30秒体づくり診断', 'LINEで30秒診断を受け取る']);
+    const u = me(p, visitor(null));
+    const hello = bot(u)[0]!;
+    for (const s of ['○○フィットネス △△店', '無料体験を受付中', '見学だけでもOK', '営業のお電話をすることはありません', '10:00〜20:00', 'デモ用の仮設定', '体づくりタイプ診断']) expect(hello).toContain(s);
+    expect(u.deliveries.map((d) => d.messageId)).toEqual(['msg_welcome_popup', 'image:img_banner_dec']);
+    expect(p.messages.find((m) => m.id === 'msg_welcome_popup')!.bubbles.flatMap((b) => bubbleButtons(b).map((x) => x.label))).toEqual(['▶ 30秒 体づくりタイプ診断', '無料体験・見学を予約する']);
+    expect(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'].map((id) => user(w, id).route)).toEqual(['route_popup', 'route_popup', 'route_cpf', 'route_web_rsv', 'route_store', 'route_site', 'route_referral']);
+  });
+
+  it('30秒診断：資料P29の4問を1問ずつ。答えた瞬間にタグ、4問で回答の組み合わせからタイプ（断定しない）＋料金の参考', () => {
+    expect(p.surveys[0]!.questions.map((q) => [q.text, q.choices.map((c) => c.label)])).toEqual([
+      ['Q1 いつから始めたいですか？', ['今すぐ', '1ヶ月以内', '2〜3ヶ月先', '検討中']],
+      ['Q2 一番の目的は？', ['ダイエット', '筋肉', '健康維持', '姿勢・肩こり']],
+      ['Q3 運動の経験は？', ['まったく初めて', '昔やっていた', '運動中', 'ジム経験あり']],
+      ['Q4 通えそうな頻度は？', ['週1回', '週2回', '週3回以上', 'わからない']],
+    ]);
+    let d = dispatch(visitor(null), { type: 'tapButton', buttonId: 'btn_w_popup_diag' });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_body', questionId: 'q_when', choiceIds: ['c_when_m1'] });
+    expect(Object.keys(me(p, d).tags)).toEqual(['when_m1']);
+    expect(me(p, d).surface).toEqual({ kind: 'survey', surveyId: 'sv_body', questionId: 'q_goal' });
+    const type = (a: [string, string, string, string]) => Object.keys(me(p, visitor(a)).tags).filter((t) => t.startsWith('bt_'));
+    // 資料P29の例：初心者＋週2回→コツコツ習慣化／筋肉＋経験あり→筋力アップ重視／ダイエット＋検討中→無理なく始める
+    expect([type(['m1', 'health', 'none', 'w2']), type(['now', 'muscle', 'gym', 'w3']), type(['undecided', 'diet', 'past', 'w1']), type(['now', 'diet', 'past', 'w3']), type(['m1', 'posture', 'now', 'w1'])]).toEqual([['bt_habit'], ['bt_muscle'], ['bt_gentle'], ['bt_slim'], ['bt_care']]);
+    const u = me(p, visitor(['m1', 'health', 'none', 'w2']));
+    const res = bot(u).find((t) => t.startsWith('＼あなたは'))!;
+    for (const s of ['「コツコツ習慣化タイプ」', '① おすすめの通い方', '② 最初の1ヶ月の取り組み方', '③ おすすめの設備・マシン', '④ 週あたりの通う頻度', 'あなたの回答：週2回', '健康状態や減量の結果を判断するものではありません']) expect(res).toContain(s);
+    for (const s of ['料金の参考シミュレーション', '1回あたり 1,000円（月会費8,000円 ÷ 月8回）', '実在のジムの料金ではありません']) expect(bot(u).at(-1)).toContain(s);
+    expect(p.messages.find((m) => m.id === 'msg_bref_w2')!.bubbles.flatMap((b) => bubbleButtons(b).map((x) => x.action))).toContainEqual({ kind: 'startFlow', flowId: 'flow_rsv_open' });
+    // 答え直すとタイプが入れ替わる（古いタイプのタグは残らない）
+    let again = dispatch(visitor(['m1', 'health', 'none', 'w2']), { type: 'tapMenu', richMenuId: 'rm_t2', cellId: 'cell_diag' });
+    again = answer(again, 'sv_body', [['q_when', 'c_when_now'], ['q_goal', 'c_goal_muscle'], ['q_exp', 'c_exp_gym'], ['q_freq', 'c_freq_w3']]);
+    expect(Object.keys(me(p, again).tags).filter((t) => /^(bt_|goal_|exp_)/.test(t)).sort()).toEqual(['bt_muscle', 'exp_gym', 'goal_muscle']);
+    // 途中でやめた人に、結果のタグは付けない
+    const quit = seek(dispatch(dispatch(visitor(null), { type: 'tapButton', buttonId: 'btn_w_popup_diag' }), { type: 'answer', surveyId: 'sv_body', questionId: 'q_when', choiceIds: ['c_when_now'] }), at(3));
+    expect(Object.keys(me(p, quit).tags).filter((t) => /^(bt_|diag_done)/.test(t))).toEqual([]);
+  });
+
+  it('性格タイプ（3問・2問以上そろったタイプ／ばらばらならQ1）・ダイエットタイプ（4問）・続けられるか（3問）。結果はタグになり、断定しない', () => {
+    const psy = (a: string, b: string, c: string) =>
+      Object.keys(me(p, answer(dispatch(visitor(null), { type: 'tapMenu', richMenuId: 'rm_t2', cellId: 'cell_psy' }), 'sv_psy', [['q_p1', `c_q_p1_${a}`], ['q_p2', `c_q_p2_${b}`], ['q_p3', `c_q_p3_${c}`]])).tags).filter((t) => t.startsWith('ps_') && t !== 'ps_done');
+    expect([psy('mood', 'log', 'log'), psy('buddy', 'buddy', 'plan'), psy('plan', 'mood', 'buddy')]).toEqual([['ps_log'], ['ps_buddy'], ['ps_plan']]);
+    expect(tags('p2')).toEqual(expect.arrayContaining(['ps_mood', 'kt_bored']));
+    expect(tags('p3')).toContain('dt_snack');
+    const t = (id: string) => bot(user(w, id)).join('\n');
+    for (const s of ['あなたは「気分派」', '① 続けやすい通い方', '② 目標の立て方', '③ 挫折しにくい工夫', '④ おすすめの行動']) expect(t('p2')).toContain(s);
+    for (const s of ['あなたは「間食見直し型」', '① ジムで取り組めること', '② 家で試せること（1つだけ）', '減量の結果を約束するものではありません']) expect(t('p3')).toContain(s);
+    for (const s of ['あなたは「変化を楽しむ型」', '① 挫折しやすい場面', '② 体験当日の回り方', '「周りの目」', '③ 最初の2週間の予定例', '休日に', '必ず続けられると決めるものではありません']) expect(t('p2')).toContain(s);
+    expect(Object.values(w.users).flatMap((u) => bot(u)).filter((x) => /必ず続けられます|必ず痩せ/.test(x))).toEqual([]);
+  });
+
+  it('1分料金シミュレーター：月会費÷（週の回数×4週）。回数を変えると結果も②のタグも入れ替わり、計算しただけでは予約（CV①）にならない', () => {
+    const u = user(w, 'p6');
+    const res = bot(u).filter((x) => x.startsWith('【1分料金シミュレーター】'));
+    expect(res).toHaveLength(2);
+    for (const s of ['プラン：いつでも通えるプラン', '月会費：8,000円', '月の想定利用回数 8回', '1回あたり：1,000円', '8,000円 ÷ 月8回（週2回×4週）', '実在のジムの料金ではありません']) expect(res[0]).toContain(s);
+    for (const s of ['月の想定利用回数 4回', '1回あたり：2,000円']) expect(res[1]).toContain(s);
+    expect(tags('p6').filter((x) => x.startsWith('pr_'))).toEqual(['pr_done', 'pr_8000_1']);
+    expect(u.cvs['cv_rsv']).toEqual({ at: at(34, 21, 33), count: 1 });
+    expect([textOf('msg_pr_10000_3'), textOf('msg_pr_6000_4')]).toEqual([expect.stringContaining('1回あたり：約833円'), expect.stringContaining('1回あたり：375円')]);
+  });
+
+  it('入会前14日間（資料P25）：2・3・4・5・6・8・10・11・14日後。5日後はダイエット目的の人だけ。予約した人に強い予約の案内は送らない。送らない理由は②に残る', () => {
+    expect(step(user(w, 'p2'))).toEqual([['msg_s2_gentle', 2], ['msg_s3', 3], ['msg_s4', 4], ['msg_s6_mood', 6], ['msg_s8_gentle', 8], ['msg_s10', 10], ['msg_s11', 11], ['msg_s14_dec', 14]]);
+    expect(step(user(w, 'p3'))).toEqual([['msg_s2_slim', 2], ['msg_s3', 3], ['msg_s4', 4], ['msg_s5', 5], ['msg_s6_default', 6], ['msg_s8_slim', 8], ['msg_s10', 10], ['msg_s11_booked', 11]]);
+    expect(got('msg_s5')).toEqual(['p3']);
+    // 予約したあとは、6日後・14日後の案内と、予約ボタンつきのQ&Aを送らない
+    for (const id of ['p1', 'p3', 'p4', 'p6', 'p7']) {
+      const u = user(w, id);
+      const bookedAt = u.cvs['cv_rsv']!.at;
+      expect(u.deliveries.filter((d) => d.at > bookedAt && /^msg_(s6_|s14_|s11$)/.test(d.messageId))).toEqual([]);
+    }
+    // 送らなかった理由（分岐の判定）が残る：目的がダイエットではない／予約ずみ
+    const why = (id: string, ref: string) => w.decisions.some((x) => x.userId === id && x.kind === 'branch' && x.outcome === 'taken' && x.ref === ref);
+    expect([why('p2', 'c_s5_other'), why('p3', 'c_s14_rsv'), why('p4', 'c_s6_rsv')]).toEqual([true, true, true]);
+  });
+
+  it('CV①（LINE予約）：確認画面のあとの確定で1回だけ。日時・店舗・プランが確認の文面・②のタグ・③の時系列まで同じ。「LINEに戻る」で確認が届いている', () => {
+    const form = p.webPages.find((x) => x.id === 'page_rsv')!.form!;
+    expect([form.confirm?.submitLabel, form.fields.map((f) => f.label)]).toEqual(['この内容で予約する', ['お手続き', '無料体験／見学', '希望店舗', '希望日時（空き枠）', '希望プラン', 'お名前（デモ用の架空のお名前）', '連絡方法']]);
+    const u = user(w, 'p1');
+    expect(u.cvs['cv_rsv']).toEqual({ at: at(0, 12, 23), count: 1 });
+    const ok = bot(u).find((t) => t.startsWith('【ご予約を受け付けました】'))!;
+    for (const s of ['種別：無料体験', `日時：${slot(1)}`, '店舗：○○フィットネス △△店', '希望プラン：いつでも通えるプラン', '持ち物', '当日の流れ', '見学だけでも大丈夫', '変更・キャンセル', 'デモ用の通知']) expect(ok).toContain(s);
+    expect(tags('p1')).toEqual(expect.arrayContaining(['rsv_s1', 'rsv_store_a', 'rsv_t_trial', 'rsv_via_line']));
+    expect(JSON.stringify(buildTimeline(p, new Labels(p), w, ['p1']))).toContain(slot(1));
+    // 予約だけでは来店・入会にならない。LINEに戻ると確認が届いている
+    let d = book(visitor(['now', 'muscle', 'past', 'w2']), 5);
+    expect([me(p, d).surface, 'visited' in me(p, d).tags, 'enrolled' in me(p, d).tags, me(p, d).cvs['cv_visit']]).toEqual([{ kind: 'page', pageId: 'page_rsv_done' }, false, false, undefined]);
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_rsv_done', blockIndex: 2 });
+    expect([me(p, d).surface, me(p, d).deliveries.at(-1)!.messageId]).toEqual([{ kind: 'talk' }, 'msg_rsv_ok']);
+  });
+
+  it('Web予約（入口C）：CV①は経路Webで1回。LINEに来た時点で予約ずみとして扱い、予約内容をあいさつで確認・前日の案内も届く', () => {
+    const u = user(w, 'p4');
+    expect([u.cvs['cv_rsv'], tags('p4').includes('rsv_via_web'), tags('p4').includes('rsv_via_line')]).toEqual([{ at: at(3, 22, 4), count: 1 }, true, false]);
+    for (const s of ['Webからのご予約', '種別：施設見学', `日時：${slot(2)}`, '店舗：○○フィットネス □□店']) expect(bot(u)[0]).toContain(s);
+    expect(remind('p4')).toEqual([['msg_rsv_1d', at(6, 18)], ['msg_rsv_2h', at(7, 17)], ['msg_rsv_thanks', at(8, 12)]]);
+    expect(u.deliveries.filter((d) => /^msg_(s6_|s14_|s11$)/.test(d.messageId))).toEqual([]);
+  });
+
+  it('予約後の案内：直後・前日18:00・当日2時間前・翌日12:00。予約していない人には送らない。直前の予約で、過ぎた時刻の案内はあとから送らない', () => {
+    expect(remind('p1')).toEqual([['msg_rsv_ok', at(0, 12, 23)], ['msg_rsv_1d', at(3, 18)], ['msg_rsv_2h', at(4, 8)], ['msg_rsv_thanks', at(5, 12)]]);
+    expect([remind('p2'), remind('p5')]).toEqual([[], []]);
+    expect(bot(user(w, 'p1')).find((x) => x.startsWith('【明日'))).toContain(`【明日 ${slot(1)}】無料体験のご確認です`);
+    // 六郎：前日18:00を過ぎてから翌朝の枠を予約 → 前日の案内は送らず、当日から
+    expect(remind('p6')).toEqual([['msg_rsv_ok', at(34, 21, 33)], ['msg_rsv_2h', at(35, 8)], ['msg_rsv_missed', at(36, 12)]]);
+    let d = seek(visitor(['now', 'muscle', 'past', 'w2']), at(3, 20));
+    d = seek(book(d, 1), at(5, 13));
+    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => x.messageId)).toEqual(['msg_rsv_ok', 'msg_rsv_2h', 'msg_rsv_missed']);
+    // 7人のどの案内も、予約した日時の前日18:00・2時間前ちょうどにだけ届く（後追いで届かない）
+    let n = 0;
+    for (const u of Object.values(w.users))
+      for (const t of u.talk) {
+        if (t.side !== 'bot' || !('text' in t.bubble)) continue;
+        const day = /^【明日 (.+?〜)】/.exec(t.bubble.text);
+        const now = /^本日 (.+?〜)、/.exec(t.bubble.text);
+        if (day) expect(t.at).toBe(at(Math.floor(startOf(day[1]!) / DAY) - 1, 18));
+        if (now) expect(t.at).toBe(startOf(now[1]!) - 120);
+        if (day || now) n++;
+      }
+    expect(n).toBe(8);
+  });
+
+  it('日程変更で前の日時の案内は止まり、キャンセルで予約者向けの案内が止まる。CV①は増えない。ブロック後は何も届かない', () => {
+    expect(remind('p7')).toEqual([['msg_rsv_ok', at(17, 19, 6)], ['msg_rsv_chg', at(19, 12, 3)], ['msg_rsv_1d', at(25, 18)]]);
+    const u = user(w, 'p7');
+    expect(bot(u).find((x) => x.startsWith('【日程を変更しました】'))).toContain(`新しい日時：${slot(7)}`);
+    expect(u.cvs['cv_rsv']!.count).toBe(1);
+    expect(tags('p7').filter((t) => /^rsv_(booked|s\d)$/.test(t))).toEqual([]);
+    expect(['rsv_changed', 'rsv_cancel'].every((t) => tags('p7').includes(t))).toBe(true);
+    const blockedAt = u.behaviors.find((b) => b.type === 'block')!.at;
+    expect(u.deliveries.filter((x) => x.at > blockedAt)).toEqual([]);
+    // ブロックで止まったシナリオ（入会前の配信・1月の企画など）は、②に「停止」として残る
+    expect(w.decisions.filter((x) => x.userId === 'p7' && x.kind === 'stopWhen' && x.at === blockedAt).map((x) => x.flowId).sort()).toEqual(['flow_bc_jan', 'flow_cal', 'flow_step']);
+  });
+
+  it('CV②（来店）は店舗が確認して登録したときだけ。予約の日時を過ぎても来店にしない。翌日は来店した人にお礼、来ていない人に前提にしない文面', () => {
+    expect(['p1', 'p3', 'p4'].map((id) => user(w, id).cvs['cv_visit']!.at)).toEqual([at(4, 11, 30), at(11, 15, 30), at(7, 20, 30)]);
+    expect([user(w, 'p6').cvs['cv_visit'], tags('p6').includes('visited'), tags('p6').includes('rsv_past')]).toEqual([undefined, false, true]);
+    expect([got('msg_rsv_thanks'), got('msg_rsv_missed'), got('msg_compare')]).toEqual([['p1', 'p3', 'p4'], ['p6'], ['p3', 'p4']]);
+    const d = seek(book(visitor(['now', 'muscle', 'past', 'w2']), 1), at(6));
+    expect([me(p, d).cvs['cv_visit'], 'visited' in me(p, d).tags]).toEqual([undefined, false]);
+  });
+
+  it('入会は店舗の登録だけ。入会で入会前の配信が止まり、メニュー③・入会日から1・5・7・14日後の配信に切り替わる', () => {
+    expect(Object.values(w.users).filter((x) => 'enrolled' in x.tags).map((x) => x.id)).toEqual(['p1', 'p5']);
+    for (const id of ['p1', 'p5']) {
+      const u = user(w, id);
+      const enrolledAt = u.cvs['st_enroll']!.at;
+      expect(u.deliveries.filter((d) => d.at > enrolledAt && /^msg_(s\d|jan$|wk\d$)/.test(d.messageId))).toEqual([]);
+      expect(u.deliveries.filter((d) => d.flowId === 'flow_member').map((d) => [d.messageId, Math.floor(d.at / DAY) - Math.floor(enrolledAt / DAY)])).toEqual([['msg_m1', 1], ['msg_m5', 5], ['msg_m7', 7], ['msg_m14', 14]]);
+      expect(tags(id)).toContain('member_step_done');
+    }
+    expect(bot(user(w, 'p1')).find((t) => t.startsWith('【1週目】'))).toContain('個人差があり、効果を約束するものではありません');
+    // ボタンや言葉では入会は成立しない（入会の自動応答も「店舗で」）
+    const d = dispatch(visitor(null), { type: 'sendText', text: '入会したい' });
+    expect([me(p, d).deliveries.at(-1)!.messageId, 'enrolled' in me(p, d).tags]).toEqual(['msg_ar_join', false]);
+  });
+
+  it('CV③：PT申込（詳細を見ただけでは記録しない）・物販申込・友だち紹介（送っただけでは記録しない・店舗が確認）。GOALはCV③', () => {
+    const u1 = user(w, 'p1');
+    expect(u1.cvs['cv3_pt']).toEqual({ at: at(11, 19, 13), count: 1 });
+    expect(u1.behaviors.some((b) => b.type === 'visitPage' && b.detail['pageId'] === 'page_pt_info' && b.at < at(11, 19, 13))).toBe(true);
+    expect([user(w, 'p5').cvs['cv3_goods']!.at, user(w, 'p5').cvs['cv3_ref']!.at]).toEqual([at(2, 19, 33), at(17, 19, 30)]);
+    // 紹介された七郎さんの友だち追加（19:01）のあとに、店舗が紹介の成立を登録
+    expect(user(w, 'p7').friendAddedAt).toBeLessThan(user(w, 'p5').cvs['cv3_ref']!.at);
+    let d = dispatch(dispatch(visitor(null), { type: 'cv', cvId: 'st_enroll' }), { type: 'tapMenu', richMenuId: 'rm_t3', cellId: 'cell_ref' });
+    d = dispatch(dispatch(d, { type: 'tapButton', buttonId: 'btn_ref_send' }), { type: 'visitPage', pageId: 'page_pt_info' });
+    expect(['cv3_ref', 'cv3_pt', 'cv3_goods'].map((c) => me(p, d).cvs[c])).toEqual([undefined, undefined, undefined]);
+    expect('ref_shared' in me(p, d).tags).toBe(true);
+    expect(journeyOf(p, w, u1).find((r) => r.isGoal)!.step.id).toBe('j_cv3');
+    expect(journeyOf(p, w, user(w, 'p5')).find((r) => r.step.id === 'j_cv3')!.status).not.toBe('todo');
+  });
+
+  it('季節の企画：10〜12月に友だちになった人へ1月1日に新年の無料体験（会員・予約中・来店ずみ・その他で出し分け）。特典の期限は配信した月の月末', () => {
+    expect(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'].map((id) => user(w, id).deliveries.find((d) => d.flowId === 'flow_bc_jan')?.messageId)).toEqual(['msg_jan_member', 'msg_jan', 'msg_jan_visited', 'msg_jan_visited', 'msg_jan_member', 'msg_jan', undefined]);
+    expect([step(user(w, 'p2')).at(-1)![0], step(user(w, 'p6')).at(-1)![0]]).toEqual(['msg_s14_dec', 'msg_s14_jan']);
+    for (const u of Object.values(w.users))
+      for (const t of u.talk) {
+        if (t.side !== 'bot' || !('text' in t.bubble)) continue;
+        if (t.bubble.text.includes('12月31日（木）まで')) expect(t.at).toBeLessThan(at(31));
+        if (t.bubble.text.includes('1月31日（日）まで')) expect(t.at).toBeGreaterThanOrEqual(at(31));
+      }
+    // 月4回の定期配信（金曜）。会員には会員向けの中身
+    expect(user(w, 'p2').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1', 'msg_wk2', 'msg_wk3', 'msg_wk4']);
+    expect(user(w, 'p5').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1_member', 'msg_wk2_member', 'msg_wk3_member', 'msg_wk4_member']);
+  });
+
+  it('自動応答（10のキーワード）と有人対応：よくある質問は自動、相談・契約・手続きは店舗スタッフ（②に「有人対応中」）', () => {
+    for (const k of ['料金', '無料体験', '見学', '入会', '解約', '持ち物', '設備', '混雑', '営業時間', 'パーソナルトレーニング']) {
+      const u = me(p, dispatch(visitor(null), { type: 'sendText', text: k }));
+      expect([u.deliveries.at(-1)!.flowId, bot(u).at(-1)!.startsWith('（自動応答）')]).toEqual([null, true]);
+    }
+    expect(user(w, 'p6').deliveries.find((d) => d.messageId === 'msg_ar_quit')!.flowId).toBeNull();
+    expect(['p3', 'p5'].every((id) => tags(id).includes('human_chat'))).toBe(true);
+    expect(tags('p6')).not.toContain('human_chat');
+    expect(bot(user(w, 'p3')).join('\n')).toContain('（有人対応に切り替え）');
+  });
+
+  it('7人の状態は独立し、戻るとタグ・CV・予約・メニュー・届いた文面もその時点に戻る', () => {
+    expect(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'].map((id) => user(w, id).personName)).toEqual(['佐藤一郎', '佐藤二郎', '佐藤三郎', '佐藤四郎', '佐藤五郎', '佐藤六郎', '佐藤七郎']);
+    expect(tags('p2').filter((t) => t.startsWith('rsv_'))).toEqual([]);
+    let d = seek(allScripted(p), at(8));
+    const id = d.session.users.find((u) => u.personaId === 'p1')!.id;
+    expect([worldOf(p, d).users[id]!.cvs['st_enroll'], worldOf(p, d).users[id]!.richMenuId]).toEqual([{ at: at(6, 19), count: 1 }, 'rm_t3']);
+    d = seek(d, at(0, 12, 22));
+    const before = worldOf(p, d).users[id]!;
+    expect([before.cvs['cv_rsv'], 'rsv_booked' in before.tags, 'bt_muscle' in before.tags, before.richMenuId, before.deliveries.some((x) => x.messageId === 'msg_rsv_ok')]).toEqual([undefined, false, true, 'rm_t1', false]);
+  });
+
+  it('資料用16:9の③：LINE追加→診断→体験予約→来店→入会→入会後フォロー→CV③を、この順にいつも出す', () => {
+    const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
+    expect(keys).toEqual(['LINE友だち追加', '30秒 体づくりタイプ診断', '無料体験・見学の予約（CV①）', '来店・体験（CV②・店舗が確認）', '入会（店舗が登録）', '入会後14日間のステップ配信', '継続・紹介・PT／物販の申込（CV③）']);
+    for (const [pid, when] of [['p1', at(0, 12, 12)], ['p1', at(12)], ['p3', at(9)], ['p5', at(20)], ['p6', at(36)], ['p7', at(30)]] as const) {
+      let d = seek(allScripted(p), when);
+      d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === pid)!.id };
+      const v = { project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'slide3', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' } as never;
+      const html = journeyPane(v, me(p, d), true);
+      const from = html.indexOf('<ol class="lsp-strip');
+      const strip = html.slice(from, html.indexOf('</ol>', from));
+      const names = [...strip.matchAll(/<li class="([^"]*)">(.*?)<\/li>/g)].map((m) => m[2]!.replace(/<[^>]+>/g, ''));
+      const found = keys.map((k) => names.findIndex((x) => x.includes(k)));
+      expect(found.every((i) => i >= 0)).toBe(true);
+      expect([...found].sort((a, b) => a - b)).toEqual(found);
+    }
+  });
+
+  it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
+    const d = playToEnd(p);
+    expect(d.now).toBe(37 * DAY);
+    const ww = worldOf(p, d);
+    for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
+    await exportChecks(p);
+  }, 30_000);
+});
