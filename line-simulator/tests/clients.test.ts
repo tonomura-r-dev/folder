@@ -918,8 +918,9 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
     ['q_grade', 'q_worry', 'q_type', 'q_when'].forEach((q, i) => (d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [`c_${q.slice(2)}_${ans[i]}`] })));
     return d;
   };
-  const book = (d: Demo, n: number, pageId = 'page_rsv') =>
-    dispatch(d, { type: 'submitForm', pageId, values: { f_kind: pageId === 'page_rsv' ? '新しく予約' : '予約し直し', f_type: '無料体験授業', f_grade: '中1・2', f_course: '集団指導', f_slot: slot(n), f_room: '○○塾 △△教室', f_people: '1名' } });
+  const book = (d: Demo, n: number, pageId = 'page_rsv', type = '無料体験授業') => dispatch(d, { type: 'submitForm', pageId, values: { f_type: type, f_grade: '中1・2', f_slot: slot(n), f_people: '1名' } });
+  /** 予約の完了画面から、LINEのトークに戻る */
+  const backToTalk = (d: Demo) => dispatch(d, { type: 'tapPageButton', pageId: 'page_rsv_done', blockIndex: 2 });
 
   it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
     expect(validate(p)).toEqual([]);
@@ -985,7 +986,7 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
     expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_doc_req' });
     expect(me(p, d).cvs['cv_doc']).toBeUndefined();
     expect(p.webPages.find((x) => x.id === 'page_doc_req')!.form!.confirm).toBeDefined();
-    d = dispatch(d, { type: 'submitForm', pageId: 'page_doc_req', values: { f_doc_grade: '中1・2', f_doc_style: '集団指導', f_doc_room: '○○塾 △△教室' } });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_doc_req', values: { f_doc_grade: '中1・2', f_doc_style: '集団指導' } });
     const u = me(p, d);
     expect([u.cvs['cv_doc']!.count, 'doc_req' in u.tags]).toEqual([1, true]);
     expect(bot(u).at(-1)).toContain('おすすめの指導形式（診断より・参考）：集団指導');
@@ -997,38 +998,54 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
     expect(doc).not.toMatch(/[0-9０-９][0-9,０-９]*円/);
   });
 
-  it('14日間の配信：3・5・7・10・14日後。悩み・資料請求・性格で出し分け、予約した人と「情報収集だけ」の人には予約の案内を送らない', () => {
+  it('14日間の配信：3・5・7・10・14日後。悩み・資料請求・性格で出し分ける。予約中・来塾ずみの人には送らず、「情報収集だけ」の人には予約の案内を入れない', () => {
     // 友だち追加の日から何日後か（暦の日で数える）
     const step = (id: string) => user(w, id).deliveries.filter((d) => d.flowId === 'flow_step').map((d) => [d.messageId, Math.floor(d.at / DAY) - Math.floor(user(w, id).friendAddedAt! / DAY)]);
     expect(step('p1')).toEqual([['msg_s3_down', 3], ['msg_s5_have', 5], ['msg_s7_compete', 7]]);
     expect(step('p2')).toEqual([['msg_s3_motivation', 3], ['msg_s5_ask', 5], ['msg_s7_info', 7], ['msg_s10_info', 10], ['msg_s14_info', 14]]);
     expect(step('p3')).toEqual([['msg_s3_down', 3], ['msg_s5_have', 5], ['msg_s7_mypace', 7], ['msg_s10_faq', 10], ['msg_s14', 14]]);
-    expect(step('p6').map((x) => x[0])).toEqual(['msg_s3_exam', 'msg_s5_have']);
-    expect(step('p7').map((x) => x[0])).toEqual(['msg_s3_behind', 'msg_s5_have']);
+    // 予約のあとは声がけを減らす：14日間の残りは届かない
+    expect([step('p5'), step('p6'), step('p7')]).toEqual([[], [], []]);
+    // キャンセルすると、残りの配信に戻る
+    expect(step('p4').map((x) => x[0])).toEqual(['msg_s1_nodiag', 'msg_s10_faq', 'msg_s14']);
     // 情報収集だけの人に、配信（ステップ・週1回・企画）で体験予約のボタンを送らない
     const toTrial = new Set(p.messages.filter((m) => m.bubbles.some((b) => bubbleButtons(b).some((x) => x.action.kind === 'startFlow' && x.action.flowId === 'flow_rsv_open'))).map((m) => m.id));
     expect(user(w, 'p2').deliveries.filter((d) => /^flow_(step|weekly|bc_)/.test(d.flowId ?? '') && toTrial.has(d.messageId))).toEqual([]);
-    // 予約した人には、予約前向けの10日後・14日後の案内を送らない
-    for (const id of ['p1', 'p5', 'p6', 'p7']) expect(ids(w, id).filter((m) => ['msg_s10_faq', 'msg_s14'].includes(m))).toEqual([]);
+    // 送らなかった理由（分岐の判定）が②に残る
+    expect(w.decisions.some((x) => x.userId === 'p7' && x.kind === 'branch' && x.outcome === 'taken' && x.ref === 'c_s3_rsv')).toBe(true);
   });
 
-  it('CV②：確認画面のあとの確定で1回だけ。選んだ日時・教室・種別・人数が、確認の文面・②のタグ・③の時系列まで同じ', () => {
-    expect(p.webPages.find((x) => x.id === 'page_rsv')!.form!.confirm?.submitLabel).toBe('この内容で予約する');
+  it('CV②：確認画面のあとの確定で1回だけ。お手続き・日時・人数が、確認の文面・②のタグ・③の時系列まで同じ。当日の流れはLINEの文面に書く', () => {
+    const page = p.webPages.find((x) => x.id === 'page_rsv')!;
+    expect([page.form!.confirm?.submitLabel, page.form!.fields.map((f) => f.label), page.form!.fields[0]!.options]).toEqual(['この内容で予約する', ['お手続き', '学年', '希望日時（空き枠）', '人数'], ['無料体験授業', '教室見学', '入会説明']]);
+    expect(page.blocks[0]).toMatchObject({ kind: 'heading', text: '○○塾 △△教室を予約' });
+    expect(p.webPages.some((x) => x.id === 'page_dayflow')).toBe(false);
     const u = user(w, 'p1');
     expect(u.cvs['cv_trial']).toEqual({ at: at(7, 20, 13), count: 1 });
     const ok = bot(u).find((t) => t.startsWith('【ご予約を受け付けました】'))!;
-    for (const s of ['種別：無料体験授業', `日時：${slot(3)}`, '教室：○○塾 △△教室', '学年：中1・2', '人数：1名']) expect(ok).toContain(s);
+    for (const s of ['お手続き：無料体験授業', `日時：${slot(3)}`, '教室：○○塾 △△教室', '学年：中1・2', '人数：1名', '▼ 当日の流れ\n① 受付で', '④ 保護者さまと']) expect(ok).toContain(s);
     expect(p.tags.find((t) => t.id === 'rsv_s3')!.label).toBe(`予約日時：${slot(3)}`);
     expect(tags('p1')).toContain('rsv_s3');
     expect(JSON.stringify(buildTimeline(p, new Labels(p), w, ['p1']))).toContain(slot(3));
     expect(bot(user(w, 'p5')).find((t) => t.startsWith('【ご予約を受け付けました】'))).toContain('人数：2名（お友だちと一緒）');
     // 資料請求をせずに、診断結果から直接予約もできる
     expect([user(w, 'p7').cvs['cv_doc'], user(w, 'p7').cvs['cv_trial']!.count]).toEqual([undefined, 1]);
+    // メニュー「体験当日の流れ」も、ページを開かずトークに文面で届く
+    expect(ids(w, 'p5')).toContain('msg_dayflow');
   });
 
-  it('予約後の案内（資料P48）：直後・2日前18:00・前日18:00・当日2時間前・翌日12:00。予約していない人には送らない', () => {
-    expect(remind('p1')).toEqual([['msg_rsv_ok', at(7, 20, 13)], ['msg_rsv_2d', at(10, 18)], ['msg_rsv_1d', at(11, 18)], ['msg_rsv_2h', at(12, 8)], ['msg_rsv_thanks', at(13, 12)]]);
-    expect(remind('p7')).toEqual([['msg_rsv_ok', at(1, 13, 15)], ['msg_rsv_2d', at(6, 18)], ['msg_rsv_1d', at(7, 18)], ['msg_rsv_2h', at(8, 15)], ['msg_rsv_thanks', at(9, 12)]]);
+  it('入会説明の予約もCV②で1回。確認は入会説明の当日の流れ。入会は教室の登録だけ。再予約は同じ画面で、裏側でタグを付ける', () => {
+    const u = me(p, backToTalk(book(parent(null), 3, 'page_rsv', '入会説明')));
+    expect([u.cvs['cv_trial']?.count, 'rsv_t_enroll' in u.tags, 'enrolled' in u.tags, u.deliveries.at(-1)!.messageId]).toEqual([1, true, false, 'msg_rsv_ok_enroll']);
+    expect(bot(u).at(-1)).toContain('③ コース・料金・講習費のご説明');
+    const [a, b] = [p.webPages.find((x) => x.id === 'page_rsv')!, p.webPages.find((x) => x.id === 'page_rsv_re')!];
+    expect([b.title, b.blocks, b.form!.fields]).toEqual([a.title, a.blocks, a.form!.fields]);
+  });
+
+  it('予約後の案内：直後・前日18:00・翌日12:00（2日前・当日の案内はない）。予約していない人には送らない', () => {
+    expect(remind('p1')).toEqual([['msg_rsv_ok', at(7, 20, 13)], ['msg_rsv_1d', at(11, 18)], ['msg_rsv_thanks', at(13, 12)]]);
+    expect(remind('p7')).toEqual([['msg_rsv_ok', at(1, 13, 15)], ['msg_rsv_1d', at(7, 18)], ['msg_rsv_thanks', at(9, 12)]]);
+    expect(p.messages.filter((m) => ['msg_rsv_2d', 'msg_rsv_2h'].includes(m.id))).toEqual([]);
     expect(remind('p2')).toEqual([]);
     const t = bot(user(w, 'p1')).find((x) => x.startsWith('【明日'))!;
     expect(t).toContain(`【明日 ${slot(3)}】無料体験授業のご確認です`);
@@ -1036,7 +1053,7 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
   });
 
   it('日程変更で前の日時の案内は止まり、キャンセルで予約者向けの案内が止まる。CV②は増えない', () => {
-    expect(remind('p4')).toEqual([['msg_rsv_ok', at(2, 20, 33)], ['msg_rsv_chg', at(3, 12, 3)], ['msg_rsv_2d', at(10, 18)]]);
+    expect(remind('p4')).toEqual([['msg_rsv_ok', at(2, 20, 33)], ['msg_rsv_chg', at(3, 12, 3)], ['msg_rsv_1d', at(11, 18)]]);
     const u = user(w, 'p4');
     expect(bot(u).find((x) => x.startsWith('【日程を変更しました】'))).toContain(`新しい日時：${slot(3)}`);
     expect(ids(w, 'p4')).toContain('msg_cancel_done');
@@ -1045,26 +1062,57 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
     expect(['rsv_changed', 'rsv_cancel'].every((t) => t in u.tags)).toBe(true);
   });
 
-  it('当日までが短い予約：過ぎた時刻の案内（2日前・前日）はあとから送らない。来塾の登録が無ければ翌日は参加を前提にしない', () => {
+  it('当日までが短い予約：過ぎた時刻の案内（前日）はあとから送らない。来塾の登録が無ければ翌日は参加を前提にしない', () => {
     let d = seek(parent(['m12', 'down', 'compete', 'term']), at(4, 19));
     d = book(d, 1);
     const bookedAt = me(p, d).cvs['cv_trial']!.at;
     d = seek(d, at(6, 13));
-    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => [x.messageId, x.at])).toEqual([['msg_rsv_ok', bookedAt], ['msg_rsv_2h', at(5, 12)], ['msg_rsv_missed', at(6, 12)]]);
+    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => [x.messageId, x.at])).toEqual([['msg_rsv_ok', bookedAt], ['msg_rsv_missed', at(6, 12)]]);
     const got = (m: string) => Object.values(w.users).filter((u) => u.deliveries.some((x) => x.messageId === m)).map((u) => u.id).sort();
     expect(got('msg_rsv_thanks')).toEqual(['p1', 'p5', 'p6', 'p7']);
     expect(got('msg_rsv_missed')).toEqual(['p3']);
     for (const u of Object.values(w.users)) for (const x of u.deliveries.filter((y) => y.messageId === 'msg_rsv_thanks')) expect(u.behaviors.some((b) => b.type === 'cv' && b.detail['cvId'] === 'st_visit' && b.at < x.at)).toBe(true);
   });
 
-  it('予約し直し（キャンセルのあと）でも CV② は重ねない。ブロックした人には何も届かない', () => {
+  it('日時を過ぎて来塾のタグが無いと、②の先頭に教室の操作（来塾タグ・来塾なし）を出す。押すまで来塾後には進まず、14日間の配信も止めたまま', () => {
+    const view = (d: Demo) => ({ project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' }) as never;
+    const html = (d: Demo) => backstage(view(d), me(p, d));
+    const booked = backToTalk(book(parent(['m12', 'down', 'compete', 'term']), 1));
+    expect(html(seek(booked, at(5, 13)))).not.toContain('lsp-ask');
+    const past = seek(booked, at(5, 17));
+    expect(['lsp-ask', '来塾タグを付ける（教室が登録）', 'data-cv="st_noshow"'].every((x) => html(past).includes(x))).toBe(true);
+    expect(guideOf(view(past), me(p, past)).text).toContain('②の「来塾タグを付ける（教室が登録）」');
+    const came = dispatch(past, { type: 'cv', cvId: 'st_visit' });
+    expect([html(came).includes('lsp-ask'), 'visited' in me(p, came).tags]).toEqual([false, true]);
+    const none = dispatch(past, { type: 'cv', cvId: 'st_noshow' });
+    expect([html(none).includes('lsp-ask'), 'no_show' in me(p, none).tags, 'visited' in me(p, none).tags, html(none).includes('data-cv="st_noshow"')]).toEqual([false, true, false, false]);
+    expect(me(p, seek(none, at(6, 13))).deliveries.at(-1)!.messageId).toBe('msg_rsv_missed');
+    expect(tags('p3')).toContain('no_show');
+    const rest = (d: Demo) => me(p, seek(d, at(8))).deliveries.filter((x) => x.flowId === 'flow_step').map((x) => x.messageId);
+    expect([rest(past), rest(came), rest(none)]).toEqual([[], [], ['msg_s5_ask', 'msg_s7_compete']]);
+  });
+
+  it('来塾ずみの人に体験の予約を案内しない。予約中の人に企画配信を送らない。比較をすすめる文面は書かない', () => {
+    const toRsv = (m: string) => (p.messages.find((x) => x.id === m)?.bubbles ?? []).flatMap((b) => bubbleButtons(b)).filter((b) => b.action.kind === 'startFlow' && b.action.flowId === 'flow_rsv_open');
+    for (const id of ['p1', 'p5', 'p6']) {
+      const u = user(w, id);
+      const came = u.cvs['st_visit']!.at;
+      expect(u.deliveries.filter((d) => d.at > came && d.flowId !== null).flatMap((d) => toRsv(d.messageId))).toEqual([]);
+    }
+    // 三郎は期末テストの企画（11/26）の時点で予約中
+    expect(ids(w, 'p3').filter((m) => m.startsWith('msg_bc_test'))).toEqual([]);
+    const all = p.messages.flatMap((m) => m.bubbles.flatMap((b) => (b.kind === 'text' || b.kind === 'buttons' ? [b.text] : [])));
+    expect(all.filter((x) => /比べて決め|ほかの塾と比べ|他塾と比べ/.test(x))).toEqual([]);
+  });
+
+  it('再予約（キャンセルのあと）でも CV② は重ねない。ブロックした人には何も届かない', () => {
     let d = book(parent(['m12', 'down', 'compete', 'term']), 3);
     d = dispatch(d, { type: 'tapButton', buttonId: 'btn_cancel_yes' });
     d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_first', cellId: 'cell_rsv' });
     expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_rsv_re' });
     d = book(d, 4, 'page_rsv_re');
     const u = me(p, d);
-    expect([u.cvs['cv_trial']!.count, 'rsv_booked' in u.tags, 'rsv_s4' in u.tags, 'rsv_s3' in u.tags, u.richMenuId]).toEqual([1, true, true, false, 'rm_reserved']);
+    expect([u.cvs['cv_trial']!.count, 'rsv_booked' in u.tags, 'rsv_s4' in u.tags, 'rsv_s3' in u.tags, 'rsv_again' in u.tags, u.richMenuId]).toEqual([1, true, true, false, true, 'rm_reserved']);
     d = dispatch(d, { type: 'block' });
     const blockedAt = d.now;
     d = seek(d, at(28));
@@ -1082,7 +1130,7 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
 
   it('季節の企画配信：入会ずみ／体験ずみ・未入会／受験学年／情報収集／その他 を分ける。週1回の配信は14日間を終えて予約していない人だけ', () => {
     expect(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'].map((id) => ids(w, id).find((m) => m.startsWith('msg_bc_w_')))).toEqual(['msg_bc_w_visited', 'msg_bc_w_info', 'msg_bc_w_exam', 'msg_bc_w_all', 'msg_bc_w_visited', 'msg_bc_w_visited', 'msg_bc_w_member']);
-    expect(Object.values(w.users).filter((u) => u.deliveries.some((d) => d.flowId === 'flow_weekly')).map((u) => u.id).sort()).toEqual(['p2', 'p4']);
+    expect(Object.values(w.users).filter((u) => u.deliveries.some((d) => d.flowId === 'flow_weekly')).map((u) => u.id).sort()).toEqual(['p2', 'p3', 'p4']);
   });
 
   it('友だち紹介：紹介した人には「送った」記録だけ（相手の追加・予約にはしない）。紹介から来た人は経路が残り、2名で予約', () => {
@@ -1110,7 +1158,7 @@ describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界�
 
   it('資料用16:9の③：LINE追加→診断→資料請求→ステップ配信→体験予約→予約後の案内→来塾を、この順に出す', () => {
     const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
-    expect(keys).toEqual(['LINE友だち追加', '30秒ぴったり診断（4問）', '資料請求（CV①）', '14日間のステップ配信', '無料体験・教室見学の予約（CV②）', '予約後の案内（直後・2日前・前日・当日）', '体験来塾（教室が登録）']);
+    expect(keys).toEqual(['LINE友だち追加', '30秒ぴったり診断（4問）', '資料請求（CV①）', '14日間のステップ配信', '来塾の予約（CV②）', '予約後の案内（直後・前日）', '体験来塾（教室が登録）']);
     for (const [pid, when] of [['p1', at(0, 10, 9)], ['p3', at(16)], ['p7', at(10)]] as const) {
       let d = seek(allScripted(p), when);
       d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === pid)!.id };
