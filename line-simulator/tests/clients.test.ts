@@ -900,3 +900,235 @@ describe.skipIf(!has('client-d-event'))('企業別デモ④（イベント運営
     await exportChecks(p);
   }, 30_000);
 });
+
+describe.skipIf(!has('client-e-juku'))('企業別デモ⑤（学習塾・業界汎用：診断→資料請求→14日間→体験予約）', () => {
+  const p = has('client-e-juku') ? loadProject('client-e-juku') : (null as unknown as Project);
+  const w = has('client-e-juku') ? run(p, 29 * DAY) : (null as unknown as WorldState);
+  const tags = (id: string) => Object.keys(user(w, id).tags);
+  const slot = (n: number) => p.webPages.find((x) => x.id === 'page_rsv')!.form!.fields.find((f) => f.id === 'f_slot')!.options![n - 1]!;
+  const SLOT_TAGS = (p ? p.tags : []).filter((t) => /^rsv_s\d+$/.test(t.id)).map((t) => t.id);
+  const bot = (u: UserState) => u.talk.flatMap((t) => (t.side === 'bot' && (t.bubble.kind === 'text' || t.bubble.kind === 'buttons') ? [t.bubble.text] : []));
+  const remind = (id: string) => user(w, id).deliveries.filter((d) => d.flowId === 'flow_rsv_remind').map((d) => [d.messageId, d.at] as const);
+  /** 手で操作する保護者：ポップアップから友だち追加して、4問に答える（null なら答えない） */
+  const parent = (ans: [string, string, string, string] | null) => {
+    let d = dispatch(newDemo(p, 'p1'), { type: 'addFriend', routeId: 'route_popup' });
+    if (!ans) return d;
+    d = dispatch(d, { type: 'tapButton', buttonId: 'btn_w_popup_diag' });
+    ['q_grade', 'q_worry', 'q_type', 'q_when'].forEach((q, i) => (d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [`c_${q.slice(2)}_${ans[i]}`] })));
+    return d;
+  };
+  const book = (d: Demo, n: number, pageId = 'page_rsv') =>
+    dispatch(d, { type: 'submitForm', pageId, values: { f_kind: pageId === 'page_rsv' ? '新しく予約' : '予約し直し', f_type: '無料体験授業', f_grade: '中1・2', f_course: '集団指導', f_slot: slot(n), f_room: '○○塾 △△教室', f_people: '1名' } });
+
+  it('検証で重大エラー・警告が無く、全シナリオに誰かが入る', () => {
+    expect(validate(p)).toEqual([]);
+    expect(personaCoverage(p)).toEqual([]);
+  });
+
+  it('全ボタン・メニュー・ページのボタンが反応する。リッチメニューは資料P46どおり2タブ×6マスで、右下は予約／日程の確認・変更', () => {
+    expect(deadButtons(p, 'p1', 'route_popup')).toEqual([]);
+    const [first, reserved] = p.richMenus;
+    const body = (m: (typeof p.richMenus)[number]) => m.cells.filter((c) => c.area.row > 0).map((c) => c.label);
+    expect(body(first!)).toEqual(['30秒ぴったり診断', 'コース・料金', '教室・講師紹介', '資料を受け取る', '友だちと一緒に体験', '無料体験・教室見学の予約']);
+    expect(body(reserved!)).toEqual(['体験当日の流れ', 'アクセス・持ち物', '担当講師の紹介', '保護者の声', 'LINEで質問', '日程の確認・変更']);
+    const br = (m: (typeof p.richMenus)[number]) => m.cells.find((c) => c.area.row === 2 && c.area.col === 4)!;
+    expect([br(first!).label, br(first!).emphasis, br(reserved!).label, br(reserved!).emphasis]).toEqual(['無料体験・教室見学の予約', true, '日程の確認・変更', true]);
+    // 予約すると「体験予約済みの方」、キャンセル・体験の日時が過ぎると「はじめての方」へ
+    expect(user(w, 'p4').richMenuId).toBe('rm_first');
+    expect(me(p, book(parent(null), 3)).richMenuId).toBe('rm_reserved');
+  });
+
+  it('入口：ポップアップは資料P41の文面、あいさつは資料P44（教室長・週1回・営業電話なし・対応時間）。QR・紹介・完了画面からも入れる', () => {
+    const pop = p.webPages.find((x) => x.id === 'page_method')!.exitPopup!;
+    expect([pop.title, pop.cta.label]).toEqual(['まだ、塾を決めなくて大丈夫です。', 'LINEで資料と診断を受け取る']);
+    const hello = bot(me(p, parent(null)))[0]!;
+    for (const s of ['教室長、佐藤', '週1回', '営業のお電話は一切しません', '平日14:00〜21:00', 'デモ用の仮設定']) expect(hello).toContain(s);
+    expect(['p1', 'p4', 'p5', 'p7'].map((id) => user(w, id).route)).toEqual(['route_popup', 'route_qr', 'route_referral', 'route_thanks']);
+  });
+
+  it('30秒診断：資料P45の4問を1問ずつ。答えた瞬間にタグ、4問そろって結果（性格で学び方の候補・断定しない）', () => {
+    expect(p.surveys[0]!.questions.map((q) => [q.text, q.choices.map((c) => c.label)])).toEqual([
+      ['Q1 お子さまの学年は？', ['小1〜4', '小5・6', '中1・2', '中3', '高1・2', '高3']],
+      ['Q2 いちばん近いお悩みは？', ['成績が下がってきた', 'やる気が出ない', '受験対策を始めたい', '授業についていけない']],
+      ['Q3 お子さまの性格に近いのは？', ['競争があると燃える', 'マイペースにコツコツ', '質問するのが苦手', '集中が続かない']],
+      ['Q4 塾はいつから？', ['今すぐ', '今学期中に', '次の学年から', '情報収集だけ']],
+    ]);
+    let d = dispatch(parent(null), { type: 'tapButton', buttonId: 'btn_w_popup_diag' });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_grade', choiceIds: ['c_grade_m3'] });
+    expect(Object.keys(me(p, d).tags)).toEqual(['grade_m3']);
+    expect(me(p, d).surface).toEqual({ kind: 'survey', surveyId: 'sv_diag', questionId: 'q_worry' });
+    const rec = (ty: string) => Object.keys(me(p, parent(['m12', 'down', ty, 'term'])).tags).filter((t) => t.startsWith('rec_')).sort();
+    expect([rec('compete'), rec('shy'), rec('mypace'), rec('focus')]).toEqual([['rec_group'], ['rec_individual'], ['rec_individual', 'rec_video'], ['rec_individual']]);
+    const res = bot(me(p, parent(['m3', 'exam', 'shy', 'now']))).find((t) => t.startsWith('【30秒診断の結果】'))!;
+    for (const s of ['中3・「受験対策を始めたい」・「質問するのが苦手」', '① お子さまの特徴', '② おすすめの学び方（参考）', '個別指導が候補', '③ 同じような悩み', '学び方を決めるものではありません']) expect(res).toContain(s);
+    const next = p.messages.find((m) => m.id === 'msg_res_shy')!.bubbles[1]!;
+    expect(next.kind === 'buttons' ? next.buttons.map((b) => b.label) : []).toEqual(['④ コース・料金の資料を受け取る', '⑤ 無料体験を予約する', '診断結果を友だちに送る']);
+    // やり直すと候補が入れ替わる
+    let again = dispatch(parent(['m12', 'down', 'compete', 'term']), { type: 'tapMenu', richMenuId: 'rm_first', cellId: 'cell_diag' });
+    for (const [q, c] of [['q_grade', 'c_grade_m12'], ['q_worry', 'c_worry_down'], ['q_type', 'c_type_shy'], ['q_when', 'c_when_term']] as const) again = dispatch(again, { type: 'answer', surveyId: 'sv_diag', questionId: q, choiceIds: [c] });
+    expect(Object.keys(me(p, again).tags).filter((t) => /^(rec_|type_)/.test(t)).sort()).toEqual(['rec_individual', 'type_shy']);
+  });
+
+  it('診断に答えていない人：1日後に一度だけフォロー。回答が無いのに診断結果のタグは付けない', () => {
+    expect(Object.values(w.users).filter((u) => u.deliveries.some((d) => d.messageId === 'msg_s1_nodiag')).map((u) => u.id)).toEqual(['p4']);
+    expect(tags('p4').filter((t) => /^(rec_|diag_done|grade_|worry_|type_|when_)/.test(t))).toEqual([]);
+    // 途中でやめた人も同じ
+    let d = dispatch(parent(null), { type: 'tapButton', buttonId: 'btn_w_popup_diag' });
+    d = dispatch(d, { type: 'answer', surveyId: 'sv_diag', questionId: 'q_grade', choiceIds: ['c_grade_m3'] });
+    d = seek(d, at(3));
+    expect(['diag_done', 'rec_group', 'rec_individual', 'rec_video'].some((t) => t in me(p, d).tags)).toBe(false);
+  });
+
+  it('CV①：送信が完了したときだけ記録。資料はLINEに届き、請求ずみの人には同じ資料を請求させない', () => {
+    let d = dispatch(parent(['m12', 'down', 'compete', 'term']), { type: 'tapButton', buttonId: 'btn_res_compete_doc' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_doc_req' });
+    expect(me(p, d).cvs['cv_doc']).toBeUndefined();
+    expect(p.webPages.find((x) => x.id === 'page_doc_req')!.form!.confirm).toBeDefined();
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_doc_req', values: { f_doc_grade: '中1・2', f_doc_style: '集団指導', f_doc_room: '○○塾 △△教室' } });
+    const u = me(p, d);
+    expect([u.cvs['cv_doc']!.count, 'doc_req' in u.tags]).toEqual([1, true]);
+    expect(bot(u).at(-1)).toContain('おすすめの指導形式（診断より・参考）：集団指導');
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_first', cellId: 'cell_doc' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_doc_already' });
+    expect(me(p, d).cvs['cv_doc']!.count).toBe(1);
+    const doc = p.webPages.find((x) => x.id === 'page_doc_view')!.blocks.flatMap((b) => (b.kind === 'text' ? [b.text] : [])).join('\n');
+    for (const s of ['おすすめの指導形式', '対象学年・コース', '月謝の目安', 'デモ用の料金例', '講習費を含めた年間', '教室の特徴', '体験授業のご案内']) expect(doc).toContain(s);
+    expect(doc).not.toMatch(/[0-9０-９][0-9,０-９]*円/);
+  });
+
+  it('14日間の配信：3・5・7・10・14日後。悩み・資料請求・性格で出し分け、予約した人と「情報収集だけ」の人には予約の案内を送らない', () => {
+    // 友だち追加の日から何日後か（暦の日で数える）
+    const step = (id: string) => user(w, id).deliveries.filter((d) => d.flowId === 'flow_step').map((d) => [d.messageId, Math.floor(d.at / DAY) - Math.floor(user(w, id).friendAddedAt! / DAY)]);
+    expect(step('p1')).toEqual([['msg_s3_down', 3], ['msg_s5_have', 5], ['msg_s7_compete', 7]]);
+    expect(step('p2')).toEqual([['msg_s3_motivation', 3], ['msg_s5_ask', 5], ['msg_s7_info', 7], ['msg_s10_info', 10], ['msg_s14_info', 14]]);
+    expect(step('p3')).toEqual([['msg_s3_down', 3], ['msg_s5_have', 5], ['msg_s7_mypace', 7], ['msg_s10_faq', 10], ['msg_s14', 14]]);
+    expect(step('p6').map((x) => x[0])).toEqual(['msg_s3_exam', 'msg_s5_have']);
+    expect(step('p7').map((x) => x[0])).toEqual(['msg_s3_behind', 'msg_s5_have']);
+    // 情報収集だけの人に、配信（ステップ・週1回・企画）で体験予約のボタンを送らない
+    const toTrial = new Set(p.messages.filter((m) => m.bubbles.some((b) => bubbleButtons(b).some((x) => x.action.kind === 'startFlow' && x.action.flowId === 'flow_rsv_open'))).map((m) => m.id));
+    expect(user(w, 'p2').deliveries.filter((d) => /^flow_(step|weekly|bc_)/.test(d.flowId ?? '') && toTrial.has(d.messageId))).toEqual([]);
+    // 予約した人には、予約前向けの10日後・14日後の案内を送らない
+    for (const id of ['p1', 'p5', 'p6', 'p7']) expect(ids(w, id).filter((m) => ['msg_s10_faq', 'msg_s14'].includes(m))).toEqual([]);
+  });
+
+  it('CV②：確認画面のあとの確定で1回だけ。選んだ日時・教室・種別・人数が、確認の文面・②のタグ・③の時系列まで同じ', () => {
+    expect(p.webPages.find((x) => x.id === 'page_rsv')!.form!.confirm?.submitLabel).toBe('この内容で予約する');
+    const u = user(w, 'p1');
+    expect(u.cvs['cv_trial']).toEqual({ at: at(7, 20, 13), count: 1 });
+    const ok = bot(u).find((t) => t.startsWith('【ご予約を受け付けました】'))!;
+    for (const s of ['種別：無料体験授業', `日時：${slot(3)}`, '教室：○○塾 △△教室', '学年：中1・2', '人数：1名']) expect(ok).toContain(s);
+    expect(p.tags.find((t) => t.id === 'rsv_s3')!.label).toBe(`予約日時：${slot(3)}`);
+    expect(tags('p1')).toContain('rsv_s3');
+    expect(JSON.stringify(buildTimeline(p, new Labels(p), w, ['p1']))).toContain(slot(3));
+    expect(bot(user(w, 'p5')).find((t) => t.startsWith('【ご予約を受け付けました】'))).toContain('人数：2名（お友だちと一緒）');
+    // 資料請求をせずに、診断結果から直接予約もできる
+    expect([user(w, 'p7').cvs['cv_doc'], user(w, 'p7').cvs['cv_trial']!.count]).toEqual([undefined, 1]);
+  });
+
+  it('予約後の案内（資料P48）：直後・2日前18:00・前日18:00・当日2時間前・翌日12:00。予約していない人には送らない', () => {
+    expect(remind('p1')).toEqual([['msg_rsv_ok', at(7, 20, 13)], ['msg_rsv_2d', at(10, 18)], ['msg_rsv_1d', at(11, 18)], ['msg_rsv_2h', at(12, 8)], ['msg_rsv_thanks', at(13, 12)]]);
+    expect(remind('p7')).toEqual([['msg_rsv_ok', at(1, 13, 15)], ['msg_rsv_2d', at(6, 18)], ['msg_rsv_1d', at(7, 18)], ['msg_rsv_2h', at(8, 15)], ['msg_rsv_thanks', at(9, 12)]]);
+    expect(remind('p2')).toEqual([]);
+    const t = bot(user(w, 'p1')).find((x) => x.startsWith('【明日'))!;
+    expect(t).toContain(`【明日 ${slot(3)}】無料体験授業のご確認です`);
+    expect(t).toContain('（キャンセル料はありません）');
+  });
+
+  it('日程変更で前の日時の案内は止まり、キャンセルで予約者向けの案内が止まる。CV②は増えない', () => {
+    expect(remind('p4')).toEqual([['msg_rsv_ok', at(2, 20, 33)], ['msg_rsv_chg', at(3, 12, 3)], ['msg_rsv_2d', at(10, 18)]]);
+    const u = user(w, 'p4');
+    expect(bot(u).find((x) => x.startsWith('【日程を変更しました】'))).toContain(`新しい日時：${slot(3)}`);
+    expect(ids(w, 'p4')).toContain('msg_cancel_done');
+    expect(u.cvs['cv_trial']!.count).toBe(1);
+    expect(['rsv_booked', ...SLOT_TAGS].filter((t) => t in u.tags)).toEqual([]);
+    expect(['rsv_changed', 'rsv_cancel'].every((t) => t in u.tags)).toBe(true);
+  });
+
+  it('当日までが短い予約：過ぎた時刻の案内（2日前・前日）はあとから送らない。来塾の登録が無ければ翌日は参加を前提にしない', () => {
+    let d = seek(parent(['m12', 'down', 'compete', 'term']), at(4, 19));
+    d = book(d, 1);
+    const bookedAt = me(p, d).cvs['cv_trial']!.at;
+    d = seek(d, at(6, 13));
+    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => [x.messageId, x.at])).toEqual([['msg_rsv_ok', bookedAt], ['msg_rsv_2h', at(5, 12)], ['msg_rsv_missed', at(6, 12)]]);
+    const got = (m: string) => Object.values(w.users).filter((u) => u.deliveries.some((x) => x.messageId === m)).map((u) => u.id).sort();
+    expect(got('msg_rsv_thanks')).toEqual(['p1', 'p5', 'p6', 'p7']);
+    expect(got('msg_rsv_missed')).toEqual(['p3']);
+    for (const u of Object.values(w.users)) for (const x of u.deliveries.filter((y) => y.messageId === 'msg_rsv_thanks')) expect(u.behaviors.some((b) => b.type === 'cv' && b.detail['cvId'] === 'st_visit' && b.at < x.at)).toBe(true);
+  });
+
+  it('予約し直し（キャンセルのあと）でも CV② は重ねない。ブロックした人には何も届かない', () => {
+    let d = book(parent(['m12', 'down', 'compete', 'term']), 3);
+    d = dispatch(d, { type: 'tapButton', buttonId: 'btn_cancel_yes' });
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_first', cellId: 'cell_rsv' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_rsv_re' });
+    d = book(d, 4, 'page_rsv_re');
+    const u = me(p, d);
+    expect([u.cvs['cv_trial']!.count, 'rsv_booked' in u.tags, 'rsv_s4' in u.tags, 'rsv_s3' in u.tags, u.richMenuId]).toEqual([1, true, true, false, 'rm_reserved']);
+    d = dispatch(d, { type: 'block' });
+    const blockedAt = d.now;
+    d = seek(d, at(28));
+    expect(me(p, d).deliveries.filter((x) => x.at > blockedAt)).toEqual([]);
+  });
+
+  it('入会は教室が登録したときだけ。入会した人は未入会向けの配信から外れ、通塾中の方向けに切り替わる。GOALは体験予約', () => {
+    const u = user(w, 'p7');
+    const enrolledAt = u.cvs['st_enroll']!.at;
+    expect(u.deliveries.filter((d) => d.at > enrolledAt && /^flow_(step|weekly)$/.test(d.flowId ?? ''))).toEqual([]);
+    expect(ids(w, 'p7').filter((m) => m.startsWith('msg_bc_'))).toEqual(['msg_bc_test_member', 'msg_bc_w_member']);
+    expect(Object.values(w.users).filter((x) => 'enrolled' in x.tags).map((x) => x.id)).toEqual(['p7']);
+    expect(journeyOf(p, w, u).find((r) => r.isGoal)!.step.id).toBe('j_trial');
+  });
+
+  it('季節の企画配信：入会ずみ／体験ずみ・未入会／受験学年／情報収集／その他 を分ける。週1回の配信は14日間を終えて予約していない人だけ', () => {
+    expect(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'].map((id) => ids(w, id).find((m) => m.startsWith('msg_bc_w_')))).toEqual(['msg_bc_w_visited', 'msg_bc_w_info', 'msg_bc_w_exam', 'msg_bc_w_all', 'msg_bc_w_visited', 'msg_bc_w_visited', 'msg_bc_w_member']);
+    expect(Object.values(w.users).filter((u) => u.deliveries.some((d) => d.flowId === 'flow_weekly')).map((u) => u.id).sort()).toEqual(['p2', 'p4']);
+  });
+
+  it('友だち紹介：紹介した人には「送った」記録だけ（相手の追加・予約にはしない）。紹介から来た人は経路が残り、2名で予約', () => {
+    expect(tags('p1')).toContain('ref_shared');
+    expect(bot(user(w, 'p1')).join('\n')).toContain('紹介しただけでは、お友だちの友だち追加・予約にはなりません');
+    expect(Object.keys(w.users)).toHaveLength(7);
+    expect([user(w, 'p5').route, tags('p5').includes('rsv_two'), tags('p5').includes('diag_shared')]).toEqual(['route_referral', true, true]);
+  });
+
+  it('自動応答と有人対応：料金は自動応答、相談は教室スタッフ（②に「有人対応中」）', () => {
+    expect(user(w, 'p2').deliveries.find((d) => d.messageId === 'msg_ar_fee')!.flowId).toBeNull();
+    expect(tags('p6')).toContain('human_chat');
+    expect(bot(user(w, 'p6')).join('\n')).toContain('（有人対応に切り替え）');
+    expect(tags('p2')).not.toContain('human_chat');
+  });
+
+  it('戻る：前の時点に戻すと、タグ・CV・予約・届いた文面もその時点に戻る', () => {
+    let d = seek(allScripted(p), at(8));
+    const id = d.session.users.find((u) => u.personaId === 'p1')!.id;
+    expect(worldOf(p, d).users[id]!.cvs['cv_trial']).toBeDefined();
+    d = seek(d, at(7, 20, 12));
+    const before = worldOf(p, d).users[id]!;
+    expect([before.cvs['cv_trial'], 'rsv_booked' in before.tags, before.deliveries.some((x) => x.messageId === 'msg_rsv_ok')]).toEqual([undefined, false, false]);
+  });
+
+  it('資料用16:9の③：LINE追加→診断→資料請求→ステップ配信→体験予約→予約後の案内→来塾を、この順に出す', () => {
+    const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
+    expect(keys).toEqual(['LINE友だち追加', '30秒ぴったり診断（4問）', '資料請求（CV①）', '14日間のステップ配信', '無料体験・教室見学の予約（CV②）', '予約後の案内（直後・2日前・前日・当日）', '体験来塾（教室が登録）']);
+    for (const [pid, when] of [['p1', at(0, 10, 9)], ['p3', at(16)], ['p7', at(10)]] as const) {
+      let d = seek(allScripted(p), when);
+      d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === pid)!.id };
+      const v = { project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'slide3', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' } as never;
+      const html = journeyPane(v, me(p, d), true);
+      const from = html.indexOf('<ol class="lsp-strip');
+      const strip = html.slice(from, html.indexOf('</ol>', from));
+      const names = [...strip.matchAll(/<li class="([^"]*)">(.*?)<\/li>/g)].map((m) => m[2]!.replace(/<[^>]+>/g, ''));
+      const found = keys.map((k) => names.findIndex((n) => n.includes(k)));
+      expect(found.every((i) => i >= 0)).toBe(true);
+      expect([...found].sort((a, b) => a - b)).toEqual(found);
+    }
+  });
+
+  it('自動再生で全員を最後まで流すと CLI と同じ結果になり、営業用HTMLを書き出せる', async () => {
+    const d = playToEnd(p);
+    expect(d.now).toBe(29 * DAY);
+    const ww = worldOf(p, d);
+    for (const u of Object.values(ww.users)) expect(u.deliveries).toEqual(user(w, d.session.users.find((x) => x.id === u.id)!.personaId).deliveries);
+    await exportChecks(p);
+  }, 30_000);
+});

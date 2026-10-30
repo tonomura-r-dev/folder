@@ -1,6 +1,7 @@
 // スマホ枠の中（はじめかた・Webページ・ポップアップ・LINEトーク）。選んでいるユーザー1人分を描く。
 
 import type { Action, Bubble, CarouselCard, Id, RichMenu, TalkItem, UserState, WebBlock, WebPage } from '../../engine/src/index.ts';
+import { renderText } from '../../engine/src/index.ts';
 import { fmtTime, type Labels } from './describe.ts';
 import { dayOf, esc, hhmm, whoOf, type View } from './view.ts';
 
@@ -265,27 +266,46 @@ function listBlock(v: View, user: UserState, p: WebPage, i: number, b: Extract<W
   }</div>`;
 }
 
+/** 確認画面（送信前）。選んだ値を並べ、「この内容で送信」か「修正する」 */
+function formConfirm(v: View, user: UserState, p: WebPage, values: Record<string, string>): string {
+  const c = p.form!.confirm!;
+  const rows = p.form!.fields.map((f) => `<dt>${esc(f.label)}</dt><dd>${esc(values[f.id] || '（未入力）')}</dd>`).join('');
+  return `<div class="lsp-browser">
+    <div class="lsp-urlbar"><button type="button" data-act="formBack" title="入力に戻る" aria-label="戻る">‹</button><span class="lsp-url">${esc(p.url ?? p.title)}</span></div>
+    <div class="lsp-page"><div class="lsp-form lsp-form-confirm"><h2>${esc(c.title ?? '入力内容の確認')}</h2><dl>${rows}</dl>${c.note ? `<p>${esc(renderText(c.note, v.project, user))}</p>` : ''}<button type="button" class="lsp-pbtn" data-act="formOk" data-page="${esc(p.id)}">${esc(
+      c.submitLabel ?? 'この内容で送信する',
+    )}</button><button type="button" class="lsp-pbtn sub" data-act="formBack">修正する</button></div><div class="lsp-fake">デモ用のページです</div></div>
+  </div>`;
+}
+
 function page(v: View, user: UserState, p: WebPage, popup: boolean): string {
   const id = esc(p.id);
+  const t = (s: string) => esc(renderText(s, v.project, user));
+  // 確認画面つきフォームの入力中の値（この人・このページのものだけ）
+  const draft = v.ui.form && v.ui.form.userId === user.id && v.ui.form.pageId === p.id ? v.ui.form : null;
+  if (p.form?.confirm && draft?.confirming) return formConfirm(v, user, p, draft.values);
   const blocks = p.blocks
     .map((b, i) => {
       if (b.kind === 'button') return `<button type="button" class="lsp-pbtn" data-act="pageBtn" data-page="${id}" data-i="${i}">${esc(b.label)}</button>`;
       if (b.kind === 'image') return img(v, b.assetId);
       if (b.kind === 'list') return listBlock(v, user, p, i, b);
-      return b.kind === 'heading' ? `<h2>${esc(b.text)}</h2>` : `<p>${esc(b.text)}</p>`;
+      return b.kind === 'heading' ? `<h2>${t(b.text)}</h2>` : `<p>${t(b.text)}</p>`;
     })
     .join('');
   const form = p.form
     ? `<form class="lsp-form" data-form="submit" data-page="${id}">${p.form.fields
         .map((f) => {
           const name = esc(f.id);
+          const was = draft?.values[f.id];
+          // 締切を過ぎた選択肢（過ぎた予約枠など）は出さない
+          const opts = (f.options ?? []).filter((_, i) => { const c = f.closesAt?.[i]; return c === undefined || c === null || v.world.now < c; });
           const input =
             f.type === 'select'
-              ? `<select name="${name}">${(f.options ?? []).map((o) => `<option>${esc(o)}</option>`).join('')}</select>`
-              : `<input name="${name}" type="${f.type === 'text' ? 'text' : f.type}" autocomplete="off">`;
+              ? `<select name="${name}">${opts.map((o) => `<option${o === was ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>${opts.length ? '' : '<div class="lsp-form-none">いま選べる候補がありません</div>'}`
+              : `<input name="${name}" type="${f.type === 'text' ? 'text' : f.type}" autocomplete="off"${was ? ` value="${esc(was)}"` : ''}>`;
           return `<label>${esc(f.label)}</label>${input}`;
         })
-        .join('')}<button type="submit" class="lsp-pbtn">送信する</button></form>`
+        .join('')}<button type="submit" class="lsp-pbtn">${esc(p.form.submitLabel ?? (p.form.confirm ? '入力内容を確認する' : '送信する'))}</button></form>`
     : '';
   const cta = p.lineCta ? `<button type="button" class="lsp-line-cta" data-act="lineCta" data-page="${id}">${esc(p.lineCta.label)}</button>` : '';
   const pop =

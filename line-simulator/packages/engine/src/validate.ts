@@ -284,6 +284,10 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     });
     if (p.form) {
       if (p.form.fields.length === 0) err('node.requiredMissing', `${path}/form/fields`);
+      p.form.fields.forEach((f, fi) => {
+        if (f.closesAt && f.closesAt.length !== (f.options ?? []).length) err('node.requiredMissing', `${path}/form/fields/${fi}/closesAt`, { reason: 'closesAtLength' });
+      });
+      if (p.form.confirm) checkText(p.form.confirm.note, `${path}/form/confirm/note`);
       const s = p.form.onSubmit;
       if (s.cvId) need(cvs.has(s.cvId), `${path}/form/onSubmit/cvId`, 'cv', s.cvId);
       if (s.nextPageId) need(pages.has(s.nextPageId), `${path}/form/onSubmit/nextPageId`, 'page', s.nextPageId);

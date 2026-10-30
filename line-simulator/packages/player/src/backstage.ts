@@ -124,7 +124,9 @@ function stateTab(v: View, user: UserState): string {
     .map((c) =>
       user.cvs[c.id] && !c.repeatable
         ? `<button type="button" class="done" disabled title="${esc(fmtTime(user.cvs[c.id]!.at))}に済み">✓ ${esc(c.label)}済み</button>`
-        : `<button type="button" data-act="cv" data-cv="${esc(c.id)}"${c.kind === 'stage' ? ' class="stage"' : ''}>${esc(c.demoAction ?? `${c.label}へ`)}${c.repeatable && user.cvs[c.id] ? `（${user.cvs[c.id]!.count + 1}回目）` : ''}</button>`,
+        : c.demoButton === false
+          ? `<button type="button" disabled title="①の画面で操作すると記録されます">${esc(c.label)}（①の画面で操作）</button>`
+          : `<button type="button" data-act="cv" data-cv="${esc(c.id)}"${c.kind === 'stage' ? ' class="stage"' : ''}>${esc(c.demoAction ?? `${c.label}へ`)}${c.repeatable && user.cvs[c.id] ? `（${user.cvs[c.id]!.count + 1}回目）` : ''}</button>`,
     )
     .join('');
   // CVの記録・運営側の登録（何回目でも出す。フォームで選んだ求人などの選択項目も添える）

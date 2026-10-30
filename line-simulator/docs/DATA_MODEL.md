@@ -102,7 +102,8 @@ type TagDef   = { id: Id; label: string; group?: string; color?: string; descrip
 type CvDef    = { id: Id; label: string;                        // { id:"cv_apply", label:"応募" }
                  demoAction?: string;                           // ②の「次の段階へ進める」ボタンの名前
                  kind?: 'cv' | 'stage';                         // stage＝運営側が登録する段階（勤務確定など）。CVの数に入れず、②・③で別に出す
-                 repeatable?: boolean };                        // 何度でも記録できる（再応募・イベントごとの勤務確定など）。②のボタンが済みにならない
+                 repeatable?: boolean;                          // 何度でも記録できる（再応募・イベントごとの勤務確定など）。②のボタンが済みにならない
+                 demoButton?: boolean };                        // false＝②に手で記録するボタンを出さない（予約の日時など、①の画面で選ぶ内容があるCV）
 type RouteDef = { id: Id; label: string };                      // { id:"route_exit_popup", label:"離脱ポップアップ" }
 
 type MessageDef = {
@@ -163,8 +164,11 @@ type WebPage = {
   blocks: ({ kind: 'heading' | 'text'; text: Text } | { kind: 'image'; assetId: Id }
            | { kind: 'button'; label: string; action: Action }
            | { kind: 'list'; facets: ListFacet[]; items: ListItem[]; emptyText?: Text })[];  // 絞り込みつきの一覧（求人一覧など）
-  form?: { fields: { id: Id; label: string; type: 'text' | 'select' | 'tel' | 'email'; options?: string[] }[];
-           onSubmit: { cvId?: Id; nextPageId?: Id } };
+  form?: { fields: { id: Id; label: string; type: 'text' | 'select' | 'tel' | 'email'; options?: string[];
+                     closesAt?: (Minutes | null)[] }[];  // 選択肢ごとの締切（options と同じ順）。過ぎた選択肢は出さない（予約の空き枠など）
+           onSubmit: { cvId?: Id; nextPageId?: Id };
+           submitLabel?: string;                  // 送信ボタンの文字（既定：送信する）
+           confirm?: { title?: string; note?: Text; submitLabel?: string } };  // 送信の前に確認画面（画面だけ。送信するまでイベントにしない）
   exitPopup?: { title: Text; body: Text; assetId?: Id; cta: { label: string; action: Action }; dismissLabel: string };
   lineCta?: { label: string; routeId: Id;        // サンクスページの「LINEで受け取る」等
               prefill?: string };                // 押した直後、トークの入力欄に入れておく文（フォームの内容の引き継ぎ）。送るかは本人
@@ -191,7 +195,7 @@ type NarrationDef = {
   eyebrow?: string; title: Text; body: Text;     // 八十吉デモの説明カード
 };
 
-/** CVまでの道筋の1段（③フローチャートの箱）。エンジンの動きには関係しない（表示だけ）。最初の段が START、最後のCV地点が GOAL */
+/** CVまでの道筋の1段（③フローチャートの箱）。エンジンの動きには関係しない（表示だけ）。最初の段が START、最後のCV地点が GOAL（運営側の登録＝kind:'stage' は GOAL にしない） */
 type JourneyStep = {
   id: Id; label: string; purpose?: Text;         // 施策名・営業先への説明
   nodeIds?: Id[];                                // このノードを通ったら「済」。文面・アンケートのノードは中身を③に出す（参照するだけ）
@@ -546,10 +550,12 @@ function validate(project: Project): Issue[];
 {{user.name}}              ユーザーの名前
 {{user.attr.area}}         属性
 {{answer.sv_hope.q_area}}  アンケート回答のラベル
+{{form.f_slot}}            いちばん最近に送信したフォームの、その項目の値（予約した日時など）
 {{brand.accountName}}      アカウント名
+{{answer.sv.q|未回答}}      「|」のあとは、値が無いとき（未回答など）に出す文字
 ```
 
-未定義のキーはそのまま残し、警告 `text.unknownVar` を出す。
+LINEの文面のほか、Webページの見出し・本文にも使える。未定義のキーはそのまま残し、警告 `text.unknownVar` を出す。
 
 ---
 

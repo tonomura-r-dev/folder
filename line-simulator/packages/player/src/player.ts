@@ -73,6 +73,8 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
   const commit = (next: Demo, keepOpen = false) => {
     demo = next;
     if (!keepOpen) ui.open.clear();
+    // 確認画面の入力中の値は、何か起きたら捨てる（時間を動かした・別の操作をした等）
+    ui.form = null;
     opts.onChange?.(demo);
     render();
   };
@@ -385,6 +387,14 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
         return send({ type: 'tapPageButton', pageId, blockIndex: Number(d['i']), itemId: d['item'] ?? '' });
       case 'lineCta':
         return send({ type: 'tapLineCta', pageId });
+      case 'formOk': {
+        const f = ui.form;
+        if (!f || f.pageId !== pageId) return;
+        return send({ type: 'submitForm', pageId, values: f.values });
+      }
+      case 'formBack':
+        if (ui.form) ui.form.confirming = false;
+        return render();
       case 'tapButton':
         return send({ type: 'tapButton', buttonId: d['button'] ?? '', ...(d['node'] ? { nodeId: d['node'] } : {}) });
       case 'tapMenu':
@@ -526,7 +536,13 @@ export function createPlayer(root: HTMLElement, opts: PlayerOptions): PlayerHand
     if (form.dataset['form'] === 'submit') {
       const values: Record<string, string> = {};
       new FormData(form).forEach((v, k) => (values[k] = String(v)));
-      send({ type: 'submitForm', pageId: form.dataset['page'] ?? '', values });
+      const pageId = form.dataset['page'] ?? '';
+      // 確認画面つきのフォームは、まず確認画面を出す（送信は「この内容で送信」を押したとき）
+      if (project.webPages.find((p) => p.id === pageId)?.form?.confirm && demo.activeUserId) {
+        ui.form = { userId: demo.activeUserId, pageId, values, confirming: true };
+        return render();
+      }
+      send({ type: 'submitForm', pageId, values });
     }
   }
 

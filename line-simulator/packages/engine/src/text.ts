@@ -1,8 +1,9 @@
 // 文面の差し込み（{{user.name}} 等）。未定義のキーはそのまま残す。
+// {{キー|既定の文字}} と書くと、値が無いとき（未回答など）は既定の文字になる。
 
 import type { Bubble, Project, UserState } from './schema.ts';
 
-export const TEXT_VAR = /\{\{\s*([\w.-]+)\s*\}\}/g;
+export const TEXT_VAR = /\{\{\s*([\w.-]+)\s*(?:\|([^{}]*?))?\s*\}\}/g;
 
 /** 差し込みとして解決できるキーか（検証で使う。値の有無は問わない） */
 export function isKnownVar(key: string, project: Project): boolean {
@@ -13,6 +14,8 @@ export function isKnownVar(key: string, project: Project): boolean {
     const survey = project.surveys.find((s) => s.id === parts[1]);
     return !!survey && survey.questions.some((q) => q.id === parts[2]);
   }
+  // form.<項目ID>：いちばん最近に送信したフォームの、その項目の値（予約した日時など）
+  if (parts[0] === 'form' && parts.length === 2) return project.webPages.some((p) => p.form?.fields.some((f) => f.id === parts[1]));
   return false;
 }
 
@@ -31,11 +34,19 @@ function resolve(key: string, project: Project, user: UserState): string | undef
     const q = project.surveys.find((s) => s.id === parts[1])?.questions.find((x) => x.id === parts[2]);
     return got.map((id) => q?.choices.find((c) => c.id === id)?.label ?? id).join(' / ');
   }
+  if (parts[0] === 'form' && parts[1] !== undefined) {
+    for (let i = user.behaviors.length - 1; i >= 0; i--) {
+      const b = user.behaviors[i]!;
+      const v = b.type === 'submitForm' ? b.detail[`values.${parts[1]}`] : undefined;
+      if (v !== undefined) return v;
+    }
+    return undefined;
+  }
   return undefined;
 }
 
 export function renderText(text: string, project: Project, user: UserState): string {
-  return text.replace(TEXT_VAR, (whole, key: string) => resolve(key, project, user) ?? whole);
+  return text.replace(TEXT_VAR, (whole, key: string, fallback?: string) => resolve(key, project, user) ?? fallback ?? whole);
 }
 
 export function renderBubble(bubble: Bubble, project: Project, user: UserState): Bubble {

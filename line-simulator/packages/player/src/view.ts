@@ -37,6 +37,8 @@ export type Ui = {
   tlOpen?: Set<string>;
   tlFuture?: boolean;
   tlMinor?: boolean;
+  /** 確認画面つきフォームの入力中の値。confirming のあいだは確認画面を出す（送信するまでイベントにしない） */
+  form?: { userId: Id; pageId: Id; values: Record<string, string>; confirming: boolean } | null;
 };
 
 export type View = {

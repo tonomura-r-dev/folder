@@ -58,7 +58,9 @@ function reachedAt(step: JourneyStep, project: Project, user: UserState, now: Mi
 /** 段ごとの状態。いちばん先まで来た段が「いまここ」、そこより手前で来ていない段は「通らず」 */
 export function journeyOf(project: Project, world: WorldState, user: UserState): JourneyRow[] {
   const { steps } = journeySteps(project);
-  const goalIndex = steps.reduce((g, s, i) => (s.cvId !== undefined ? i : g), -1);
+  // GOAL は最後のCV地点。運営側の登録（来塾・入会など kind: stage）はCVではないので GOAL にしない
+  const isCv = (id: Id) => project.cvs.find((c) => c.id === id)?.kind !== 'stage';
+  const goalIndex = steps.reduce((g, s, i) => (s.cvId !== undefined && isCv(s.cvId) ? i : g), -1);
   const reach = steps.map((s) => reachedAt(s, project, user, world.now));
   const current = reach.reduce((c, r, i) => (r.reached ? i : c), -1);
   return steps.map((step, i) => {

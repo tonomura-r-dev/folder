@@ -6,6 +6,7 @@ import { reduce, validate } from '../packages/engine/src/index.ts';
 import { dispatch, newDemo, seek, worldOf } from '../packages/player/src/controller.ts';
 import { backstage } from '../packages/player/src/backstage.ts';
 import { Labels } from '../packages/player/src/describe.ts';
+import { journeyOf } from '../packages/player/src/journey.ts';
 import { listFilter, phone } from '../packages/player/src/phone.ts';
 import { buildTimeline } from '../packages/player/src/timeline.ts';
 import { baseProject, chain, codes, DAY, edge, node } from './helpers.ts';
@@ -195,5 +196,86 @@ describe('LINE誘導の入力欄への引き継ぎ（prefill）', () => {
     d = dispatch(d, { type: 'sendText', text: '【応募しました】サンプル' });
     html = phone(view(p, d), worldOf(p, d).users['u1']!);
     expect(html).not.toContain('value="【応募しました】サンプル"');
+  });
+});
+
+describe('予約フォーム：選んだ値の差し込み・選択肢の締切・確認画面', () => {
+  const project = () =>
+    baseProject({
+      surveys: [{ id: 'sv', label: '診断', questions: [{ id: 'q', text: '学年は？', mode: 'single', choices: [{ id: 'c1', label: '中1' }] }] }],
+      messages: [{ id: 'm1', bubbles: [{ kind: 'text', text: '日時：{{form.f_slot}}／学年：{{answer.sv.q|未回答}}' }] }, { id: 'm2', bubbles: [{ kind: 'text', text: 'm2' }] }],
+      webPages: [
+        {
+          id: 'pg_rsv', kind: 'form', title: '予約', blocks: [{ kind: 'text', text: '診断の学年：{{answer.sv.q|未回答}}' }],
+          form: { fields: [{ id: 'f_slot', label: '日時', type: 'select', options: ['1日目', '3日目'], closesAt: [DAY, null] }], onSubmit: { cvId: 'cv1', nextPageId: 'pg_done' }, confirm: { title: '予約内容の確認', submitLabel: 'この内容で予約する' } },
+        },
+        { id: 'pg_done', kind: 'thanks', title: '完了', blocks: [{ kind: 'heading', text: '完了' }, { kind: 'button', label: 'LINEに戻る', action: { kind: 'backToLine' } }] },
+      ],
+      flows: [chain('f_ok', [node({ id: 'm', type: 'message', messageId: 'm1' })], { trigger: { kind: 'cv', cvId: 'cv1' }, reentry: 'always' })],
+    });
+
+  it('{{form.項目}} はいちばん最近に送信したフォームの値、{{キー|既定}} は値が無いときの文字になる', () => {
+    const p = project();
+    expect(validate(p).filter((i) => i.code === 'text.unknownVar')).toEqual([]);
+    let d = dispatch(newDemo(p, 'u1'), { type: 'addFriend', routeId: 'r1' });
+    d = dispatch(d, { type: 'visitPage', pageId: 'pg_rsv' });
+    expect(phone(view(p, d), worldOf(p, d).users['u1']!)).toContain('診断の学年：未回答');
+    d = dispatch(d, { type: 'submitForm', pageId: 'pg_rsv', values: { f_slot: '3日目' } });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'pg_done', blockIndex: 1 });
+    const u = worldOf(p, d).users['u1']!;
+    expect(u.surface).toEqual({ kind: 'talk' });
+    const last = u.talk.at(-1)!;
+    expect(last.side === 'bot' ? last.bubble : null).toEqual({ kind: 'text', text: '日時：3日目／学年：未回答' });
+    // 知らない項目は検証で知らせる
+    const bad = project();
+    bad.messages[1]!.bubbles = [{ kind: 'text', text: '{{form.nope}}' }];
+    expect(validate(bad).filter((i) => i.code === 'text.unknownVar')).toHaveLength(1);
+  });
+
+  it('締切を過ぎた選択肢は出さない。締切の数が選択肢と合わなければ検証で知らせる', () => {
+    const p = project();
+    let d = dispatch(newDemo(p, 'u1'), { type: 'visitPage', pageId: 'pg_rsv' });
+    expect(phone(view(p, d), worldOf(p, d).users['u1']!)).toContain('<option>1日目</option>');
+    d = seek(d, DAY + 10);
+    const html = phone(view(p, d), worldOf(p, d).users['u1']!);
+    expect(html).not.toContain('1日目');
+    expect(html).toContain('<option>3日目</option>');
+    const bad = project();
+    bad.webPages[0]!.form!.fields[0]!.closesAt = [DAY];
+    expect(codes(validate(bad), 'error')).toEqual(['node.requiredMissing']);
+  });
+
+  it('確認画面：選んだ値を並べ、「この内容で予約する」と「修正する」。送信ボタンの文字も変わる', () => {
+    const p = project();
+    const d = dispatch(newDemo(p, 'u1'), { type: 'visitPage', pageId: 'pg_rsv' });
+    const v = view(p, d) as { ui: Record<string, unknown> };
+    const u = worldOf(p, d).users['u1']!;
+    expect(phone(v as never, u)).toContain('>入力内容を確認する</button>');
+    v.ui['form'] = { userId: 'u1', pageId: 'pg_rsv', values: { f_slot: '3日目' }, confirming: true };
+    const html = phone(v as never, u);
+    expect(html).toContain('<h2>予約内容の確認</h2>');
+    expect(html).toContain('<dt>日時</dt><dd>3日目</dd>');
+    expect(html).toContain('data-act="formOk"');
+    expect(html).toContain('data-act="formBack"');
+    // 「修正する」で戻ると、選んでいた値のまま
+    v.ui['form'] = { userId: 'u1', pageId: 'pg_rsv', values: { f_slot: '3日目' }, confirming: false };
+    expect(phone(v as never, u)).toContain('<option selected>3日目</option>');
+  });
+
+  it('demoButton:false のCVは、②に手で記録するボタンを出さない', () => {
+    const p = project();
+    p.cvs = [{ id: 'cv1', label: '体験予約', demoButton: false }];
+    const d = dispatch(newDemo(p, 'u1'), { type: 'addFriend', routeId: 'r1' });
+    const html = backstage(view(p, d), worldOf(p, d).users['u1']!);
+    expect(html).toContain('体験予約（①の画面で操作）');
+    expect(html).not.toContain('data-cv="cv1"');
+  });
+
+  it('③の GOAL は最後のCV地点。運営側の登録（stage）は GOAL にしない', () => {
+    const p = project();
+    p.cvs = [{ id: 'cv1', label: '体験予約' }, { id: 'st', label: '入会', kind: 'stage' }];
+    p.journey = [{ id: 'j1', label: '予約', cvId: 'cv1' }, { id: 'j2', label: '入会', cvId: 'st' }];
+    const d = newDemo(p, 'u1');
+    expect(journeyOf(p, worldOf(p, d), worldOf(p, d).users['u1']!).filter((r) => r.isGoal).map((r) => r.step.id)).toEqual(['j1']);
   });
 });

@@ -80,6 +80,8 @@ export type CvDef = Tracked & {
   kind?: 'cv' | 'stage';
   /** 何度でも記録できる（例：再応募・イベントごとの勤務確定）。デモ画面②のボタンが済みにならない */
   repeatable?: boolean;
+  /** false＝デモ画面②に手で記録するボタンを出さない（予約の日時など、①の画面で選ぶ内容があるCV） */
+  demoButton?: boolean;
 };
 export type RouteDef = Tracked & { id: Id; label: string };
 
@@ -176,8 +178,13 @@ export type WebPage = Tracked & {
   url?: string;
   blocks: WebBlock[];
   form?: {
-    fields: { id: Id; label: string; type: 'text' | 'select' | 'tel' | 'email'; options?: string[] }[];
+    /** closesAt は選択肢ごとの締切（options と同じ順・null は締切なし）。過ぎた選択肢は出さない（予約の空き枠など） */
+    fields: { id: Id; label: string; type: 'text' | 'select' | 'tel' | 'email'; options?: string[]; closesAt?: (Minutes | null)[] }[];
     onSubmit: { cvId?: Id; nextPageId?: Id };
+    /** 送信ボタンの文字（既定：送信する） */
+    submitLabel?: string;
+    /** 送信の前に、入力内容の確認画面を出す（予約内容の確認など）。画面だけの動きで、送信するまでイベントにはならない */
+    confirm?: { title?: string; note?: Text; submitLabel?: string };
   };
   exitPopup?: {
     title: Text;

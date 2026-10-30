@@ -60,7 +60,9 @@ export function describeIssue(i: Issue): string {
         ? 'ボタン選択には、ボタン付きの文面を選んでください'
         : p['reason'] === 'outOfBounds'
           ? 'メニューの区画が枠からはみ出しています'
-          : '必須の設定が空です';
+          : p['reason'] === 'closesAtLength'
+            ? '選択肢の締切の数が、選択肢の数と合っていません'
+            : '必須の設定が空です';
     case 'asset.fileMissing':
       return `画像ファイルがありません：${str(p['path'])}`;
     case 'prov.unapproved':
