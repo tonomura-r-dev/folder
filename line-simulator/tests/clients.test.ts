@@ -782,9 +782,71 @@ describe.skipIf(!has('client-d-event'))('企業別デモ④（イベント運営
     expect(c.flatMap((m) => cardTitles(m)).every((t) => t.includes('販売'))).toBe(true);
   });
 
-  it('資料用16:9の③：応募→登録→勤務確定→勤務前の案内→勤務→次回募集→再応募は「⋮ ○段」にまとめず、いつも出す', () => {
+  it('面接の予約：選んだ日時を記録 → 完了画面の「LINEに戻る」→ 予約完了の確認が届いている。二重に届かず、登録済みにもならない', () => {
+    const slot = p.webPages.find((x) => x.id === 'page_interview')!.form!.fields.find((f) => f.id === 'f_slot')!.options![1]!;
+    let d = newcomer('yokohama', 'any', 'guide', 'weekend');
+    d = dispatch(d, { type: 'visitPage', pageId: 'page_ev_e3' });
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_ev_e3', blockIndex: 4 });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_apply_e3', values: { f_event: 'x' } });
+    d = dispatch(d, { type: 'closePage', pageId: 'page_apply_thanks_e3' });
+    d = dispatch(d, { type: 'sendText', text: '応募しました' });
+    d = dispatch(d, { type: 'tapButton', buttonId: 'btn_r_applied_iv' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_interview' });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_interview', values: { f_name: 'デモ', f_slot: slot } });
+    let u = me(p, d);
+    expect(u.surface).toEqual({ kind: 'page', pageId: 'page_interview_thanks' });
+    expect(['iv_booked', 'iv_2', 'iv_1', 'st_staff'].map((t) => t in u.tags)).toEqual([true, true, false, false]);
+    expect(Object.keys(u.cvs)).toEqual(['cv_apply']);
+    // 完了画面の「LINEに戻る」でトークへ。確認には選んだ日時と、今後の案内（前日のリマインド・登録は面接のあと）
+    const back = p.webPages.find((x) => x.id === 'page_interview_thanks')!.blocks.findIndex((b) => b.kind === 'button' && b.label === 'LINEに戻る');
+    d = dispatch(d, { type: 'tapPageButton', pageId: 'page_interview_thanks', blockIndex: back });
+    u = me(p, d);
+    expect(u.surface).toEqual({ kind: 'talk' });
+    const last = u.talk.at(-1)!;
+    expect(last.side === 'bot' && last.bubble.kind === 'text' ? last.bubble.text : '').toMatch(new RegExp(`^【面接の予約が完了しました】\\n日時：${slot.replace(/[()（）]/g, '.')}[\\s\\S]*前日18:00に[\\s\\S]*スタッフ登録[\\s\\S]*予約システムとLINEの連携を想定`));
+    // もう一度「面接の日時を選ぶ」を押しても予約フォームは出ず、送り直しても確認は1回だけ
+    d = dispatch(d, { type: 'tapButton', buttonId: 'btn_r_applied_iv' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_iv_booked' });
+    d = dispatch(d, { type: 'submitForm', pageId: 'page_interview', values: { f_name: 'デモ', f_slot: slot } });
+    expect(me(p, d).deliveries.filter((x) => x.messageId.startsWith('msg_iv_ok_')).map((x) => x.messageId)).toEqual(['msg_iv_ok_2']);
+    // 面接の前日 18:00 にリマインド（日時つき）
+    d = seek(d, at(2, 18, 1));
+    expect(me(p, d).deliveries.filter((x) => x.messageId.startsWith('msg_iv_')).map((x) => [x.messageId, x.at])).toEqual([
+      ['msg_iv_ok_2', me(p, d).deliveries.find((x) => x.messageId === 'msg_iv_ok_2')!.at],
+      ['msg_iv_rm_2', at(2, 18)],
+    ]);
+  });
+
+  it('台本の面接：予約→確認→前日のリマインド→（面接のあと）スタッフ登録の順。確認・リマインドは1人1回ずつ', () => {
+    const slots = p.webPages.find((x) => x.id === 'page_interview')!.form!.fields.find((f) => f.id === 'f_slot')!.options!;
+    const ivAt = (label: string) => {
+      const m = label.match(/11月(\d+)日.*?(\d+):(\d+)/)!;
+      return at(Number(m[1]) - 2, Number(m[2]), Number(m[3]));
+    };
+    for (const id of ['p_a', 'p_b', 'p_c']) {
+      const u = user(w, id);
+      const sent = u.behaviors.find((b) => b.type === 'submitForm' && b.detail['pageId'] === 'page_interview')!;
+      const n = slots.indexOf(sent.detail['values.f_slot']!) + 1;
+      expect(n).toBeGreaterThan(0);
+      expect(u.tags[`iv_${n}`]).toBeDefined();
+      const iv = u.deliveries.filter((x) => x.messageId.startsWith('msg_iv_'));
+      expect(iv.map((x) => x.messageId)).toEqual([`msg_iv_ok_${n}`, `msg_iv_rm_${n}`]);
+      expect(iv[0]!.at).toBe(sent.at);
+      expect(iv[1]!.at).toBe(at(Math.floor(ivAt(slots[n - 1]!) / DAY) - 1, 18));
+      // スタッフ登録は面接の時刻より後。LINEに戻るボタンでトークに戻っている
+      expect(u.cvs['st_register']!.at).toBeGreaterThan(ivAt(slots[n - 1]!));
+      expect(u.behaviors.some((b) => b.type === 'tapPageButton' && b.detail['pageId'] === 'page_interview_thanks' && b.at === sent.at + 1)).toBe(true);
+    }
+    // ③の時系列にも、面接の予約（日時つき）・予約完了の確認・前日のリマインドが出る
+    const tl = buildTimeline(p, new Labels(p), w, ['p_a']);
+    const texts = tl.flatMap((e) => [...e.front, ...e.back]);
+    expect(texts.some((t) => t.includes('面接の日時を選ぶ') && t.includes(slots[0]!))).toBe(true);
+    expect(tl.some((e) => e.at === at(1, 18) && JSON.stringify(e).includes('面接の前日のリマインド'))).toBe(true);
+  });
+
+  it('資料用16:9の③：応募→面接の予約→登録→勤務確定→勤務前の案内→勤務→次回募集→再応募は「⋮ ○段」にまとめず、いつも出す', () => {
     const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
-    expect(keys).toEqual(['新規応募', '面接・スタッフ登録', '勤務確定', '勤務前の案内（前日・当日）', '勤務完了（勤務履歴）', '次回イベントの募集（勤務した方へ）', '再応募（次のイベントへ）']);
+    expect(keys).toEqual(['新規応募', '面接の予約', '面接・スタッフ登録', '勤務確定', '勤務前の案内（前日・当日）', '勤務完了（勤務履歴）', '次回イベントの募集（勤務した方へ）', '再応募（次のイベントへ）']);
     for (const [id, when] of [['p_a', at(0, 10, 3)], ['p_b', at(3, 20)], ['p_a', at(21, 23)], ['p_g', at(12)]] as const) {
       let d = seek(allScripted(p), when);
       d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === id)!.id };

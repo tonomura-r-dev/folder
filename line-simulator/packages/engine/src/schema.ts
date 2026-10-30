@@ -116,6 +116,8 @@ export type Action =
   | { kind: 'answer'; surveyId: Id; questionId: Id; choiceId: Id }
   | { kind: 'addFriend'; routeId: Id }
   | { kind: 'switchMenu'; richMenuId: Id }
+  /** Webページを閉じて、LINEのトークに戻る（予約完了画面の「LINEに戻る」など） */
+  | { kind: 'backToLine' }
   | { kind: 'none' };
 
 export type RichMenuCell = {

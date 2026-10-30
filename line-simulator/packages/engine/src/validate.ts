@@ -106,6 +106,7 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
       case 'sendText':
         if (!a.text.trim()) err('node.requiredMissing', `${path}/text`);
         return;
+      case 'backToLine':
       case 'none':
         return;
       default:

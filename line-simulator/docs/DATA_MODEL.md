@@ -129,6 +129,7 @@ type Action =
   | { kind: 'answer'; surveyId: Id; questionId: Id; choiceId: Id }
   | { kind: 'addFriend'; routeId: Id }           // 友だち追加（ポップアップ・サンクス）
   | { kind: 'switchMenu'; richMenuId: Id }
+  | { kind: 'backToLine' }                       // Webページを閉じてLINEのトークに戻る（予約完了画面の「LINEに戻る」等）
   | { kind: 'none' };
 
 type RichMenu = {

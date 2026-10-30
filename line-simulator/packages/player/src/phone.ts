@@ -89,7 +89,9 @@ export function previewBubble(v: View, b: Bubble): string {
               ? '友だち追加'
               : a.kind === 'switchMenu'
                 ? 'メニューを切り替える'
-                : '';
+                : a.kind === 'backToLine'
+                  ? 'LINEのトークに戻る'
+                  : '';
   const btns = (list: { label: string; action: Action }[]) =>
     `<div class="lsp-btns">${list.map((x) => `<span class="lsp-btn-ro">${esc(x.label)}${what(x.action) ? `<small>→ ${esc(what(x.action))}</small>` : ''}</span>`).join('')}</div>`;
   switch (b.kind) {

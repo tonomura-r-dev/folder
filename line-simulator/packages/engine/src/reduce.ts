@@ -649,6 +649,10 @@ function act(ctx: Ctx, user: UserState, action: Action): void {
     case 'switchMenu':
       user.richMenuId = action.richMenuId;
       return;
+    case 'backToLine':
+      // 押した操作（ページのボタン）は行動履歴に残っているので、画面だけトークに戻す
+      user.surface = { kind: 'talk' };
+      return;
     case 'none':
       return;
   }

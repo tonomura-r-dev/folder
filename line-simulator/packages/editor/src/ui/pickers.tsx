@@ -72,6 +72,7 @@ const ACTION_KINDS: Option[] = [
   { value: 'answer', label: 'アンケートに答える' },
   { value: 'addFriend', label: '友だち追加する' },
   { value: 'switchMenu', label: 'メニューを切り替える' },
+  { value: 'backToLine', label: 'ページを閉じてLINEに戻る' },
   { value: 'none', label: '何もしない' },
 ];
 
@@ -89,6 +90,8 @@ function emptyAction(kind: string): Action {
       return { kind, routeId: '' };
     case 'switchMenu':
       return { kind, richMenuId: '' };
+    case 'backToLine':
+      return { kind };
     default:
       return { kind: 'none' };
   }
