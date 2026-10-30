@@ -1382,8 +1382,35 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
         if (t.bubble.text.includes('1月31日（日）まで')) expect(t.at).toBeGreaterThanOrEqual(at(31));
       }
     // 月4回の定期配信（金曜）。会員には会員向けの中身
-    expect(user(w, 'p2').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1', 'msg_wk2', 'msg_wk3', 'msg_wk4']);
+    expect(user(w, 'p2').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1_done', 'msg_wk2_done', 'msg_wk3', 'msg_wk4_done']);
     expect(user(w, 'p5').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1_member', 'msg_wk2_member', 'msg_wk3_member', 'msg_wk4_member']);
+  });
+
+  it('一度答えた診断・料金シミュレーターは配信で案内しない。定期配信は同じ金曜に診断のない文面へ差し替える（まだ答えていない人には届く）', () => {
+    const doneTag: Record<string, string> = { flow_diag: 'diag_done', flow_psy: 'ps_done', flow_diet: 'dt_done', flow_keep: 'kt_done', flow_price: 'pr_done' };
+    const starts = (m: string) =>
+      (p.messages.find((x) => x.id === m)?.bubbles ?? []).flatMap((b) => (b.kind === 'buttons' ? b.buttons : [])).flatMap((b) => (b.action.kind === 'startFlow' && b.action.flowId in doneTag ? [b.action.flowId] : []));
+    /** 答えたあとに届いた案内（その結果についた「計算し直す」と、自分で送った言葉への自動応答は除く） */
+    const resent = (u: UserState) => u.deliveries.flatMap((d) => (d.flowId === null ? [] : starts(d.messageId).filter((f) => f !== d.flowId && (u.tags[doneTag[f]!]?.at ?? Infinity) <= d.at).map((f) => `${d.messageId}→${f}`)));
+    for (const u of Object.values(w.users)) expect(resent(u)).toEqual([]);
+
+    const fill = (d: Demo, cellId: string, sv: string) =>
+      answer(dispatch(d, { type: 'tapMenu', richMenuId: 'rm_t2', cellId }), sv, p.surveys.find((s) => s.id === sv)!.questions.map((q) => [q.id, q.choices[0]!.id] as [string, string]));
+    const weekly = (u: UserState) => u.deliveries.filter((x) => x.flowId === 'flow_weekly').map((x) => x.messageId);
+    // すべてに答えた人：14日間の診断・料金の配信は止まり、定期配信は4回とも診断のない文面
+    const all = me(p, seek(fill(fill(fill(fill(visitor(['now', 'diet', 'none', 'w2']), 'cell_psy', 'sv_psy'), 'cell_diet', 'sv_diet'), 'cell_keep', 'sv_keep'), 'cell_price', 'sv_price'), at(37)));
+    expect(all.deliveries.filter((x) => /^msg_(s3|s4|s5|s10|wk\d)$/.test(x.messageId))).toEqual([]);
+    expect(weekly(all)).toEqual(['msg_wk1_done', 'msg_wk2_done', 'msg_wk3_done', 'msg_wk4_done']);
+    expect(resent(all)).toEqual([]);
+    // 30秒診断だけの人：残りの診断は届く。ダイエットタイプ診断は目的がダイエットの人だけ
+    const diet = me(p, seek(visitor(['now', 'diet', 'none', 'w2']), at(25)));
+    expect(weekly(diet)).toEqual(['msg_wk1_done', 'msg_wk2', 'msg_wk3', 'msg_wk4']);
+    expect(step(diet).map((x) => x[0])).toEqual(expect.arrayContaining(['msg_s3', 'msg_s4', 'msg_s5', 'msg_s10']));
+    expect(weekly(me(p, seek(visitor(['m1', 'health', 'none', 'w2']), at(25))))).toEqual(['msg_wk1_done', 'msg_wk2_done', 'msg_wk3', 'msg_wk4']);
+    // 料金を計算ずみの人の30秒診断の結果には、計算のボタンを出さない
+    const body: [string, string][] = [['q_when', 'c_when_now'], ['q_goal', 'c_goal_muscle'], ['q_exp', 'c_exp_past'], ['q_freq', 'c_freq_w2']];
+    expect(me(p, answer(dispatch(fill(visitor(null), 'cell_price', 'sv_price'), { type: 'tapMenu', richMenuId: 'rm_t2', cellId: 'cell_diag' }), 'sv_body', body)).deliveries.at(-1)!.messageId).toBe('msg_bref_w2_priced');
+    expect(me(p, visitor(['now', 'muscle', 'past', 'w2'])).deliveries.at(-1)!.messageId).toBe('msg_bref_w2');
   });
 
   it('自動応答（10のキーワード）と有人対応：よくある質問は自動、相談・契約・手続きは店舗スタッフ（②に「有人対応中」）', () => {
