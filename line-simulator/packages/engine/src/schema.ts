@@ -82,6 +82,11 @@ export type CvDef = Tracked & {
   repeatable?: boolean;
   /** false＝デモ画面②に手で記録するボタンを出さない（予約の日時など、①の画面で選ぶ内容があるCV） */
   demoButton?: boolean;
+  /**
+   * 条件を満たすあいだ、デモ画面②の先頭に運営側の操作として目立たせる（例：予約の日時を過ぎたのに来店の登録がない）。
+   * only＝②の下のボタン一覧には出さず、ここにだけ出す
+   */
+  prompt?: { when: Expr; text: string; only?: boolean };
 };
 export type RouteDef = Tracked & { id: Id; label: string };
 

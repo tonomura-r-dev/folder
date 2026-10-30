@@ -798,6 +798,9 @@
 /* ②：運営側の登録（勤務確定など。CVとは色を分ける） */
 .lsp-cvlog.stage li { background: #ecf7f6; border-color: #b9e0dc; }
 .lsp-ctrls button.stage { border-color: var(--k-stage); color: var(--k-stage); }
+.lsp-ask { background: #fff7ec; border: 2px solid #e8a33d; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; }
+.lsp-ask b { display: block; font-size: 13px; color: #9a5b00; }
+.lsp-ask p { margin: 4px 0 8px; font-size: 12.5px; color: var(--lsp-ink); }
 /* ②：タグを種類ごとに */
 .lsp-taggrp { display: grid; grid-template-columns: max-content 1fr; gap: 4px 10px; margin: 0; font-size: 12.5px; align-items: baseline; }
 .lsp-taggrp dt { color: var(--lsp-muted); font-size: 12px; white-space: nowrap; }

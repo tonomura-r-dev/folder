@@ -333,6 +333,11 @@ export function validate(project: Project, options: ValidateOptions = {}): Issue
     });
   }
 
+  // ---------- CV ----------
+  project.cvs.forEach((c, i) => {
+    if (c.prompt) checkExpr(c.prompt.when, `/cvs/${i}/prompt/when`);
+  });
+
   // ---------- フロー ----------
   project.flows.forEach((flow, fi) => {
     const path = `/flows/${fi}`;

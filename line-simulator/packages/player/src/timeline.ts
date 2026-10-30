@@ -4,7 +4,7 @@
 // （操作がない場合・台本どおりに進んだ場合の予定。手で操作すると作り直される）。
 
 import type { FlowNode, Id, InputEvent, Minutes, Project, UserState, WorldState } from '../../engine/src/index.ts';
-import { bubbleButtons, MINUTES_PER_DAY, reduce } from '../../engine/src/index.ts';
+import { bubbleButtons, evaluate, MINUTES_PER_DAY, reduce } from '../../engine/src/index.ts';
 import { DEMO_END_DAY, nextStop, pendingInputs, upcoming, type Demo } from './controller.ts';
 import { describeExpr, describeTrigger, explainDecision, fmtTime, type Labels } from './describe.ts';
 import { journeyOf, nextAction } from './journey.ts';
@@ -357,6 +357,11 @@ export type Guide = {
   target?: string;
 };
 
+/** いま運営側の操作を待っているもの（prompt の条件を満たし、まだ記録していないCV・段階） */
+export function activePrompts(v: View, user: UserState) {
+  return v.project.cvs.filter((c) => c.prompt && !(user.cvs[c.id] && !c.repeatable) && evaluate(c.prompt.when, { project: v.project, user, now: v.world.now }).value);
+}
+
 export function guideOf(v: View, user: UserState): Guide {
   const { project, world, demo, L } = v;
   const scripted = demo.scripted.includes(user.id);
@@ -406,6 +411,8 @@ export function guideOf(v: View, user: UserState): Guide {
         }
       return { kind: 'manual', text: `①のメッセージのボタン（${labels}）から1つ押してください。`, target: '.lsp-chat .lsp-row.bot:last-of-type .lsp-btns' };
     }
+    const ask = activePrompts(v, user)[0];
+    if (ask) return { kind: 'manual', text: `運営側の操作待ちです。②の「${ask.demoAction ?? ask.label}」を押すと次へ進みます。` };
   }
   if (plan.when) return { kind: 'wait', text: `「次の出来事 ▶」で、この人の次の出来事（${plan.when}：${plan.what}）まで進めてください。${goalDone ? '' : '①のメニューやボタンを押して反応を確かめることもできます。'}` };
   if (goalDone) {

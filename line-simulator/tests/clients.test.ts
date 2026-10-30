@@ -9,8 +9,9 @@ import type { InputEventBody, Project, UserState, WorldState } from '../packages
 import { bubbleButtons, personaCoverage, reduce, sessionFromPersonas, validate } from '../packages/engine/src/index.ts';
 import { allScripted, autoStep, dispatch, newDemo, seek, worldOf, type Demo } from '../packages/player/src/controller.ts';
 import { journeyOf, journeyPane } from '../packages/player/src/journey.ts';
+import { backstage } from '../packages/player/src/backstage.ts';
 import { Labels } from '../packages/player/src/describe.ts';
-import { buildTimeline } from '../packages/player/src/timeline.ts';
+import { buildTimeline, guideOf } from '../packages/player/src/timeline.ts';
 import { phone } from '../packages/player/src/phone.ts';
 import { buildExport } from '../tools/export-lib.ts';
 import { loadProject } from '../tools/project-io.ts';
@@ -1156,8 +1157,7 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
     ['q_when', 'q_goal', 'q_exp', 'q_freq'].forEach((q, i) => (d = dispatch(d, { type: 'answer', surveyId: 'sv_body', questionId: q, choiceIds: [`c_${q.slice(2)}_${ans[i]}`] })));
     return d;
   };
-  const book = (d: Demo, n: number) =>
-    dispatch(d, { type: 'submitForm', pageId: 'page_rsv', values: { f_kind: '新しく予約', f_type: '無料体験', f_store: '○○フィットネス △△店', f_slot: slot(n), f_plan: 'いつでも通えるプラン', f_name: 'デモ', f_contact: 'LINE' } });
+  const book = (d: Demo, n: number, type = '無料体験', pageId = 'page_rsv') => dispatch(d, { type: 'submitForm', pageId, values: { f_type: type, f_slot: slot(n), f_name: 'デモ' } });
   const answer = (d: Demo, sv: string, picks: [string, string][]) => picks.reduce((x, [q, c]) => dispatch(x, { type: 'answer', surveyId: sv, questionId: q, choiceIds: [c] }), d);
   const textOf = (id: string) => {
     const b = p.messages.find((m) => m.id === id)!.bubbles.find((x) => x.kind === 'buttons' || x.kind === 'text')!;
@@ -1259,29 +1259,33 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
     expect([textOf('msg_pr_10000_3'), textOf('msg_pr_6000_4')]).toEqual([expect.stringContaining('1回あたり：約833円'), expect.stringContaining('1回あたり：375円')]);
   });
 
-  it('入会前14日間（資料P25）：2・3・4・5・6・8・10・11・14日後。5日後はダイエット目的の人だけ。予約した人に強い予約の案内は送らない。送らない理由は②に残る', () => {
+  it('入会前14日間（資料P25）：2・3・4・5・6・8・10・11・14日後。5日後はダイエット目的の人だけ。予約中・来店ずみの人には送らない。送らない理由は②に残る', () => {
     expect(step(user(w, 'p2'))).toEqual([['msg_s2_gentle', 2], ['msg_s3', 3], ['msg_s4', 4], ['msg_s6_mood', 6], ['msg_s8_gentle', 8], ['msg_s10', 10], ['msg_s11', 11], ['msg_s14_dec', 14]]);
-    expect(step(user(w, 'p3'))).toEqual([['msg_s2_slim', 2], ['msg_s3', 3], ['msg_s4', 4], ['msg_s5', 5], ['msg_s6_default', 6], ['msg_s8_slim', 8], ['msg_s10', 10], ['msg_s11_booked', 11]]);
+    expect(step(user(w, 'p3'))).toEqual([['msg_s2_slim', 2], ['msg_s3', 3], ['msg_s4', 4], ['msg_s5', 5], ['msg_s6_default', 6]]);
     expect(got('msg_s5')).toEqual(['p3']);
-    // 予約したあとは、6日後・14日後の案内と、予約ボタンつきのQ&Aを送らない
-    for (const id of ['p1', 'p3', 'p4', 'p6', 'p7']) {
+    // 予約のあとは声がけを減らす：14日間の残りも定期配信も届かない（会員の月1回は別）
+    for (const id of ['p1', 'p3', 'p4', 'p6']) {
       const u = user(w, id);
       const bookedAt = u.cvs['cv_rsv']!.at;
-      expect(u.deliveries.filter((d) => d.at > bookedAt && /^msg_(s6_|s14_|s11$)/.test(d.messageId))).toEqual([]);
+      expect(u.deliveries.filter((d) => d.at > bookedAt && (d.flowId === 'flow_step' || (d.flowId === 'flow_weekly' && !d.messageId.endsWith('_member'))))).toEqual([]);
     }
     // 送らなかった理由（分岐の判定）が残る：目的がダイエットではない／予約ずみ
     const why = (id: string, ref: string) => w.decisions.some((x) => x.userId === id && x.kind === 'branch' && x.outcome === 'taken' && x.ref === ref);
-    expect([why('p2', 'c_s5_other'), why('p3', 'c_s14_rsv'), why('p4', 'c_s6_rsv')]).toEqual([true, true, true]);
+    expect([why('p2', 'c_s5_other'), why('p3', 'c_s10_rsv'), why('p4', 'c_s6_rsv'), why('p3', 'c_wk2_q')]).toEqual([true, true, true, true]);
   });
 
-  it('CV①（LINE予約）：確認画面のあとの確定で1回だけ。日時・店舗・プランが確認の文面・②のタグ・③の時系列まで同じ。「LINEに戻る」で確認が届いている', () => {
-    const form = p.webPages.find((x) => x.id === 'page_rsv')!.form!;
-    expect([form.confirm?.submitLabel, form.fields.map((f) => f.label)]).toEqual(['この内容で予約する', ['お手続き', '無料体験／見学', '希望店舗', '希望日時（空き枠）', '希望プラン', 'お名前（デモ用の架空のお名前）', '連絡方法']]);
+  it('CV①（LINE予約）：確認画面のあとの確定で1回だけ。お手続き・日時が確認の文面・②のタグ・③の時系列まで同じ。当日の流れはLINEの文面に書く。「LINEに戻る」で確認が届いている', () => {
+    const page = p.webPages.find((x) => x.id === 'page_rsv')!;
+    const form = page.form!;
+    expect([form.confirm?.submitLabel, form.fields.map((f) => f.label), form.fields[0]!.options]).toEqual(['この内容で予約する', ['お手続き', '希望日時（空き枠）', 'お名前（デモ用の架空のお名前）'], ['無料体験', '施設見学', '入会説明']]);
+    expect(page.blocks[0]).toMatchObject({ kind: 'heading', text: '○○フィットネス △△店を予約' });
+    expect(p.webPages.some((x) => x.id === 'page_dayflow')).toBe(false);
     const u = user(w, 'p1');
     expect(u.cvs['cv_rsv']).toEqual({ at: at(0, 12, 23), count: 1 });
     const ok = bot(u).find((t) => t.startsWith('【ご予約を受け付けました】'))!;
-    for (const s of ['種別：無料体験', `日時：${slot(1)}`, '店舗：○○フィットネス △△店', '希望プラン：いつでも通えるプラン', '持ち物', '当日の流れ', '見学だけでも大丈夫', '変更・キャンセル', 'デモ用の通知']) expect(ok).toContain(s);
-    expect(tags('p1')).toEqual(expect.arrayContaining(['rsv_s1', 'rsv_store_a', 'rsv_t_trial', 'rsv_via_line']));
+    for (const s of ['お手続き：無料体験', `日時：${slot(1)}`, '店舗：○○フィットネス △△店', '持ち物', '▼ 当日の流れ\n① 受付で', '④ ご質問・料金のご説明', '見学だけでも大丈夫', '変更・キャンセル', 'デモ用の通知']) expect(ok).toContain(s);
+    expect(ok).not.toContain('希望プラン');
+    expect(tags('p1')).toEqual(expect.arrayContaining(['rsv_s1', 'rsv_t_trial', 'rsv_via_line']));
     expect(JSON.stringify(buildTimeline(p, new Labels(p), w, ['p1']))).toContain(slot(1));
     // 予約だけでは来店・入会にならない。LINEに戻ると確認が届いている
     let d = book(visitor(['now', 'muscle', 'past', 'w2']), 5);
@@ -1290,35 +1294,49 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
     expect([me(p, d).surface, me(p, d).deliveries.at(-1)!.messageId]).toEqual([{ kind: 'talk' }, 'msg_rsv_ok']);
   });
 
+  it('入会説明の予約もCV①で1回。確認は入会説明の当日の流れ。入会は店舗の登録だけ。再予約は同じ画面で、CVを重ねず裏側でタグを付ける', () => {
+    const u = me(p, dispatch(book(visitor(null), 5, '入会説明'), { type: 'tapPageButton', pageId: 'page_rsv_done', blockIndex: 2 }));
+    expect([u.cvs['cv_rsv']?.count, 'rsv_t_enroll' in u.tags, 'enrolled' in u.tags, u.deliveries.at(-1)!.messageId]).toEqual([1, true, false, 'msg_rsv_ok_enroll']);
+    expect(bot(u).at(-1)).toContain('③ 料金・プラン・解約の条件のご説明');
+    // キャンセルのあとの予約：見た目は同じ画面。CV①は増えず、「再予約」のタグだけが付く
+    const [a, b] = [p.webPages.find((x) => x.id === 'page_rsv')!, p.webPages.find((x) => x.id === 'page_rsv_re')!];
+    expect([b.title, b.blocks, b.form!.fields]).toEqual([a.title, a.blocks, a.form!.fields]);
+    let d = dispatch(book(visitor(null), 5), { type: 'tapPageButton', pageId: 'page_rsv_done', blockIndex: 2 });
+    d = dispatch(dispatch(dispatch(d, { type: 'tapButton', buttonId: 'btn_rsv_ok_manage' }), { type: 'tapButton', buttonId: 'btn_manage_cancel' }), { type: 'tapButton', buttonId: 'btn_cancel_yes' });
+    d = dispatch(d, { type: 'tapMenu', richMenuId: 'rm_t1', cellId: 'cell_rsv' });
+    expect(me(p, d).surface).toEqual({ kind: 'page', pageId: 'page_rsv_re' });
+    const again = me(p, book(d, 6, '無料体験', 'page_rsv_re'));
+    expect([again.cvs['cv_rsv']?.count, 'rsv_again' in again.tags, 'rsv_booked' in again.tags]).toEqual([1, true, true]);
+  });
+
   it('Web予約（入口C）：CV①は経路Webで1回。LINEに来た時点で予約ずみとして扱い、予約内容をあいさつで確認・前日の案内も届く', () => {
     const u = user(w, 'p4');
     expect([u.cvs['cv_rsv'], tags('p4').includes('rsv_via_web'), tags('p4').includes('rsv_via_line')]).toEqual([{ at: at(3, 22, 4), count: 1 }, true, false]);
-    for (const s of ['Webからのご予約', '種別：施設見学', `日時：${slot(2)}`, '店舗：○○フィットネス □□店']) expect(bot(u)[0]).toContain(s);
-    expect(remind('p4')).toEqual([['msg_rsv_1d', at(6, 18)], ['msg_rsv_2h', at(7, 17)], ['msg_rsv_thanks', at(8, 12)]]);
+    for (const s of ['Webからのご予約', 'お手続き：施設見学', `日時：${slot(2)}`, '店舗：○○フィットネス △△店', '▼ 当日の流れ']) expect(bot(u)[0]).toContain(s);
+    expect(remind('p4')).toEqual([['msg_rsv_1d', at(6, 18)], ['msg_rsv_thanks', at(8, 12)]]);
     expect(u.deliveries.filter((d) => /^msg_(s6_|s14_|s11$)/.test(d.messageId))).toEqual([]);
   });
 
-  it('予約後の案内：直後・前日18:00・当日2時間前・翌日12:00。予約していない人には送らない。直前の予約で、過ぎた時刻の案内はあとから送らない', () => {
-    expect(remind('p1')).toEqual([['msg_rsv_ok', at(0, 12, 23)], ['msg_rsv_1d', at(3, 18)], ['msg_rsv_2h', at(4, 8)], ['msg_rsv_thanks', at(5, 12)]]);
+  it('予約後の案内：直後・前日18:00・翌日12:00（当日の案内はない）。予約していない人には送らない。直前の予約で、過ぎた時刻の案内はあとから送らない', () => {
+    expect(remind('p1')).toEqual([['msg_rsv_ok', at(0, 12, 23)], ['msg_rsv_1d', at(3, 18)], ['msg_rsv_thanks', at(5, 12)]]);
+    expect(p.messages.some((m) => m.id === 'msg_rsv_2h')).toBe(false);
     expect([remind('p2'), remind('p5')]).toEqual([[], []]);
     expect(bot(user(w, 'p1')).find((x) => x.startsWith('【明日'))).toContain(`【明日 ${slot(1)}】無料体験のご確認です`);
-    // 六郎：前日18:00を過ぎてから翌朝の枠を予約 → 前日の案内は送らず、当日から
-    expect(remind('p6')).toEqual([['msg_rsv_ok', at(34, 21, 33)], ['msg_rsv_2h', at(35, 8)], ['msg_rsv_missed', at(36, 12)]]);
+    // 六郎：前日18:00を過ぎてから翌朝の枠を予約 → 前日の案内は送らない
+    expect(remind('p6')).toEqual([['msg_rsv_ok', at(34, 21, 33)], ['msg_rsv_missed', at(36, 12)]]);
     let d = seek(visitor(['now', 'muscle', 'past', 'w2']), at(3, 20));
     d = seek(book(d, 1), at(5, 13));
-    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => x.messageId)).toEqual(['msg_rsv_ok', 'msg_rsv_2h', 'msg_rsv_missed']);
-    // 7人のどの案内も、予約した日時の前日18:00・2時間前ちょうどにだけ届く（後追いで届かない）
+    expect(me(p, d).deliveries.filter((x) => x.flowId === 'flow_rsv_remind').map((x) => x.messageId)).toEqual(['msg_rsv_ok', 'msg_rsv_missed']);
+    // 7人のどの案内も、予約した日時の前日18:00ちょうどにだけ届く（後追いで届かない）
     let n = 0;
     for (const u of Object.values(w.users))
       for (const t of u.talk) {
         if (t.side !== 'bot' || !('text' in t.bubble)) continue;
         const day = /^【明日 (.+?〜)】/.exec(t.bubble.text);
-        const now = /^本日 (.+?〜)、/.exec(t.bubble.text);
         if (day) expect(t.at).toBe(at(Math.floor(startOf(day[1]!) / DAY) - 1, 18));
-        if (now) expect(t.at).toBe(startOf(now[1]!) - 120);
-        if (day || now) n++;
+        if (day) n++;
       }
-    expect(n).toBe(8);
+    expect(n).toBe(4);
   });
 
   it('日程変更で前の日時の案内は止まり、キャンセルで予約者向けの案内が止まる。CV①は増えない。ブロック後は何も届かない', () => {
@@ -1326,6 +1344,8 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
     const u = user(w, 'p7');
     expect(bot(u).find((x) => x.startsWith('【日程を変更しました】'))).toContain(`新しい日時：${slot(7)}`);
     expect(u.cvs['cv_rsv']!.count).toBe(1);
+    // 予約中は14日間の配信を止める。キャンセルすると残りの配信に戻る
+    expect(step(u)).toEqual([['msg_s10', 10]]);
     expect(tags('p7').filter((t) => /^rsv_(booked|s\d)$/.test(t))).toEqual([]);
     expect(['rsv_changed', 'rsv_cancel'].every((t) => tags('p7').includes(t))).toBe(true);
     const blockedAt = u.behaviors.find((b) => b.type === 'block')!.at;
@@ -1340,6 +1360,42 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
     expect([got('msg_rsv_thanks'), got('msg_rsv_missed'), got('msg_compare')]).toEqual([['p1', 'p3', 'p4'], ['p6'], ['p3', 'p4']]);
     const d = seek(book(visitor(['now', 'muscle', 'past', 'w2']), 1), at(6));
     expect([me(p, d).cvs['cv_visit'], 'visited' in me(p, d).tags]).toEqual([undefined, false]);
+  });
+
+  it('日時を過ぎて来店のタグが無いと、②の先頭に店舗の操作（来店タグ・来店なし）を出す。押すまで来店後には進まない', () => {
+    const view = (d: Demo) => ({ project: p, world: worldOf(p, d), demo: d, ui: { menuOpen: true, picked: [], mode: 'three', tab: 'state', open: new Set<number>(), onlyNg: false, playing: false, speed: 1, status: '', fcZoom: 1, fcOptions: true, fcOpen: null, help: false }, L: new Labels(p), assetUrl: () => '' }) as never;
+    const html = (d: Demo) => backstage(view(d), me(p, d));
+    const booked = dispatch(book(visitor(['now', 'muscle', 'past', 'w2']), 1), { type: 'tapPageButton', pageId: 'page_rsv_done', blockIndex: 2 });
+    expect(html(seek(booked, at(4, 9)))).not.toContain('lsp-ask');
+    const past = seek(booked, at(4, 13));
+    expect(['lsp-ask', '来店タグを付ける（店舗が登録）', 'data-cv="st_noshow"'].every((x) => html(past).includes(x))).toBe(true);
+    expect(guideOf(view(past), me(p, past)).text).toContain('②の「来店タグを付ける（店舗が登録）」');
+    // 来店タグ：カードが消えて来店後へ
+    const came = dispatch(past, { type: 'cv', cvId: 'cv_visit' });
+    expect([html(came).includes('lsp-ask'), 'visited' in me(p, came).tags, me(p, came).cvs['cv_visit']?.count]).toEqual([false, true, 1]);
+    // 来店なし：CV②にせず、タグだけ。下のボタン一覧には出さない
+    const none = dispatch(past, { type: 'cv', cvId: 'st_noshow' });
+    expect([html(none).includes('lsp-ask'), 'no_show' in me(p, none).tags, me(p, none).cvs['cv_visit'], html(none).includes('data-cv="st_noshow"')]).toEqual([false, true, undefined, false]);
+    expect(me(p, seek(none, at(5, 13))).deliveries.at(-1)!.messageId).toBe('msg_rsv_missed');
+    expect(tags('p6')).toContain('no_show');
+    // 14日間の配信：店舗が確認するまでは止めたまま。「来店なし」で残りの配信に戻る
+    const rest = (d: Demo) => step(me(p, seek(d, at(7))));
+    expect(rest(past)).toEqual([]);
+    expect(rest(came)).toEqual([]);
+    expect(rest(none).map((x) => x[0])).toEqual(['msg_s4', 'msg_s6_default']);
+  });
+
+  it('文面の修正：「比べて決めて」と言わない・持ち物5つは縦に並べる・来店ずみの人に体験／見学の予約を案内しない', () => {
+    const all = p.messages.flatMap((m) => m.bubbles.flatMap((b) => (b.kind === 'text' || b.kind === 'buttons' ? [b.text] : [])));
+    expect(all.filter((x) => /比べて決め|ほかのジムと比べ/.test(x))).toEqual([]);
+    expect(textOf('msg_m1')).toContain('✅ 室内シューズ\n✅ 動きやすいウェア\n✅ タオル\n✅ 飲み物\n✅ ロッカーの鍵');
+    const toRsv = (m: string) => (p.messages.find((x) => x.id === m)?.bubbles ?? []).flatMap((b) => (b.kind === 'buttons' ? b.buttons : [])).filter((b) => b.action.kind === 'startFlow' && b.action.flowId === 'flow_rsv_open');
+    for (const id of ['p1', 'p3', 'p4']) {
+      const u = user(w, id);
+      const came = u.cvs['cv_visit']!.at;
+      expect(u.deliveries.filter((d) => d.at > came && d.flowId !== null).flatMap((d) => toRsv(d.messageId))).toEqual([]);
+      expect(bot(u).filter((x) => x.includes('【1月の予告】'))).toEqual([]);
+    }
   });
 
   it('入会は店舗の登録だけ。入会で入会前の配信が止まり、メニュー③・入会日から1・5・7・14日後の配信に切り替わる', () => {
@@ -1381,9 +1437,9 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
         if (t.bubble.text.includes('12月31日（木）まで')) expect(t.at).toBeLessThan(at(31));
         if (t.bubble.text.includes('1月31日（日）まで')) expect(t.at).toBeGreaterThanOrEqual(at(31));
       }
-    // 月4回の定期配信（金曜）。会員には会員向けの中身
+    // 月4回の定期配信（金曜）。会員は入会後14日間のあとの月1回だけ
     expect(user(w, 'p2').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1_done', 'msg_wk2_done', 'msg_wk3', 'msg_wk4_done']);
-    expect(user(w, 'p5').deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => d.messageId)).toEqual(['msg_wk1_member', 'msg_wk2_member', 'msg_wk3_member', 'msg_wk4_member']);
+    for (const id of ['p1', 'p5']) expect(user(w, id).deliveries.filter((d) => d.flowId === 'flow_weekly').map((d) => [d.messageId, Math.floor(d.at / DAY)])).toEqual([['msg_wk4_member', 24]]);
   });
 
   it('一度答えた診断・料金シミュレーターは配信で案内しない。定期配信は同じ金曜に診断のない文面へ差し替える（まだ答えていない人には届く）', () => {
@@ -1437,7 +1493,7 @@ describe.skipIf(!has('client-f-gym'))('企業別デモ⑥（ジム・フィッ�
 
   it('資料用16:9の③：LINE追加→診断→体験予約→来店→入会→入会後フォロー→CV③を、この順にいつも出す', () => {
     const keys = p.journey!.filter((s) => s.key).map((s) => s.label);
-    expect(keys).toEqual(['LINE友だち追加', '30秒 体づくりタイプ診断', '無料体験・見学の予約（CV①）', '来店・体験（CV②・店舗が確認）', '入会（店舗が登録）', '入会後14日間のステップ配信', '継続・紹介・PT／物販の申込（CV③）']);
+    expect(keys).toEqual(['LINE友だち追加', '30秒 体づくりタイプ診断', '来店の予約（CV①）', '来店・体験（CV②・店舗が確認）', '入会（店舗が登録）', '入会後14日間のステップ配信', '継続・紹介・PT／物販の申込（CV③）']);
     for (const [pid, when] of [['p1', at(0, 12, 12)], ['p1', at(12)], ['p3', at(9)], ['p5', at(20)], ['p6', at(36)], ['p7', at(30)]] as const) {
       let d = seek(allScripted(p), when);
       d = { ...d, activeUserId: d.session.users.find((u) => u.personaId === pid)!.id };

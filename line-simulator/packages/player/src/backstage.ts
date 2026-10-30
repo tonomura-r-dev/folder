@@ -6,7 +6,7 @@ import { bubbleButtons } from '../../engine/src/index.ts';
 import { upcoming } from './controller.ts';
 import { describeExpr, describeTraceNode, explainDecision, fmtTime, friendText, type Explanation } from './describe.ts';
 import { nextAction } from './journey.ts';
-import { flowConditions, formChoices, nextOwn, userHistoryHtml } from './timeline.ts';
+import { activePrompts, flowConditions, formChoices, nextOwn, userHistoryHtml } from './timeline.ts';
 import { esc, whoOf, type Tab, type View } from './view.ts';
 
 // ---------- 説明カード ----------
@@ -121,6 +121,7 @@ function stateTab(v: View, user: UserState): string {
   // その段階を「完了した状態」に進める。済んだ段階は押せない（二重に記録しない）
   // 何度でも記録できる段階（再応募・イベントごとの勤務確定など）は、済みにしない
   const cvButtons = v.project.cvs
+    .filter((c) => !c.prompt?.only)
     .map((c) =>
       user.cvs[c.id] && !c.repeatable
         ? `<button type="button" class="done" disabled title="${esc(fmtTime(user.cvs[c.id]!.at))}に済み">✓ ${esc(c.label)}済み</button>`
@@ -299,9 +300,18 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'matrix', label: '誰に届く？' },
 ];
 
+/** 運営側の操作を待っているときだけ、どのタブでも見える場所に出す */
+function promptCard(v: View, user: UserState): string {
+  const list = activePrompts(v, user);
+  if (!list.length) return '';
+  const buttons = list.map((c, i) => `<button type="button" data-act="cv" data-cv="${esc(c.id)}"${i === 0 ? ' class="primary"' : ''}>${esc(c.demoAction ?? `${c.label}へ`)}</button>`).join('');
+  return `<div class="lsp-ask"><b>運営側の操作が必要です</b><p>${esc(list[0]!.prompt!.text)}</p><div class="lsp-ctrls">${buttons}</div></div>`;
+}
+
 export function backstage(v: View, user: UserState): string {
   const body = v.ui.tab === 'state' ? stateTab(v, user) : v.ui.tab === 'events' ? `<div class="lsp-hint top">この人に起きたこと（新しい順）。行を押すと裏側の処理をすべて表示します。</div>${userHistoryHtml(v, user)}` : v.ui.tab === 'why' ? whyTab(v, user) : v.ui.tab === 'log' ? logTab(v, user) : matrixTab(v);
   return `<div class="lsp-side">
+    ${promptCard(v, user)}
     ${narrationCard(v, user)}
     <div class="lsp-card-side lsp-tabs-card">
       <div class="lsp-tabs" role="tablist">${TABS.map(

@@ -103,7 +103,8 @@ type CvDef    = { id: Id; label: string;                        // { id:"cv_appl
                  demoAction?: string;                           // ②の「次の段階へ進める」ボタンの名前
                  kind?: 'cv' | 'stage';                         // stage＝運営側が登録する段階（勤務確定など）。CVの数に入れず、②・③で別に出す
                  repeatable?: boolean;                          // 何度でも記録できる（再応募・イベントごとの勤務確定など）。②のボタンが済みにならない
-                 demoButton?: boolean };                        // false＝②に手で記録するボタンを出さない（予約の日時など、①の画面で選ぶ内容があるCV）
+                 demoButton?: boolean;                          // false＝②に手で記録するボタンを出さない（予約の日時など、①の画面で選ぶ内容があるCV）
+                 prompt?: { when: Expr; text: string; only?: boolean } }; // 条件を満たすあいだ②の先頭に運営側の操作として目立たせる。only＝②の下の一覧には出さない
 type RouteDef = { id: Id; label: string };                      // { id:"route_exit_popup", label:"離脱ポップアップ" }
 
 type MessageDef = {
