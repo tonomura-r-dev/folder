@@ -97,7 +97,7 @@ def main(src, out):
             tf.vertical_anchor = MSO_ANCHOR.MIDDLE
             p0 = tf.paragraphs[0]
             r = p0.add_run()
-            r.text = f"ほかの案｜{label}"
+            r.text = label
             style_run(r, 13.5, True, NAVY)
             p0.space_after = Pt(4)
             for line in lines:
